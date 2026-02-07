@@ -1,0 +1,49 @@
+﻿UTC: 20260207_234238
+COMMIT: de01ccc2b4e2795b2b153ba1dd78eb11d92db227
+BRANCH: main
+STATUS:
+## main
+?? docs/proofs/1.2_port_governance_runnable_20260207_234238.log
+
+== npm ci ==
+
+> weweb-supabase-option2@0.0.0 prepare
+> node scripts/prepare_ci_safe.mjs
+
+
+added 36 packages, and audited 37 packages in 799ms
+
+23 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+== lint:migrations ==
+
+> weweb-supabase-option2@0.0.0 lint:migrations
+> node scripts/lint_migrations.mjs
+
+lint:migrations OK
+
+== lint:sql ==
+
+> weweb-supabase-option2@0.0.0 lint:sql
+> node scripts/run_lint_sql.mjs
+
+LINT_SQL_SAFETY OK
+
+== lint:pgtap ==
+
+> weweb-supabase-option2@0.0.0 lint:pgtap
+> node scripts/lint_pgtap.mjs
+
+LINT_PGTAP OK
+
+== build ==
+
+> weweb-supabase-option2@0.0.0 build
+> node scripts/build.mjs
+
+build: no-op (no Next.js; no tsconfig.json)
+
+PASS
