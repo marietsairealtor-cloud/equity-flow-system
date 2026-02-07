@@ -1,0 +1,58 @@
+﻿UTC: 20260207_230957
+COMMIT: 08eed84fc76bd8848df93be6e3e99929e2a12408
+BRANCH: main
+STATUS:
+## main
+?? docs/proofs/1.1_port_manifest_20260207_230957.log
+
+== REQUIRED PATH CHECK ==
+OK   .gitattributes
+OK   .editorconfig
+OK   package-lock.json
+OK   CODEOWNERS
+OK   .github/workflows
+OK   docs/artifacts/AUTOMATION.md
+OK   docs/artifacts/CONTRACTS.md
+OK   docs/artifacts/GUARDRAILS.md
+OK   docs/artifacts/RELEASES.md
+OK   docs/artifacts/SOP_WORKFLOW.md
+OK   docs/ops/BUDGETS.md
+OK   docs/ops/ONBOARDING.md
+OK   docs/ops/PRIORITIES.md
+OK   docs/threats/THREATS.md
+OK   docs/threats/INCIDENTS.md
+OK   docs/handoff_latest.txt
+OK   scripts/build.mjs
+OK   scripts/ci_boot.ps1
+OK   scripts/ci_definer_safety_audit.ps1
+OK   scripts/ci_guard_gitattributes.ps1
+OK   scripts/ci_policy.ps1
+OK   scripts/ci_schema_drift.ps1
+OK   scripts/contracts_lint.ps1
+OK   scripts/db_push_guard.ps1
+OK   scripts/docker_cleanup_project.ps1
+OK   scripts/docs_push.ps1
+OK   scripts/fix_encoding.ps1
+OK   scripts/gen_contracts_snapshot.ps1
+OK   scripts/gen_schema.ps1
+OK   scripts/green_gate.mjs
+OK   scripts/handoff.ps1
+OK   scripts/handoff_commit.ps1
+OK   scripts/lint_bom_gate.mjs
+OK   scripts/lint_migrations.mjs
+OK   scripts/lint_pgtap.mjs
+OK   scripts/lint_sql_safety.ps1
+OK   scripts/must_contain.ps1
+OK   scripts/patch_green_gate.mjs
+OK   scripts/preflight_encoding.ps1
+OK   scripts/prepare_ci_safe.mjs
+OK   scripts/run_lint_sql.mjs
+OK   scripts/ship.mjs
+OK   scripts/ship_guard.ps1
+
+== BANNED OUTPUT CHECK ==
+ABSENT   generated/schema.sql
+ABSENT   generated/contracts.snapshot.json
+
+RESULT:
+PASS
