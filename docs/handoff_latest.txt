@@ -1,0 +1,32 @@
+HANDOFF CHECKPOINT (robot-owned, deterministic)
+HEAD: 40efd50
+
+=== git status --porcelain=v1 ===
+ M docs/handoff_latest.txt
+ M generated/schema.sql
+
+=== supabase status (sanitized summary) ===
+{
+    "exitcode":  0,
+    "stack_running":  true,
+    "stopped_services":  [
+
+                         ],
+    "api_url":  null,
+    "rest_url":  null,
+    "studio_url":  null,
+    "functions_url":  null
+}
+
+=== last applied migration (DB) ===
+ 20260311101000
+
+=== latest migration file in repo ===
+20260311101000_106_kill_switch_write_disable_idempotency.sql
+
+=== implemented gates/status ===
+- handoff checkpoint: yes
+- CI workflow present: yes (.github/workflows/ci.yml)
+- pgTAP workflow present: yes (.github/workflows/database-tests.yml)
+- privilege firewall (REVOKE core tables) detected in schema.sql: yes
+- SECURITY DEFINER detected in schema.sql: yes

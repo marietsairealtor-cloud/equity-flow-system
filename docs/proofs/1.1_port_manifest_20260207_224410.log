@@ -1,0 +1,44 @@
+﻿UTC: 20260207_224410
+COMMIT: 
+BRANCH: 
+STATUS:
+
+== REQUIRED PATH CHECK ==
+OK   .gitattributes
+OK   .editorconfig
+OK   package-lock.json
+MISSING  CODEOWNERS
+MISSING  .github/workflows
+OK   docs/artifacts/AUTOMATION.md
+OK   docs/artifacts/CONTRACTS.md
+OK   docs/artifacts/GUARDRAILS.md
+OK   docs/artifacts/RELEASES.md
+OK   docs/artifacts/SOP_WORKFLOW.md
+OK   docs/ops/BUDGETS.md
+OK   docs/ops/ONBOARDING.md
+OK   docs/ops/PRIORITIES.md
+OK   docs/threats/THREATS.md
+OK   docs/threats/INCIDENTS.md
+OK   docs/handoff_latest.txt
+MISSING  scripts/pr_scope_check.mjs
+MISSING  scripts/required_checks_contract.mjs
+MISSING  scripts/repo_ruleset_contract.mjs
+MISSING  scripts/qa_verify.mjs
+MISSING  scripts/proofs_append_only.mjs
+MISSING  scripts/governance_change_guard.mjs
+MISSING  scripts/surface_truth_harness.mjs
+MISSING  scripts/cloud_inventory.mjs
+MISSING  scripts/cloud_surface_harness.mjs
+MISSING  scripts/release_workflow_guard.mjs
+MISSING  scripts/rls_structural_audit.sql
+MISSING  scripts/privilege_truth_check.sql
+
+== BANNED OUTPUT CHECK ==
+ABSENT   generated/schema.sql
+ABSENT   generated/contracts.snapshot.json
+
+== WORKFLOWS INVENTORY ==
+(no workflows dir)
+
+RESULT:
+FAIL: missing required paths: CODEOWNERS, .github/workflows, scripts/pr_scope_check.mjs, scripts/required_checks_contract.mjs, scripts/repo_ruleset_contract.mjs, scripts/qa_verify.mjs, scripts/proofs_append_only.mjs, scripts/governance_change_guard.mjs, scripts/surface_truth_harness.mjs, scripts/cloud_inventory.mjs, scripts/cloud_surface_harness.mjs, scripts/release_workflow_guard.mjs, scripts/rls_structural_audit.sql, scripts/privilege_truth_check.sql

@@ -1,0 +1,8 @@
+* @YOUR_GH_ORG/maintainers
+/supabase/** @YOUR_GH_ORG/db-owners
+/supabase/migrations/** @YOUR_GH_ORG/db-owners
+/scripts/** @YOUR_GH_ORG/maintainers
+/.github/workflows/** @YOUR_GH_ORG/maintainers
+/generated/** @YOUR_GH_ORG/maintainers
+/docs/handoff_latest.txt @YOUR_GH_ORG/maintainers
+/(AUTOMATION|CONTRACTS|GUARDRAILS|SOP_WORKFLOW).md @YOUR_GH_ORG/maintainers
