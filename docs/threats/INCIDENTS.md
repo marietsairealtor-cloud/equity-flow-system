@@ -219,3 +219,14 @@ Rewrote `package.json` as UTF-8 without BOM (content unchanged). Husky init succ
 - Guardrail added: repo text files must be UTF-8 without BOM.
 - Commit-time BOM gate added (Husky + lint-staged): blocks BOM in staged `**/*.{json,md,yml,yaml,js,mjs,ts,tsx,sql,ps1}` by running `node scripts/lint_bom_gate.mjs`.
 - Existing encoding repair: use `npm run fix:encoding` when file encoding/line endings cause inconsistent tool behavior.
+
+### 2026-02-08 — Renormalize gate state drift + path mismatch (Windows)
+
+Symptom: npm run renormalize:check failed with Missing script: "renormalize:check" and/or fatal: pathspec 'scripts/check_renormalize.mjs' did not match any files, blocking the renormalize-enforced gate.
+
+Classification: determinism/state-drift incident (shell context drift + unpersisted wiring) + gate path mismatch.
+
+Closure: Proved repo truth (ls scripts + git ls-files), created scripts/check_renormalize.mjs at the referenced path, added renormalize:check to package.json, committed, reran gate → RENORMALIZE_ENFORCED_OK.
+
+Status: Closed. 
+
