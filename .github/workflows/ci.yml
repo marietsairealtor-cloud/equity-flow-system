@@ -5,17 +5,33 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: [ubuntu-latest]
         node-version: [16.x, 18.x, 20.x, 22.x]
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - run: npm run ci
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - run: npm run ci
+
+  toolchain-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm run toolchain:contract
+
+  required:
+    if: github.event_name == 'pull_request'
+    needs: [test, toolchain-contract]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "required (pull_request) PASS"
