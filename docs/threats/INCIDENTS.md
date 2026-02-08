@@ -230,3 +230,7 @@ Closure: Proved repo truth (ls scripts + git ls-files), created scripts/check_re
 
 Status: Closed. 
 
+
+### Feb 8, 2026 Incident — GitHub Ruleset Required Check Mismatch (2.4)
+
+During enforcement of branch protection (2.4), the PR was repeatedly blocked by a phantom **“Expected”** required check despite all CI jobs succeeding. Root cause: GitHub Rulesets enforce **check-run names** (e.g. `required`), while the UI surfaces **workflow labels** (e.g. `CI / required (pull_request)`), which are *not* valid enforcement targets. Requiring the UI label caused GitHub to wait indefinitely for a non-existent context. Resolution: ruleset was corrected to require the actual check-run name **`required`**, after which the PR merged successfully. **Prevention:** always select required checks by **job/check-run name**, never workflow/UI label; document this explicitly in governance.
