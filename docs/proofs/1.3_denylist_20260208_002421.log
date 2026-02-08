@@ -1,0 +1,40 @@
+﻿UTC: 20260208_002421
+COMMIT: 8e55066cb384b6e8b845c69e4211e3ce36f5bf81
+BRANCH: main
+STATUS:
+## main...origin/main
+?? docs/proofs/1.3_denylist_20260208_002421.log
+
+
+CMD: Test-Path supabase/.branches
+OUT: False
+CMD: Test-Path supabase/.temp
+OUT: False
+
+CMD: Get-ChildItem -Force -Recurse -Directory -ErrorAction SilentlyContinue . | Where-Object { $_.Name -eq '.supabase' } | Select-Object -First 50
+OUT: (none)
+
+CMD: docker volume ls
+DRIVER    VOLUME NAME
+local     supabase_db_weweb-supabase-option2
+local     supabase_storage_weweb-supabase-option2
+
+
+CMD: Get-ChildItem -Force -Recurse -File -ErrorAction SilentlyContinue . | Where-Object { $_.Name -match '\.(log|dump|sql\.gz|tar|zip)$' } | Select-Object -First 200 FullName,Length
+
+FullName                                                                                                Length
+--------                                                                                                ------
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_224410.log              1674
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_230804.log              1527
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_230957.log              1634
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.2_port_governance_runnable_20260207_234238.log    917
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.3_ci_local_20260208_001355.log                    672
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.3_denylist_20260208_001230.log                    535
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.3_denylist_20260208_002421.log                    759
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.4_ci_local_20260208_001520.log                    624
+C:\Users\marie\projects\equity-flow-system\docs\proofs\1.4_regen_policy_20260208_001426.log                213
+
+
+
+
+RESULT: PASS
