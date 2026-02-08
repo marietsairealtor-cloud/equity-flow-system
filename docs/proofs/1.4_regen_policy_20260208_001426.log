@@ -1,0 +1,8 @@
+﻿UTC=20260208_001426
+HEAD=a0449c7
+
+OK absent: generated/schema.sql
+OK absent: generated/contracts.snapshot.json
+OK present: scripts/gen_schema.ps1
+OK present: scripts/gen_contracts_snapshot.ps1
+PROOF PASS
