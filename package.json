@@ -2,7 +2,8 @@
   "name": "weweb-supabase-option2",
   "private": true,
   "version": "0.0.0",
-  "scripts": { "renormalize:check": "node scripts/check_renormalize.mjs",
+  "scripts": {
+    "renormalize:check": "node scripts/check_renormalize.mjs",
     "build": "node scripts/build.mjs",
     "ci:schema-drift": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_schema_drift.ps1",
     "docker:clean": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docker_cleanup_project.ps1",
@@ -25,7 +26,8 @@
     "lint:pgtap": "node scripts/lint_pgtap.mjs",
     "prepare": "node scripts/prepare_ci_safe.mjs",
     "ci": "npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build",
-    "toolchain:contract": "node scripts/check_toolchain.mjs"
+    "toolchain:contract": "node scripts/check_toolchain.mjs",
+    "truth-bootstrap": "node scripts/truth_bootstrap_check.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
@@ -43,4 +45,3 @@
     "node": "20.18.1"
   }
 }
-
