@@ -1,0 +1,20 @@
+﻿UTC=20260208_001230
+PWD=C:\Users\marie\projects\equity-flow-system
+TOP=C:/Users/marie/projects/equity-flow-system
+HEAD=d81c54e
+
+== DENYLIST CHECK ==
+OK absent: supabase/.branches
+OK absent: supabase/.temp
+== LOCAL SUPABASE STATE (best-effort indicators) ==
+
+== DOCKER VOLUMES (informational) ==
+DRIVER    VOLUME NAME
+local     supabase_db_weweb-supabase-option2
+local     supabase_storage_weweb-supabase-option2
+
+== GIT STATUS ==
+## main...origin/main
+?? docs/proofs/1.3_denylist_20260208_001230.log
+
+PROOF PASS
