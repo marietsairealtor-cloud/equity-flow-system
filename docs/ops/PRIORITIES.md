@@ -1,4 +1,4 @@
-﻿# PRIORITIES — Product Drivers and Won’t-Build List (Week 5)
+# PRIORITIES — Product Drivers and Won’t-Build List (Week 5)
 
 This document defines what optimizes decisions and what is explicitly out of scope.
 
