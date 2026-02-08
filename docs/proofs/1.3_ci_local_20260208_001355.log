@@ -1,0 +1,32 @@
+﻿UTC=20260208_001355
+PWD=C:\Users\marie\projects\equity-flow-system
+HEAD=fa97574
+NODE=v24.13.0
+NPM=11.6.2
+
+== npm run ci ==
+
+> weweb-supabase-option2@0.0.0 ci
+> npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build
+
+
+> weweb-supabase-option2@0.0.0 lint:migrations
+> node scripts/lint_migrations.mjs
+
+lint:migrations OK
+
+> weweb-supabase-option2@0.0.0 lint:sql
+> node scripts/run_lint_sql.mjs
+
+LINT_SQL_SAFETY OK
+
+> weweb-supabase-option2@0.0.0 lint:pgtap
+> node scripts/lint_pgtap.mjs
+
+LINT_PGTAP OK
+
+> weweb-supabase-option2@0.0.0 build
+> node scripts/build.mjs
+
+build: no-op (no Next.js; no tsconfig.json)
+
