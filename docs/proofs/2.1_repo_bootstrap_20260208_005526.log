@@ -63,3 +63,7 @@ build: no-op (no Next.js; no tsconfig.json)
 
 
 RESULT: PASS
+
+## CI run link
+CI_RUN_URL: <PASTE GITHUB ACTIONS RUN URL HERE>
+
