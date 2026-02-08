@@ -1,6 +1,7 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  pull_request:
 
 jobs:
   test:
@@ -19,7 +20,6 @@ jobs:
       - run: npm run ci
 
   toolchain-contract:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -30,8 +30,7 @@ jobs:
       - run: npm run toolchain:contract
 
   required:
-    if: github.event_name == 'pull_request'
     needs: [test, toolchain-contract]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "required (pull_request) PASS"
+      - run: echo "required PASS"
