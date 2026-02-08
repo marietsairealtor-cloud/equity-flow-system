@@ -4,3 +4,4 @@
 supabase/.branches/
 supabase/.temp/
 .DS_Store
+.tmp.driveupload/
