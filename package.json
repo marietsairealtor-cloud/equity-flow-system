@@ -27,7 +27,8 @@
     "prepare": "node scripts/prepare_ci_safe.mjs",
     "ci": "npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build",
     "toolchain:contract": "node scripts/check_toolchain.mjs",
-    "truth-bootstrap": "node scripts/truth_bootstrap_check.mjs"
+    "truth-bootstrap": "node scripts/truth_bootstrap_check.mjs",
+    "required-checks-contract": "node scripts/required_checks_contract.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
