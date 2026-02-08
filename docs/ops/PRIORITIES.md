@@ -1,4 +1,4 @@
-# PRIORITIES — Product Drivers and Won’t-Build List (Week 5)
+﻿# PRIORITIES — Product Drivers and Won’t-Build List (Week 5)
 
 This document defines what optimizes decisions and what is explicitly out of scope.
 
@@ -16,7 +16,7 @@ This document defines what optimizes decisions and what is explicitly out of sco
 - MAO and deal decisions must be quick, deterministic, and explainable.
 
 ### 3) Reliability and Reproducibility
-- PR-only publishing; ship is the sole publisher.
+- PR-only publishing; handoff:commit publishes; ship verifies.
 - Deterministic gates: schema drift, pgTAP, definer safety audits, lints.
 - Tagged releases and rollback discipline.
 
