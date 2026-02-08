@@ -24,7 +24,8 @@
     "db:push": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db_push_guard.ps1",
     "lint:pgtap": "node scripts/lint_pgtap.mjs",
     "prepare": "node scripts/prepare_ci_safe.mjs",
-    "ci": "npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build"
+    "ci": "npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build",
+    "toolchain:contract": "node scripts/check_toolchain.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
@@ -37,5 +38,8 @@
     "**/*.{json,md,yml,yaml,js,mjs,ts,tsx,sql,ps1}": [
       "node scripts/lint_bom_gate.mjs"
     ]
+  },
+  "volta": {
+    "node": "20.18.1"
   }
 }

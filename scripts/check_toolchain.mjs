@@ -1,0 +1,10 @@
+import fs from "node:fs"; import { execSync } from "node:child_process";
+const cfg=JSON.parse(fs.readFileSync("docs/truth/toolchain.json","utf8"));
+const run=c=>execSync(c,{stdio:["ignore","pipe","pipe"]}).toString("utf8").trim();
+const ok=(a,e,m)=>m==="exact"?a===e:m==="prefix"?a.startsWith(e):(()=>{throw new Error("bad match")})();
+const fail=m=>{console.error("TOOLCHAIN_CONTRACT_FAIL: "+m);process.exit(1)};
+const nodeV=run("node -v"), npmV=run("npm -v");
+console.log("=== toolchain-contract ==="); console.log(JSON.stringify({runner:{RUNNER_OS:process.env.RUNNER_OS||"unknown",ImageOS:process.env.ImageOS||"unknown",expected_runs_on:cfg.runner.runs_on},node:{actual:nodeV,expected:cfg.node.expect,match:cfg.node.match},npm:{actual:npmV,expected:cfg.npm.expect,match:cfg.npm.match}},null,2));
+if(!ok(nodeV,cfg.node.expect,cfg.node.match)) fail(`node mismatch: ${nodeV}`);
+if(!ok(npmV,cfg.npm.expect,cfg.npm.match)) fail(`npm mismatch: ${npmV}`);
+console.log("TOOLCHAIN_CONTRACT_OK");

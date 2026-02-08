@@ -1,0 +1,1 @@
+{"schema_version":1,"runner":{"runs_on":"ubuntu-24.04"},"node":{"expect":"v20.","match":"prefix"},"npm":{"expect":"10.","match":"prefix"}}
