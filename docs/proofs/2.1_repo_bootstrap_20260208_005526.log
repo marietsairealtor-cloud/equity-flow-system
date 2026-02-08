@@ -65,5 +65,5 @@ build: no-op (no Next.js; no tsconfig.json)
 RESULT: PASS
 
 ## CI run link
-CI_RUN_URL: <https://github.com/marietsairealtor-cloud/equity-flow-system.git>
+CI_RUN_URL: <https://github.com/marietsairealtor-cloud/equity-flow-system/actions/runs/21789782660>
 
