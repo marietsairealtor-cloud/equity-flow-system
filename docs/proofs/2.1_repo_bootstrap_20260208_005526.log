@@ -1,0 +1,65 @@
+﻿UTC: 20260208_005526
+COMMIT: 94935789c431d4e680f358d730068da8495a035d
+BRANCH: main
+STATUS:
+## main...origin/main
+?? docs/proofs/1.5_doc_corrections_20260208_003707.md
+?? docs/proofs/2.1_repo_bootstrap_20260208_005526.log
+
+
+## Tool versions
+CMD: node -v
+OUT:
+v24.13.0
+
+CMD: npm -v
+OUT:
+11.6.2
+
+
+## npm ci
+CMD: npm ci
+OUT:
+
+> weweb-supabase-option2@0.0.0 prepare
+> node scripts/prepare_ci_safe.mjs
+
+
+added 36 packages, and audited 37 packages in 916ms
+
+23 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+
+## local gates
+CMD: npm run ci
+OUT:
+
+> weweb-supabase-option2@0.0.0 ci
+> npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build
+
+
+> weweb-supabase-option2@0.0.0 lint:migrations
+> node scripts/lint_migrations.mjs
+
+lint:migrations OK
+
+> weweb-supabase-option2@0.0.0 lint:sql
+> node scripts/run_lint_sql.mjs
+
+LINT_SQL_SAFETY OK
+
+> weweb-supabase-option2@0.0.0 lint:pgtap
+> node scripts/lint_pgtap.mjs
+
+LINT_PGTAP OK
+
+> weweb-supabase-option2@0.0.0 build
+> node scripts/build.mjs
+
+build: no-op (no Next.js; no tsconfig.json)
+
+
+RESULT: PASS
