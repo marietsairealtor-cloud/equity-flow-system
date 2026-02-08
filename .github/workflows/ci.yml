@@ -4,6 +4,18 @@ on:
   pull_request:
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      docs_only: ${{ steps.filter.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docs_only:
+              - 'docs/**'
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -34,3 +46,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "required PASS"
+
+  db-heavy:
+    runs-on: ubuntu-24.04
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
+    steps:
+      - run: echo db-heavy noop
+
