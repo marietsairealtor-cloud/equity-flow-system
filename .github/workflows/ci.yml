@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
-      - run: npm run ci
+      - run: npm run truth-bootstrap
 
   toolchain-contract:
     runs-on: ubuntu-24.04
