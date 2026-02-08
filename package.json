@@ -2,7 +2,7 @@
   "name": "weweb-supabase-option2",
   "private": true,
   "version": "0.0.0",
-  "scripts": {
+  "scripts": { "renormalize:check": "node scripts/check_renormalize.mjs",
     "build": "node scripts/build.mjs",
     "ci:schema-drift": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_schema_drift.ps1",
     "docker:clean": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docker_cleanup_project.ps1",
@@ -43,3 +43,4 @@
     "node": "20.18.1"
   }
 }
+
