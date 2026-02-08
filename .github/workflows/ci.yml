@@ -34,3 +34,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "required PASS"
+
+
+  required-checks-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run required-checks-contract
+
