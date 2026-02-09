@@ -1,0 +1,146 @@
+UTC=20260209_140823Z
+BRANCH=main
+HEAD=6c43533
+
+=== npm run preflight:encoding (HEAD=6c43533) ===
+
+> equity-flow-system@0.0.0 preflight:encoding
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight_encoding.ps1
+
+Encoding preflight OK.
+
+=== npm run renormalize:check (HEAD=6c43533) ===
+
+> equity-flow-system@0.0.0 renormalize:check
+> node scripts/check_renormalize.mjs
+
+HEAD is now at 6c43533 Merge pull request #7 from Equity-Flow-Systems/pr/encoding-normalize-bom
+RENORMALIZE_ENFORCED_OK
+
+=== npm run toolchain:contract (HEAD=6c43533) ===
+
+> equity-flow-system@0.0.0 toolchain:contract
+> node scripts/check_toolchain.mjs
+
+=== toolchain-contract ===
+{
+  "runner": {
+    "RUNNER_OS": "unknown",
+    "ImageOS": "unknown",
+    "expected_runs_on": "ubuntu-24.04"
+  },
+  "node": {
+    "actual": "v20.18.1",
+    "expected": "v20.",
+    "match": "prefix"
+  },
+  "npm": {
+    "actual": "10.8.2",
+    "expected": "10.",
+    "match": "prefix"
+  }
+}
+TOOLCHAIN_CONTRACT_OK
+
+=== npm run truth-bootstrap (HEAD=6c43533) ===
+
+> equity-flow-system@0.0.0 truth-bootstrap
+> node scripts/truth_bootstrap_check.mjs
+
+=== truth-bootstrap: required paths (existence) ===
+PASS EXISTS docs/truth/required_checks.json
+PASS EXISTS docs/truth/lane_checks.json
+PASS EXISTS docs/truth/toolchain.json
+PASS EXISTS docs/truth/qa_requirements.json
+PASS EXISTS docs/truth/expected_surface.json
+PASS EXISTS docs/truth/execute_allowlist.json
+PASS EXISTS docs/truth/definer_allowlist.json
+PASS EXISTS docs/truth/pr_scope_rules.json
+PASS EXISTS docs/truth/robot_owned_paths.json
+PASS EXISTS docs/truth/rpc_budget.json
+PASS EXISTS docs/truth/blocked_identifiers.json
+PASS EXISTS docs/truth/tenant_table_selector.json
+PASS EXISTS docs/truth/privilege_truth.json
+PASS EXISTS docs/truth/qa_requirements.schema.json
+PASS EXISTS docs/truth/surface_truth.schema.json
+PASS EXISTS docs/truth/cloud_inventory.schema.json
+PASS EXISTS docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: JSON parse ===
+PASS JSON docs/truth/required_checks.json
+PASS JSON docs/truth/lane_checks.json
+PASS JSON docs/truth/toolchain.json
+PASS JSON docs/truth/qa_requirements.json
+PASS JSON docs/truth/expected_surface.json
+PASS JSON docs/truth/execute_allowlist.json
+PASS JSON docs/truth/definer_allowlist.json
+PASS JSON docs/truth/pr_scope_rules.json
+PASS JSON docs/truth/robot_owned_paths.json
+PASS JSON docs/truth/rpc_budget.json
+PASS JSON docs/truth/blocked_identifiers.json
+PASS JSON docs/truth/tenant_table_selector.json
+PASS JSON docs/truth/privilege_truth.json
+PASS JSON docs/truth/qa_requirements.schema.json
+PASS JSON docs/truth/surface_truth.schema.json
+PASS JSON docs/truth/cloud_inventory.schema.json
+PASS JSON docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: schema-lite checks (no Ajv) ===
+SCHEMA_LITE_PASS: qa_requirements.json
+SCHEMA_LITE_PASS: expected_surface.json
+SCHEMA_LITE_PASS: privilege_truth.json
+SCHEMA_LITE_PASS: docs/truth/qa_requirements.schema.json
+SCHEMA_LITE_PASS: docs/truth/surface_truth.schema.json
+SCHEMA_LITE_PASS: docs/truth/cloud_inventory.schema.json
+SCHEMA_LITE_PASS: docs/truth/privilege_truth.schema.json
+STATUS: PASS (truth-bootstrap OK)
+
+=== npm run required-checks-contract (HEAD=6c43533) ===
+
+> equity-flow-system@0.0.0 required-checks-contract
+> node scripts/required_checks_contract.mjs
+
+=== required-checks-contract ===
+WORKFLOWS: 2
+DISCOVERED_CHECKS:
+ - CI / changes
+ - CI / db-heavy
+ - CI / required
+ - CI / required-checks-contract
+ - CI / test
+ - CI / toolchain-contract
+ - placeholder / placeholder
+REQUIRED_CHECKS:
+ - CI / test
+=== verify: no lane-only checks in required_checks.json ===
+PASS lane-only excluded
+=== verify: required_checks.json matches workflow job names (string-exact) ===
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+
+=== npm run docs-only-ci-skip (HEAD=6c43533) ===
+
+> equity-flow-system@0.0.0 docs-only-ci-skip
+> node scripts/docs_only_ci_skip_contract.mjs
+
+=== docs-only-ci-skip contract (truth-driven) ===
+WORKFLOWS: 2
+DISCOVERED_CHECKS:
+ - CI / changes
+ - CI / db-heavy
+ - CI / required
+ - CI / required-checks-contract
+ - CI / test
+ - CI / toolchain-contract
+ - placeholder / placeholder
+REQUIRED_CHECKS (truth):
+ - CI / test
+PASS: paths-filter present
+PASS: changes job present
+PASS: changes outputs docs_only
+PASS: docs_only filter includes docs/**
+PASS: db-heavy job present
+PASS: db-heavy skipped on docs_only
+PASS: required check exists in workflows: CI / test
+PASS: required check NOT skipped on docs_only: CI / test
+STATUS: PASS (docs-only-ci-skip OK)
+
+RESULT: PASS
