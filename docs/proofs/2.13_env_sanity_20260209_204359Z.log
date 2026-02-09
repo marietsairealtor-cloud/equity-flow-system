@@ -1,0 +1,6 @@
+
+> equity-flow-system@0.0.0 env:sanity
+> node scripts/env_sanity.mjs
+
+ENV_SANITY project=equity-flow-system containers=0 volumes=0 networks=0
+ENV_SANITY PASS
