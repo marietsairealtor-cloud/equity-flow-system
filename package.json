@@ -30,7 +30,9 @@
     "truth-bootstrap": "node scripts/truth_bootstrap_check.mjs",
     "required-checks-contract": "node scripts/required_checks_contract.mjs",
     "docs-only-ci-skip": "node scripts/docs_only_ci_skip_contract.mjs",
-    "main-moved-guard": "node scripts/ci_main_moved_guard.mjs"
+    "main-moved-guard": "node scripts/ci_main_moved_guard.mjs",
+    "proof:manifest": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proof_manifest.ps1",
+    "proofs:append-only": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proofs_append_only.ps1"
   },
   "devDependencies": {
     "husky": "^9.1.7",
