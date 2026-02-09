@@ -427,3 +427,16 @@ Proof:
 PR/CI: merged; MAIN_HEAD=5831fb4f0db449f0d6ca2fe412c81171b2696100
 DoD: env:sanity passes clean; gate exists; required-checks-contract passes.
 Status: PASS
+
+## 2026-02-09 — 2.14 Stop-the-line incident coupling
+Objective: Enforce explicit acknowledgment for stop-the-line failure classes (INCIDENT or one-PR waiver; mutual exclusivity).
+Changes:
+- Added gate script: scripts/stop_the_line_gate.mjs
+- Added waiver location: docs/waivers/WAIVER_PR<NNN>.md (must contain: QA: NOT AN INCIDENT)
+- Added merge-blocking CI gate: .github/workflows/stop-the-line.yml
+- Added required check truth: stop-the-line / stop-the-line
+Proof:
+- docs/proofs/2.14_stop_the_line_20260209_205402Z.log
+PR/CI: merged; MAIN_HEAD=f4933e6f9e866cc4b0ad169adc5b813de524911d
+DoD: Gate blocks missing/dual ack; passes with exactly one; required-checks-contract PASS.
+Status: PASS
