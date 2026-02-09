@@ -6,7 +6,7 @@
       "required": true
     },
     {
-      "name": "secrets-scan",
+      "name": "secrets-scan / secrets-scan",
       "type": "github_status",
       "required": true
     }
