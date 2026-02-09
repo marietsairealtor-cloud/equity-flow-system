@@ -230,3 +230,11 @@ Closure: Proved repo truth (ls scripts + git ls-files), created scripts/check_re
 
 Status: Closed. 
 
+
+## 2026-02-09 — Proof manifest self-entry + Windows path normalization
+
+* Symptom: 
+pm run proof:manifest failed (missing entries / self-entry / hash mismatch) due to Windows path separators and manifest including itself.
+* Classification: determinism / chain-of-custody drift (proof manifest non-canonicalization).
+* Closure: enforce POSIX-style keys in manifest, hard-forbid self-entry, regenerate manifest after proof additions/merges; gate now hard-fails on violations.
+* Status: Closed.

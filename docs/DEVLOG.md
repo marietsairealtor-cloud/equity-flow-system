@@ -377,3 +377,26 @@ DoD
 
 Status
 - CLOSED
+
+2026-02-09 — Proof manifest canonicalization (post-merge doc closure)
+
+Objective
+- Record incident + guardrail and refresh proofs manifest after 2.11 merge.
+
+Changes
+- INCIDENTS: add proof-manifest self-entry/path normalization incident.
+- GUARDRAILS: require POSIX proof-manifest keys.
+- Regenerated docs/proofs/manifest.json to match repo state.
+
+Proof
+- npm run proof:manifest = PROOF_MANIFEST_OK (on PR branch)
+
+PR/CI
+- MAIN_HEAD (before): ac8d423
+- PR_HEAD: 3c2c6b8
+
+DoD
+- Evidence captured; manifest consistent.
+
+Status
+- CLOSED
