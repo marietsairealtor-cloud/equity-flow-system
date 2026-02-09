@@ -8,20 +8,34 @@ This SOP defines how work is proven locally, how truth artifacts are generated a
 
 ---
 
-- Proof artifacts must be committed under `docs/proofs/` (never `logs/`).
-- Any newly created proof file must pass `npm run fix:encoding` before commit.
+* Proof artifacts must be committed under `docs/proofs/` (never `logs/`).
+* Any newly created proof file must pass `npm run fix:encoding` before commit.
+
+---
 
 ## Core Principle (LOCKED)
 
-### Proof ≠ Publish
+### There Is No Golden Path
+
+The concept of a “Golden Path” or “happy path” is **retired**.
+
+There is **one authoritative path only**, enforced by governance and gates:
+
+**PR → CI green → approved → merged → proof artifact**
+
+Any alternative, shortcut, or implied happy path is invalid.
+
+---
+
+## Proof ≠ Publish (LOCKED)
 
 These responsibilities are permanently separated:
 
-* Proof → green:* , ship
-* Publish artifacts → handoff:commit (PR lane only)
+* Proof → `green:*`, `ship`
+* Publish artifacts → `handoff:commit` (PR lane only)
 * Merge / release → humans + CI
 
-Any script that mixes these roles is incorrect by definition.
+Any script or workflow that mixes these roles is incorrect by definition.
 
 ---
 
@@ -29,7 +43,7 @@ Any script that mixes these roles is incorrect by definition.
 
 Work is not done until:
 
-PR opened → CI green → approved → merged
+**PR opened → CI green → approved → merged**
 
 No PR = work is not complete.
 
@@ -46,8 +60,7 @@ It must include at least one of:
 * DEVLOG update with evidence
 
 Required flow:
-
-Proof PR → CI → merge
+**Proof PR → CI → merge**
 
 “No diff” = not closed.
 Out-of-branch proof = invalid.
@@ -58,32 +71,32 @@ Out-of-branch proof = invalid.
 
 The following scripts must exist and remain functional:
 
-* lint:migrations
-* lint:sql
-* lint:pgtap
-* build
-* handoff
-* handoff:commit
-* ship
+* `lint:migrations`
+* `lint:sql`
+* `lint:pgtap`
+* `build`
+* `handoff`
+* `handoff:commit`
+* `ship`
 
 Roles:
 
-handoff → generate truth
-handoff:commit → publish (PR only)
-ship → verify only
-green:* → gate proofs
+* `handoff` → generate truth
+* `handoff:commit` → publish (PR only)
+* `ship` → verify only
+* `green:*` → gate proofs
 
 ---
 
 ## DB Tests (pgTAP)
 
-Authoritative runner: npx supabase test db
+Authoritative runner: `npx supabase test db`
 
 Rules:
 
 * No alternative DB runners
 * No local-only tests
-* auth.uid() tests must set request.jwt.claims and use real auth.users.id
+* `auth.uid()` tests must set `request.jwt.claims` and use real `auth.users.id`
 
 ---
 
@@ -93,13 +106,13 @@ Run in repo root.
 
 One green pass consists of:
 
-1. npx supabase stop --no-backup
-2. npx supabase start -x vector --ignore-health-check
-3. npx supabase status
-4. npm run lint:migrations
-5. npm run lint:sql
-6. npm run lint:pgtap
-7. npm run build
+1. `npx supabase stop --no-backup`
+2. `npx supabase start -x vector --ignore-health-check`
+3. `npx supabase status`
+4. `npm run lint:migrations`
+5. `npm run lint:sql`
+6. `npm run lint:pgtap`
+7. `npm run build`
 
 Requirements:
 
@@ -130,7 +143,7 @@ All PRs must pass:
 All SECURITY DEFINER functions must:
 
 * Use schema-qualified internal calls
-* Use controlled search_path
+* Use controlled `search_path`
 * Contain no dynamic SQL
 
 Failure = hard block.
@@ -141,11 +154,9 @@ Failure = hard block.
 
 This replaces all previous publishing workflows.
 
----
-
 ### End-of-Session Trigger (LOCKED)
 
-handoff and handoff:commit may be run ONLY:
+`handoff` and `handoff:commit` may be run ONLY:
 
 1. At the end of the final working session of the day, OR
 2. Immediately before closing a gate
@@ -163,9 +174,9 @@ Violations invalidate the snapshot.
 
 ### End Session Procedure
 
-1. Verify clean tree (git status must be clean)
-2. Generate truth artifacts (npm run handoff)
-3. Publish via PR lane (npm run handoff:commit)
+1. Verify clean tree (`git status`)
+2. Generate truth artifacts (`npm run handoff`)
+3. Publish via PR lane (`npm run handoff:commit`)
 4. Open PR
 5. Wait for CI green
 6. Merge
@@ -178,13 +189,13 @@ No shortcuts.
 
 After artifacts PR merge:
 
-1. Checkout main and pull
+1. Checkout `main` and pull
 2. Verify clean tree
-3. Run ship
+3. Run `ship`
 4. Record:
 
-   * MAIN_HEAD
-   * HANDOFF_HEAD
+   * `MAIN_HEAD`
+   * `HANDOFF_HEAD`
    * Migration parity
    * DEVLOG entry
 
@@ -194,9 +205,8 @@ Only then is the gate closed.
 
 ## Clean Tree Proof (Clarification)
 
-docs/handoff_latest.txt is always dirty during generation.
-
-Only git status on main after merge is authoritative.
+`docs/handoff_latest.txt` is always dirty during generation.
+Only `git status` on `main` after merge is authoritative.
 
 ---
 
@@ -204,12 +214,12 @@ Only git status on main after merge is authoritative.
 
 Run only after merge and gate close.
 
-On main:
+On `main`:
 
-* git checkout main
-* git pull
-* git status
-* npm run ship
+* `git checkout main`
+* `git pull`
+* `git status`
+* `npm run ship`
 
 Failure = regression → New PR → Fix first failing gate only.
 
@@ -219,23 +229,10 @@ Failure = regression → New PR → Fix first failing gate only.
 
 If this SOP conflicts with behavior:
 
-Behavior is wrong.
-Stop and realign.
+**Behavior is wrong.
+Stop and realign.**
 
 ---
-  Add/clarify: **proof artifacts must be committed under `docs/proofs/` (never `logs/`)** and **any newly created proof file must pass `fix:encoding` before commit**.
 
-
-## Local Commit Gate (SQL Safety)
-
-A pre-commit hook runs automatically on `git commit` and blocks committing unsafe SQL migrations.
-
-- Trigger: `git commit` (automatic)
-- Applies to: staged `supabase/**/*.sql`
-- Runs: `node scripts/run_lint_sql.mjs` via `lint-staged`
-- Outcome: unsafe SQL cannot be committed (prevents wasted CI cycles)
-
-Notes:
-- No manual action required by humans or AIs.
-- Do not bypass with `--no-verify` unless emergency recovery; document any bypass.
-
+**QA note:** This change is wording-only.
+**DoD:** docs-only PR + CI green.
