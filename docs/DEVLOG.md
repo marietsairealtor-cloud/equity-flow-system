@@ -413,3 +413,17 @@ Proof:
 PR/CI: #17 (merged); MAIN_HEAD=2a39434e08a220b1f52c046233f33d5cd475ba81
 DoD: Secrets scan passes for repo + docs/proofs; proof includes scanner output + version; merge-blocking gate exists.
 Status: PASS
+
+## 2026-02-09 — 2.13 Environment sanity gate
+Objective: Block clean-room actions on contaminated Docker/Supabase environments.
+Changes:
+- Added env sanity implementation: scripts/env_sanity.mjs (cross-platform)
+- Added npm script: env:sanity
+- Added CI job: CI / env-sanity (merge-blocking)
+- Added required check truth: CI / env-sanity
+Proof:
+- docs/proofs/2.13_env_sanity_20260209_203725Z.log
+- docs/proofs/2.13_env_sanity_20260209_204359Z.log
+PR/CI: merged; MAIN_HEAD=5831fb4f0db449f0d6ca2fe412c81171b2696100
+DoD: env:sanity passes clean; gate exists; required-checks-contract passes.
+Status: PASS
