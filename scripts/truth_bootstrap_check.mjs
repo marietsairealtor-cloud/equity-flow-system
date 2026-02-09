@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 
 const required = [
   "docs/truth/required_checks.json",
