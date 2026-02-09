@@ -14,6 +14,11 @@
       "name": "CI / env-sanity",
       "type": "github_status",
       "required": true
+    },
+    {
+      "name": "stop-the-line / stop-the-line",
+      "type": "github_status",
+      "required": true
     }
   ]
 }
