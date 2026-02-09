@@ -1,0 +1,6 @@
+
+> equity-flow-system@0.0.0 env:sanity
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/env_sanity.ps1
+
+ENV_SANITY project=equity-flow-system containers=0 volumes=0 networks=0
+ENV_SANITY PASS
