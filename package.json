@@ -33,7 +33,8 @@
     "main-moved-guard": "node scripts/ci_main_moved_guard.mjs",
     "proof:manifest": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proof_manifest.ps1",
     "proofs:append-only": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proofs_append_only.ps1",
-    "env:sanity": "node scripts/env_sanity.mjs"
+    "env:sanity": "node scripts/env_sanity.mjs",
+    "stop-the-line": "node scripts/stop_the_line_gate.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",

@@ -1,0 +1,15 @@
+name: stop-the-line
+on: { pull_request: {} }
+jobs:
+  stop-the-line:
+    name: stop-the-line
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: stop-the-line (pass-through unless simulated)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: npm run stop-the-line
