@@ -1,7 +1,7 @@
 {
   "version": 1,
   "algo": "sha256",
-  "generated_utc": "20260209T193752.389Z",
+  "generated_utc": "20260209T194316.684Z",
   "files": {
     "docs/proofs/1.1_port_manifest_20260207_230957.log": "f782775cf7fff6ed30a29061fe654667348d5ba777196f4a999cef00660c6be6",
     "docs/proofs/1.2_ci_green_20260207_235832.md": "94bec7c56ff59148c2721fd9c77b288a59977b8253a4ffbd7167f057021cd82f",
@@ -20,6 +20,7 @@
     "docs/proofs/2.7_docs_only_ci_skip_20260208_234320Z.log": "d42d526d626b96a3d1ed33acdb5b75d0c83c9fe49b37de77e4f4e3fd7af4ff1d",
     "docs/proofs/2.8_command_smoke_gov_20260209_142024Z.log": "94d3b5d06ede10cba8420ded1243855ae9a029b33846afa80f7e6dc462bbe6f3",
     "docs/proofs/2.9_main_moved_guard_20260209_152822Z.log": "3c11f6f12ffd054b3de462bb63be3a9d339dd53e76d86e3bfb8df35f572d43d6",
+    "docs/proofs/PROOF_REDACTION__.md": "0563598c2247a0da2d20b8bd4d40e9e5192d90c549e77b316a74f85b103dabc8",
     "docs/proofs/_archive/1.1_port_manifest_20260207_224410.log": "d44d258e95507c63be5b65fbba35f9dfb705940a3d242cf2add350ff8e2c055d",
     "docs/proofs/_archive/1.1_port_manifest_20260207_230804.log": "a73ca94be7e64b2328bfb1b1c3ddd182dd6035c3f33a8370bb257eede470809c",
     "docs/proofs/_archive/1.3_ci_local_20260208_001355.log": "9165e7b98802956270b93f65d3a82150aa0db9bc1b16b221e1907622f9010a59",
