@@ -352,3 +352,28 @@ DoD
 - Main branch remains governed by ruleset (required check = required; bypass = never)
 Status
 PASS
+
+2026-02-09 — 2.10 Proof chain-of-custody + manifest
+
+Objective
+- Add proof chain-of-custody via SHA256 manifest + enforce append-only proofs.
+
+Changes
+- Added proof manifest verifier + proofs append-only guard.
+- Updated docs/proofs/manifest.json after merge to include new proof log.
+
+Proof
+- docs/proofs/2.10_proof_manifest_20260209_184616Z.log
+- docs/proofs/manifest.json
+
+PR/CI
+- PR: (fill after PR opened)
+- MAIN_HEAD: 6cf2097
+- DEVLOG_PR_HEAD: 5285a86
+
+DoD
+- manifest exists with SHA256 for in-scope proofs
+- append-only enforcement gate present
+
+Status
+- CLOSED
