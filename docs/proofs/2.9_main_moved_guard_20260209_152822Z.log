@@ -1,0 +1,6 @@
+UTC: 20260209_152822Z
+BRANCH: main
+HEAD: 609ad319babf8093e9d00403fe0662761699e355
+
+=== npm run main-moved-guard ===
+ > equity-flow-system@0.0.0 main-moved-guard > node scripts/ci_main_moved_guard.mjs  From https://github.com/Equity-Flow-Systems/equity-flow-system  * branch            main       -> FETCH_HEAD MAIN_MOVED_GUARD behind=0 ahead=0 PASS
