@@ -1,0 +1,14 @@
+UTC=20260209_194412Z
+BRANCH=pr/2.11-proof-redaction
+HEAD=9ff460f
+
+=== npm run proof:manifest ===
+PROOF_MANIFEST_OK
+
+=== npm run proofs:append-only ===
+From https://github.com/Equity-Flow-Systems/equity-flow-system  * branch            main       -> FETCH_HEAD PROOFS_APPEND_ONLY_OK
+
+FILES_ADDED:
+- docs/proofs/PROOF_REDACTION__.md
+
+RESULT=PASS

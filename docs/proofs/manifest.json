@@ -1,7 +1,7 @@
 {
   "version": 1,
   "algo": "sha256",
-  "generated_utc": "20260209T193752.389Z",
+  "generated_utc": "20260209T194414.339Z",
   "files": {
     "docs/proofs/1.1_port_manifest_20260207_230957.log": "f782775cf7fff6ed30a29061fe654667348d5ba777196f4a999cef00660c6be6",
     "docs/proofs/1.2_ci_green_20260207_235832.md": "94bec7c56ff59148c2721fd9c77b288a59977b8253a4ffbd7167f057021cd82f",
@@ -10,6 +10,7 @@
     "docs/proofs/1.4_regen_policy_20260208_003105.log": "c2d6ba4d91684bcd48a97fdf089f0d5b0a2b90d403f909c1d8e449f15c0b4e99",
     "docs/proofs/1.5_doc_corrections_fix_20260208_004544.md": "158e2a28d85a14503502d412b57abd7b63659e6191b08ab7aa836a90ffb1084e",
     "docs/proofs/2.10_proof_manifest_20260209_184616Z.log": "be8b8d16e34632e90da980653f86af11b6f4e77dec06eff0b209ae93365a4895",
+    "docs/proofs/2.11_proof_redaction_escape_hatch_20260209_194412Z.log": "f0b62deb74874faeeadaa0f5ba0f459cb7c093bc5c3301bd26c0ecb0f3cc0ac3",
     "docs/proofs/2.1_repo_bootstrap_20260208_012254.md": "2c02b588d50cce393151764bbf83e8f067b82936370c31d220d9cf975663afe4",
     "docs/proofs/2.2_toolchain_versions_20260208_145124.log": "66e7f7fe75c15eac463eaff777b4ea67fefa86559e0d1944d0eebe0d3a951759",
     "docs/proofs/2.2a_renormalize_enforced_20260208_163001.log": "9090eebae64b3de17f74fd5629cb9b014b34057744560e2d8d91db5620043a9e",
@@ -20,6 +21,7 @@
     "docs/proofs/2.7_docs_only_ci_skip_20260208_234320Z.log": "d42d526d626b96a3d1ed33acdb5b75d0c83c9fe49b37de77e4f4e3fd7af4ff1d",
     "docs/proofs/2.8_command_smoke_gov_20260209_142024Z.log": "94d3b5d06ede10cba8420ded1243855ae9a029b33846afa80f7e6dc462bbe6f3",
     "docs/proofs/2.9_main_moved_guard_20260209_152822Z.log": "3c11f6f12ffd054b3de462bb63be3a9d339dd53e76d86e3bfb8df35f572d43d6",
+    "docs/proofs/PROOF_REDACTION__.md": "0563598c2247a0da2d20b8bd4d40e9e5192d90c549e77b316a74f85b103dabc8",
     "docs/proofs/_archive/1.1_port_manifest_20260207_224410.log": "d44d258e95507c63be5b65fbba35f9dfb705940a3d242cf2add350ff8e2c055d",
     "docs/proofs/_archive/1.1_port_manifest_20260207_230804.log": "a73ca94be7e64b2328bfb1b1c3ddd182dd6035c3f33a8370bb257eede470809c",
     "docs/proofs/_archive/1.3_ci_local_20260208_001355.log": "9165e7b98802956270b93f65d3a82150aa0db9bc1b16b221e1907622f9010a59",
