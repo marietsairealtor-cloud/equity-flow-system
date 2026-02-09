@@ -1,1 +1,14 @@
-{"checks":[{"name":"CI / test","type":"github_status","required":true}]}
+{
+  "checks": [
+    {
+      "name": "CI / test",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "secrets-scan / secrets-scan",
+      "type": "github_status",
+      "required": true
+    }
+  ]
+}
