@@ -220,3 +220,10 @@ Use the standard repair workflow (`npm run fix:encoding`) or rewrite as UTF-8 wi
 - Secrets scanning is enforced by CI gate secrets-scan using Docker image zricethezav/gitleaks (avoid action licensing dependencies).
 - Required check context is secrets-scan / secrets-scan (string-exact).
 
+
+## Stop-the-line acknowledgment (CI)
+- Stop-the-line failures require exactly one acknowledgment:
+  - INCIDENT entry in docs/threats/INCIDENTS.md, or
+  - One-PR waiver file docs/waivers/WAIVER_PR<NNN>.md containing exact text: QA: NOT AN INCIDENT
+- Both present = FAIL. None present = FAIL.
+

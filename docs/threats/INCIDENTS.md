@@ -244,3 +244,8 @@ pm run proof:manifest failed (missing entries / self-entry / hash mismatch) due 
 - Classification: external dependency / CI gate break.
 - Closure: replaced action with Docker-based gitleaks in secrets-scan workflow; proof logs committed; required check context pinned.
 
+
+## 2026-02-09 — Stop-the-line coupling introduced
+- Policy change: certain CI failures now require explicit acknowledgment (INCIDENT or one-PR waiver).
+- Enforced by merge-blocking gate: stop-the-line.
+

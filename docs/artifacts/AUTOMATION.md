@@ -323,3 +323,9 @@ Bypass (`--no-verify`) is prohibited except emergency recovery with written post
 - Implemented as GitHub Actions workflow .github/workflows/secrets-scan.yml running Docker gitleaks.
 - No local npm script; local verification may use the same Docker commands as the workflow.
 
+
+## stop-the-line (merge-blocking)
+- Implemented by .github/workflows/stop-the-line.yml.
+- Script: scripts/stop_the_line_gate.mjs.
+- Required check context: stop-the-line / stop-the-line.
+
