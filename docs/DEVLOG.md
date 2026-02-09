@@ -333,3 +333,22 @@ DoD
 Status  
 PASS  
 MAIN_HEAD=7606ef1 · CI/PR=#10
+2026-02-09 — Docs: DEVLOG + archive non-referenced proofs
+Objective
+Archive non-referenced proof artifacts while keeping DEVLOG-referenced proofs in docs/proofs; prove PR-only governance still holds.
+Changes
+- Added docs/DEVLOG.md
+- Moved non-referenced proofs into docs/proofs/_archive/
+Proof
+  green:twice PASS
+  tests:
+  - PR #11 merged; checks green
+  schema:
+  handoff:
+  PR/CI: #11 (merge commit 0c18df2cc306a2acbe349d54bcb81a70ea6cac22)
+DoD
+- docs/proofs contains only proofs referenced by docs/DEVLOG.md
+- docs/proofs/_archive contains older/unreferenced proofs
+- Main branch remains governed by ruleset (required check = required; bypass = never)
+Status
+PASS
