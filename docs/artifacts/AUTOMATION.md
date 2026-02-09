@@ -318,3 +318,8 @@ On `git commit`, Husky runs lint-staged automatically:
 
 Bypass (`--no-verify`) is prohibited except emergency recovery with written post-mortem.
 
+
+## secrets-scan (merge-blocking)
+- Implemented as GitHub Actions workflow .github/workflows/secrets-scan.yml running Docker gitleaks.
+- No local npm script; local verification may use the same Docker commands as the workflow.
+

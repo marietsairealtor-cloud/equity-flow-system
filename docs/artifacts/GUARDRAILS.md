@@ -215,3 +215,8 @@ If a file looks valid but tooling says it’s invalid (especially JSON on Window
 Use the standard repair workflow (`npm run fix:encoding`) or rewrite as UTF-8 without BOM.
 
 - Proof manifests (docs/proofs/manifest.json) MUST use POSIX paths (docs/proofs/...), never backslashes.
+
+## Secrets scan gate (CI)
+- Secrets scanning is enforced by CI gate secrets-scan using Docker image zricethezav/gitleaks (avoid action licensing dependencies).
+- Required check context is secrets-scan / secrets-scan (string-exact).
+

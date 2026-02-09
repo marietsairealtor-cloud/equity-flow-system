@@ -238,3 +238,9 @@ pm run proof:manifest failed (missing entries / self-entry / hash mismatch) due 
 * Classification: determinism / chain-of-custody drift (proof manifest non-canonicalization).
 * Closure: enforce POSIX-style keys in manifest, hard-forbid self-entry, regenerate manifest after proof additions/merges; gate now hard-fails on violations.
 * Status: Closed.
+
+## 2026-02-09 — Gitleaks Action org license break
+- Symptom: CI secrets-scan failed: gitleaks-action@v2 required org license key.
+- Classification: external dependency / CI gate break.
+- Closure: replaced action with Docker-based gitleaks in secrets-scan workflow; proof logs committed; required check context pinned.
+
