@@ -1,0 +1,19 @@
+UTC=20260209_205402Z
+HEAD=36fbd0efc23ff634e93f170347f7a3fb9e852f5c
+BRANCH=pr/2.14-stop-the-line
+
+=== FAIL case: no INCIDENT, no WAIVER ===
+
+> equity-flow-system@0.0.0 stop-the-line
+> node scripts/stop_the_line_gate.mjs
+
+STOP_THE_LINE class=SECRETS_SCAN_FAIL
+STOP_THE_LINE FAIL: missing acknowledgment. Add INCIDENT (PR: N, FailureClass: KEY) OR waiver file with exact text 'QA: NOT AN INCIDENT'.
+
+=== PASS case: WAIVER present ===
+
+> equity-flow-system@0.0.0 stop-the-line
+> node scripts/stop_the_line_gate.mjs
+
+STOP_THE_LINE class=SECRETS_SCAN_FAIL
+STOP_THE_LINE PASS: waiver present
