@@ -6,6 +6,8 @@ on:
 permissions:
   contents: read
   pull-requests: read
+
+jobs:
   env-sanity:
     name: env-sanity
     runs-on: ubuntu-latest
