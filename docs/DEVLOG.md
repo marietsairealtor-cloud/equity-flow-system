@@ -400,3 +400,16 @@ DoD
 
 Status
 - CLOSED
+
+## 2026-02-09 — 2.12 Secrets discipline gate
+Objective: Enforce repo-wide secrets scanning (including docs/proofs) as a merge-blocking gate.
+Changes:
+- Added CI gate: .github/workflows/secrets-scan.yml (Docker gitleaks; no org license dependency)
+- Updated required checks truth to include: secrets-scan / secrets-scan
+Proof:
+- docs/proofs/2.12_secrets_scan_20260209_200749Z.log
+- docs/proofs/2.12_secrets_scan_20260209_201208Z.log
+- docs/proofs/2.12_secrets_scan_20260209_201409Z.log
+PR/CI: #17 (merged); MAIN_HEAD=2a39434e08a220b1f52c046233f33d5cd475ba81
+DoD: Secrets scan passes for repo + docs/proofs; proof includes scanner output + version; merge-blocking gate exists.
+Status: PASS
