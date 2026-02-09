@@ -1,1 +1,1 @@
-﻿{"version":1,"rules":[{"path_glob":"docs/**","lanes":["docs"]}]}
+{"version":1,"rules":[{"path_glob":"docs/**","lanes":["docs"]}]}

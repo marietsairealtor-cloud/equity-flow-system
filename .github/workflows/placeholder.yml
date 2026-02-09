@@ -1,4 +1,4 @@
-﻿name: placeholder
+name: placeholder
 on: [workflow_dispatch]
 jobs:
   placeholder:
