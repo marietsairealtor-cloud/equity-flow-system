@@ -1,0 +1,66 @@
+=== 2.9 MAIN MOVED GUARD — QA BUNDLE ===
+UTC: 2026-02-09T15:32:15Z
+BRANCH: main
+HEAD: 609ad319babf8093e9d00403fe0662761699e355
+
+=== git status -sb ===
+## main...origin/main M  .github/workflows/ci.yml A  docs/proofs/2.9_main_moved_guard_20260209_152822Z.log M  package.json A  scripts/ci_main_moved_guard.mjs
+
+=== staged diffstat ===
+ .github/workflows/ci.yml                              | 12 ++++++++++++  docs/proofs/2.9_main_moved_guard_20260209_152822Z.log |  6 ++++++  package.json                                          |  3 ++-  scripts/ci_main_moved_guard.mjs                       | 19 +++++++++++++++++++  4 files changed, 39 insertions(+), 1 deletion(-)
+
+=== staged diff (first 200 lines) ===
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml index 862f0cb..43fb164 100644 --- a/.github/workflows/ci.yml +++ b/.github/workflows/ci.yml @@ -7,6 +7,18 @@ permissions:    contents: read    pull-requests: read  jobs: +  main-moved-guard: +    name: main-moved-guard +    runs-on: ubuntu-latest +    steps: +      - uses: actions/checkout@v4 +        with: +          fetch-depth: 0 +      - uses: actions/setup-node@v4 +        with: +          node-version: "20" +      - run: npm ci +      - run: npm run main-moved-guard    changes:      runs-on: ubuntu-latest      outputs: diff --git a/docs/proofs/2.9_main_moved_guard_20260209_152822Z.log b/docs/proofs/2.9_main_moved_guard_20260209_152822Z.log new file mode 100644 index 0000000..ddcfe18 --- /dev/null +++ b/docs/proofs/2.9_main_moved_guard_20260209_152822Z.log @@ -0,0 +1,6 @@ +UTC: 20260209_152822Z +BRANCH: main +HEAD: 609ad319babf8093e9d00403fe0662761699e355 + +=== npm run main-moved-guard === + > equity-flow-system@0.0.0 main-moved-guard > node scripts/ci_main_moved_guard.mjs  From https://github.com/Equity-Flow-Systems/equity-flow-system  * branch            main       -> FETCH_HEAD MAIN_MOVED_GUARD behind=0 ahead=0 PASS diff --git a/package.json b/package.json index 4fec8ac..0af9771 100644 --- a/package.json +++ b/package.json @@ -29,7 +29,8 @@      "toolchain:contract": "node scripts/check_toolchain.mjs",      "truth-bootstrap": "node scripts/truth_bootstrap_check.mjs",      "required-checks-contract": "node scripts/required_checks_contract.mjs", -    "docs-only-ci-skip": "node scripts/docs_only_ci_skip_contract.mjs" +    "docs-only-ci-skip": "node scripts/docs_only_ci_skip_contract.mjs", +    "main-moved-guard": "node scripts/ci_main_moved_guard.mjs"    },    "devDependencies": {      "husky": "^9.1.7", diff --git a/scripts/ci_main_moved_guard.mjs b/scripts/ci_main_moved_guard.mjs new file mode 100644 index 0000000..35a8afb --- /dev/null +++ b/scripts/ci_main_moved_guard.mjs @@ -0,0 +1,19 @@ +import cp from "node:child_process"; + +const sh = (c) => cp.execSync(c, { encoding: "utf8" }).trim(); + +sh("git fetch origin main --prune"); + +const out = sh("git rev-list --left-right --count origin/main...HEAD"); +const [behind, ahead] = out.split(/\s+/).map(Number); + +console.log("MAIN_MOVED_GUARD"); +console.log("behind=" + behind + " ahead=" + ahead); + +if (behind > 0) { +  console.error("FAIL: HEAD is not up-to-date with origin/main"); +  console.error("FIX: git fetch origin && git rebase origin/main"); +  process.exit(1); +} + +console.log("PASS"); \ No newline at end of file
+
+=== proof log: 2.9_main_moved_guard ===
+UTC: 20260209_152822Z
+BRANCH: main
+HEAD: 609ad319babf8093e9d00403fe0662761699e355
+
+=== npm run main-moved-guard ===
+ > equity-flow-system@0.0.0 main-moved-guard > node scripts/ci_main_moved_guard.mjs  From https://github.com/Equity-Flow-Systems/equity-flow-system  * branch            main       -> FETCH_HEAD MAIN_MOVED_GUARD behind=0 ahead=0 PASS
+
+
+=== workflow: .github/workflows/ci.yml (main-moved-guard job excerpt) ===
+> C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:10:  main-moved-guard:
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:11:    name: main-moved-guard
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:12:    runs-on: ubuntu-latest
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:13:    steps:
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:14:      - uses: actions/checkout@v4
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:15:        with:
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:16:          fetch-depth: 0
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:17:      - uses: actions/setup-node@v4
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:18:        with:
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:19:          node-version: "20"
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:20:      - run: npm ci
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:21:      - run: npm run main-moved-guard
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:22:  changes:
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:23:    runs-on: ubuntu-latest
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:24:    outputs:
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:25:      docs_only: ${{ steps.filter.outputs.docs_only }}
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:26:    steps:
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:27:      - uses: actions/checkout@v4
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:28:      - id: filter
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:29:        uses: dorny/paths-filter@v3
+  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:30:        with:
+
+=== script: scripts/ci_main_moved_guard.mjs ===
+import cp from "node:child_process";
+
+const sh = (c) => cp.execSync(c, { encoding: "utf8" }).trim();
+
+sh("git fetch origin main --prune");
+
+const out = sh("git rev-list --left-right --count origin/main...HEAD");
+const [behind, ahead] = out.split(/\s+/).map(Number);
+
+console.log("MAIN_MOVED_GUARD");
+console.log("behind=" + behind + " ahead=" + ahead);
+
+if (behind > 0) {
+  console.error("FAIL: HEAD is not up-to-date with origin/main");
+  console.error("FIX: git fetch origin && git rebase origin/main");
+  process.exit(1);
+}
+
+console.log("PASS");
