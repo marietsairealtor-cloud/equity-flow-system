@@ -213,3 +213,5 @@ A commit-time BOM gate runs automatically (Husky + lint-staged):
 ### Operator hint
 If a file looks valid but tooling says it’s invalid (especially JSON on Windows), suspect UTF-8 BOM first.
 Use the standard repair workflow (`npm run fix:encoding`) or rewrite as UTF-8 without BOM.
+
+- Proof manifests (docs/proofs/manifest.json) MUST use POSIX paths (docs/proofs/...), never backslashes.
