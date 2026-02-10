@@ -316,3 +316,18 @@ Closed.
 **Status**
 - Closed. Prevented by SOP + clarified contract.
 
+
+## 2026-02-10 — proof-commit-binding false-fail on no-proof PRs
+Objective
+- Prevent merge-blocking CI / proof-commit-binding from deadlocking PRs that do not touch docs/proofs/**
+Changes
+- Gate now exits 0 with PROOF_COMMIT_BINDING_SKIP when no proof files changed in the PR
+Proof (filenames)
+- N/A (behavior change; validated by CI green on docs-only PR)
+PR/CI
+- CI / proof-commit-binding no longer blocks docs-only PRs without proof deltas
+DoD
+- Docs-only PR merges without adding docs/proofs/** artifacts; gate reports SKIP and passes
+Status
+- CLOSED
+

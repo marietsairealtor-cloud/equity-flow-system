@@ -263,3 +263,7 @@ On Windows, environment variables may not carry between shells (Git Bash vs Powe
 - Verify via non-secret signal (length + short hash prefix) before running the proof.
 - Prefer generating/writing proof logs via **PowerShell** (UTF-8 no BOM) to avoid shell redirection instability.
 
+
+## 2026-02-10 — proof-commit-binding scope clarification
+- proof-commit-binding is a PR gate; it validates proof binding **only when** docs/proofs/** changes exist in the PR; otherwise it emits PROOF_COMMIT_BINDING_SKIP and exits 0.
+
