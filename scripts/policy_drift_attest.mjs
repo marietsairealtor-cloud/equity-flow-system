@@ -21,6 +21,7 @@ const tokenSource =
   "MISSING";
 if (!token) die("Missing GH_TOKEN/GITHUB_TOKEN in env.");
 console.log(`TOKEN_SOURCE=${tokenSource}`);
+console.log(`TOKEN_FINGERPRINT=len:${token.length},prefix:${token.slice(0,4)}`);
 
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) die("Missing GITHUB_REPOSITORY.");
