@@ -29,7 +29,8 @@ jobs:
           UTC="$(date -u +%Y%m%d_%H%M%SZ)"
           LOG="docs/proofs/2.16.1_policy_drift_attestation_${UTC}.log"
           mkdir -p docs/proofs
-          node scripts/policy_drift_attest.mjs 2>&1 | tee "$LOG" || true
+          node scripts/policy_drift_attest.mjs >"$LOG" 2>&1
+          cat "$LOG"
           grep -q "^OK:" "$LOG"
           test -s "$LOG"
           grep -q "^BRANCH=" "$LOG"
