@@ -1,7 +1,7 @@
 {
   "version": 1,
   "algo": "sha256",
-  "generated_utc": "2026-02-10T21:45:15.9906405Z",
+  "generated_utc": "2026-02-10T22:51:10.5403809Z",
   "files": {
     "docs/proofs/_archive/1.1_port_manifest_20260207_224410.log": "d44d258e95507c63be5b65fbba35f9dfb705940a3d242cf2add350ff8e2c055d",
     "docs/proofs/_archive/1.1_port_manifest_20260207_230804.log": "a73ca94be7e64b2328bfb1b1c3ddd182dd6035c3f33a8370bb257eede470809c",
@@ -34,8 +34,8 @@
     "docs/proofs/2.14_stop_the_line_20260209_205402Z.log": "65f02ead5014d1d6ecafae90fd388ae19d47aece4b173c95465a85aa9827aab1",
     "docs/proofs/2.15_governance_change_20260210_001959Z.log": "876ae57a7a5a7ce538de7614244c038efadae3e322726a7f60760cae3152bc06",
     "docs/proofs/2.16.1_policy_drift_attestation_20260210_185039Z.log": "b5ad0a1eb224c3549c48e0c5d6a57308addc0c9b537ee932287d4646e706c149",
-    "docs/proofs/2.16.2_proof_commit_binding_20260210_205315Z.log": "b4d7f6d55f9e05349e9d25f78aad72de1bc0399c4c588a766b52671d8e5bec9b",
-    "docs/proofs/2.16.2_proof_commit_binding_20260210_213852Z.log": "9a73e4dbf1fa56aef7e00d7ce7a2ab0351e3915ec5b1a4235d84d312a2af1631",
+    "docs/proofs/2.16.2_proof_commit_binding_20260210_205315Z.log": "95d4478cab941b7ccb44138137f5c872749d1741dbf2ef91ce1246b501e00c54",
+    "docs/proofs/2.16.2_proof_commit_binding_20260210_213852Z.log": "95d4478cab941b7ccb44138137f5c872749d1741dbf2ef91ce1246b501e00c54",
     "docs/proofs/2.2_toolchain_versions_20260208_145124.log": "66e7f7fe75c15eac463eaff777b4ea67fefa86559e0d1944d0eebe0d3a951759",
     "docs/proofs/2.2a_renormalize_enforced_20260208_163001.log": "9090eebae64b3de17f74fd5629cb9b014b34057744560e2d8d91db5620043a9e",
     "docs/proofs/2.3_repo_rules_enforced_20260208_163125.md": "46ad723aac705fbe81ed364b17b467fd932f75251bed4df1817fc65c7e2cee9c",
