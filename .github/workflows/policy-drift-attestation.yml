@@ -1,14 +1,34 @@
 name: policy-drift-attestation
+
 on:
   workflow_dispatch: {}
-  schedule: [{ cron: '17 3 * * *' }]
-permissions: { contents: read }
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: read
+
 jobs:
   policy-drift-attestation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Attest GitHub policy drift (snapshot diff)
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.POLICY_DRIFT_TOKEN }}
-        run: node scripts/policy_drift_attest.mjs
+        run: |
+          set -euo pipefail
+          ts="$(date -u +"%Y%m%d_%H%M%SZ")"
+          out="/tmp/2.16.1_policy_drift_attestation_${ts}.log"
+          echo "PROOF_LOG=${out}"
+          node scripts/policy_drift_attest.mjs 2>&1 | tee "${out}"
+
+      - name: Upload proof log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: policy-drift-attestation-proof
+          path: /tmp/2.16.1_policy_drift_attestation_*.log
+          if-no-files-found: error
