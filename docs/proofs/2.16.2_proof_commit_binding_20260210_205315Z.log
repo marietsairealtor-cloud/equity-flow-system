@@ -1,0 +1,47 @@
+PROOF_HEAD=72f06ef609ab6a0a53241469b13a226d72754c8c
+PROOF_SCRIPTS_HASH=At line:1 char:60
++ =(git rev-parse --show-toplevel).Trim();function H([string]){(Get-Fil ...
++                                                            ~
+Parameter declarations are a comma-separated list of variable names with optional initializer expressions.
+At line:1 char:60
++ =(git rev-parse --show-toplevel).Trim();function H([string]){(Get-Fil ...
++                                                            ~
+Missing ')' in function parameter list.
+At line:1 char:123
++ ... Get-FileHash -Algorithm SHA256 (Join-Path  )).Hash.ToLower()};=H('scr ...
++                                                                 ~
+Unexpected token '}' in expression or statement.
+At line:1 char:288
++ ... binding.ps1');=[System.Security.Cryptography.SHA256]::Create();try{([ ...
++                                                                  ~
+An expression was expected after '('.
+At line:1 char:320
++ ... Cryptography.SHA256]::Create();try{([BitConverter]::ToString(.Compute ...
++                                                                  ~
+Missing ')' in method call.
+At line:1 char:320
++ ... .SHA256]::Create();try{([BitConverter]::ToString(.ComputeHash([Text.E ...
++                                                      ~~~~~~~~~~~~
+Unexpected token '.ComputeHash' in expression or statement.
+At line:1 char:320
++ ... Cryptography.SHA256]::Create();try{([BitConverter]::ToString(.Compute ...
++                                                                  ~
+Missing closing ')' in expression.
+At line:1 char:293
++ ... g.ps1');=[System.Security.Cryptography.SHA256]::Create();try{([BitCon ...
++                                                                 ~
+Missing closing '}' in statement block or type definition.
+At line:1 char:366
++ ... ter]::ToString(.ComputeHash([Text.Encoding]::UTF8.GetBytes())) -repla ...
++                                                                  ~
+The Try statement is missing its Catch or Finally block.
+At line:1 char:366
++ ... er]::ToString(.ComputeHash([Text.Encoding]::UTF8.GetBytes())) -replac ...
++                                                                 ~
+Unexpected token ')' in expression or statement.
+Not all parse errors were reported.  Correct the reported errors and try again.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidFunctionParameter
+ 
+
+2.16.2 placeholder proof log (will be updated after CI wiring)
