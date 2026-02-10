@@ -564,3 +564,23 @@ Outcome
 Status  
 Closed. QA PASS. No further action required.
 
+
+2026-02-10 — 2.16.2 proof-commit-binding
+Objective
+- Add merge-blocking CI gate proof-commit-binding with commit-binding + deterministic script hash
+Changes
+- scripts/ci_proof_commit_binding.ps1 (validator + deterministic PROOF_SCRIPTS_HASH)
+- .github/workflows/ci.yml (CI job: proof-commit-binding)
+- docs/truth/required_checks.json (require CI / proof-commit-binding)
+- docs/proofs/manifest.json (refreshed)
+Proof (filenames)
+- docs/proofs/2.16.2_proof_commit_binding_20260210_205315Z.log
+- docs/proofs/2.16.2_proof_commit_binding_20260210_213852Z.log
+- docs/proofs/manifest.json
+PR/CI
+- CI / proof-commit-binding (merge-blocking), required-checks-contract PASS
+DoD
+- Proof headers present; PROOF_HEAD ancestor of PR HEAD; post-proof changes proof-only; manifest valid
+Status
+- MERGED
+
