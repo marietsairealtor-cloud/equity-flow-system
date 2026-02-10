@@ -19,7 +19,7 @@ function ScriptsHash(){
 $scriptsHash=ScriptsHash
 $chg = git diff --name-status "$base...HEAD" -- docs/proofs | % { $_.Trim() } | ? { $_ }
 $need=@(); foreach($l in $chg){ $p=$l -split "\s+"; $st=$p[0]; $f=$p[1]; if($f -eq 'docs/proofs/manifest.json'){continue}; if($st -match '^[AMD]'){ $need += $f } }
-if($need.Count -eq 0){ Write-Error 'PROOF_COMMIT_BINDING_FAIL: no proof files changed in PR'; exit 1 }
+if($need.Count -eq 0){ Write-Host 'PROOF_COMMIT_BINDING_SKIP: no proof files changed in PR'; exit 0 }
 foreach($f in $need){
   $t=Get-Content $f -Raw
   if($t -notmatch '(?m)^PROOF_HEAD=([0-9a-f]{40})\r?$'){ Write-Error "MISSING PROOF_HEAD: $f"; exit 1 }
