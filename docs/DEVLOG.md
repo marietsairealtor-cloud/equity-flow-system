@@ -76,7 +76,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **1.3 Denylist Verification (P2)**
+## 2026-02-08 — **1.3 Denylist Verification (P2)**
 
 Objective  
 Prove denylisted ghost-carrier paths are absent.
@@ -96,7 +96,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **1.4 Regenerate-Only Policy (P3)**
+## 2026-02-08 — **1.4 Regenerate-Only Policy (P3)**
 
 Objective  
 Prove no generated outputs were ported and regeneration is enforced.
@@ -116,7 +116,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **1.5 Document Corrections (Mandatory)**
+## 2026-02-08 — **1.5 Document Corrections (Mandatory)**
 
 Objective  
 Correct publisher semantics and enforce encoding/BOM cleanliness.
@@ -138,7 +138,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **2.1 Repo Bootstrap**
+## 2026-02-08 — **2.1 Repo Bootstrap**
 
 Objective  
 Prove repo boots with pinned toolchain locally and in CI.
@@ -462,5 +462,20 @@ DoD:
 - Governance-touch requires justification.
 - Docs-only override enforced.
 - CI merge-blocking gate active.
+
+Status: CLOSED
+## 2026-02-10 — Section 2 Close — Governance only (2.1–2.15)
+
+MAIN_HEAD: 82add418fa0542215ca7a73dacb7a203d88d571b
+
+Post-merge governance verification completed on main.
+All Section 2 governance gates were re-run locally on a clean tree and returned PASS.
+No DB, no publish step, no runtime artifacts involved.
+
+What ran (gov-only close):
+- npm run preflight:encoding
+- npm run renormalize:check
+- npm run required-checks-contract
+- npm run docs-only-ci-skip
 
 Status: CLOSED
