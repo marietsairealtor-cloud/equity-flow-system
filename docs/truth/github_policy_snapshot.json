@@ -1,0 +1,36 @@
+{
+  "admin_bypass_flags": {
+    "allow_deletions": null,
+    "allow_force_pushes": null,
+    "enforce_admins": null
+  },
+  "branch": "main",
+  "branch_protection": null,
+  "repo": "Equity-Flow-Systems/equity-flow-system",
+  "required_checks": {
+    "checks": [],
+    "contexts": [],
+    "strict": null
+  },
+  "rulesets": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/Equity-Flow-Systems/equity-flow-system/rules/12578327"
+        },
+        "self": {
+          "href": "https://api.github.com/repos/Equity-Flow-Systems/equity-flow-system/rulesets/12578327"
+        }
+      },
+      "created_at": "2026-02-08T11:52:34.105-05:00",
+      "enforcement": "active",
+      "id": 12578327,
+      "name": "MAIN-BRANCH-RULES",
+      "node_id": "RRS_lACqUmVwb3NpdG9yec5EsXH9zgC_7hc",
+      "source": "Equity-Flow-Systems/equity-flow-system",
+      "source_type": "Repository",
+      "target": "branch",
+      "updated_at": "2026-02-08T14:13:49.088-05:00"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+name: policy-drift-attestation
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  policy-drift-attestation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Attest GitHub policy drift (snapshot diff)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/policy_drift_attest.mjs
