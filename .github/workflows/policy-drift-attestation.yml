@@ -29,8 +29,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           echo "PROOF_LOG=${out}"
           echo "WF_TOKEN_LEN=${#POLICY_DRIFT_TOKEN}" | tee -a "${out}"; echo "BRANCH=${GITHUB_REF_NAME}" | tee -a "${out}"; echo "HEAD=PENDING" | tee -a "${out}"; node scripts/policy_drift_attest.mjs 2>&1 | tee -a "${out}"
-            test -s "${out}"; grep -q "^BRANCH=" "${out}"; grep -q "^HEAD=PENDING$" "${out}"
-            git add "${out}"; git commit -m "2.16.1 proof log (HEAD==PR HEAD)"
-            sha="$(git rev-parse HEAD)"; sed -i "s/^HEAD=PENDING$/HEAD=${sha}/" "${out}"; grep -q "^HEAD=${sha}$" "${out}"
-            git add "${out}"; git commit --amend --no-edit
+          test -s "${out}"; grep -q "^BRANCH=" "${out}"; grep -q "^HEAD=PENDING$" "${out}"
+          git add "${out}"; git commit -m "2.16.1 proof log (HEAD==PR HEAD)"
+          sha="$(git rev-parse HEAD)"; sed -i "s/^HEAD=PENDING$/HEAD=${sha}/" "${out}"; grep -q "^HEAD=${sha}$" "${out}"
+          git add "${out}"; git commit --amend --no-edit
           git push origin "HEAD:${GITHUB_REF_NAME}" --force-with-lease
