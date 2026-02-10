@@ -519,3 +519,48 @@ Outcome
 
 Status
 Advisory review complete. Evidence recorded. No action required to close Section 2.
+
+## 2026-02-10 — Close 2.16.1 GitHub Policy Drift Attestation
+
+Objective  
+Close **2.16.1 — GitHub Policy Drift Attestation** with a QA-verified proof, resolving prior proof/HEAD ambiguity without reopening Section 2 or changing governance intent.
+
+Context  
+Initial attempts exposed ambiguity in the meaning of `HEAD` within proof logs (tested commit vs. commit storing the proof), causing repeated PR churn. QA clarified the contract to align with operational reality while preserving rigor.
+
+Clarified Proof Contract (QA-approved)  
+- `HEAD` denotes the **commit that was tested**.
+- Proof is committed **after** execution.
+- Acceptance requires:
+  - `HEAD` is an **ancestor** of PR/merge commit.
+  - All diffs after `HEAD` are **proof-only** (`docs/proofs/**`).
+- No CI self-commit or amend required.
+
+Execution  
+- Proof generated on PR branch against tested commit.
+- Proof log includes:
+  - `UTC=`
+  - `BRANCH=`
+  - `HEAD=<tested commit>`
+  - GitHub API HTTP evidence
+  - Terminal `OK` signal.
+- Proof committed once; superseded proof artifacts cleaned up.
+- PR merged cleanly to `main`.
+
+Evidence  
+- Merge commit: `32d14c7` (PR #33).
+- Tested commit: `bb00ecf`.
+- Proof artifact:  
+  `docs/proofs/2.16.1_policy_drift_attestation_20260210_185039Z.log`
+- QA verification:
+  - `git merge-base --is-ancestor bb00ecf 32d14c7` → OK
+  - `git diff bb00ecf..32d14c7` → `docs/proofs/**` only
+
+Outcome  
+- **2.16.1 CLOSED**.
+- Section 2 governance remains frozen and authoritative.
+- Proof binding semantics now explicit, eliminating future treadmill risk.
+
+Status  
+Closed. QA PASS. No further action required.
+
