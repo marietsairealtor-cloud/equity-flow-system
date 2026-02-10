@@ -334,3 +334,8 @@ Bypass (`--no-verify`) is prohibited except emergency recovery with written post
 - New merge-blocking job: CI / governance-change-guard
 - paths-filter adds ;  computes docs_only = (docs_only AND NOT governance).
 - Guard fails if governance touched and no docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md included in PR changes.
+
+## CI gate note — proof-commit-binding (merge-blocking)
+- Gate runs in CI as CI / proof-commit-binding.
+- If a PR contains no docs/proofs/** changes, the gate emits PROOF_COMMIT_BINDING_SKIP and exits 0.
+
