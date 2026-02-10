@@ -1,0 +1,28 @@
+UTC=20260210_142547Z
+COMMIT=12f3e209c7a2ba9c766c2c97c956effd855b5276
+== workflow ==
+name: policy-drift-attestation
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '17 3 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  policy-drift-attestation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Attest GitHub policy drift (snapshot diff)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/policy_drift_attest.mjs
+== snapshot sha256 ==
+5258b81d1f29ddf88a6c0cdd59aeaf962c0179097d8da995fe0d0a997d444476 *docs/truth/github_policy_snapshot.json
+== attest (endpoints + result) ==
+stdout is not a tty
