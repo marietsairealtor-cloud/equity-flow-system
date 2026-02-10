@@ -1,0 +1,17 @@
+UTC=20260210_001959Z
+BRANCH=main
+HEAD=53bd2b00cbf1b3d791bb8d8a7c733da467e4faa8
+
+=== FAIL (missing justification in PR changes) ===
+C:\Users\marie\projects\equity-flow-system\scripts\ci_governance_change_guard.ps1 : GOV_CHANGE_GUARD FAIL: governance touched; missing 
+docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md (must be included in PR changes)
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,ci_governance_change_guard.ps1
+ 
+EXIT_FAIL=1
+
+=== PASS (justification included) ===
+gov_touched=True
+EXIT_PASS=0
+
+OVERRIDE: governance filter => docs_only computed false

@@ -1,0 +1,13 @@
+{
+  "exempt": ["docs/DEVLOG.md"],
+  "paths": [
+    "docs/truth/**",
+    ".github/workflows/**",
+    "scripts/**",
+    "docs/artifacts/GUARDRAILS.md",
+    "docs/artifacts/CONTRACTS.md",
+    "docs/artifacts/AUTOMATION.md",
+    "docs/artifacts/SOP_WORKFLOW.md"
+  ],
+  "justification_glob": "docs/governance/GOVERNANCE_CHANGE_PR*.md"
+}
