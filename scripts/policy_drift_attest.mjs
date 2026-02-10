@@ -28,12 +28,27 @@ const headers = {
 };
 
 async function gh(path) {
-  const r = await fetch(`${apiBase}${path}`, { headers });
+  const url = `${apiBase}${path}`;
+  console.error(`GET ${url}`);
+
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), 20000);
+
+  let r;
+  try {
+    r = await fetch(url, { headers, signal: ac.signal });
+  } catch (e) {
+    clearTimeout(t);
+    die(`FETCH ERROR ${url}: ${e.name || "Error"} ${e.message || e}`);
+  }
+  clearTimeout(t);
+
   const txt = await r.text();
   let json = null;
   try { json = txt ? JSON.parse(txt) : null; } catch {}
+
   if (!r.ok) {
-    const msg = json?.message || txt;
+    const msg = json?.message || txt || "(no body)";
     const err = new Error(msg);
     err.status = r.status;
     throw err;
@@ -51,11 +66,8 @@ let protection = null;
 try {
   protection = await gh(`/repos/${owner}/${name}/branches/${encodeURIComponent(branch)}/protection`);
 } catch (e) {
-  if (e.status === 404) {
-    protection = null; // branch not protected is VALID
-  } else {
-    die(`GitHub API FAIL ${e.status}: ${e.message}`);
-  }
+  if (e.status === 404) protection = null;
+  else die(`GitHub API FAIL ${e.status}: ${e.message}`);
 }
 
 const requiredChecks = protection?.required_status_checks

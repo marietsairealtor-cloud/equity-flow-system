@@ -1,5 +1,0 @@
-UTC=20260210_135550Z
-BRANCH=pr/2.16.1-policy-drift-attestation
-HEAD=e8358f8
-NOTE=Proof placeholder; populated by scheduled/manual CI run.
-RESULT=PENDING
