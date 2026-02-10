@@ -23,7 +23,7 @@ jobs:
           ts="$(date -u +"%Y%m%d_%H%M%SZ")"
           out="/tmp/2.16.1_policy_drift_attestation_${ts}.log"
           echo "PROOF_LOG=${out}"
-          node scripts/policy_drift_attest.mjs 2>&1 | tee "${out}"
+          echo "WF_TOKEN_LEN=${#POLICY_DRIFT_TOKEN}"; node scripts/policy_drift_attest.mjs 2>&1 | tee "${out}"
 
       - name: Upload proof log
         if: always()
