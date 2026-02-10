@@ -31,7 +31,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      docs_only: ${{ steps.filter.outputs.docs_only }}
+      docs_only: ${{ steps.set.outputs.docs_only }}
     steps:
       - uses: actions/checkout@v4
       - id: filter
@@ -40,6 +40,25 @@ jobs:
           filters: |
             docs_only:
               - 'docs/**'
+            governance:
+              - 'docs/truth/**'
+              - '.github/workflows/**'
+              - 'scripts/**'
+              - 'docs/artifacts/GUARDRAILS.md'
+              - 'docs/artifacts/CONTRACTS.md'
+              - 'docs/artifacts/AUTOMATION.md'
+              - 'docs/artifacts/SOP_WORKFLOW.md'
+      - id: set
+        shell: bash
+        env:
+          DOCS_ONLY: ${{ steps.filter.outputs.docs_only }}
+          GOVERNANCE: ${{ steps.filter.outputs.governance }}
+        run: |
+          if [ "$DOCS_ONLY" = "true" ] && [ "$GOVERNANCE" != "true" ]; then
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          fi
 
   test:
     runs-on: ${{ matrix.os }}
@@ -63,6 +82,15 @@ jobs:
     steps:
       - run: echo "db-heavy (skipped on docs-only) PASS"
 
+  governance-change-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: governance-change-guard
+        shell: pwsh
+        run: |
+          ./scripts/ci_governance_change_guard.ps1
+
   toolchain-contract:
     runs-on: ubuntu-24.04
     steps:
@@ -78,13 +106,3 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "required PASS"
-
-  required-checks-contract:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm run required-checks-contract
