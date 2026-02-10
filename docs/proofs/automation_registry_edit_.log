@@ -10,5 +10,4 @@ At C:\Users\marie\projects\equity-flow-system\scripts\preflight_encoding.ps1:46 
     + CategoryInfo          : NotSpecified: (:) [], ParentContainsErrorRecordException
     + FullyQualifiedErrorId : IOException
  
-?? docs/AUTOMATION.md
-?? docs/proofs/automation_registry_edit_.log
+ M docs/proofs/automation_registry_edit_.log
