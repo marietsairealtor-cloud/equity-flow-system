@@ -6,13 +6,17 @@ on:
     - cron: '17 3 * * *'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   policy-drift-attestation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Attest GitHub policy drift (snapshot diff)
         shell: bash
@@ -20,15 +24,25 @@ jobs:
           POLICY_DRIFT_TOKEN: ${{ secrets.POLICY_DRIFT_TOKEN }}
         run: |
           set -euo pipefail
-          ts="$(date -u +"%Y%m%d_%H%M%SZ")"
-          out="/tmp/2.16.1_policy_drift_attestation_${ts}.log"
-          echo "PROOF_LOG=${out}"
-          echo "WF_TOKEN_LEN=${#POLICY_DRIFT_TOKEN}"; echo "BRANCH=${GITHUB_REF_NAME}" | tee -a "${out}"; echo "HEAD=$(git rev-parse HEAD)" | tee -a "${out}"; node scripts/policy_drift_attest.mjs 2>node scripts/policy_drift_attest.mjs 2>&1 | tee "${out}"1 | tee -a "${out}"
-
-      - name: Upload proof log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: policy-drift-attestation-proof
-          path: /tmp/2.16.1_policy_drift_attestation_*.log
-          if-no-files-found: error
+            trap 'echo "ERR line=$LINENO cmd=$BASH_COMMAND"; exit 1' ERR
+            set -x
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          UTC="$(date -u +%Y%m%d_%H%M%SZ)"
+          LOG="docs/proofs/2.16.1_policy_drift_attestation_${UTC}.log"
+          mkdir -p docs/proofs
+            node scripts/policy_drift_attest.mjs >"$LOG" 2>&1 || true
+          cat "$LOG"
+          grep -q "^OK:" "$LOG"
+          test -s "$LOG"
+          grep -q "^BRANCH=" "$LOG"
+          grep -q "^TOKEN_SOURCE=" "$LOG"
+          if ! grep -q "^HEAD=" "$LOG"; then echo "HEAD=PENDING" >> "$LOG"; fi
+          sed -i "s/^HEAD=.*/HEAD=PENDING/" "$LOG"
+          git add "$LOG"
+          git commit -m "2.16.1 add CI proof log (head-bound)"
+          SHA="$(git rev-parse HEAD)"
+          sed -i "s/^HEAD=PENDING/HEAD=${SHA}/" "$LOG"
+          git add "$LOG"
+          git commit --amend --no-edit
+          git push origin "HEAD:${GITHUB_REF_NAME}" --force-with-lease
