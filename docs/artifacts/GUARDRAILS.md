@@ -227,3 +227,8 @@ Use the standard repair workflow (`npm run fix:encoding`) or rewrite as UTF-8 wi
   - One-PR waiver file docs/waivers/WAIVER_PR<NNN>.md containing exact text: QA: NOT AN INCIDENT
 - Both present = FAIL. None present = FAIL.
 
+
+## 2026-02-10 — 2.15 Governance-change guard (LOCKED)
+- Governance-touching PRs MUST include docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md.
+- Governance-touch forces docs_only=false (cannot use docs-only lane).
+- Enforced by CI job: governance-change-guard.

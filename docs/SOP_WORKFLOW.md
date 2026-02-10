@@ -6,3 +6,7 @@
    - Add WAIVER_PR<NNN>.md with text: QA: NOT AN INCIDENT (valid for that PR only).
 3. Re-run CI; merge only after PASS.
 
+
+## 2026-02-10 — Governance-change justification (2.15)
+- If PR touches governance paths (docs/truth/**, .github/workflows/**, scripts/**, governance artifacts), PR MUST include: docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md
+- DEVLOG-only PRs are exempt.

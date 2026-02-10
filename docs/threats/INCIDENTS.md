@@ -249,3 +249,11 @@ pm run proof:manifest failed (missing entries / self-entry / hash mismatch) due 
 - Policy change: certain CI failures now require explicit acknowledgment (INCIDENT or one-PR waiver).
 - Enforced by merge-blocking gate: stop-the-line.
 
+
+## 2026-02-10 — Prevented: Governance drift via docs-only PR
+- Symptom: Governance-affecting change could be classified as docs-only.
+- Risk: CI lane bypass / unreviewed governance drift.
+- Fix: 2.15 governance-change-guard + docs-only override.
+- Proof: docs/proofs/2.15_governance_change_20260210_001959Z.log
+- PR: #25
+- Status: Closed
