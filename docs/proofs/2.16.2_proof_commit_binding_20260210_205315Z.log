@@ -1,4 +1,4 @@
-PROOF_HEAD={HEAD}
+PROOF_HEAD=9b151c483ab2d86241f0b20f064b31fbbc9c3dd4
 PROOF_SCRIPTS_HASH={SCRIPTS_HASH}
 + =(git rev-parse --show-toplevel).Trim();function H([string]){(Get-Fil ...
 +                                                            ~
@@ -45,3 +45,4 @@ Not all parse errors were reported.  Correct the reported errors and try again.
  
 
 2.16.2 placeholder proof log (will be updated after CI wiring)
+
