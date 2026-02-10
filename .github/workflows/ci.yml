@@ -90,7 +90,17 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_governance_change_guard.ps1
-
+  proof-commit-binding:
+    name: proof-commit-binding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: proof-commit-binding
+        shell: pwsh
+        run: |
+          ./scripts/ci_proof_commit_binding.ps1
   toolchain-contract:
     runs-on: ubuntu-24.04
     steps:

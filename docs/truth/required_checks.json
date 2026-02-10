@@ -19,6 +19,11 @@
       "name": "stop-the-line / stop-the-line",
       "type": "github_status",
       "required": true
+    },
+    {
+      "name": "CI / proof-commit-binding",
+      "type": "github_status",
+      "required": true
     }
   ]
 }
