@@ -14,26 +14,53 @@ function sortKeysDeep(x) {
 }
 function stableJson(x) { return JSON.stringify(sortKeysDeep(x), null, 2) + "\n"; }
 
-const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+const token = process.env.POLICY_DRIFT_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || "";
+const tokenSource =
+  process.env.POLICY_DRIFT_TOKEN ? "POLICY_DRIFT_TOKEN" :
+  process.env.GH_TOKEN ? "POLICY_DRIFT_TOKEN" :
+  process.env.GITHUB_TOKEN ? "GITHUB_TOKEN" :
+  "MISSING";
 if (!token) die("Missing GH_TOKEN/GITHUB_TOKEN in env.");
+console.log(`TOKEN_SOURCE=${tokenSource}`);
+import crypto from "node:crypto";
+console.log(`TOKEN_LEN=${token.length}`);
+console.log(`TOKEN_SHA256_8=${crypto.createHash("sha256").update(token,"utf8").digest("hex").slice(0,8)}`);
+
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) die("Missing GITHUB_REPOSITORY.");
 
 const apiBase = "https://api.github.com";
 const headers = {
   "Accept": "application/vnd.github+json",
-  "Authorization": `Bearer ${token}`,
+  "Authorization": `token ${token}`,
   "X-GitHub-Api-Version": "2022-11-28",
   "User-Agent": "policy-drift-attestation"
 };
 
 async function gh(path) {
-  const r = await fetch(`${apiBase}${path}`, { headers });
+  const url = `${apiBase}${path}`;
+  console.error(`GET ${path}`);
+
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), 20000);
+
+  let r;
+  try {
+    r = await fetch(url, { headers, signal: ac.signal });
+  } catch (e) {
+    clearTimeout(t);
+    die(`FETCH ERROR ${url}: ${e.name || "Error"} ${e.message || e}`);
+  }
+  clearTimeout(t);
+
+  console.error(`HTTP ${r.status} ${path}`);
+
   const txt = await r.text();
   let json = null;
   try { json = txt ? JSON.parse(txt) : null; } catch {}
+
   if (!r.ok) {
-    const msg = json?.message || txt;
+    const msg = json?.message || txt || "(no body)";
     const err = new Error(msg);
     err.status = r.status;
     throw err;
@@ -51,11 +78,8 @@ let protection = null;
 try {
   protection = await gh(`/repos/${owner}/${name}/branches/${encodeURIComponent(branch)}/protection`);
 } catch (e) {
-  if (e.status === 404) {
-    protection = null; // branch not protected is VALID
-  } else {
-    die(`GitHub API FAIL ${e.status}: ${e.message}`);
-  }
+  if (e.status === 404) protection = null;
+  else die(`GitHub API FAIL ${e.status}: ${e.message}`);
 }
 
 const requiredChecks = protection?.required_status_checks
