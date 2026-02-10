@@ -283,3 +283,36 @@ Prevention
 Status
 Closed.
 
+
+### Post-Mortem — 2.16.1 Proof Treadmill (Expanded)
+
+**What actually failed**
+- The system did not fail governance checks.
+- The failure mode was **proof binding semantics under Windows execution**, compounded by shell/session drift.
+
+**Why it escaped initially**
+- `HEAD` was underspecified (tested commit vs. proof container commit).
+- Windows allowed tokens to exist in one shell but not another without obvious failure.
+- Git Bash redirection intermittently corrupted or truncated proof logs.
+
+**What fixed it**
+- Contract clarified: `HEAD` = **tested commit**.
+- QA acceptance tightened: ancestry + proof-only diff.
+- Proof generation moved to PowerShell (UTF-8 no BOM).
+- Superseded proof artifacts explicitly removed before final proof.
+
+**Why this is now safe**
+- Ancestry check prevents false binding.
+- Proof-only diff constraint prevents silent semantic drift.
+- Token presence verified via non-secret signals before execution.
+
+**Residual risk**
+- Windows shell/session inconsistency remains a human-ops risk.
+- Mitigated by SOP, not automation.
+
+**Classification**
+- Tooling / process boundary failure (non-logic).
+
+**Status**
+- Closed. Prevented by SOP + clarified contract.
+
