@@ -1,5 +1,5 @@
-PROOF_HEAD=72f06ef609ab6a0a53241469b13a226d72754c8c
-PROOF_SCRIPTS_HASH=At line:1 char:60
+PROOF_HEAD={HEAD}
+PROOF_SCRIPTS_HASH={SCRIPTS_HASH}
 + =(git rev-parse --show-toplevel).Trim();function H([string]){(Get-Fil ...
 +                                                            ~
 Parameter declarations are a comma-separated list of variable names with optional initializer expressions.
