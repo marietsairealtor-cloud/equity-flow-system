@@ -28,7 +28,7 @@ if (!repo) die("Missing GITHUB_REPOSITORY.");
 const apiBase = "https://api.github.com";
 const headers = {
   "Accept": "application/vnd.github+json",
-  "Authorization": `Bearer ${token}`,
+  "Authorization": `token ${token}`,
   "X-GitHub-Api-Version": "2022-11-28",
   "User-Agent": "policy-drift-attestation"
 };
