@@ -14,8 +14,14 @@ function sortKeysDeep(x) {
 }
 function stableJson(x) { return JSON.stringify(sortKeysDeep(x), null, 2) + "\n"; }
 
-const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || "";
+const tokenSource =
+  process.env.GH_TOKEN ? "POLICY_DRIFT_TOKEN" :
+  process.env.GITHUB_TOKEN ? "GITHUB_TOKEN" :
+  "MISSING";
 if (!token) die("Missing GH_TOKEN/GITHUB_TOKEN in env.");
+console.log(`TOKEN_SOURCE=${tokenSource}`);
+
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) die("Missing GITHUB_REPOSITORY.");
 
@@ -29,7 +35,7 @@ const headers = {
 
 async function gh(path) {
   const url = `${apiBase}${path}`;
-  console.error(`GET ${url}`);
+  console.error(`GET ${path}`);
 
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), 20000);
@@ -42,6 +48,8 @@ async function gh(path) {
     die(`FETCH ERROR ${url}: ${e.name || "Error"} ${e.message || e}`);
   }
   clearTimeout(t);
+
+  console.error(`HTTP ${r.status} ${path}`);
 
   const txt = await r.text();
   let json = null;
