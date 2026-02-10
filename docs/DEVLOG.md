@@ -464,3 +464,18 @@ DoD:
 - CI merge-blocking gate active.
 
 Status: CLOSED
+## 2026-02-10 — Section 2 Close — Governance only (2.1–2.15)
+
+MAIN_HEAD: 82add418fa0542215ca7a73dacb7a203d88d571b
+
+Post-merge governance verification completed on main.
+All Section 2 governance gates were re-run locally on a clean tree and returned PASS.
+No DB, no publish step, no runtime artifacts involved.
+
+What ran (gov-only close):
+- npm run preflight:encoding
+- npm run renormalize:check
+- npm run required-checks-contract
+- npm run docs-only-ci-skip
+
+Status: CLOSED
