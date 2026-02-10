@@ -6,7 +6,7 @@ on:
     - cron: '17 3 * * *'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   policy-drift-attestation:
@@ -25,7 +25,7 @@ jobs:
           ts="$(date -u +"%Y%m%d_%H%M%SZ")"
           out="/tmp/2.16.1_policy_drift_attestation_${ts}.log"
           echo "PROOF_LOG=${out}"
-          echo "WF_TOKEN_LEN=${#POLICY_DRIFT_TOKEN}"; echo "BRANCH=${GITHUB_REF_NAME}" | tee -a "${out}"; echo "HEAD=$(git rev-parse HEAD)" | tee -a "${out}"; node scripts/policy_drift_attest.mjs 2>node scripts/policy_drift_attest.mjs 2>&1 | tee "${out}"1 | tee -a "${out}"
+          echo "WF_TOKEN_LEN=${#POLICY_DRIFT_TOKEN}" | tee -a "${out}"; echo "BRANCH=${GITHUB_REF_NAME}" | tee -a "${out}"; echo "HEAD=$(git rev-parse HEAD)" | tee -a "${out}"; node scripts/policy_drift_attest.mjs 2>&1 | tee -a "${out}"; test -s "${out}"
 
       - name: Upload proof log
         if: always()
