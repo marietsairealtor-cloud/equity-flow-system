@@ -240,3 +240,26 @@ Stop and realign.**
 ## 2026-02-10 — Governance-change justification (2.15)
 - If PR touches governance paths (docs/truth/**, .github/workflows/**, scripts/**, governance artifacts), PR MUST include: docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md
 - DEVLOG-only PRs are exempt.
+
+---
+
+## Proof Log HEAD Semantics (Clarified)
+
+For proof logs that record `HEAD=`:
+
+- `HEAD` denotes the **commit that was tested** (the code state the proof executed against).
+- The proof file is committed **after** execution; therefore `HEAD` is expected to be an **ancestor** of the PR/merge commit that stores the proof artifact.
+- Acceptance check:
+  - `git merge-base --is-ancestor <HEAD> <MERGE_SHA>` must succeed.
+  - `git diff --name-only <HEAD>..<MERGE_SHA>` must be proof-only (typically `docs/proofs/**`).
+
+---
+
+## Windows Operator Note (Token + Session Discipline)
+
+On Windows, environment variables may not carry between shells (Git Bash vs PowerShell). For GitHub API proofs:
+
+- Set and verify token in the **same session** that runs the proof.
+- Verify via non-secret signal (length + short hash prefix) before running the proof.
+- Prefer generating/writing proof logs via **PowerShell** (UTF-8 no BOM) to avoid shell redirection instability.
+
