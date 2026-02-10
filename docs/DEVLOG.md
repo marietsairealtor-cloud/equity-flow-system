@@ -440,3 +440,27 @@ Proof:
 PR/CI: merged; MAIN_HEAD=f4933e6f9e866cc4b0ad169adc5b813de524911d
 DoD: Gate blocks missing/dual ack; passes with exactly one; required-checks-contract PASS.
 Status: PASS
+
+## 2026-02-10 — 2.15 Governance-change guard
+
+Objective:
+Prevent governance drift via docs-only PRs.
+
+Changes:
+- Added governance-change guard enforcing PR-scoped justification.
+- Forced non-docs lane when governance paths are touched.
+- Documented incident, SOP, guardrails, and automation.
+
+Proof:
+- docs/proofs/2.15_governance_change_20260210_001959Z.log
+
+PR/CI:
+- PR #25 (guard implementation) — merged
+- PR #26 (docs updates) — merged
+
+DoD:
+- Governance-touch requires justification.
+- Docs-only override enforced.
+- CI merge-blocking gate active.
+
+Status: CLOSED
