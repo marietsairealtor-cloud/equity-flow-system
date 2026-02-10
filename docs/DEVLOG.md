@@ -479,3 +479,43 @@ What ran (gov-only close):
 - npm run docs-only-ci-skip
 
 Status: CLOSED
+
+## 2026-02-10 — Section 2 Audit Review (Advisor Meeting)
+
+Objective
+Validate residual risk in Section 2 (Governance/Foundation) and identify additive hardening only, without reopening or resequencing closed work.
+
+Context
+Section 2 is closed and frozen. Review was audit-only (risk, silent failure modes, future-proofing). No redesign permitted.
+
+Findings (Consensus)
+- Governance is internally consistent and sufficient to proceed.
+- Primary residual risks are:
+  - External platform drift (GitHub rulesets / permissions changing while CI stays green).
+  - CI semantic rot (checks becoming no-ops with unchanged names).
+  - Proof validity gaps (proofs correct but bound to wrong reality).
+  - Human erosion (waivers, justifications degrading under pressure).
+- No missing prerequisite blocks Section 3.
+- Section 3 (Security) is the correct next focus.
+
+Decisions — Additive Hardenings Approved
+- 2.16.1 — GitHub Policy Drift Attestation: Keep as-is (scheduled, alert-level signal for platform drift).
+- 2.16.2 — Proof Commit-Binding: Keep as-is (bind proofs to PR HEAD + script hash).
+- 2.16.3 — CI Semantic Contract: Implement with hard-fail only when .github/workflows/** changes; alert-only otherwise.
+- 2.16.4 — Negative-Space Proof Assertion: Dropped (overkill / high ceremony).
+- 2.16.5 — Waiver Rate-Limit Enforcement: Downgraded (alert-only with very low ceiling; hard-fail only on abuse patterns).
+- 2.16.6 — Governance-Change Justification Quality: Keep minimal (enforce structure + non-empty fields only).
+
+Non-Decisions
+- No changes to existing gates.
+- No renumbering of Section 2.
+- No guardrail reinterpretation.
+- No movement of items into Section 3.
+
+Outcome
+- Section 2 remains closed and authoritative.
+- Additive hardening items approved for future implementation.
+- Proceed to Section 3 (Security).
+
+Status
+Advisory review complete. Evidence recorded. No action required to close Section 2.
