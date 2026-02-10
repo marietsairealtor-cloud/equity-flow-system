@@ -329,3 +329,8 @@ Bypass (`--no-verify`) is prohibited except emergency recovery with written post
 - Script: scripts/stop_the_line_gate.mjs.
 - Required check context: stop-the-line / stop-the-line.
 
+
+## 2026-02-10 — CI: governance-change-guard (2.15)
+- New merge-blocking job: CI / governance-change-guard
+- paths-filter adds ;  computes docs_only = (docs_only AND NOT governance).
+- Guard fails if governance touched and no docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md included in PR changes.
