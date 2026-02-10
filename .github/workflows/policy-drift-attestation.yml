@@ -24,6 +24,8 @@ jobs:
           POLICY_DRIFT_TOKEN: ${{ secrets.POLICY_DRIFT_TOKEN }}
         run: |
           set -euo pipefail
+            trap 'echo "ERR line=$LINENO cmd=$BASH_COMMAND"; exit 1' ERR
+            set -x
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           UTC="$(date -u +%Y%m%d_%H%M%SZ)"
