@@ -1,7 +1,6 @@
 import fs from "node:fs";
 
 const SNAP_PATH = "docs/truth/github_policy_snapshot.json";
-
 function die(msg, code = 1) { console.error(msg); process.exit(code); }
 
 function sortKeysDeep(x) {
@@ -17,11 +16,9 @@ function stableJson(x) { return JSON.stringify(sortKeysDeep(x), null, 2) + "\n";
 
 const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 if (!token) die("Missing GH_TOKEN/GITHUB_TOKEN in env.");
-
 const repo = process.env.GITHUB_REPOSITORY;
 if (!repo) die("Missing GITHUB_REPOSITORY.");
 
-const branch = process.env.GITHUB_REF_NAME || "main";
 const apiBase = "https://api.github.com";
 const headers = {
   "Accept": "application/vnd.github+json",
@@ -34,19 +31,31 @@ async function gh(path) {
   const r = await fetch(`${apiBase}${path}`, { headers });
   const txt = await r.text();
   let json = null;
-  try { json = txt ? JSON.parse(txt) : null; } catch { /* ignore */ }
-  if (!r.ok) die(`GitHub API FAIL ${r.status} ${path}\n${txt}`);
+  try { json = txt ? JSON.parse(txt) : null; } catch {}
+  if (!r.ok) {
+    const msg = json?.message || txt;
+    const err = new Error(msg);
+    err.status = r.status;
+    throw err;
+  }
   return json;
 }
 
 const [owner, name] = repo.split("/");
+const repoInfo = await gh(`/repos/${owner}/${name}`);
+const branch = repoInfo?.default_branch || "main";
 
 const rulesets = await gh(`/repos/${owner}/${name}/rulesets?per_page=100`);
+
 let protection = null;
 try {
   protection = await gh(`/repos/${owner}/${name}/branches/${encodeURIComponent(branch)}/protection`);
-} catch {
-  protection = null;
+} catch (e) {
+  if (e.status === 404) {
+    protection = null; // branch not protected is VALID
+  } else {
+    die(`GitHub API FAIL ${e.status}: ${e.message}`);
+  }
 }
 
 const requiredChecks = protection?.required_status_checks
@@ -73,28 +82,29 @@ const adminBypass = {
 const current = {
   repo,
   branch,
-  fetched_at_utc: new Date().toISOString(),
   rulesets,
   branch_protection: protection,
   required_checks: requiredChecks,
   admin_bypass_flags: adminBypass,
 };
 
-if (!fs.existsSync(SNAP_PATH)) {
-  die(`Missing snapshot at ${SNAP_PATH} (must be committed).`);
-}
-
-const snapRaw = fs.readFileSync(SNAP_PATH, "utf8");
-let snap = null;
-try { snap = JSON.parse(snapRaw); } catch { die(`Snapshot is not valid JSON: ${SNAP_PATH}`); }
-
-const snapNorm = stableJson(snap);
 const curNorm = stableJson(current);
 
-if (snapNorm !== curNorm) {
+if (process.env.WRITE_SNAPSHOT === "1") {
+  fs.mkdirSync("docs/truth", { recursive: true });
+  fs.writeFileSync(SNAP_PATH, curNorm, "utf8");
+  console.log(`WROTE snapshot: ${SNAP_PATH}`);
+  process.exit(0);
+}
+
+if (!fs.existsSync(SNAP_PATH)) die(`Missing snapshot at ${SNAP_PATH} (must be committed).`);
+
+let snap = null;
+try { snap = JSON.parse(fs.readFileSync(SNAP_PATH, "utf8")); }
+catch { die(`Snapshot is not valid JSON: ${SNAP_PATH}`); }
+
+if (stableJson(snap) !== curNorm) {
   console.error("POLICY DRIFT DETECTED: snapshot != current");
-  console.error(`snapshot_path=${SNAP_PATH}`);
-  console.error("---- current (normalized) ----");
   process.stderr.write(curNorm);
   process.exit(2);
 }
