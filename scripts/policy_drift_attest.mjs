@@ -14,7 +14,7 @@ function sortKeysDeep(x) {
 }
 function stableJson(x) { return JSON.stringify(sortKeysDeep(x), null, 2) + "\n"; }
 
-const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || "";
+const token = process.env.POLICY_DRIFT_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN || "";
 const tokenSource =
   process.env.GH_TOKEN ? "POLICY_DRIFT_TOKEN" :
   process.env.GITHUB_TOKEN ? "GITHUB_TOKEN" :

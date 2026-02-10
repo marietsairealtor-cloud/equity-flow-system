@@ -17,7 +17,7 @@ jobs:
       - name: Attest GitHub policy drift (snapshot diff)
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.POLICY_DRIFT_TOKEN }}
+          POLICY_DRIFT_TOKEN: ${{ secrets.POLICY_DRIFT_TOKEN }}
         run: |
           set -euo pipefail
           ts="$(date -u +"%Y%m%d_%H%M%SZ")"
