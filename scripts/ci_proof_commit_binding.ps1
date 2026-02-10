@@ -4,7 +4,18 @@ $base='origin/main'
 $head=(git rev-parse HEAD).Trim()
 $root=(git rev-parse --show-toplevel).Trim()
 function FileSha([string]$rel){ (Get-FileHash -Algorithm SHA256 (Join-Path $root $rel)).Hash.ToLower() }
-function ScriptsHash(){ $h=(FileSha 'scripts\ci_proof_commit_binding.ps1'); $sha=[System.Security.Cryptography.SHA256]::Create(); try{ ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($h))) -replace '-','').ToLower() } finally{ $sha.Dispose() } }
+function ScriptsHash(){
+  $utf8 = New-Object System.Text.UTF8Encoding($false)
+  $files = @('scripts\ci_proof_commit_binding.ps1')
+  $buf = ''
+  foreach($rel in $files){
+    $p2 = Join-Path $root $rel
+    $txt = [IO.File]::ReadAllText($p2,$utf8) -replace "`r`n","`n" -replace "`r","`n"
+    $buf += "FILE:$rel`n$txt`n"
+  }
+  $sha=[System.Security.Cryptography.SHA256]::Create()
+  try{ ([BitConverter]::ToString($sha.ComputeHash($utf8.GetBytes($buf))) -replace '-','').ToLower() } finally{ $sha.Dispose() }
+}
 $scriptsHash=ScriptsHash
 $chg = git diff --name-status "$base...HEAD" -- docs/proofs | % { $_.Trim() } | ? { $_ }
 $need=@(); foreach($l in $chg){ $p=$l -split "\s+"; $st=$p[0]; $f=$p[1]; if($f -eq 'docs/proofs/manifest.json'){continue}; if($st -match '^[AMD]'){ $need += $f } }
