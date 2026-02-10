@@ -76,7 +76,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **1.3 Denylist Verification (P2)**
+## 2026-02-08 — **1.3 Denylist Verification (P2)**
 
 Objective  
 Prove denylisted ghost-carrier paths are absent.
@@ -96,7 +96,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **1.4 Regenerate-Only Policy (P3)**
+## 2026-02-08 — **1.4 Regenerate-Only Policy (P3)**
 
 Objective  
 Prove no generated outputs were ported and regeneration is enforced.
@@ -116,7 +116,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **1.5 Document Corrections (Mandatory)**
+## 2026-02-08 — **1.5 Document Corrections (Mandatory)**
 
 Objective  
 Correct publisher semantics and enforce encoding/BOM cleanliness.
@@ -138,7 +138,7 @@ PASS
 
 ---
 
-## 2026-02-07 — **2.1 Repo Bootstrap**
+## 2026-02-08 — **2.1 Repo Bootstrap**
 
 Objective  
 Prove repo boots with pinned toolchain locally and in CI.
