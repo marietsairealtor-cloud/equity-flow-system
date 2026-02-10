@@ -236,3 +236,7 @@ Stop and realign.**
 
 **QA note:** This change is wording-only.
 **DoD:** docs-only PR + CI green.
+
+## 2026-02-10 — Governance-change justification (2.15)
+- If PR touches governance paths (docs/truth/**, .github/workflows/**, scripts/**, governance artifacts), PR MUST include: docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md
+- DEVLOG-only PRs are exempt.
