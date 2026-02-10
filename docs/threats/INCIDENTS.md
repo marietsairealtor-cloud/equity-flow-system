@@ -257,3 +257,29 @@ pm run proof:manifest failed (missing entries / self-entry / hash mismatch) due 
 - Proof: docs/proofs/2.15_governance_change_20260210_001959Z.log
 - PR: #25
 - Status: Closed
+
+## 2026-02-10 — 2.16.1 proof treadmill (HEAD semantics + Windows session/token drift)
+
+Symptom
+- Repeated QA FAIL for 2.16.1 due to `HEAD=` mismatch vs PR tip after committing proof.
+- Intermittent empty/malformed proof logs during capture.
+- Local runs alternated between success and `Missing GH_TOKEN/GITHUB_TOKEN` / `401 Bad credentials`.
+
+Root Causes
+- Proof contract ambiguity: `HEAD` interpreted as PR tip vs tested commit.
+- Windows shell/session drift: token present in one shell/session but not another.
+- Git Bash redirection instability in this environment (proof capture produced `stdout is not a tty` / non-zero exit in some runs).
+- Superseded proof artifacts accumulated before final proof was committed.
+
+Resolution
+- Clarified proof contract (QA-approved): `HEAD` denotes the commit that was tested.
+- QA acceptance: `HEAD` must be an ancestor of merge commit; diff after `HEAD` must be proof-only (`docs/proofs/**`).
+- Generated final proof using PowerShell (UTF-8 no BOM), committed once, merged.
+
+Prevention
+- Operator rule (Windows): generate and write proof logs via PowerShell; verify token presence (LEN + SHA256_8) in the same session that runs the attestation.
+- Always delete superseded proof logs before generating the final proof artifact.
+
+Status
+Closed.
+
