@@ -1,0 +1,13 @@
+WF_TOKEN_LEN=93
+BRANCH=pr/2.16.1-policy-drift-attestation
+HEAD=3379f9ac5748314efffa2499c3754c8bcef1edc0
+TOKEN_SOURCE=POLICY_DRIFT_TOKEN
+TOKEN_LEN=93
+TOKEN_SHA256_8=bdbf3d8d
+GET /repos/Equity-Flow-Systems/equity-flow-system
+HTTP 200 /repos/Equity-Flow-Systems/equity-flow-system
+GET /repos/Equity-Flow-Systems/equity-flow-system/rulesets?per_page=100
+HTTP 200 /repos/Equity-Flow-Systems/equity-flow-system/rulesets?per_page=100
+GET /repos/Equity-Flow-Systems/equity-flow-system/branches/main/protection
+HTTP 404 /repos/Equity-Flow-Systems/equity-flow-system/branches/main/protection
+OK: GitHub policy matches committed snapshot.
