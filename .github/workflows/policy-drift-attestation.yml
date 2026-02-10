@@ -14,7 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Attest GitHub policy drift (snapshot diff)
         shell: bash
@@ -22,15 +24,21 @@ jobs:
           POLICY_DRIFT_TOKEN: ${{ secrets.POLICY_DRIFT_TOKEN }}
         run: |
           set -euo pipefail
-          ts="$(date -u +"%Y%m%d_%H%M%SZ")"
-          out="docs/proofs/2.16.1_policy_drift_attestation_${ts}.log"
-          mkdir -p docs/proofs
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          echo "PROOF_LOG=${out}"
-          echo "WF_TOKEN_LEN=${#POLICY_DRIFT_TOKEN}" | tee -a "${out}"; echo "BRANCH=${GITHUB_REF_NAME}" | tee -a "${out}"; echo "HEAD=PENDING" | tee -a "${out}"; node scripts/policy_drift_attest.mjs 2>&1 | tee -a "${out}"
-          test -s "${out}"; grep -q "^BRANCH=" "${out}"; grep -q "^HEAD=PENDING$" "${out}"
-          git add "${out}"; git commit -m "2.16.1 proof log (HEAD==PR HEAD)"
-          sha="$(git rev-parse HEAD)"; sed -i "s/^HEAD=PENDING$/HEAD=${sha}/" "${out}"; grep -q "^HEAD=${sha}$" "${out}"
-          git add "${out}"; git commit --amend --no-edit
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          UTC="$(date -u +%Y%m%d_%H%M%SZ)"
+          LOG="docs/proofs/2.16.1_policy_drift_attestation_${UTC}.log"
+          mkdir -p docs/proofs
+          node scripts/policy_drift_attest.mjs 2>&1 | tee "$LOG"
+          test -s "$LOG"
+          grep -q "^BRANCH=" "$LOG"
+          grep -q "^TOKEN_SOURCE=" "$LOG"
+          if ! grep -q "^HEAD=" "$LOG"; then echo "HEAD=PENDING" >> "$LOG"; fi
+          sed -i "s/^HEAD=.*/HEAD=PENDING/" "$LOG"
+          git add "$LOG"
+          git commit -m "2.16.1 add CI proof log (head-bound)"
+          SHA="$(git rev-parse HEAD)"
+          sed -i "s/^HEAD=PENDING/HEAD=${SHA}/" "$LOG"
+          git add "$LOG"
+          git commit --amend --no-edit
           git push origin "HEAD:${GITHUB_REF_NAME}" --force-with-lease
