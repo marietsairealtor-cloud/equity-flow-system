@@ -1,4 +1,4 @@
-PROOF_HEAD=a38f4e7
+PROOF_HEAD=a38f4e7d4d67035066b06be4af1e78adb0d7c6da
 From https://github.com/Equity-Flow-Systems/equity-flow-system
  * branch            main       -> FETCH_HEAD
 PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
