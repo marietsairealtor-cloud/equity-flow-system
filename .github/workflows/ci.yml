@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       docs_only: ${{ steps.set.outputs.docs_only }}
+      workflows_changed: ${{ steps.set.outputs.workflows_changed }}
     steps:
       - uses: actions/checkout@v4
       - id: filter
@@ -40,6 +41,8 @@ jobs:
           filters: |
             docs_only:
               - 'docs/**'
+            workflows_changed:
+              - '.github/workflows/**'
             governance:
               - 'docs/truth/**'
               - '.github/workflows/**'
@@ -49,17 +52,22 @@ jobs:
               - 'docs/artifacts/AUTOMATION.md'
               - 'docs/artifacts/SOP_WORKFLOW.md'
       - id: set
-        shell: bash
+        shell: pwsh
         env:
           DOCS_ONLY: ${{ steps.filter.outputs.docs_only }}
           GOVERNANCE: ${{ steps.filter.outputs.governance }}
+          WORKFLOWS_CHANGED: ${{ steps.filter.outputs.workflows_changed }}
         run: |
-          if [ "$DOCS_ONLY" = "true" ] && [ "$GOVERNANCE" != "true" ]; then
-            echo "docs_only=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "docs_only=false" >> "$GITHUB_OUTPUT"
-          fi
-
+          if ($env:DOCS_ONLY -eq 'true' -and $env:GOVERNANCE -ne 'true') {
+            "docs_only=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            "docs_only=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+          if ($env:WORKFLOWS_CHANGED -eq 'true') {
+            "workflows_changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            "workflows_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -101,6 +109,19 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_proof_commit_binding.ps1
+  ci-semantic-contract:
+    needs: [changes]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: ci-semantic-contract
+        env:
+          SEMANTIC_STRICT: ${{ needs.changes.outputs.workflows_changed }}
+        run: node scripts/ci_semantic_contract.mjs
+
   toolchain-contract:
     runs-on: ubuntu-24.04
     steps:
@@ -112,7 +133,10 @@ jobs:
       - run: npm run toolchain:contract
 
   required:
-    needs: [test, toolchain-contract]
+    needs: [test, toolchain-contract, ci-semantic-contract]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "required PASS"
+      - name: required (aggregate)
+        shell: pwsh
+        run: |
+          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
