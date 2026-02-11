@@ -1,344 +1,213 @@
-# AUTOMATION — Robot Gates (v4)
+# AUTOMATION.md
+
+Authoritative — Merge Blocking
 
 ## Purpose
 
-Define **what automation may do and may not do**, mechanically.
+Defines automated enforcement of governance, proof discipline, CI behavior, and release integrity.
 
-This document is a **scripts contract**.
-If a script violates this contract, the script is wrong — not the SOP, not the user.
-
----
-
-## Core Principle (LOCKED)
-
-**Proof ≠ Publish ≠ Release**
-
-Automation responsibilities are permanently separated:
-
-* **Generate truth** → `handoff`
-* **Publish truth (PR lane)** → `handoff:commit`
-* **Verify only** → `ship`
-* **Gate checks** → `green:*`
-
-Any script that mixes these roles is **invalid by definition**.
+Automation enforces contracts. Humans do not bypass gates.
 
 ---
 
-## Command Contract (Scripts Contract)
+# 1. Command Contracts (Authoritative)
 
-| Command          | May Write | May Commit | May Push    | Purpose        |
-| ---------------- | --------- | ---------- | ----------- | -------------- |
-| `handoff`        | Yes       | No         | No          | Generate truth |
-| `handoff:commit` | Yes       | Yes        | Branch only | Publish        |
-| `ship`           | No        | No         | No          | Verify         |
-| `green:*`        | No        | No         | No          | Gates only     |
+## 1.1 `handoff`
 
----
+* Generates truth artifacts
+* Updates snapshots
+* Writes `docs/handoff_latest.txt`
+* Does NOT commit
+* Does NOT push
 
-## Enforcement Notes (LOCKED)
+## 1.2 `handoff:commit`
 
-### `handoff`
+* Commits only robot-owned artifacts
+* Creates PR branch if on `main`
+* Never commits to `main`
+* Never commits human-authored files
 
-* May write **only** robot-owned truth artifacts:
+## 1.3 `ship`
 
-  * `docs/handoff_latest.txt`
-  * `generated/schema.sql`
-  * `generated/contracts.snapshot.json`
-* Must never:
-
-  * commit
-  * push
-  * open PRs
-  * wait for CI
-
----
-
-### `handoff:commit`
-
-* Is the **only publisher** of truth artifacts.
-* Must be **janitor-proof**.
-
-Required behavior:
-
-* If current branch is `main`:
-
-  * auto-create a PR branch
-* Commit **only** truth artifacts
-* Push **only** the PR branch
-* Must never:
-
-  * commit `main`
-  * push `main`
-  * bypass PR flow
+* Verify-only publisher
+* Must run on clean `main`
+* Runs gates locally
+* Must NOT generate artifacts
+* Must NOT commit human code
+* If any gate fails → treat as regression → new PR required
 
 ---
 
-### `ship`
+# 2. CI Workflow Architecture
 
-* **Proof-only** command.
-* main branch only.
-* Requires clean working tree.
+## 2.1 Core CI Workflows (Authoritative)
+
+These are merge-blocking:
+
+* `.github/workflows/ci.yml`
+* `.github/workflows/database-tests.yml`
+* `.github/workflows/secrets-scan.yml`
+* `.github/workflows/stop-the-line.yml`
+
+If any fail → merge blocked.
+
+---
+
+# 3. CI Lane Isolation Rules
+
+## 3.1 Docs-only PR
+
+Trigger: only `docs/**`
 
 Must:
 
-* Run verification gates only
-* Exit `0` (pass) or `1` (fail)
+* Skip database CI
+* Skip pgTAP
+* Skip migration replay
 
-Must never:
+Must run:
 
-* run `handoff`
-* generate artifacts
-* commit
-* push
-* wait for CI
-* trigger workflows
+* Lint (if configured)
 
 ---
 
-### `green:*`
+## 3.2 Artifacts-only PR
 
-* Gate-only commands (`green:once`, `green:twice`)
-* Must never:
+Trigger: only robot artifacts (`docs/proofs/**`, snapshots)
 
-  * run `handoff`
-  * write artifacts
-  * commit
-  * push
+Must run:
 
----
+* `ci_schema_drift`
+* `ci_policy`
+* lint (if configured)
 
-## Local Green Gate Loop (Implementation)
+Must skip:
 
-`green:*` runs deterministic proof passes of:
-
-1. Hard reset local stack (Windows-safe):
-
-   ```bash
-   npx supabase stop --no-backup
-   npx supabase start -x vector --ignore-health-check
-   ```
-
-2. Validate running state:
-
-   ```bash
-   npx supabase status
-   ```
-
-3. Lints and checks:
-
-   ```bash
-   npm run lint:migrations
-   npm run lint:sql
-   npm run lint:pgtap
-   ```
-
-4. Build (may be a no-op):
-
-   ```bash
-   npm run build
-   ```
-
-Rules:
-
-* No generators allowed
-* No commits allowed
-* No pushes allowed
-* Must be repeatable
-
-Requirement:
-
-* `green:twice` = two consecutive passes with **no edits between**
+* pgTAP
+* full DB replay
+* migration tests
 
 ---
 
-## End-of-Session Automation (AUTHORITATIVE)
+## 3.3 Code / Migration PR
 
-End-of-session publishing is **explicitly not handled by `ship`**.
+Trigger: any non-doc, non-artifact change
 
-Correct flow:
+Must run full CI:
 
-```bash
-npm run handoff
-npm run handoff:commit
-```
-
-Everything else (PR open, CI wait, merge) is human + CI controlled.
-
----
-
-## Release Verification Automation
-
-Release verification is **manual + proof-only**.
-
-```bash
-git checkout main
-git pull
-git status
-npm run ship
-```
-
-Rules:
-
-* If working tree is dirty → STOP
-* If `ship` fails → STOP
-* `ship` does not publish
+* schema drift
+* policy gate
+* pgTAP
+* migration replay
+* proof-commit-binding
+* secrets scan
+* stop-the-line
 
 ---
 
-## Docs-Only Changes
+# 4. Proof Enforcement
 
-If only documentation files changed:
+## 4.1 Completion Law
 
-* Do **not** run `ship`
-* Use:
+Objective is complete ONLY if:
+PR opened → CI green → merged
 
-  ```bash
-  npm run docs:push
-  ```
-
----
-
-## CI Behavior (Every Push / PR)
-
-### Required workflows
-
-* `.github/workflows/database-tests.yml` (pgTAP)
-* `.github/workflows/ci.yml` (policy / guardrails)
-
-### Required check naming (Rulesets)
-
-* Must originate from **GitHub Actions**
-* Must match check names **string-exactly**
-* Must exist on `main` before being marked required
+No PR = Not Done
+Passing tests without PR = Not Done
+One objective = One PR
 
 ---
 
-## Schema Drift Is Intentional
+## 4.2 Proof-Only Work Rule
 
-CI regenerates truth artifacts and fails if they differ from committed:
+If no functional change:
+A Proof PR is still required.
 
-* `docs/handoff_latest.txt`
-* `generated/schema.sql`
-* `generated/contracts.snapshot.json`
+Must include at least one:
 
-Correct response to drift:
+* committed proof log
+* pgTAP assertion
+* DEVLOG update with evidence
 
-```bash
-npm run handoff
-npm run handoff:commit
-```
+“Nothing to commit” = invalid
 
-Never “fix” drift manually.
+Proof must exist in-repo under:
+`docs/proofs/**`
 
----
-
-## SQL Safety Lint (ENFORCED)
-
-CI enforces:
-
-* No `$$` dollar quoting
-* UTF-8 **without BOM**
-* No UTF-16
-* pgTAP files must be SQL-only, deterministic, and complete
+Out-of-branch proof = invalid
 
 ---
 
-## Truth Files (Robot-Owned)
+# 5. Guardrails
 
-The following are **robot-owned** and must never be hand-edited:
+Automation enforces:
 
-* `docs/handoff_latest.txt`
-* `generated/schema.sql`
-* `generated/contracts.snapshot.json`
-* `.gitattributes`
+* Encoding/BOM validation
+* SQL safety lint
+* Schema drift detection
+* Policy snapshot coupling
+* Definer safety audit (if applicable)
 
-If they change, it must be via:
-
-```bash
-npm run handoff
-npm run handoff:commit
-```
+If guardrail fails → stop-the-line.
 
 ---
 
-## CI Schema Drift — Supabase CLI Version (ENFORCED)
+# 6. Proof-Commit Binding
 
-If CI reports drift but local checks pass:
+CI verifies:
 
-* Assume Supabase CLI version mismatch
-* CI must pin CLI explicitly (e.g. `supabase/setup-cli@v1` with version)
-* After pinning:
+* Proof artifacts correspond to actual commit state
+* Hashes match authoritative source
+* Snapshots not manually edited
 
-  ```bash
-  npm run handoff
-  npm run handoff:commit
-  ```
-Add/append under CI / required checks: “Definer safety audit” now runs in CI via scripts/ci_definer_safety_audit.ps1 (enumerates SECURITY DEFINER funcs; fails on missing search_path=pg_catalog, public or unqualified internal calls).
+Violation = immediate failure.
 
-Note where it runs in workflow (.github/workflows/ci.yml after ci_boot.ps1).
+---
 
-## Pre-commit Safety Gate (SQL)
+# 7. Release Model
 
-### What it does
-A local Git pre-commit hook runs automatically on every `git commit`. It scans staged SQL migrations and blocks commits that violate SQL safety rules.
+Proof ≠ Publish ≠ Release
 
-### Why it exists
-This prevents merge-blocking CI failures by stopping unsafe SQL from being committed in the first place (e.g., `$$` dollar-quoting, UTF-16, and other banned patterns).
+All changes flow:
+PR → CI green → Merge
 
-### How it works (automated)
-- Tooling: Husky + lint-staged
-- Trigger: `git commit` (automatic)
-- Scope: staged files matching `supabase/**/*.sql`
-- Command executed: `node scripts/run_lint_sql.mjs`
-- Result:
-  - PASS → commit continues
-  - FAIL → commit is blocked with an error message
+After merge:
 
-### Operator notes
-- Humans/AIs do not need to manually run anything for this gate.
-- Bypass is possible only with intentional override (e.g., `--no-verify`). Do not bypass except for emergency recovery with a written post-mortem.
+* checkout main
+* git pull
+* git status must be clean
+* run `ship`
+* all local gates must pass
 
-### Quick manual check (optional)
-- `npm run lint:sql`
-- `npx lint-staged` (only checks staged files)
+If not clean → lane not closed.
 
-## Commit-time gates (automatic)
+---
 
-On `git commit`, Husky runs lint-staged automatically:
+# 8. Stop-The-Line Policy
 
-- SQL Safety Gate:
-  - staged `supabase/**/*.sql`
-  - runs `node scripts/run_lint_sql.mjs`
-  - blocks unsafe SQL (ex: `$$`)
+If:
 
-- BOM Gate:
-  - staged `**/*.{json,md,yml,yaml,js,mjs,ts,tsx,sql,ps1}`
-  - runs `node scripts/lint_bom_gate.mjs`
-  - blocks UTF-8 BOM / UTF-16 BOM (prevents “looks-valid but tooling fails” issues)
+* CI red
+* Guardrail violation
+* Drift detected
+* Snapshot mismatch
 
-Bypass (`--no-verify`) is prohibited except emergency recovery with written post-mortem.
+Then:
+No merge.
+No bypass.
+Fix first failing gate only.
 
+---
 
-## secrets-scan (merge-blocking)
-- Implemented as GitHub Actions workflow .github/workflows/secrets-scan.yml running Docker gitleaks.
-- No local npm script; local verification may use the same Docker commands as the workflow.
+# 9. Non-Negotiables
 
+* Robot-owned files are never hand-edited.
+* No manual CI reruns to “make green.”
+* No merging on red.
+* No partial objective merges.
+* No multi-objective PRs.
 
-## stop-the-line (merge-blocking)
-- Implemented by .github/workflows/stop-the-line.yml.
-- Script: scripts/stop_the_line_gate.mjs.
-- Required check context: stop-the-line / stop-the-line.
-
-
-## 2026-02-10 — CI: governance-change-guard (2.15)
-- New merge-blocking job: CI / governance-change-guard
-- paths-filter adds ;  computes docs_only = (docs_only AND NOT governance).
-- Guard fails if governance touched and no docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md included in PR changes.
-
-## CI gate note — proof-commit-binding (merge-blocking)
-- Gate runs in CI as CI / proof-commit-binding.
-- If a PR contains no docs/proofs/** changes, the gate emits PROOF_COMMIT_BINDING_SKIP and exits 0.
-
+---
 
 ### proof-commit-binding — scripts hash authority
 
@@ -367,17 +236,3 @@ Bypass (`--no-verify`) is prohibited except emergency recovery with written post
 - Bullet pattern: - `relpath` (no extra text)
 - End marker: END scripts hash authority
 END scripts hash authority
-
-- Encode as lowercase hex.
-
-### Encoding Discipline
-
-All governance and artifact files must:
-
-- Be stored as UTF-8.
-- Be parsed in-memory with newline normalization.
-- Not depend on console encoding.
-- Not depend on editor rendering.
-
-Parser must operate on normalized text only.
-
