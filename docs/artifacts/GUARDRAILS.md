@@ -232,3 +232,26 @@ Use the standard repair workflow (`npm run fix:encoding`) or rewrite as UTF-8 wi
 - Governance-touching PRs MUST include docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md.
 - Governance-touch forces docs_only=false (cannot use docs-only lane).
 - Enforced by CI job: governance-change-guard.
+
+## Guardrail — Absolute Path Prohibition
+
+### Forbidden
+- Any manifest key containing:
+  - Drive letters (e.g., C:/)
+  - Backslash-prefixed absolute paths
+  - OS-dependent path roots
+
+### Required
+- All keys must begin with:
+  docs/proofs/
+- Forward slash only.
+- Repo-relative only.
+
+Violation Class:
+Manifest Integrity Failure
+
+Enforcement:
+- CI validation
+- Pre-merge review
+- Byte-level inspection if needed
+

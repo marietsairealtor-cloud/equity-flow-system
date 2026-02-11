@@ -369,3 +369,15 @@ Bypass (`--no-verify`) is prohibited except emergency recovery with written post
 END scripts hash authority
 
 - Encode as lowercase hex.
+
+### Encoding Discipline
+
+All governance and artifact files must:
+
+- Be stored as UTF-8.
+- Be parsed in-memory with newline normalization.
+- Not depend on console encoding.
+- Not depend on editor rendering.
+
+Parser must operate on normalized text only.
+
