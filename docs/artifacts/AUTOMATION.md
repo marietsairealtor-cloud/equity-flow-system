@@ -1,213 +1,256 @@
 # AUTOMATION.md
-
-Authoritative — Merge Blocking
-
-## Purpose
-
-Defines automated enforcement of governance, proof discipline, CI behavior, and release integrity.
-
-Automation enforces contracts. Humans do not bypass gates.
+Authoritative — CI & Mechanical Enforcement (Aligned with Command + GUARDRAILS)
 
 ---
 
-# 1. Command Contracts (Authoritative)
+## 0) Purpose
 
-## 1.1 `handoff`
+This document defines what CI enforces mechanically.
 
-* Generates truth artifacts
-* Updates snapshots
-* Writes `docs/handoff_latest.txt`
-* Does NOT commit
-* Does NOT push
+- Build Route defines what must be true.
+- Command for Chat defines execution discipline.
+- GUARDRAILS defines non-negotiable safety rules.
+- AUTOMATION defines enforcement behavior.
 
-## 1.2 `handoff:commit`
-
-* Commits only robot-owned artifacts
-* Creates PR branch if on `main`
-* Never commits to `main`
-* Never commits human-authored files
-
-## 1.3 `ship`
-
-* Verify-only publisher
-* Must run on clean `main`
-* Runs gates locally
-* Must NOT generate artifacts
-* Must NOT commit human code
-* If any gate fails → treat as regression → new PR required
+If conflict exists:
+Build Route wins.
+Command for Chat wins.
+GUARDRAILS wins.
+Automation must be updated via PR.
 
 ---
 
-# 2. CI Workflow Architecture
+## 1) Completion Enforcement (Merge Blocking)
 
-## 2.1 Core CI Workflows (Authoritative)
+An objective is complete ONLY if:
 
-These are merge-blocking:
+PR opened → CI green → approved → merged
 
-* `.github/workflows/ci.yml`
-* `.github/workflows/database-tests.yml`
-* `.github/workflows/secrets-scan.yml`
-* `.github/workflows/stop-the-line.yml`
+CI must block merge if:
+- Any required check is red
+- Required approvals are missing (branch protection)
+- Required workflows did not execute
 
-If any fail → merge blocked.
+No merge on red.
+No bypass.
+No partial objective merges.
 
 ---
 
-# 3. CI Lane Isolation Rules
+## 2) Required Workflows (Merge Blocking)
 
-## 3.1 Docs-only PR
+The following workflows are required and merge-blocking:
 
-Trigger: only `docs/**`
+- `.github/workflows/ci.yml`
+- `.github/workflows/database-tests.yml`
+- `.github/workflows/secrets-scan.yml`
+- `.github/workflows/stop-the-line.yml`
+
+If any required workflow fails → merge blocked.
+
+---
+
+## 3) CI Lane Isolation (Deterministic)
+
+CI must enforce deterministic PR lanes.
+
+### 3.1 Docs-only PR
+Trigger: only `docs/**` changes (excluding robot artifacts)
 
 Must:
+- Skip DB-heavy workflows
+- Skip pgTAP
+- Skip migration replay
 
-* Skip database CI
-* Skip pgTAP
-* Skip migration replay
-
-Must run:
-
-* Lint (if configured)
+May run:
+- Lint
+- Non-DB safety checks
 
 ---
 
-## 3.2 Artifacts-only PR
-
-Trigger: only robot artifacts (`docs/proofs/**`, snapshots)
+### 3.2 Artifacts-only PR
+Trigger: only robot-owned outputs (`docs/proofs/**`, generated snapshots)
 
 Must run:
-
-* `ci_schema_drift`
-* `ci_policy`
-* lint (if configured)
+- schema drift gate
+- policy gate
+- proof-commit-binding
 
 Must skip:
-
-* pgTAP
-* full DB replay
-* migration tests
+- pgTAP
+- migration replay
+- full DB suite
 
 ---
 
-## 3.3 Code / Migration PR
-
-Trigger: any non-doc, non-artifact change
+### 3.3 Code / Migration PR
+Any functional change.
 
 Must run full CI:
+- schema drift
+- policy validation
+- DB tests / pgTAP
+- migration replay
+- proof-commit-binding
+- secrets scan
+- stop-the-line
 
-* schema drift
-* policy gate
-* pgTAP
-* migration replay
-* proof-commit-binding
-* secrets scan
-* stop-the-line
-
----
-
-# 4. Proof Enforcement
-
-## 4.1 Completion Law
-
-Objective is complete ONLY if:
-PR opened → CI green → merged
-
-No PR = Not Done
-Passing tests without PR = Not Done
-One objective = One PR
+If workflow YAML does not enforce this, repository is noncompliant.
 
 ---
 
-## 4.2 Proof-Only Work Rule
+## 4) Proof-Commit-Binding Enforcement
 
-If no functional change:
-A Proof PR is still required.
+CI must validate the integrity of proof artifacts.
 
-Must include at least one:
+### 4.1 PROOF_HEAD
+- Must equal tested SHA at runtime
+- Must be ancestor of PR_HEAD
+- Commits after PROOF_HEAD may modify only:
+  - docs/proofs/**
+  - optionally docs/DEVLOG.md
 
-* committed proof log
-* pgTAP assertion
-* DEVLOG update with evidence
-
-“Nothing to commit” = invalid
-
-Proof must exist in-repo under:
-`docs/proofs/**`
-
-Out-of-branch proof = invalid
+Violation → FAIL
 
 ---
 
-# 5. Guardrails
+### 4.2 PROOF_SCRIPTS_HASH
+Must be:
+- Deterministic
+- Explicit file list (no globbing)
+- Deterministic ordering
+- CRLF normalized to LF before hashing
 
-Automation enforces:
+Hash must match between:
+- AUTOMATION.md specification
+- Validator implementation
+- Proof log header
 
-* Encoding/BOM validation
-* SQL safety lint
-* Schema drift detection
-* Policy snapshot coupling
-* Definer safety audit (if applicable)
-
-If guardrail fails → stop-the-line.
-
----
-
-# 6. Proof-Commit Binding
-
-CI verifies:
-
-* Proof artifacts correspond to actual commit state
-* Hashes match authoritative source
-* Snapshots not manually edited
-
-Violation = immediate failure.
+Mismatch → FAIL
 
 ---
 
-# 7. Release Model
+## 5) Guardrail Enforcement (Per GUARDRAILS.md)
 
-Proof ≠ Publish ≠ Release
+CI must enforce:
 
-All changes flow:
-PR → CI green → Merge
+- Encoding/BOM validation (UTF-8 no BOM, LF only)
+- SQL safety lint
+- No `$$` in repo-owned SQL (named tags only)
+- No dynamic SQL in migrations
+- No retro-editing historical migrations
+- Schema drift detection
+- Policy snapshot coupling
+- SECURITY DEFINER safety (fixed search_path, no dynamic SQL)
+- Absolute path prohibition in manifests
+- Secrets-scan gate enforcement
 
-After merge:
-
-* checkout main
-* git pull
-* git status must be clean
-* run `ship`
-* all local gates must pass
-
-If not clean → lane not closed.
-
----
-
-# 8. Stop-The-Line Policy
-
-If:
-
-* CI red
-* Guardrail violation
-* Drift detected
-* Snapshot mismatch
-
-Then:
-No merge.
-No bypass.
-Fix first failing gate only.
+Any guardrail failure → stop-the-line.
 
 ---
 
-# 9. Non-Negotiables
+## 6) Stop-The-Line Acknowledgment (XOR Rule)
 
-* Robot-owned files are never hand-edited.
-* No manual CI reruns to “make green.”
-* No merging on red.
-* No partial objective merges.
-* No multi-objective PRs.
+If stop-the-line triggers:
+
+Exactly one acknowledgment must exist:
+
+- INCIDENT entry in `docs/threats/INCIDENTS.md`
+  OR
+- One-PR waiver file `docs/waivers/WAIVER_PR<NNN>.md`
+  containing exact text: `QA: NOT AN INCIDENT`
+
+Both present = FAIL  
+None present = FAIL  
+
+Merge blocked until condition satisfied.
 
 ---
+
+## 7) Execution Surface Stability (Referenced Authority)
+
+CI assumes execution surface stability per Command for Chat:
+
+- No shell changes mid-objective
+- No runtime swaps mid-objective
+- No new runtime introduced mid-item
+
+If proof artifacts imply execution surface drift,
+proof-binding validation may fail.
+
+Execution surface changes require a new objective.
+
+---
+
+## 8) Truth Artifact Enforcement
+
+CI must fail if:
+
+- Robot-owned files are manually edited
+- Generated files differ from expected deterministic output
+- Manifest paths violate POSIX-only requirement
+- Absolute paths are introduced
+
+Truth artifacts must be commit-bound and reproducible.
+
+(`handoff`/`handoff:commit` generation path enforcement deferred until implemented.)
+
+---
+
+## 9) Waiver Debt Enforcement (Build Route 2.16.4)
+
+If waivers are used:
+
+- Must be recorded in-repo
+- Must be time-bounded
+- Must be scoped
+- Expired waivers must fail CI
+
+Waiver removal requires:
+PR opened → CI green → approved → merged
+
+CI blocks merge if:
+- Waiver expired
+- Waiver undocumented
+- Waiver scope mismatch
+
+---
+
+## 10) Branch Protection Assumptions
+
+- `main` is PR-only
+- No direct pushes
+- Required reviews enforced
+- Required checks string-exact match GitHub status contexts
+
+If branch protection is misconfigured, governance is degraded.
+
+---
+
+## 11) Governance Integrity Guarantees
+
+Automation enforces mechanics only.
+
+It does not:
+- Infer missing proof
+- Redesign system
+- Allow partial objectives
+- Permit CI bypass
+
+One objective = one PR.
+Merge only when CI green and approved.
+
+---
+
+STATUS:
+Aligned with Command for Chat
+Aligned with Build Route v2.4
+Aligned with GUARDRAILS
+Stop-the-line XOR enforced
+Proof-binding deterministic
+Lane isolation defined
+Approval-before-merge enforced
+Governance stack mechanically consistent
 
 ### proof-commit-binding — scripts hash authority
 
