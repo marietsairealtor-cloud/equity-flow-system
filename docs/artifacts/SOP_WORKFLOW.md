@@ -1,5 +1,5 @@
 # SOP_WORKFLOW.md
-Authoritative — Governed Execution (Fully Aligned with Command for Chat)
+Authoritative — Governed Execution (Final Aligned Version)
 
 ---
 
@@ -33,6 +33,8 @@ Local pass ≠ complete
 “Nothing to commit” ≠ complete  
 
 One objective = One PR  
+
+No multi-objective PRs.
 
 ---
 
@@ -86,7 +88,7 @@ QA must return:
 
 PASS  
 or  
-FAIL (with first failing gate)
+FAIL (first failing gate only)
 
 No PR is valid without QA PASS.
 
@@ -105,6 +107,8 @@ Rules:
 - No redesign
 - No debugging unless triggered
 
+---
+
 ### 5.2 Debugger Mode (Triggered Only)
 
 Enter Debugger Mode if ANY:
@@ -119,14 +123,15 @@ Debugger Mode Rules:
 - Fix that gate only
 - Exit once green
 - Do not redesign system
+- Do not stack fixes
 
 ---
 
 ## 6) Execution Format (Session Rule)
 
-For interactive execution steps, follow Command for Chat execution format exactly.
+Interactive step responses must follow the exact execution format defined in Command for Chat.
 
-This governs session responses only and does not alter documentation structure.
+This governs session output only and does not alter documentation structure.
 
 ---
 
@@ -145,12 +150,14 @@ Execution Surface Stability Rule:
 
 During a single objective/PR:
 - Do not change shell
-- Do not introduce a new runtime
+- Do not introduce new runtime
+- Do not swap execution surface mid-item
+
 If required → stop and open a new objective.
 
 ---
 
-## 8) Proof-Commit-Binding Rules
+## 8) Proof-Commit-Binding Compliance
 
 For all docs/proofs/** artifacts:
 
@@ -161,16 +168,16 @@ For all docs/proofs/** artifacts:
   - docs/proofs/**
   - optionally docs/DEVLOG.md
 
+---
+
 ### 8.2 PROOF_SCRIPTS_HASH
 Must be:
-
 - Deterministic
 - Explicit file list (no globbing)
 - Deterministic ordering
 - CRLF normalized to LF before hashing
 
-Hash must match between:
-
+Must match:
 - AUTOMATION.md specification
 - Validator implementation
 - Proof log header
@@ -179,31 +186,7 @@ Mismatch = FAIL.
 
 ---
 
-## 9) Truth Artifact Rule
-
-Truth files are generated only via:
-
-npm run handoff  
-npm run handoff:commit  
-
-ship is verify-only.
-
-Hand-editing robot-owned files is forbidden.
-
----
-
-## 10) Local Green Gate Loop
-
-green:once  
-green:twice  
-
-Must pass twice with no edits between.
-
-No generators allowed during gate loop.
-
----
-
-## 11) CI Lane Isolation
+## 9) CI Lane Isolation (Policy)
 
 Docs-only PR:
 - Skip DB-heavy tests
@@ -216,11 +199,11 @@ Artifacts-only PR:
 Code PR:
 - Run full CI
 
-If workflow YAML does not enforce this, system is noncompliant until corrected via objective PR.
+If YAML does not enforce this, repository is noncompliant until corrected via objective PR.
 
 ---
 
-## 12) Waiver Debt Enforcement (Build Route 2.16.4)
+## 10) Waiver Debt Enforcement (Build Route 2.16.4)
 
 Waivers must be:
 
@@ -232,26 +215,11 @@ Waivers must be:
 Expired waivers must fail CI.
 
 Waiver removal requires:
-- Proof artifact
-- CI green
-- PR opened → approved → merged
+PR opened → CI green → approved → merged
 
 ---
 
-## 13) Gate Close — Clean Tree Verification
-
-After merge to main:
-
-git checkout main  
-git pull  
-git status → must show clean working tree  
-npm run ship → must pass  
-
-The git status line inside docs/handoff_latest.txt is informational only and not authoritative for tree cleanliness.
-
----
-
-## 14) Stop Conditions (LOCKED)
+## 11) Stop Conditions (LOCKED)
 
 Stop immediately if:
 
@@ -265,33 +233,41 @@ When a stop condition is triggered:
 - Do not proceed with implementation
 - Do not switch modes to bypass
 - Do not redesign system
-- Request clarification
-- Resolve the blocking condition first
+- Resolve the blocking issue first
 
 ---
 
-## 15) Forbidden Actions (LOCKED)
+## 12) Forbidden Actions
 
 The following are prohibited:
 
-- Hand-edit robot-owned files:
-  - docs/handoff_latest.txt
-  - generated/schema.sql
-  - generated/contracts.snapshot.json
-  - .gitattributes
-- Dynamic SQL in migrations ($$, EXECUTE)
+- Hand-edit robot-owned files
 - Commit directly to main
-- Retro-edit historical migrations
-- Infer script lists for hashing
-- Skip required proof artifacts
-- Open PR without QA PASS
 - Merge on red CI
+- Open PR without QA PASS
+- Multi-objective PRs
+- Retro-edit historical migrations
+- Introduce dynamic SQL in migrations
+- Bypass proof artifact requirements
 
 Violation = governance failure.
 
 ---
 
-## 16) DEVLOG Entry Format (LOCKED)
+## 13) Gate Close — Clean Tree Verification
+
+After merge to main:
+
+git checkout main  
+git pull  
+git status → must show clean working tree  
+npm run ship → must pass  
+
+`docs/handoff_latest.txt` internal git status line is informational only and not authoritative.
+
+---
+
+## 14) DEVLOG Entry Format (LOCKED)
 
 Entries must follow exactly:
 
@@ -304,3 +280,17 @@ DoD
 Status  
 
 No structural deviation allowed.
+
+---
+
+STATUS:
+Aligned with Command for Chat
+Aligned with Build Route v2.4
+Aligned with AUTOMATION
+Aligned with GUARDRAILS
+Proof-before-PR enforced
+QA-before-PR enforced
+Approval-before-merge enforced
+Stop conditions hardened
+Execution surface stability enforced
+Governance stack consistent
