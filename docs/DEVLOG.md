@@ -564,3 +564,128 @@ Outcome
 Status  
 Closed. QA PASS. No further action required.
 
+## 2026-02-11 — Build Route v2.16.2A — PROOF_SCRIPTS_HASH Authority Contract
+
+### Objective
+
+Eliminate drift between documentation and validator logic for `PROOF_SCRIPTS_HASH` by establishing a single authoritative declaration and enforcing deterministic hashing + proof binding discipline.
+
+---
+
+### Changes
+
+**1. Authority Declaration (docs/artifacts/AUTOMATION.md)**
+
+* Added section:
+
+
+
+
+* Declared:
+
+* Explicit script file list (no globbing)
+* Ordering rule (list order)
+* UTF-8 (no BOM) requirement
+* CRLF → LF normalization
+* Hash framing:
+
+  * `FILE:<relpath>\n`
+  * normalized file text
+  * `\n`
+* SHA-256 → lowercase hex
+* Locked parser contract (start marker + expected bullet structure + end marker)
+
+**2. Validator Enforcement**
+
+* `ci_proof_commit_binding.ps1` now:
+
+* Parses authority section
+* Extracts script list deterministically
+* Normalizes in-memory before hashing
+* Emits:
+
+  * PROOF_SCRIPTS_FILES
+  * PROOF_SCRIPTS_FILE_SHA256
+  * PROOF_SCRIPTS_HASH
+* Rejects drift
+
+**3. Manifest Hardening**
+
+* Absolute-path key existed in historical proof state (`dd38caa`).
+* Current manifest contains **no** absolute paths; keys are repo-relative under `docs/proofs/`.
+* JSON validity confirmed.
+
+**4. Proof Binding Discipline**
+
+* Enforced rule:
+
+* Non-proof commit first
+* Proof commit second
+* After proof commit → only `docs/proofs/**` may change
+* Validator correctly triggers `POST_PROOF_NON_PROOF_CHANGE` on violation.
+* Proof log contract tightened:
+
+* `PROOF_HEAD` must be full 40-hex
+* Proof binding constraints are validator-enforced
+
+---
+
+### Proof
+
+* Authority header UTF-8 verified (E2 80 94 em-dash).
+* No mojibake bytes.
+* Manifest:
+
+* Historical absolute-path key confirmed in `dd38caa`
+* HEAD manifest confirms **no** absolute paths
+* All keys repo-relative
+* Gate output:
+
+* Proof log recorded:
+
+
+---
+
+### DoD (Definition of Done)
+
+* [x] Authority declared exactly once.
+* [x] Script list string-exact.
+* [x] Validator implements declared contract exactly.
+* [x] Hash normalization deterministic.
+* [x] Manifest keys repo-relative only.
+* [x] Proof log uses 40-hex `PROOF_HEAD`.
+* [x] Proof binding validated by CI gate.
+* [x] CI returns success.
+
+---
+
+### Status
+
+**COMPLETE — PASS — MERGED**
+
+Governance maturity increased.  
+Drift vector closed.  
+Hash authority deterministic.
+
+---
+
+**2026-02-11 — Build Route v2.4 — Section 2.17 Ported Files Stability Sweep**
+
+**Objective**
+Restore and harden determinism after PS5→PS7 port and validator brittleness surfaced encoding, newline, path-leak, and parsing fragility.
+
+**Changes**
+
+* Added 2.17.1 Repository Normalization Contract
+* Added 2.17.2 Encoding & Hidden Character Audit (block on forbidden classes only)
+* Added 2.17.3 Absolute Path / Machine Leak Audit (scoped blocking)
+* Added 2.17.4 Parser Contract Resilience Check (fixture-based, hash-of-normalized-output comparator)
+
+**Proof**
+Governed via CI gates: `ci_normalize_sweep`, `ci_encoding_audit`, `ci_path_leak_audit`, `ci_validator` (fixture pack).
+
+**DoD**
+All four sweeps implemented, produce proof logs under `docs/proofs/`, and pass CI with deterministic output.
+
+**Status**
+LOCKED (additive hardening; no runtime expansion).
