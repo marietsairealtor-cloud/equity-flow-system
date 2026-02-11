@@ -689,3 +689,8 @@ All four sweeps implemented, produce proof logs under `docs/proofs/`, and pass C
 
 **Status**
 LOCKED (additive hardening; no runtime expansion).
+## 2026-02-11T18:31:23Z
+- 2.16.3 CI Semantic Contract (Targeted Anti–No-Op) merged (PR #45).
+- 2.16.4 Proof manifest hash fix merged (post-merge correction).
+- main HEAD: 37068234034a5cee714ab9335f25e64bca0ca46b
+
