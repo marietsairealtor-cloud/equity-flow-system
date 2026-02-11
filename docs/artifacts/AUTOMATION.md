@@ -206,3 +206,31 @@ Fix first failing gate only.
 * No merging on red.
 * No partial objective merges.
 * No multi-objective PRs.
+
+### proof-commit-binding — scripts hash authority
+
+**Authority:** This section is the single source of truth for `PROOF_SCRIPTS_HASH`.
+
+**Script file list (string-exact, no globbing):**
+- `scripts\ci_proof_commit_binding.ps1`
+
+**Ordering rule:**
+- Hash files in the list order shown above.
+
+**Normalization rule (before hashing):**
+- Read file as UTF-8 (no BOM).
+- Normalize line endings: CRLF (`\r\n`) → LF (`\n`); lone CR (`\r`) → LF (`\n`).
+
+**Hash input framing:**
+- For each file in order, concatenate:
+  - `FILE:<relpath>\n`
+  - normalized file text
+  - `\n`
+- Compute SHA-256 of the concatenated UTF-8 bytes.
+- Encode as lowercase hex.
+
+**Parser contract (LOCKED):**
+- Start marker: ### proof-commit-binding — scripts hash authority
+- Bullet pattern: - `relpath` (no extra text)
+- End marker: END scripts hash authority
+END scripts hash authority
