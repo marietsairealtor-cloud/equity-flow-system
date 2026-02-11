@@ -1,0 +1,8 @@
+PROOF_HEAD=ab9b594538db509364e784cea9aa364cb55cdfad
+From https://github.com/Equity-Flow-Systems/equity-flow-system
+ * branch            main       -> FETCH_HEAD
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:991e17550051b00a8be74955ffd9ebe0e0f19f69fd160a03b1b0e38bb593c8c8
+PROOF_SCRIPTS_HASH=ddcffe5d2d47b600fc25664e7f7c4a3fcd869e68c423a4289ec05c8f5041b987
+PROOF_COMMIT_BINDING_SKIP: no proof files changed in PR
+RESULT=PASS
