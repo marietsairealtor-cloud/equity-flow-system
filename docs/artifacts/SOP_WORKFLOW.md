@@ -1,333 +1,306 @@
-# SOP — Local Proof + CI Proof (WeWeb + Supabase)
-
-## Purpose
-
-Prevent regressions through repeatable proofs and strict role separation.
-
-This SOP defines how work is proven locally, how truth artifacts are generated and published, how releases are verified, and what “done” means.
+# SOP_WORKFLOW.md
+Authoritative — Governed Execution (Fully Aligned with Command for Chat)
 
 ---
 
-* Proof artifacts must be committed under `docs/proofs/` (never `logs/`).
-* Any newly created proof file must pass `npm run fix:encoding` before commit.
+## 0) Authoritative Load Order (LOCKED)
+
+Load and obey in this exact order:
+
+1. Build Route
+2. docs/handoff_latest.txt
+3. docs/CONTRACTS.md
+4. docs/GUARDRAILS.md
+5. docs/AUTOMATION.md
+6. docs/SOP_WORKFLOW.md
+7. docs/DEVLOG.md
+
+Conflict rule:
+handoff → guardrails → build route wins
+
+If any instruction conflicts with Command for Chat, Command for Chat wins.
 
 ---
 
-## Core Principle (LOCKED)
+## 1) Completion Law (AUTHORITATIVE)
 
-### There Is No Golden Path
+An objective is complete ONLY if:
 
-The concept of a “Golden Path” or “happy path” is **retired**.
+PR opened → CI green → approved → merged
 
-There is **one authoritative path only**, enforced by governance and gates:
+No PR = not complete  
+Local pass ≠ complete  
+“Nothing to commit” ≠ complete  
 
-**PR → CI green → approved → merged → proof artifact**
-
-Any alternative, shortcut, or implied happy path is invalid.
-
----
-
-## Proof ≠ Publish (LOCKED)
-
-These responsibilities are permanently separated:
-
-* Proof → `green:*`, `ship`
-* Publish artifacts → `handoff:commit` (PR lane only)
-* Merge / release → humans + CI
-
-Any script or workflow that mixes these roles is incorrect by definition.
+One objective = One PR  
 
 ---
 
-## Definition of Done (DoD) (AUTHORITATIVE)
+## 2) Proof-Only Work Rule
 
-Work is not done until:
+If an objective requires no functional code change:
 
-**PR opened → CI green → approved → merged**
+A Proof PR is still required containing at least one:
 
-No PR = work is not complete.
+- Committed proof artifact under docs/proofs/**
+- pgTAP / invariant assertion
+- DEVLOG update with evidence
 
----
+Proof must be:
 
-## Proof-Only Completion Rule (LOCKED)
+- In-repo
+- Commit-bound
+- CI validated
 
-If a DoD is met with no functional code changes, a Proof PR is still required.
-
-It must include at least one of:
-
-* committed proof artifact
-* pgTAP or invariant assertion
-* DEVLOG update with evidence
-
-Required flow:
-**Proof PR → CI → merge**
-
-“No diff” = not closed.
-Out-of-branch proof = invalid.
+Screenshots or pasted terminal output are invalid.
 
 ---
 
-## Required Repo Scripts
+## 3) Proof Artifact Sequencing (LOCKED)
 
-The following scripts must exist and remain functional:
+Required order:
 
-* `lint:migrations`
-* `lint:sql`
-* `lint:pgtap`
-* `build`
-* `handoff`
-* `handoff:commit`
-* `ship`
+1. Implement objective
+2. Run required local gates
+3. Generate proof artifact under docs/proofs/**
+4. Update manifest (if required)
+5. Commit proof artifact
+6. Submit proof evidence to QA
+7. Receive explicit QA PASS
+8. Open PR
 
-Roles:
-
-* `handoff` → generate truth
-* `handoff:commit` → publish (PR only)
-* `ship` → verify only
-* `green:*` → gate proofs
+A PR opened without required proof artifacts and QA PASS is invalid.
 
 ---
 
-## DB Tests (pgTAP)
+## 4) QA Submission Rule (LOCKED)
 
-Authoritative runner: `npx supabase test db`
+Before opening a PR, the operator must provide:
+
+- PR diff (or staged file list)
+- Proof artifact path
+- Gate output
+- Manifest status (if applicable)
+
+QA must return:
+
+PASS  
+or  
+FAIL (with first failing gate)
+
+No PR is valid without QA PASS.
+
+---
+
+## 5) Operating Modes
+
+### 5.1 Executor Mode (Default)
+
+Use when:
+- Implementing a scoped Build Route item
+- Producing required artifacts
 
 Rules:
+- One objective → one PR
+- No redesign
+- No debugging unless triggered
 
-* No alternative DB runners
-* No local-only tests
-* `auth.uid()` tests must set `request.jwt.claims` and use real `auth.users.id`
+### 5.2 Debugger Mode (Triggered Only)
 
----
+Enter Debugger Mode if ANY:
 
-## Local Green Gate Loop (LOCKED)
+- A gate is red (local or CI)
+- Same named gate fails twice
+- A blocking error prevents required proof generation
 
-Run in repo root.
+Debugger Mode Rules:
 
-One green pass consists of:
-
-1. `npx supabase stop --no-backup`
-2. `npx supabase start -x vector --ignore-health-check`
-3. `npx supabase status`
-4. `npm run lint:migrations`
-5. `npm run lint:sql`
-6. `npm run lint:pgtap`
-7. `npm run build`
-
-Requirements:
-
-* Run twice consecutively
-* No edits between runs
-
-Failure rule:
-
-* Stop at first failure
-* Fix only that failure
-* Restart from step 1
+- Identify first failing gate by name
+- Fix that gate only
+- Exit once green
+- Do not redesign system
 
 ---
 
-## CI Proof Requirements (LOCKED)
+## 6) Execution Format (Session Rule)
 
-All PRs must pass:
+For interactive execution steps, follow Command for Chat execution format exactly.
 
-* Migration lint
-* SQL lint
-* pgTAP
-* Build
-* Schema drift
-* SECURITY DEFINER audit
-
-### Definer Audit (Mandatory Gate)
-
-All SECURITY DEFINER functions must:
-
-* Use schema-qualified internal calls
-* Use controlled `search_path`
-* Contain no dynamic SQL
-
-Failure = hard block.
+This governs session responses only and does not alter documentation structure.
 
 ---
 
-## End-of-Session SOP (AUTHORITATIVE)
+## 7) Shell Discipline (LOCKED)
 
-This replaces all previous publishing workflows.
+Default interactive shell: Git Bash (MINGW64)
 
-### End-of-Session Trigger (LOCKED)
+PowerShell allowed only when:
+- Windows-safe file writing required
+- Encoding control required
+- Running PowerShell-based gates
 
-`handoff` and `handoff:commit` may be run ONLY:
+Do not mix shells inside a single command block.
 
-1. At the end of the final working session of the day, OR
-2. Immediately before closing a gate
+Execution Surface Stability Rule:
 
-They must NOT be run:
-
-* mid-task
-* between objectives
-* during debugging
-* as a partial checkpoint
-
-Violations invalidate the snapshot.
+During a single objective/PR:
+- Do not change shell
+- Do not introduce a new runtime
+If required → stop and open a new objective.
 
 ---
 
-### End Session Procedure
+## 8) Proof-Commit-Binding Rules
 
-1. Verify clean tree (`git status`)
-2. Generate truth artifacts (`npm run handoff`)
-3. Publish via PR lane (`npm run handoff:commit`)
-4. Open PR
-5. Wait for CI green
-6. Merge
+For all docs/proofs/** artifacts:
 
-No shortcuts.
+### 8.1 PROOF_HEAD
+- Must equal tested SHA at runtime
+- Must be ancestor of PR_HEAD
+- Commits after PROOF_HEAD may modify only:
+  - docs/proofs/**
+  - optionally docs/DEVLOG.md
 
----
+### 8.2 PROOF_SCRIPTS_HASH
+Must be:
 
-## Gate Close Bundle (LOCKED)
+- Deterministic
+- Explicit file list (no globbing)
+- Deterministic ordering
+- CRLF normalized to LF before hashing
 
-After artifacts PR merge:
+Hash must match between:
 
-1. Checkout `main` and pull
-2. Verify clean tree
-3. Run `ship`
-4. Record:
+- AUTOMATION.md specification
+- Validator implementation
+- Proof log header
 
-   * `MAIN_HEAD`
-   * `HANDOFF_HEAD`
-   * Migration parity
-   * DEVLOG entry
-
-Only then is the gate closed.
+Mismatch = FAIL.
 
 ---
 
-## Clean Tree Proof (Clarification)
+## 9) Truth Artifact Rule
 
-`docs/handoff_latest.txt` is always dirty during generation.
-Only `git status` on `main` after merge is authoritative.
+Truth files are generated only via:
 
----
+npm run handoff  
+npm run handoff:commit  
 
-## Release SOP (LOCKED)
+ship is verify-only.
 
-Run only after merge and gate close.
-
-On `main`:
-
-* `git checkout main`
-* `git pull`
-* `git status`
-* `npm run ship`
-
-Failure = regression → New PR → Fix first failing gate only.
+Hand-editing robot-owned files is forbidden.
 
 ---
 
-## Authority Reminder
+## 10) Local Green Gate Loop
 
-If this SOP conflicts with behavior:
+green:once  
+green:twice  
 
-**Behavior is wrong.
-Stop and realign.**
+Must pass twice with no edits between.
 
----
-
-**QA note:** This change is wording-only.
-**DoD:** docs-only PR + CI green.
-
-## 2026-02-10 — Governance-change justification (2.15)
-- If PR touches governance paths (docs/truth/**, .github/workflows/**, scripts/**, governance artifacts), PR MUST include: docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md
-- DEVLOG-only PRs are exempt.
+No generators allowed during gate loop.
 
 ---
 
-## Proof Log HEAD Semantics (Clarified)
+## 11) CI Lane Isolation
 
-For proof logs that record `HEAD=`:
+Docs-only PR:
+- Skip DB-heavy tests
+- Run minimal gates only
 
-- `HEAD` denotes the **commit that was tested** (the code state the proof executed against).
-- The proof file is committed **after** execution; therefore `HEAD` is expected to be an **ancestor** of the PR/merge commit that stores the proof artifact.
-- Acceptance check:
-  - `git merge-base --is-ancestor <HEAD> <MERGE_SHA>` must succeed.
-  - `git diff --name-only <HEAD>..<MERGE_SHA>` must be proof-only (typically `docs/proofs/**`).
+Artifacts-only PR:
+- Run drift + policy + proof-commit-binding
+- Skip full DB suite
+
+Code PR:
+- Run full CI
+
+If workflow YAML does not enforce this, system is noncompliant until corrected via objective PR.
 
 ---
 
-## Windows Operator Note (Token + Session Discipline)
+## 12) Waiver Debt Enforcement (Build Route 2.16.4)
 
-On Windows, environment variables may not carry between shells (Git Bash vs PowerShell). For GitHub API proofs:
+Waivers must be:
 
-- Set and verify token in the **same session** that runs the proof.
-- Verify via non-secret signal (length + short hash prefix) before running the proof.
-- Prefer generating/writing proof logs via **PowerShell** (UTF-8 no BOM) to avoid shell redirection instability.
+- Explicit
+- Scoped
+- Time-bounded
+- Auditable
 
+Expired waivers must fail CI.
 
-## 2026-02-10 — proof-commit-binding scope clarification
-- proof-commit-binding is a PR gate; it validates proof binding **only when** docs/proofs/** changes exist in the PR; otherwise it emits PROOF_COMMIT_BINDING_SKIP and exits 0.
+Waiver removal requires:
+- Proof artifact
+- CI green
+- PR opened → approved → merged
 
+---
 
+## 13) Gate Close — Clean Tree Verification
 
-## 2.16.2A — Proof Binding Workflow (Hard Rule)
+After merge to main:
 
-### Commit Order Discipline
+git checkout main  
+git pull  
+git status → must show clean working tree  
+npm run ship → must pass  
 
-1. Non-proof changes commit first.
-2. Proof log + manifest commit second.
-3. After proof commit:
-   - Only files under docs/proofs/** may change.
+The git status line inside docs/handoff_latest.txt is informational only and not authoritative for tree cleanliness.
 
-Any violation triggers:
-POST_PROOF_NON_PROOF_CHANGE
+---
 
-### PROOF_HEAD Requirements
+## 14) Stop Conditions (LOCKED)
 
-- Must be full 40-hex SHA.
-- Must bind correctly within PR graph (validator enforced).
+Stop immediately if:
 
-### Manifest Requirements
+- Authoritative file missing
+- CI red
+- Unexpected file drift
+- Build Route ambiguity
 
-- Keys must be repo-relative.
-- Keys must use forward slashes.
-- No absolute drive paths allowed.
-- JSON must parse cleanly.
+When a stop condition is triggered:
 
-### Hash Authority Discipline
+- Do not proceed with implementation
+- Do not switch modes to bypass
+- Do not redesign system
+- Request clarification
+- Resolve the blocking condition first
 
-PROOF_SCRIPTS_HASH is derived only from:
+---
 
-### proof-commit-binding — scripts hash authority
+## 15) Forbidden Actions (LOCKED)
 
-- Script list is string-exact.
-- No globbing.
-- Files hashed in listed order.
-- UTF-8 (no BOM).
-- CRLF and CR normalized to LF.
-- Framing:
-  FILE:<relpath>\n
-  normalized text
-  \n
-- SHA-256 lowercase hex.
+The following are prohibited:
 
-This section is the single source of truth.
-Validator must implement it exactly.
+- Hand-edit robot-owned files:
+  - docs/handoff_latest.txt
+  - generated/schema.sql
+  - generated/contracts.snapshot.json
+  - .gitattributes
+- Dynamic SQL in migrations ($$, EXECUTE)
+- Commit directly to main
+- Retro-edit historical migrations
+- Infer script lists for hashing
+- Skip required proof artifacts
+- Open PR without QA PASS
+- Merge on red CI
 
+Violation = governance failure.
 
+---
 
+## 16) DEVLOG Entry Format (LOCKED)
 
-## Execution Surface Stability (Authoritative)
+Entries must follow exactly:
 
-To preserve determinism and prevent environment drift:
+YYYY-MM-DD — Build Route vX.Y — Item
 
-* The execution surface (shell + runtime) must remain constant for the duration of a single objective/PR.
-* Do not switch between Bash and PowerShell mid-item.
-* Do not introduce a new runtime (e.g., Python) mid-item.
-* If a shell or runtime change is required, stop and open a new objective explicitly scoped to toolchain modification.
-* Toolchain changes must follow Completion Law (PR → CI green → merge).
+Objective  
+Changes  
+Proof  
+DoD  
+Status  
 
-Rationale:
-Mid-objective execution surface changes introduce nondeterminism (quoting differences, path separators, encoding defaults, exit code behavior) and increase regression risk.
-
-This rule is governance-enforced, not preference-based.
-
+No structural deviation allowed.
