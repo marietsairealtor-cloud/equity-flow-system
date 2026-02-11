@@ -1,7 +1,7 @@
 {
   "version": 1,
   "algo": "sha256",
-  "generated_utc": "2026-02-10T22:51:10.5403809Z",
+  "generated_utc": "2026-02-11T16:09:18Z",
   "files": {
     "docs/proofs/_archive/1.1_port_manifest_20260207_224410.log": "d44d258e95507c63be5b65fbba35f9dfb705940a3d242cf2add350ff8e2c055d",
     "docs/proofs/_archive/1.1_port_manifest_20260207_230804.log": "a73ca94be7e64b2328bfb1b1c3ddd182dd6035c3f33a8370bb257eede470809c",
@@ -45,6 +45,7 @@
     "docs/proofs/2.7_docs_only_ci_skip_20260208_234320Z.log": "d42d526d626b96a3d1ed33acdb5b75d0c83c9fe49b37de77e4f4e3fd7af4ff1d",
     "docs/proofs/2.8_command_smoke_gov_20260209_142024Z.log": "94d3b5d06ede10cba8420ded1243855ae9a029b33846afa80f7e6dc462bbe6f3",
     "docs/proofs/2.9_main_moved_guard_20260209_152822Z.log": "3c11f6f12ffd054b3de462bb63be3a9d339dd53e76d86e3bfb8df35f572d43d6",
-    "docs/proofs/PROOF_REDACTION__.md": "863e3e912cbddce1447c3d5609b25c7328ae3ef278d27908a3490afcdda32187"
+    "docs/proofs/PROOF_REDACTION__.md": "863e3e912cbddce1447c3d5609b25c7328ae3ef278d27908a3490afcdda32187",
+    "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log": "9d18610ae5f8d85a6983e9d7da55aa59f8a4ee6e69664535e82992a5067ae147"
   }
 }
