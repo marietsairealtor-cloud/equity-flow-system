@@ -1,7 +1,7 @@
 {
   "version": 1,
   "algo": "sha256",
-  "generated_utc": "2026-02-11T16:09:18Z",
+  "generated_utc": "2026-02-11T18:22:32Z",
   "files": {
     "docs/proofs/_archive/1.1_port_manifest_20260207_224410.log": "d44d258e95507c63be5b65fbba35f9dfb705940a3d242cf2add350ff8e2c055d",
     "docs/proofs/_archive/1.1_port_manifest_20260207_230804.log": "a73ca94be7e64b2328bfb1b1c3ddd182dd6035c3f33a8370bb257eede470809c",
@@ -34,8 +34,6 @@
     "docs/proofs/2.14_stop_the_line_20260209_205402Z.log": "65f02ead5014d1d6ecafae90fd388ae19d47aece4b173c95465a85aa9827aab1",
     "docs/proofs/2.15_governance_change_20260210_001959Z.log": "876ae57a7a5a7ce538de7614244c038efadae3e322726a7f60760cae3152bc06",
     "docs/proofs/2.16.1_policy_drift_attestation_20260210_185039Z.log": "b5ad0a1eb224c3549c48e0c5d6a57308addc0c9b537ee932287d4646e706c149",
-    "docs/proofs/2.16.2_proof_commit_binding_20260210_205315Z.log": "95d4478cab941b7ccb44138137f5c872749d1741dbf2ef91ce1246b501e00c54",
-    "docs/proofs/2.16.2_proof_commit_binding_20260210_213852Z.log": "95d4478cab941b7ccb44138137f5c872749d1741dbf2ef91ce1246b501e00c54",
     "docs/proofs/2.2_toolchain_versions_20260208_145124.log": "66e7f7fe75c15eac463eaff777b4ea67fefa86559e0d1944d0eebe0d3a951759",
     "docs/proofs/2.2a_renormalize_enforced_20260208_163001.log": "9090eebae64b3de17f74fd5629cb9b014b34057744560e2d8d91db5620043a9e",
     "docs/proofs/2.3_repo_rules_enforced_20260208_163125.md": "46ad723aac705fbe81ed364b17b467fd932f75251bed4df1817fc65c7e2cee9c",
@@ -46,6 +44,9 @@
     "docs/proofs/2.8_command_smoke_gov_20260209_142024Z.log": "94d3b5d06ede10cba8420ded1243855ae9a029b33846afa80f7e6dc462bbe6f3",
     "docs/proofs/2.9_main_moved_guard_20260209_152822Z.log": "3c11f6f12ffd054b3de462bb63be3a9d339dd53e76d86e3bfb8df35f572d43d6",
     "docs/proofs/PROOF_REDACTION__.md": "863e3e912cbddce1447c3d5609b25c7328ae3ef278d27908a3490afcdda32187",
-    "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log": "9d18610ae5f8d85a6983e9d7da55aa59f8a4ee6e69664535e82992a5067ae147"
+    "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log": "9d18610ae5f8d85a6983e9d7da55aa59f8a4ee6e69664535e82992a5067ae147",
+    "docs/proofs/2.16.2_proof_commit_binding_20260210_213852Z.log": "db89f4512fc228c7a5e1327db87d5e275d90dbbf686d42e49526c72b2ffdd900",
+    "docs/proofs/2.16.2_proof_commit_binding_20260210_205315Z.log": "db89f4512fc228c7a5e1327db87d5e275d90dbbf686d42e49526c72b2ffdd900",
+    "docs/proofs/2.16.3_ci_semantic_contract_20260211_180456Z.log": "5cb31991b8a90ab9e67782caddaa8d431a3dc93c590b0a143d890b1ef77769ef"
   }
 }

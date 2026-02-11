@@ -1,0 +1,98 @@
+PROOF_HEAD=cfd4ec7592a1213fffe28e4922bfeb09f150cc83
+PROOF_SCRIPTS_HASH=ddcffe5d2d47b600fc25664e7f7c4a3fcd869e68c423a4289ec05c8f5041b987
+HEAD=44309419ee5be7609c6097911354435e14489e71
+UTC=20260211_180456Z
+--- NON_STRICT ---
+=== ci-semantic-contract ===
+STRICT_MODE= false
+WORKFLOWS_INSPECTED= 5
+ - .github\workflows\ci.yml
+ - .github\workflows\placeholder.yml
+ - .github\workflows\policy-drift-attestation.yml
+ - .github\workflows\secrets-scan.yml
+ - .github\workflows\stop-the-line.yml
+REQUIRED_CHECKS=
+ - CI / test
+ - secrets-scan / secrets-scan
+ - CI / env-sanity
+ - stop-the-line / stop-the-line
+ - CI / proof-commit-binding
+CHECK CI / test
+  FILE: .github\workflows\ci.yml
+  JOB_ID: test
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK secrets-scan / secrets-scan
+  FILE: .github\workflows\secrets-scan.yml
+  JOB_ID: secrets-scan
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / env-sanity
+  FILE: .github\workflows\ci.yml
+  JOB_ID: env-sanity
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK stop-the-line / stop-the-line
+  FILE: .github\workflows\stop-the-line.yml
+  JOB_ID: stop-the-line
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / proof-commit-binding
+  FILE: .github\workflows\ci.yml
+  JOB_ID: proof-commit-binding
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+RESULT=PASS
+EXITCODE=0
+--- STRICT ---
+=== ci-semantic-contract ===
+STRICT_MODE= true
+WORKFLOWS_INSPECTED= 5
+ - .github\workflows\ci.yml
+ - .github\workflows\placeholder.yml
+ - .github\workflows\policy-drift-attestation.yml
+ - .github\workflows\secrets-scan.yml
+ - .github\workflows\stop-the-line.yml
+REQUIRED_CHECKS=
+ - CI / test
+ - secrets-scan / secrets-scan
+ - CI / env-sanity
+ - stop-the-line / stop-the-line
+ - CI / proof-commit-binding
+CHECK CI / test
+  FILE: .github\workflows\ci.yml
+  JOB_ID: test
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK secrets-scan / secrets-scan
+  FILE: .github\workflows\secrets-scan.yml
+  JOB_ID: secrets-scan
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / env-sanity
+  FILE: .github\workflows\ci.yml
+  JOB_ID: env-sanity
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK stop-the-line / stop-the-line
+  FILE: .github\workflows\stop-the-line.yml
+  JOB_ID: stop-the-line
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / proof-commit-binding
+  FILE: .github\workflows\ci.yml
+  JOB_ID: proof-commit-binding
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+RESULT=PASS
+EXITCODE=0
