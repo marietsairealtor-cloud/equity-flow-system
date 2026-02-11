@@ -314,3 +314,20 @@ This section is the single source of truth.
 Validator must implement it exactly.
 
 
+
+
+## Execution Surface Stability (Authoritative)
+
+To preserve determinism and prevent environment drift:
+
+* The execution surface (shell + runtime) must remain constant for the duration of a single objective/PR.
+* Do not switch between Bash and PowerShell mid-item.
+* Do not introduce a new runtime (e.g., Python) mid-item.
+* If a shell or runtime change is required, stop and open a new objective explicitly scoped to toolchain modification.
+* Toolchain changes must follow Completion Law (PR → CI green → merge).
+
+Rationale:
+Mid-objective execution surface changes introduce nondeterminism (quoting differences, path separators, encoding defaults, exit code behavior) and increase regression risk.
+
+This rule is governance-enforced, not preference-based.
+
