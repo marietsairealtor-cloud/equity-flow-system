@@ -207,6 +207,8 @@ Fix first failing gate only.
 * No partial objective merges.
 * No multi-objective PRs.
 
+---
+
 ### proof-commit-binding — scripts hash authority
 
 **Authority:** This section is the single source of truth for `PROOF_SCRIPTS_HASH`.
