@@ -1,0 +1,24 @@
+PROOF_HEAD=4892c1f69394c74576b19d373e5675abe091e93f
+PROOF_SCRIPTS_HASH=4f3e6faec358b92def0b582847d13928210a825082168660decb7859800d42e1
+PR_HEAD=4892c1f69394c74576b19d373e5675abe091e93f
+
+PROOF_HEAD=fe6c53ae614cd7f8da2ee9d942cd3b8fd67b479b
+ITEM=2.16.4C
+PR_HEAD=a7c4181f151311c5a0de5866776d431b3ef4ad00
+PR_HEAD=8df216de6db59481d959aaaa3b687c863ab1f38c
+UTC_TS=20260212_193531Z
+--- npm run truth:sync (1) ---
+
+> equity-flow-system@0.0.0 truth:sync
+> node scripts/truth_sync_required_checks.mjs
+
+--- npm run truth:sync (2) ---
+
+> equity-flow-system@0.0.0 truth:sync
+> node scripts/truth_sync_required_checks.mjs
+
+--- git diff --name-only (should be empty) ---
+.github/workflows/ci.yml
+docs/truth/required_checks.json
+package.json
+RESULT=PASS

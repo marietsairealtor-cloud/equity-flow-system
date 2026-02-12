@@ -3,6 +3,7 @@
   "algo": "sha256",
   "generated_utc": "2026-02-11T18:26:49Z",
   "files": {
+    "docs/proofs/2.16.4C_truth_sync_20260212_205811Z.log": "32b1e441e2d399ae362e2a74b4d5d428bc47871c97e1fc14457be28d6a85006e",
     "docs/proofs/_archive/1.1_port_manifest_20260207_224410.log": "d44d258e95507c63be5b65fbba35f9dfb705940a3d242cf2add350ff8e2c055d",
     "docs/proofs/_archive/1.1_port_manifest_20260207_230804.log": "a73ca94be7e64b2328bfb1b1c3ddd182dd6035c3f33a8370bb257eede470809c",
     "docs/proofs/_archive/1.3_ci_local_20260208_001355.log": "9165e7b98802956270b93f65d3a82150aa0db9bc1b16b221e1907622f9010a59",
@@ -47,6 +48,12 @@
     "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log": "9d18610ae5f8d85a6983e9d7da55aa59f8a4ee6e69664535e82992a5067ae147",
     "docs/proofs/2.16.2_proof_commit_binding_20260210_213852Z.log": "db89f4512fc228c7a5e1327db87d5e275d90dbbf686d42e49526c72b2ffdd900",
     "docs/proofs/2.16.2_proof_commit_binding_20260210_205315Z.log": "db89f4512fc228c7a5e1327db87d5e275d90dbbf686d42e49526c72b2ffdd900",
-    "docs/proofs/2.16.3_ci_semantic_contract_20260211_180456Z.log": "066181c01a9280f0e1c839eea887797a74198b192328bc779ebf998118cdb3fe"
+    "docs/proofs/2.16.3_ci_semantic_contract_20260211_180456Z.log": "066181c01a9280f0e1c839eea887797a74198b192328bc779ebf998118cdb3fe",
+    "docs/proofs/2.16.4_waiver_debt_enforcement_20260211_204254Z.log": "646debb5cb41eefd61fab9ad4ce9f12e94908dfe201649748588869501c73539",
+    "docs/proofs/2.16.4_waiver_debt_enforcement_20260211_235046Z.log": "646debb5cb41eefd61fab9ad4ce9f12e94908dfe201649748588869501c73539",
+    "docs/proofs/2.16.4_waiver_debt_enforcement_20260212_011423Z.log": "179c225489f330eabbaa547703e1d8c68ed6444179fb201cc01b6ed407bcaa64",
+    "docs/proofs/2.16.4A_ci_gate_wiring_closure_20260212_153352Z.log": "69e369f18a495097d6fb8e24a13f9fabc50626f83ceb6f3728caf8a17bdce22d",
+    "docs/proofs/2.16.4B_ci_topology_audit_20260212_163106Z.log": "74a71f3d9045e724ea0b04f28c6e46e15424005b219440ab52f9600397c17959",
+    "docs/proofs/2.16.4C_truth_sync_20260212_193531Z.log": "d6dc6316633b1d59ad306e9b662c690e2395e3137d05daf6c1246b6b06359f08"
   }
 }

@@ -1,12 +1,12 @@
 {
   "checks": [
     {
-      "name": "CI / test",
+      "name": "CI / ci-semantic-contract",
       "type": "github_status",
       "required": true
     },
     {
-      "name": "secrets-scan / secrets-scan",
+      "name": "CI / ci-topology-audit",
       "type": "github_status",
       "required": true
     },
@@ -16,12 +16,22 @@
       "required": true
     },
     {
-      "name": "stop-the-line / stop-the-line",
+      "name": "CI / proof-commit-binding",
       "type": "github_status",
       "required": true
     },
     {
-      "name": "CI / proof-commit-binding",
+      "name": "CI / test",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / toolchain-contract",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / truth-sync-enforced",
       "type": "github_status",
       "required": true
     },

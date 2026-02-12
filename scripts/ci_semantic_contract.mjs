@@ -128,7 +128,7 @@ function hasAllowlistedGate(cmd){
   const allow = [
     /\.?[/\\]scripts[/\\]ci_[A-Za-z0-9_.-]+\.ps1\b/,
     /\bnode\s+scripts[/\\][A-Za-z0-9_.-]+\.mjs\b/,
-    /\bnpm\s+run\s+(truth-bootstrap|env:sanity|stop-the-line|toolchain:contract|main-moved-guard)\b/,
+    /\bnpm\s+run\s+(truth-bootstrap|env:sanity|stop-the-line|toolchain:contract|main-moved-guard|truth:sync)\b/,
     /\bdocker\s+run\b.*\bgitleaks\b.*\bdetect\b/
   ];
   return allow.some(r=>r.test(s));
