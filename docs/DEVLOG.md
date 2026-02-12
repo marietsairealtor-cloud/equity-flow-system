@@ -931,3 +931,56 @@ DoD
 Status
 PASS
 
+
+## 2026-02-12 — Advisor Review Outcome (Feb 11–12 additions) — Scope/Alignment OK
+
+Objective
+- Confirm no scope creep; increase governance density only where aligned; mechanically freeze Section 2 against speculative hardening.
+
+Changes
+- Classified gating items as merge-blocking vs lane-only vs dormant (effective immediately).
+- Declared Section 2 “Stop rule” to prevent further meta-governance expansion without incident-based justification.
+
+Proof
+- N/A (advisor review / classification entry)
+
+DoD
+- Decision recorded in DEVLOG
+- Gating classification captured
+- Section 2 freeze rule captured
+- Next execution section declared
+
+Status
+PASS
+
+### Decision
+No scope creep. Governance density increased but remains aligned. Section 2 is now mechanically frozen.
+
+### Gating classification (effective immediately)
+
+MERGE-BLOCKING NOW (core integrity / anti-drift / reproducibility)
+- 2.16.2A — PROOF_SCRIPTS_HASH authority
+- 2.16.3 — CI Semantic Contract
+- 2.16.4A — waiver-debt-enforcement wiring
+- 2.16.4B — CI Topology Audit
+- 2.16.4C — Truth Sync Enforced
+- 2.17.1 — Repo Normalization (block only on real violations)
+- 2.17.2 — Encoding/hidden char audit (block only on forbidden classes)
+- 2.17.3 — Absolute path / machine leak audit (block only on real leaks)
+
+LANE-ONLY (alert-first; promote only if it catches real corruption)
+- 2.17.4 — Parser resilience check (fixture-based)
+
+DORMANT (defined in Build Route; NOT enforced until Hub/Billing scope)
+- 6.6–6.8, 7.4–7.5, 10.3–10.6, 11.8–11.9 (Wholesale Hub ranges)
+- 2.16.5A–2.16.5G (Foundation/Product split suite)
+
+### Stop rule (Section 2 Freeze)
+No new meta-governance items unless:
+(a) a real incident exposes a bypass/gap (post-mortem required), OR
+(b) Section 3/6 implementation proves a missing invariant that cannot be solved without governance change.
+No speculative hardening.
+
+Next
+Proceed to Section 3 (Automation Build). No further Section 2 additions without meeting the stop rule.
+
