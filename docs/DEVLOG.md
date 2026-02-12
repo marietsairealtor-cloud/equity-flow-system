@@ -725,3 +725,37 @@ waiver-debt-enforcement runs in CI and is enforced via required.needs.
 Status
 Merged
 
+
+---
+
+## 2026-02-12T15:45:31Z — Build Route 2.16.4A — CI Gate Wiring Closure (Required Checks + Policy Ruleset Snapshotting)
+
+### Objective
+Close CI aggregate-gate gap by ensuring:
+- All truth-required checks are present in workflow job IDs (string-exact).
+- All truth-required checks are wired into `jobs.required.needs`.
+- Branch ruleset required checks are captured in policy drift snapshot.
+- Proof binding remains commit-ancestor constrained.
+
+### Changes
+- Updated `.github/workflows/ci.yml`:
+  - Added missing required jobs to `jobs.required.needs`.
+- Updated `docs/truth/required_checks.json`:
+  - Marked `CI / waiver-debt-enforcement` as `required: true`.
+- Enhanced `scripts/policy_drift_attest.mjs`:
+  - Extract required status checks from rulesets (not only branch protection).
+- Added proof:
+  - `docs/proofs/2.16.4A_ci_gate_wiring_closure_20260212_153352Z.log`
+
+### DoD
+- `required-checks-contract` PASS
+- `ci_proof_commit_binding.ps1` PASS
+- CI GREEN
+- Diff limited to:
+  - .github/workflows/ci.yml
+  - docs/truth/required_checks.json
+  - scripts/policy_drift_attest.mjs
+  - docs/proofs/2.16.4A_ci_gate_wiring_closure_*.log
+
+Status: COMPLETE ✅
+
