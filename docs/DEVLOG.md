@@ -1,5 +1,4 @@
 # DEVLOG (Authoritative)
-# DEVLOG (Authoritative)
 
 This file is the authoritative ledger of completed, proven work.
 Entries are added **only when a gate is closed**.
@@ -728,6 +727,87 @@ Merged
 
 ---
 
+
+2026-02-12 — Build Route v2.4 — Additive Hardening Items (2.16.4A–2.16.4C, 2.17)
+
+Objective
+Add additive governance hardening to prevent: silent CI topology drift (“phantom gates”); truth file drift from human maintenance; ported-file instability (PS5→PS7 newline/encoding/path leak/parsing brittleness). Scope is additive only; Section 2 remains frozen; no resequencing.
+
+Changes
+1) 2.16.4A — CI Gate Wiring Closure (Authoritative)
+- Intent: close wiring gaps by making truth/required_checks.json authoritative and ensuring:
+  - each truth entry exists as a workflow job ID (string-exact)
+  - aggregate required.needs includes the full truth set (string-exact)
+- Artifacts: docs/proofs/2.16.4A_ci_gate_wiring_closure_<UTC>.log
+- Gate: ci-gate-wiring-closure (merge-blocking)
+
+2) 2.16.4B — CI Topology Audit Gate (No Phantom Gates Enforcement)
+- Intent: prevent drift by asserting:
+  - truth → workflows: every truth-required gate exists as a job ID in .github/workflows/**
+  - truth → merge-block topology: required.needs includes the full truth set
+  - docs/package scripts are non-authoritative unless workflow-wired
+- Artifacts: docs/proofs/2.16.4B_ci_topology_audit_<UTC>.log
+- Gate: ci-topology-audit (merge-blocking)
+
+3) 2.16.4C — Truth Sync Enforcement (Machine-Derived Truth)
+- Intent: eliminate manual drift by requiring:
+  - npm run truth:sync deterministically regenerates truth/required_checks.json
+  - CI fails if truth:sync produces any diff (git diff --exit-code)
+  - running twice produces identical output
+- Artifacts: docs/proofs/2.16.4C_truth_sync_<UTC>.log
+- Gate: truth-sync-enforced (merge-blocking)
+
+4) 2.17 — Ported Files Stability Sweep (Authoritative)
+- Intent: stabilize ported files and parser behavior after PS5→PS7 port:
+  - normalization determinism (LF/no-BOM) for governed paths
+  - forbidden character sweep (BOM/zero-width/control)
+  - absolute path leakage audit (blocking only in high-risk outputs)
+  - validator parser robustness via adversarial fixture pack + normalized-output hash comparator
+- Items:
+  - 2.17.1 Repository Normalization Contract (ci_normalize_sweep)
+  - 2.17.2 Encoding & Hidden Character Audit (ci_encoding_audit)
+  - 2.17.3 Absolute Path / Machine Leak Audit (ci_path_leak_audit)
+  - 2.17.4 Parser Contract Resilience Check (ci_validator fixture pack)
+- Proofs:
+  - docs/proofs/2.17.1_normalize_sweep_<UTC>.log
+  - docs/proofs/2.17.2_encoding_audit_<UTC>.log
+  - docs/proofs/2.17.3_path_leak_audit_<UTC>.log
+  - docs/proofs/2.17.4_parser_fixture_check_<UTC>.log
+
+Proof
+Additive Build Route additions only (authoritative requirements). No implementation proof in this entry.
+
+DoD
+Addendum items recorded without resequencing; Section 2 remains frozen; requirements are additive only.
+
+Status
+Approved for staged implementation: start 2.16.4A → 2.16.4B → 2.16.4C, then 2.17.
+
+2026-02-12 — Build Route v2.4 — 2.16.4B CI Topology Audit Gate (No Phantom Gates)
+
+Objective
+Implement merge-blocking CI topology audit to prevent silent governance drift by validating truth-required checks exist in workflows and that CI aggregation is wired correctly.
+
+Changes
+- Added scripts/ci_topology_audit.mjs (YAML-parse; derives <workflow.name> / <job.name||jobId>; validates truth membership; validates required.needs for CI truth job IDs).
+- Added CI job ci-topology-audit and wired into required.needs in .github/workflows/ci.yml.
+- Added devDependency yaml to package.json to support deterministic YAML parsing.
+
+Proof
+- docs/proofs/2.16.4B_ci_topology_audit_20260212_163106Z.log
+
+DoD
+- CI green.
+- Merge-blocking gate ci-topology-audit present and aggregated via required.needs.
+- Proof log includes PROOF_HEAD and PROOF_SCRIPTS_HASH.
+
+Status
+PASS — PR #59 (https://github.com/Equity-Flow-Systems/equity-flow-system/pull/59)
+
+
+---
+
+
 ## 2026-02-12T15:45:31Z — Build Route 2.16.4A — CI Gate Wiring Closure (Required Checks + Policy Ruleset Snapshotting)
 
 ### Objective
@@ -758,4 +838,30 @@ Close CI aggregate-gate gap by ensuring:
   - docs/proofs/2.16.4A_ci_gate_wiring_closure_*.log
 
 Status: COMPLETE ✅
+
+
+---
+
+## 2026-02-12 — Build Route v2.4 — **2.16.4B CI Topology Audit Gate (No Phantom Gates Enforcement)**
+
+Objective  
+- Implement merge-blocking CI topology audit to prevent silent governance drift by validating truth-required checks exist in workflows and CI aggregation wiring is correct.
+
+Changes  
+- Added `scripts/ci_topology_audit.mjs` (YAML parse; derives `<workflow.name> / <job.name||jobId>`; validates truth membership; validates `required.needs` contains CI truth job IDs).
+- Added `ci-topology-audit` job to `.github/workflows/ci.yml` and wired it into `required.needs` (merge-blocking via aggregate).
+- Added `yaml` as a dev dependency in `package.json` to support deterministic YAML parsing.
+
+Proof  
+- `docs/proofs/2.16.4B_ci_topology_audit_20260212_163106Z.log`
+
+DoD  
+- `ci-topology-audit` runs on `pull_request`.
+- Loads required check names from `docs/truth/required_checks.json`.
+- Asserts truth-required checks exist as workflow-derived check names.
+- Asserts `.github/workflows/ci.yml` job `required` exists and `required.needs` includes the CI truth job IDs.
+- Gate `ci-topology-audit` is merge-blocking.
+
+Status
+- PASS — PR #59
 
