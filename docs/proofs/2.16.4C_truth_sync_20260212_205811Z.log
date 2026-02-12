@@ -1,0 +1,16 @@
+PROOF_HEAD=b5de15e040c405d4a59b6294783a5686dd10c0b6
+PROOF_SCRIPTS_HASH=4f3e6faec358b92def0b582847d13928210a825082168660decb7859800d42e1
+PR_HEAD=b5de15e040c405d4a59b6294783a5686dd10c0b6
+UTC_TS=20260212_205811Z
+
+> equity-flow-system@0.0.0 truth:sync
+> node scripts/truth_sync_required_checks.mjs
+
+
+> equity-flow-system@0.0.0 truth:sync
+> node scripts/truth_sync_required_checks.mjs
+
+--- git status --porcelain ---
+?? docs/proofs/2.16.4C_truth_sync_20260212_205811Z.log
+--- git diff --name-only ---
+RESULT=PASS

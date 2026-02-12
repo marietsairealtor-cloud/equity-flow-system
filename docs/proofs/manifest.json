@@ -3,6 +3,7 @@
   "algo": "sha256",
   "generated_utc": "2026-02-11T18:26:49Z",
   "files": {
+    "docs/proofs/2.16.4C_truth_sync_20260212_205811Z.log": "32b1e441e2d399ae362e2a74b4d5d428bc47871c97e1fc14457be28d6a85006e",
     "docs/proofs/_archive/1.1_port_manifest_20260207_224410.log": "d44d258e95507c63be5b65fbba35f9dfb705940a3d242cf2add350ff8e2c055d",
     "docs/proofs/_archive/1.1_port_manifest_20260207_230804.log": "a73ca94be7e64b2328bfb1b1c3ddd182dd6035c3f33a8370bb257eede470809c",
     "docs/proofs/_archive/1.3_ci_local_20260208_001355.log": "9165e7b98802956270b93f65d3a82150aa0db9bc1b16b221e1907622f9010a59",
