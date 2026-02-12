@@ -46,6 +46,9 @@ The following workflows are required and merge-blocking:
 - `.github/workflows/secrets-scan.yml`
 - `.github/workflows/stop-the-line.yml`
 
+
+- NOTE: CI topology is structurally enforced by the merge-blocking gate `ci-topology-audit` (enforcement only; not a policy authority source).
+
 If any required workflow fails → merge blocked.
 
 ---
