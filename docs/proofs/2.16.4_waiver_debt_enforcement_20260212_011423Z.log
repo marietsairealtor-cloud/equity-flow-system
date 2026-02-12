@@ -1,0 +1,13 @@
+PROOF_HEAD=6c25a343e7d1df69660d891aa69ff0cdee73200b
+PROOF_SCRIPTS_HASH=4f3e6faec358b92def0b582847d13928210a825082168660decb7859800d42e1
+
+=== waiver-debt-enforcement ===
+WINDOW_DAYS= 14
+THRESHOLD= 1 (hard fail if > THRESHOLD)
+WAIVERS_TOUCHED= 1
+WAIVER_FILES=
+ - docs/waivers/WAIVER_PR999.md
+RESULT=WARN
+WARN: 1 waiver touched in last 14 days (<= threshold). Cleanup required soon.
+
+RESULT_EXITCODE=0

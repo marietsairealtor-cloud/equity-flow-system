@@ -24,6 +24,9 @@
       "name": "CI / proof-commit-binding",
       "type": "github_status",
       "required": true
+    },
+    {
+      "name": "CI / waiver-debt-enforcement"
     }
   ]
 }
