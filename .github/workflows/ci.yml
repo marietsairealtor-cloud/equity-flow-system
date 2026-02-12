@@ -131,9 +131,22 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npm run toolchain:contract
+      
+  waiver-debt-enforcement:
+    name: waiver-debt-enforcement
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: waiver-debt-enforcement
+        run: node scripts/waiver_debt_enforcement.mjs
 
   required:
-    needs: [test, toolchain-contract, ci-semantic-contract]
+    needs: [test, toolchain-contract, ci-semantic-contract, waiver-debt-enforcement]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
