@@ -1,0 +1,43 @@
+UTC: 20260212_153352Z
+BRANCH: pr/2.16.4A-devlog
+PROOF_HEAD=39434224c2cd05340c1ba9417353f105fe74b988
+PROOF_SCRIPTS_HASH=4f3e6faec358b92def0b582847d13928210a825082168660decb7859800d42e1
+
+=== npm run required-checks-contract ===
+
+> equity-flow-system@0.0.0 required-checks-contract
+> node scripts/required_checks_contract.mjs
+
+=== required-checks-contract ===
+WORKFLOWS: 5
+DISCOVERED_CHECKS:
+ - CI / changes
+ - CI / ci-semantic-contract
+ - CI / db-heavy
+ - CI / env-sanity
+ - CI / governance-change-guard
+ - CI / main-moved-guard
+ - CI / proof-commit-binding
+ - CI / required
+ - CI / test
+ - CI / toolchain-contract
+ - CI / waiver-debt-enforcement
+ - placeholder / placeholder
+ - policy-drift-attestation / policy-drift-attestation
+ - secrets-scan / secrets-scan
+ - stop-the-line / stop-the-line
+REQUIRED_CHECKS:
+ - CI / test
+ - secrets-scan / secrets-scan
+ - CI / env-sanity
+ - stop-the-line / stop-the-line
+ - CI / proof-commit-binding
+ - CI / waiver-debt-enforcement
+=== verify: no lane-only checks in required_checks.json ===
+PASS lane-only excluded
+=== verify: required_checks.json matches workflow job names (string-exact) ===
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+
+=== NOTE ===
+policy_drift_attest snapshot regeneration requires POLICY_DRIFT_TOKEN and is executed in scheduled CI; local run without token is expected to fail.
