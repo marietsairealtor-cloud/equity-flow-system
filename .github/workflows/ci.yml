@@ -146,7 +146,7 @@ jobs:
         run: node scripts/waiver_debt_enforcement.mjs
 
   required:
-    needs: [test, toolchain-contract, ci-semantic-contract, waiver-debt-enforcement]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)

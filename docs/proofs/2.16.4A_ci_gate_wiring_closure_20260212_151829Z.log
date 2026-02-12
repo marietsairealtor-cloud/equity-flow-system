@@ -1,0 +1,81 @@
+UTC: 20260212_151829Z
+BRANCH: pr/2.16.4A-devlog
+HEAD: b15809d15fd38453489984f09724e0481e40852a
+
+=== truth required checks ===
+{
+  "checks": [
+    {
+      "name": "CI / test",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "secrets-scan / secrets-scan",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / env-sanity",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "stop-the-line / stop-the-line",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / proof-commit-binding",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / waiver-debt-enforcement",
+      "type": "github_status",
+      "required": true
+    }
+  ]
+}
+
+=== ci.yml required.needs ===
+148:  required:
+
+=== npm run required-checks-contract ===
+
+> equity-flow-system@0.0.0 required-checks-contract
+> node scripts/required_checks_contract.mjs
+
+=== required-checks-contract ===
+WORKFLOWS: 5
+DISCOVERED_CHECKS:
+ - CI / changes
+ - CI / ci-semantic-contract
+ - CI / db-heavy
+ - CI / env-sanity
+ - CI / governance-change-guard
+ - CI / main-moved-guard
+ - CI / proof-commit-binding
+ - CI / required
+ - CI / test
+ - CI / toolchain-contract
+ - CI / waiver-debt-enforcement
+ - placeholder / placeholder
+ - policy-drift-attestation / policy-drift-attestation
+ - secrets-scan / secrets-scan
+ - stop-the-line / stop-the-line
+REQUIRED_CHECKS:
+ - CI / test
+ - secrets-scan / secrets-scan
+ - CI / env-sanity
+ - stop-the-line / stop-the-line
+ - CI / proof-commit-binding
+ - CI / waiver-debt-enforcement
+=== verify: no lane-only checks in required_checks.json ===
+PASS lane-only excluded
+=== verify: required_checks.json matches workflow job names (string-exact) ===
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+
+=== NOTE ===
+policy_drift_attest snapshot regeneration requires POLICY_DRIFT_TOKEN and is executed in scheduled CI; local run without token is expected to fail.
