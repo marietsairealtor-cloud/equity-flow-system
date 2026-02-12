@@ -1,0 +1,97 @@
+UTC: 20260212_153030Z
+BRANCH: pr/2.16.4A-devlog
+PROOF_HEAD=c5a7fba45679d8e36a287e17d42475a659ec6fe4
+PROOF_SCRIPTS_HASH=[31;1m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mUnexpected token '`"' in expression or statement.[0m
+
+=== truth required checks ===
+{
+  "checks": [
+    {
+      "name": "CI / test",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "secrets-scan / secrets-scan",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / env-sanity",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "stop-the-line / stop-the-line",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / proof-commit-binding",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / waiver-debt-enforcement",
+      "type": "github_status",
+      "required": true
+    }
+  ]
+}
+
+=== ci.yml required.needs ===
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: waiver-debt-enforcement
+        run: node scripts/waiver_debt_enforcement.mjs
+
+  required:
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement]
+    runs-on: ubuntu-latest
+    steps:
+      - name: required (aggregate)
+        shell: pwsh
+        run: |
+          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+=== npm run required-checks-contract ===
+
+> equity-flow-system@0.0.0 required-checks-contract
+> node scripts/required_checks_contract.mjs
+
+=== required-checks-contract ===
+WORKFLOWS: 5
+DISCOVERED_CHECKS:
+ - CI / changes
+ - CI / ci-semantic-contract
+ - CI / db-heavy
+ - CI / env-sanity
+ - CI / governance-change-guard
+ - CI / main-moved-guard
+ - CI / proof-commit-binding
+ - CI / required
+ - CI / test
+ - CI / toolchain-contract
+ - CI / waiver-debt-enforcement
+ - placeholder / placeholder
+ - policy-drift-attestation / policy-drift-attestation
+ - secrets-scan / secrets-scan
+ - stop-the-line / stop-the-line
+REQUIRED_CHECKS:
+ - CI / test
+ - secrets-scan / secrets-scan
+ - CI / env-sanity
+ - stop-the-line / stop-the-line
+ - CI / proof-commit-binding
+ - CI / waiver-debt-enforcement
+=== verify: no lane-only checks in required_checks.json ===
+PASS lane-only excluded
+=== verify: required_checks.json matches workflow job names (string-exact) ===
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+
+=== NOTE ===
+policy_drift_attest snapshot regeneration requires POLICY_DRIFT_TOKEN and is executed in scheduled CI; local run without token is expected to fail.
