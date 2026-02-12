@@ -2,3 +2,4 @@ UTC_TS=20260212_163106Z
 HEAD=3399bf4819e24d6c3b243938d7982e31844fb4e6
 BRANCH=pr/2.16.4B-ci-topology-audit
 CMD=node scripts/ci_topology_audit.mjs
+PROOF_HEAD=3e74874a15eeef4cad18ed727c58b347ff02fc73
