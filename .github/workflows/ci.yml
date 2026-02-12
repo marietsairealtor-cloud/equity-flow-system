@@ -145,8 +145,21 @@ jobs:
       - name: waiver-debt-enforcement
         run: node scripts/waiver_debt_enforcement.mjs
 
+
+  ci-topology-audit:
+    name: ci-topology-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: ci-topology-audit
+        run: node scripts/ci_topology_audit.mjs
+
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
