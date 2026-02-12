@@ -865,3 +865,69 @@ DoD
 Status
 - PASS — PR #59
 
+
+## 2026-02-12 — Build Route v2.4 — **2.16.4C Truth Sync Enforced (CI-only required checks)**
+
+Objective
+- Define “required” as CI-topology only (derived from `ci.yml:required.needs`) and enforce regen-invariant via merge-blocking truth sync.
+
+Changes
+- Added `truth-sync-enforced` job to `.github/workflows/ci.yml` and wired into `jobs.required.needs`.
+- Added generator `scripts/truth_sync_required_checks.mjs` and `npm run truth:sync` to deterministically rewrite `docs/truth/required_checks.json`.
+- Updated `scripts/ci_semantic_contract.mjs` allowlist to permit `npm run truth:sync` gate.
+- Updated proof manifest entries for new proof logs.
+
+Proof
+- docs/proofs/2.16.4C_truth_sync_20260212_193531Z.log
+- docs/proofs/2.16.4C_truth_sync_20260212_205811Z.log
+
+DoD
+- `truth:sync` deterministically rewrites CI-only truth from `required.needs` (sorted; UTF-8; trailing newline).
+- Idempotent: two consecutive `truth:sync` runs produce no diff (`git diff --exit-code`).
+- Merge-blocking gate `truth-sync-enforced` runs `npm run truth:sync && git diff --exit-code`.
+- `truth-sync-enforced` included in `jobs.required.needs`.
+
+Status
+PASS
+
+
+## 2026-02-12 — Build Route v2.4 Update — Wholesale Hub Integration
+
+Objective
+- Extend Build Route v2.4 (Rebuild Mode) to explicitly support Free MAO Calculator → Per-Seat Wholesale Hub (USD, single tier) without altering stack (Supabase + WeWeb) or weakening governance guarantees.
+
+Changes
+- Added Build Route items: Section 6 (6.6–6.8), Section 7 (7.4–7.5), Section 10 (10.3–10.6), Section 11 (11.8–11.9).
+- Preserved invariants: RLS day one, calc_version persisted, idempotent server-side writes, merge-blocking security gates; no enterprise CRM scope.
+
+Proof
+- N/A (Build Route update only)
+
+DoD
+- Build Route v2.4 updated with listed items
+- No locked-section edits outside intended insertion points
+
+Status
+PASS
+
+---
+
+## 2026-02-12 — Build Route Extension — 2.16.5A–2.16.5G (Foundation/Product Split)
+
+Objective
+- Extend Build Route v2.4 after 2.16.5 to formally separate Foundation (shared platform layer) from Product/UI (fork-specific layer) to support multi-product reuse without weakening governance.
+
+Changes
+- Added items 2.16.5A–2.16.5G immediately after 2.16.5; downstream numbering unchanged.
+- Defined boundary contract, repo layout separation, invariants suite, lane separation enforcement, versioning/fork protocol, anti-divergence detector, product scaffold generator.
+
+Proof
+- N/A (Build Route update only)
+
+DoD
+- Build Route v2.4 updated with items listed above
+- No modifications to locked sections prior to 2.16.5
+
+Status
+PASS
+
