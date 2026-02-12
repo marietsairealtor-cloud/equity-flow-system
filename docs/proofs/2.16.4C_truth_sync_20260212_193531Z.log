@@ -1,0 +1,18 @@
+ITEM=2.16.4C
+PR_HEAD=8df216de6db59481d959aaaa3b687c863ab1f38c
+UTC_TS=20260212_193531Z
+--- npm run truth:sync (1) ---
+
+> equity-flow-system@0.0.0 truth:sync
+> node scripts/truth_sync_required_checks.mjs
+
+--- npm run truth:sync (2) ---
+
+> equity-flow-system@0.0.0 truth:sync
+> node scripts/truth_sync_required_checks.mjs
+
+--- git diff --name-only (should be empty) ---
+.github/workflows/ci.yml
+docs/truth/required_checks.json
+package.json
+RESULT=PASS
