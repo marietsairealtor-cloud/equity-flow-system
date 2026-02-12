@@ -710,3 +710,18 @@ Gate
 - ci-semantic-contract
 (merge-blocking only on workflow changes)
 
+
+2026-02-11 — Build Route v2.16.4A — waiver-debt-enforcement CI wiring
+Objective
+Wire waiver-debt-enforcement into CI and make it merge-blocking via the required aggregate gate.
+Changes
+- .github/workflows/ci.yml: add job waiver-debt-enforcement (checkout fetch-depth: 0, Node 20, run scripts/waiver_debt_enforcement.mjs)
+- .github/workflows/ci.yml: required.needs includes waiver-debt-enforcement
+Proof
+- Merged on main: commit 56c6719 (PR #55)
+- CI on 56c6719 shows CI / waiver-debt-enforcement and CI / required passing
+DoD
+waiver-debt-enforcement runs in CI and is enforced via required.needs.
+Status
+Merged
+
