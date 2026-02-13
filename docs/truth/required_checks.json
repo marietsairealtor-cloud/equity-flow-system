@@ -39,6 +39,11 @@
       "name": "CI / waiver-debt-enforcement",
       "type": "github_status",
       "required": true
+    },
+    {
+      "name": "CI / proof-manifest",
+      "required": true,
+      "type": "github_status"
     }
   ]
 }
