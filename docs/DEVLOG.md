@@ -1010,3 +1010,31 @@ Working tree clean
 Status  
 MERGED
 
+
+## 2026-02-13 — Build Route v2.4 — 2.16.5A Foundation Boundary Contract (Scope Tighten)
+
+Objective  
+Tighten 2.16.5A to explicitly define Foundation as governance + core DB security layer and clarify enforcement is via existing governance gates + human review (no new gate introduced).
+
+Changes  
+- Updated wording in:
+  docs/artifacts/Build Route v2.4 - Rebuild Mode.md
+- Clarified:
+  * Foundation = governance + core DB security layer
+  * Product must not weaken Foundation invariants
+  * No new CI gate added
+- No enforcement logic, required checks, or CI topology modified.
+
+Proof  
+Docs-only PR  
+CI green  
+Incident recorded for prior process order violation  
+Post-merge verify-only gates PASS
+
+DoD  
+PR opened → CI green → QA PASS → merged  
+Working tree clean on main  
+
+Status  
+MERGED
+
