@@ -1,4 +1,12 @@
-﻿name: CI
+name: CI
+          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+        run: |
+      - name: normalize proofs to LF
+        shell: bash
+        run: |
+          find docs/proofs -type f -print0 | xargs -0 sed -i 's/\r$//'
+          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+name: CI
 
 on:
   pull_request:
