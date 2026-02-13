@@ -369,3 +369,12 @@ Gate also triggered POST_PROOF_NON_PROOF_CHANGE when proof discipline was violat
 Status: CLOSED
 
 
+
+## 2026-02-13T02:02:46Z — Process Order Violation (Merged Before QA PASS) — LOW
+
+- Scope: Docs-only (Build Route 2.16.5A wording)
+- What happened: PR merged before QA PASS (process order violated).
+- Impact: No enforcement logic / required checks / CI topology changed.
+- Remediation: Reinforce merge-after-QA rule; require QA PASS confirmation before merge.
+- Evidence: Post-merge verify-only gates PASS on main (required-checks-contract, proof-commit-binding).
+
