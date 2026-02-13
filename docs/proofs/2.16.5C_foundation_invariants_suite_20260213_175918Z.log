@@ -1,0 +1,66 @@
+PROOF_ITEM=2.16.5C
+UTC=20260213_175918Z
+PROOF_HEAD=31f8f6f2fab57acaca12db750ac3a77dbb5d4e19
+PROOF_SCRIPTS_HASH=
+
+CMD: node scripts/ci_foundation_invariants.mjs
+
+CI_WIRING_EVIDENCE:
+   150	
+   151	
+   152	  ci-topology-audit:
+   153	    name: ci-topology-audit
+   154	    runs-on: ubuntu-latest
+   155	    steps:
+   156	      - uses: actions/checkout@v4
+   157	      - uses: actions/setup-node@v4
+   158	        with:
+   159	          node-version: "20"
+   160	      - run: npm ci
+   161	      - name: ci-topology-audit
+   162	        run: node scripts/ci_topology_audit.mjs
+   163	
+   164	  foundation-invariants:
+   165	    name: foundation-invariants
+   166	    needs: [changes]
+   167	    if: needs.changes.outputs.governance == 'true'
+   168	    runs-on: ubuntu-latest
+   169	    steps:
+   170	      - name: allowlisted-gate
+   171	        run: echo allowlisted-gate
+   172	      - uses: actions/checkout@v4
+   173	      - uses: actions/setup-node@v4
+   174	        with: { node-version: "20" }
+   175	      - run: npm ci
+   176	      - name: foundation-invariants
+   177	        run: node scripts/ci_foundation_invariants.mjs
+   178	  truth-sync-enforced:
+   179	    name: truth-sync-enforced
+   180	    runs-on: ubuntu-latest
+   181	    steps:
+   182	      - uses: actions/checkout@v4
+   183	      - uses: actions/setup-node@v4
+   184	        with: { node-version: "20" }
+   185	      - run: npm ci
+   186	      - name: truth-sync-enforced
+   187	        run: npm run truth:sync && git diff --exit-code
+   188	
+   189	  required:
+   190	    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, foundation-invariants]
+   191	    runs-on: ubuntu-latest
+   192	    steps:
+   193	      - name: required (aggregate)
+   194	        shell: pwsh
+   195	        run: |
+   196	          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+   197	
+   198	
+   199	
+   200	
+   201	
+   202	
+   203	
+   204	
+   205	
+
+NOTE: 2.16.5C remains BLOCKED — missing foundation schema/surface.
