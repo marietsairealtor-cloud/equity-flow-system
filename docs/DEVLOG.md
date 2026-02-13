@@ -1038,3 +1038,35 @@ Working tree clean on main
 Status  
 MERGED
 
+
+## 2026-02-13 — Build Route v2.4 — 2.16.5B Repo Layout Separation
+
+Objective
+Implement physical directory separation between Foundation and Product layers, with deterministic CI path-filter enforcement and explicit no-cross-write rule.
+
+Changes
+- Added CI path filters:
+  * governance includes supabase/foundation/**
+  * products includes products/**
+- Documented explicit boundary rule (no cross-write) in:
+  docs/artifacts/CONTRACTS.md
+- Moved Foundation DB placeholder path:
+  supabase/migrations/.gitkeep -> supabase/foundation/migrations/.gitkeep
+- Added governance change justification:
+  docs/governance/GOVERNANCE_CHANGE_PR003.md
+
+Proof
+- Proof log committed:
+  docs/proofs/2.16.5B_repo_layout_separation_20260213_141217Z.log
+- CI green incl. proof-commit-binding PASS
+
+DoD
+PR opened → CI green → QA PASS → merged
+Post-merge verify-only gates PASS on main
+Working tree clean
+
+Refs
+- Merge commit: 640c7428725188564f1955e623603b618b7720d9
+
+Status
+MERGED
