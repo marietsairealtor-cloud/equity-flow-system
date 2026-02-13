@@ -125,3 +125,16 @@ products/placeholder
 }
 
 PASS
+
+=== NO CROSS-WRITE (docs/artifacts/CONTRACTS.md excerpt) ===
+211:## Repo Layer Boundary — No Cross-Write
+## Repo Layer Boundary — No Cross-Write
+
+- Product layer (products/**) MUST NOT modify Foundation (supabase/foundation/**).
+- Foundation changes ONLY via approved upgrade protocol (governance PR with proof).
+
+=== DENYLIST / NEVER-PORT EVIDENCE (gitignore + tracked-files check) ===
+.gitignore entries:
+Tracked under supabase/.branches or supabase/.temp (should be none):
+
+PASS
