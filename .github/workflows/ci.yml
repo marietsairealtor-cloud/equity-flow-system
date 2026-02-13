@@ -4,6 +4,11 @@ name: CI
         run: |
           ./scripts/ci_proof_manifest.ps1
 name: CI
+          ./scripts/ci_proof_manifest.ps1
+        run: |
+        run: |
+          ./scripts/ci_proof_manifest.ps1
+name: CI
 
 on:
   pull_request:
@@ -175,6 +180,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+          ./scripts/ci_proof_manifest.ps1
+        run: |
+        shell: pwsh
         with: { node-version: "20" }
       - run: npm ci
       - name: truth-sync-enforced
