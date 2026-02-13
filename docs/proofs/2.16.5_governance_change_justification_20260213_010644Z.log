@@ -1,6 +1,6 @@
 PROOF_SCRIPTS_HASH=4f3e6faec358b92def0b582847d13928210a825082168660decb7859800d42e1
 
-PROOF_HEAD=97a2f5fe2ebe1dd9947c2c66c50423083654c3a9
+PROOF_HEAD=59a5be579d5a67d022793c603563d8ca34396d04
 ITEM=2.16.5
 ACTION=prepare-proof-stub
 NOTE=Awaiting authoritative Build Route file path to apply doc-only clarification text.
