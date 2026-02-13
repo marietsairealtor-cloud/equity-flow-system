@@ -1,0 +1,63 @@
+PROOF_ITEM=2.16.5C
+UTC=20260213_155425Z
+PROOF_HEAD=ac70490373b650b186ecbe4254d1596b5eff7fbf
+PROOF_SCRIPTS_HASH=
+
+CMD: npm run foundation:invariants
+BLOCKED_NO_FOUNDATION_SURFACE: no SQL migrations under supabase/foundation/migrations; skipping invariants
+
+CI_WIRING_EVIDENCE: .github/workflows/ci.yml (foundation-invariants + required.needs)
+   145	      - uses: actions/setup-node@v4
+   146	        with:
+   147	          node-version: "20"
+   148	      - name: waiver-debt-enforcement
+   149	        run: node scripts/waiver_debt_enforcement.mjs
+   150	
+   151	
+   152	  ci-topology-audit:
+   153	    name: ci-topology-audit
+   154	    runs-on: ubuntu-latest
+   155	    steps:
+   156	      - uses: actions/checkout@v4
+   157	      - uses: actions/setup-node@v4
+   158	        with:
+   159	          node-version: "20"
+   160	      - run: npm ci
+   161	      - name: ci-topology-audit
+   162	        run: node scripts/ci_topology_audit.mjs
+   163	
+   164	  foundation-invariants:
+   165	    name: foundation-invariants
+   166	    needs: [changes]
+   167	    if: needs.changes.outputs.governance == 'true'
+   168	    runs-on: ubuntu-latest
+   169	    steps:
+   170	      - uses: actions/checkout@v4
+   171	      - uses: actions/setup-node@v4
+   172	        with: { node-version: "20" }
+   173	      - run: npm ci
+   174	      - name: foundation-invariants
+   175	        run: npm run foundation:invariants
+   176	  truth-sync-enforced:
+   177	    name: truth-sync-enforced
+   178	    runs-on: ubuntu-latest
+   179	    steps:
+   180	      - uses: actions/checkout@v4
+   181	      - uses: actions/setup-node@v4
+   182	        with: { node-version: "20" }
+   183	      - run: npm ci
+   184	      - name: truth-sync-enforced
+   185	        run: npm run truth:sync && git diff --exit-code
+   186	
+   187	  required:
+   188	    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, foundation-invariants]
+   189	    runs-on: ubuntu-latest
+   190	    steps:
+   191	      - name: required (aggregate)
+   192	        shell: pwsh
+   193	        run: |
+   194	          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+   195	
+   196	
+
+NOTE: 2.16.5C remains BLOCKED — missing foundation schema/surface.
