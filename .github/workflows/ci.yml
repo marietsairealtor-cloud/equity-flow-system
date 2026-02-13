@@ -188,12 +188,13 @@ jobs:
 
   required:
     needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, foundation-invariants]
-runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
         shell: pwsh
         run: |
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
 
 
 
