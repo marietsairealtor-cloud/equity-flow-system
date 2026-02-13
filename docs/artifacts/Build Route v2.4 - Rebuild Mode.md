@@ -656,18 +656,18 @@ existing governance-change-guard \+ human review.
 
 # **2.16.5A — Foundation Boundary Contract**
 
-Deliverable: Explicit boundary defined between Foundation (shared platform layer) and Product/UI (fork-specific layer).
+Deliverable: Explicit boundary defined between Foundation (governance + core DB security layer) and Product/UI (fork-specific layer).
 
 DoD:
 
-* Foundation owns:  
+* Foundation = governance + core DB security layer. Foundation owns:  
   * Tenancy model  
   * Memberships \+ roles  
   * Entitlement truth  
   * Activity log contract  
   * Baseline RLS policies \+ negative tests  
   * Core CI contracts/proofs  
-* Product/UI owns:  
+* Product/UI owns (must not weaken Foundation invariants):  
   * Product domain tables  
   * WeWeb pages and flows  
   * Product-specific views/functions extending baseline  
