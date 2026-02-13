@@ -3,3 +3,6 @@
 
 # proofs should be LF-stable across OS
 docs/proofs/*.log text eol=lf
+
+# proofs: enforce LF across all extensions
+docs/proofs/** text eol=lf
