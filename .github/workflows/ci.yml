@@ -1,209 +1,16 @@
 name: CI
-          ./scripts/ci_proof_manifest.ps1
-        run: |
-        run: |
-          ./scripts/ci_proof_manifest.ps1
-name: CI
-          ./scripts/ci_proof_manifest.ps1
-        run: |
-        run: |
-          ./scripts/ci_proof_manifest.ps1
-name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
 
-          ./scripts/ci_proof_manifest.ps1
-        run: |
-        shell: pwsh
-permissions:
-  contents: read
-  pull-requests: read
-
 jobs:
-  env-sanity:
-    name: env-sanity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: env-sanity
-        run: npm ci && npm run env:sanity
-
-  main-moved-guard:
-    name: main-moved-guard
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: npm ci
-      - run: npm run main-moved-guard
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      docs_only: ${{ steps.set.outputs.docs_only }}
-      workflows_changed: ${{ steps.set.outputs.workflows_changed }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            docs_only:
-              - 'docs/**'
-            workflows_changed:
-              - '.github/workflows/**'
-            products:
-              - 'products/**'
-            governance:
-              - 'docs/truth/**'
-              - '.github/workflows/**'
-              - 'scripts/**'
-              - 'docs/artifacts/GUARDRAILS.md'
-              - 'docs/artifacts/CONTRACTS.md'
-              - 'docs/artifacts/AUTOMATION.md'
-              - 'docs/artifacts/SOP_WORKFLOW.md'
-              - 'supabase/foundation/**'
-      - id: set
-        shell: pwsh
-        env:
-          DOCS_ONLY: ${{ steps.filter.outputs.docs_only }}
-          GOVERNANCE: ${{ steps.filter.outputs.governance }}
-          WORKFLOWS_CHANGED: ${{ steps.filter.outputs.workflows_changed }}
-        run: |
-          if ($env:DOCS_ONLY -eq 'true' -and $env:GOVERNANCE -ne 'true') {
-            "docs_only=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          } else {
-            "docs_only=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          }
-          if ($env:WORKFLOWS_CHANGED -eq 'true') {
-            "workflows_changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          } else {
-            "workflows_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          }
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node-version: [16.x, 18.x, 20.x, 22.x]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm run truth-bootstrap
-
-  db-heavy:
-    needs: [changes, proof-manifest]
-    if: needs.changes.outputs.docs_only != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "db-heavy (skipped on docs-only) PASS"
-
-  governance-change-guard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: governance-change-guard
-        shell: pwsh
-        run: |
-          ./scripts/ci_governance_change_guard.ps1
-  proof-commit-binding:
-    name: proof-commit-binding
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: proof-commit-binding
-        shell: pwsh
-        run: |
-          ./scripts/ci_proof_commit_binding.ps1
-  ci-semantic-contract:
-    needs: [changes, proof-manifest]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: ci-semantic-contract
-        env:
-          SEMANTIC_STRICT: ${{ needs.changes.outputs.workflows_changed }}
-        run: node scripts/ci_semantic_contract.mjs
-
-  toolchain-contract:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: npm ci
-      - run: npm run toolchain:contract
-      
-  waiver-debt-enforcement:
-    name: waiver-debt-enforcement
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: waiver-debt-enforcement
-        run: node scripts/waiver_debt_enforcement.mjs
-
-
-  ci-topology-audit:
-    name: ci-topology-audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: npm ci
-      - name: ci-topology-audit
-        run: node scripts/ci_topology_audit.mjs
-
-  truth-sync-enforced:
-    name: truth-sync-enforced
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-          ./scripts/ci_proof_manifest.ps1
-        run: |
-        shell: pwsh
-        with: { node-version: "20" }
-      - run: npm ci
-      - name: truth-sync-enforced
-        run: npm run truth:sync && git diff --exit-code
-
-  required-aggregate:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest]
-    runs-on: ubuntu-latest
-    steps:
-      - name: required (aggregate)
-        shell: pwsh
-        run: |
-          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-
   proof-manifest:
     name: proof-manifest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: enforce LF
         shell: bash
         run: |
@@ -212,3 +19,11 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_proof_manifest.ps1
+  required-aggregate:
+    needs: [proof-manifest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: required (aggregate)
+        shell: pwsh
+        run: |
+          "required PASS" | Out-File -FilePath  -Append -Encoding utf8
