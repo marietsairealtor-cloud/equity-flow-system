@@ -23,7 +23,7 @@
     "docs/proofs/1.2_port_governance_runnable_20260207_234238.log": "ab7fb18015aa2596a3aacf9514705a071821ffdbec691e35f2d39628f904e411",
     "docs/proofs/1.3_denylist_20260208_002421.log": "37a1c3db1573f0dd7b0dcc69c95f7fb3398c2b83b1d5bf499fac32bba5f114e8",
     "docs/proofs/1.4_regen_policy_20260208_003105.log": "c2d6ba4d91684bcd48a97fdf089f0d5b0a2b90d403f909c1d8e449f15c0b4e99",
-    "docs/proofs/1.5_doc_corrections_fix_20260208_004544.md": "158e2a28d85a14503502d412b57abd7b63659e6191b08ab7aa836a90ffb1084e",
+    "docs/proofs/1.5_doc_corrections_fix_20260208_004544.md": "B705A3FF475730DD30AAA824B5B772538069C500C1360316DBDD0DCB160ADAE6",
     "docs/proofs/2.1_repo_bootstrap_20260208_012254.md": "2c02b588d50cce393151764bbf83e8f067b82936370c31d220d9cf975663afe4",
     "docs/proofs/2.10_proof_manifest_20260209_184616Z.log": "be8b8d16e34632e90da980653f86af11b6f4e77dec06eff0b209ae93365a4895",
     "docs/proofs/2.11_proof_redaction_escape_hatch_20260209_194412Z.log": "f0b62deb74874faeeadaa0f5ba0f459cb7c093bc5c3301bd26c0ecb0f3cc0ac3",
@@ -57,7 +57,6 @@
     "docs/proofs/2.16.4C_truth_sync_20260212_193531Z.log": "d6dc6316633b1d59ad306e9b662c690e2395e3137d05daf6c1246b6b06359f08",
     "docs/proofs/2.16.5_governance_change_justification_20260213_010644Z.log": "29EA814033ACBDD9C84239EC58BA25E779DB35AC1650DBEDB4A535CE80E8CD90",
     "docs/proofs/2.16.5A_foundation_boundary_contract_.log": "D1A3706B6CBAE7BD68ABA8E632A9F312B3C8A1D2D9B183FB7B64CC4F90D769E6",
-    "docs/proofs/2.16.5B_repo_layout_separation_20260213_010644Z.log": null,
     "docs/proofs/2.16.5B_repo_layout_separation_20260213_141217Z.log": "75EFFE46227AD5FC3851801D7270F5B5F90D936351E095D8A4D3BCE30762C14F"
   }
 }
