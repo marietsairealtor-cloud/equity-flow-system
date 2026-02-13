@@ -984,3 +984,29 @@ No speculative hardening.
 Next
 Proceed to Section 3 (Automation Build). No further Section 2 additions without meeting the stop rule.
 
+
+## 2026-02-13 — Build Route v2.4 — 2.16.5 Governance-Change Justification (Human Contract)
+
+Objective  
+Clarify 2.16.5 as a reviewer-discipline specification only (no new CI gate, no new required check), triggered solely when governance surface changes.
+
+Changes  
+- Updated 2.16.5 section in:
+  docs/artifacts/Build Route v2.4 - Rebuild Mode.md
+- Confirmed no new workflows, required checks, or enforcement scripts added.
+- Bound proof artifact with PROOF_HEAD + PROOF_SCRIPTS_HASH.
+
+Proof  
+docs/proofs/2.16.5_governance_change_justification_20260213_010644Z.log  
+Gov-only local gate pack PASS  
+CI green including proof-commit-binding PASS  
+Post-merge verify-only on main clean (truth:sync no diff)
+
+DoD  
+PR opened → CI green → approved → merged  
+Post-merge verify-only gates PASS on main  
+Working tree clean  
+
+Status  
+MERGED
+
