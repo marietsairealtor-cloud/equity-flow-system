@@ -1,0 +1,4 @@
+PROOF_HEAD=97a2f5fe2ebe1dd9947c2c66c50423083654c3a9
+ITEM=2.16.5
+ACTION=prepare-proof-stub
+NOTE=Awaiting authoritative Build Route file path to apply doc-only clarification text.
