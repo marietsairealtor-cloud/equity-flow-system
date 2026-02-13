@@ -1,58 +1,58 @@
 {
-    "name":  "equity-flow-system",
-    "private":  true,
-    "version":  "0.0.0",
-    "scripts":  {
-                    "renormalize:check":  "node scripts/check_renormalize.mjs",
-                    "build":  "node scripts/build.mjs",
-                    "ci:schema-drift":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_schema_drift.ps1",
-                    "docker:clean":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docker_cleanup_project.ps1",
-                    "docs:push":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs_push.ps1",
-                    "fix:encoding":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fix_encoding.ps1",
-                    "gen:contracts":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\gen_contracts_snapshot.ps1",
-                    "gen:schema":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\gen_schema.ps1",
-                    "green:once":  "node scripts/green_gate.mjs once",
-                    "green:twice":  "node scripts/green_gate.mjs twice",
-                    "handoff":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\handoff.ps1",
-                    "handoff:commit":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\handoff_commit.ps1",
-                    "lint:contracts":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\contracts_lint.ps1",
-                    "lint:migrations":  "node scripts/lint_migrations.mjs",
-                    "must:contain":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\must_contain.ps1",
-                    "preflight:encoding":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight_encoding.ps1",
-                    "ship":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ship_guard.ps1",
-                    "ship:inner":  "node scripts/ship.mjs",
-                    "lint:sql":  "node scripts/run_lint_sql.mjs",
-                    "db:push":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db_push_guard.ps1",
-                    "lint:pgtap":  "node scripts/lint_pgtap.mjs",
-                    "prepare":  "node scripts/prepare_ci_safe.mjs",
-                    "ci":  "npm run lint:migrations \u0026\u0026 npm run lint:sql \u0026\u0026 npm run lint:pgtap \u0026\u0026 npm run build",
-                    "toolchain:contract": "node scripts/check_toolchain.mjs",
-  "truth:sync": "node scripts/truth_sync_required_checks.mjs",
-                    "truth-bootstrap":  "node scripts/truth_bootstrap_check.mjs",
-                    "required-checks-contract":  "node scripts/required_checks_contract.mjs",
-                    "docs-only-ci-skip":  "node scripts/docs_only_ci_skip_contract.mjs",
-                    "main-moved-guard":  "node scripts/ci_main_moved_guard.mjs",
-                    "proof:manifest":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proof_manifest.ps1",
-                    "proofs:append-only":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proofs_append_only.ps1",
-                    "env:sanity":  "node scripts/env_sanity.mjs",
-                    "stop-the-line":  "node scripts/stop_the_line_gate.mjs",
-                    "proof:commit-binding":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_proof_commit_binding.ps1"
-                },
-    "devDependencies":  {
-                            "husky":  "^9.1.7",
-                            "lint-staged":  "^16.2.7",
-                            "yaml":  "^2.6.0"
-                        },
-    "lint-staged":  {
-                        "supabase/**/*.sql":  [
-                                                  "node scripts/run_lint_sql.mjs"
-                                              ],
-                        "**/*.{json,md,yml,yaml,js,mjs,ts,tsx,sql,ps1}":  [
-                                                                              "node scripts/lint_bom_gate.mjs"
-                                                                          ]
-                    },
-    "volta":  {
-                  "node":  "20.18.1"
-              }
+    "name": "equity-flow-system",
+    "private": true,
+    "version": "0.0.0",
+    "scripts": {
+        "renormalize:check": "node scripts/check_renormalize.mjs",
+        "build": "node scripts/build.mjs",
+        "ci:schema-drift": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_schema_drift.ps1",
+        "docker:clean": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docker_cleanup_project.ps1",
+        "docs:push": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs_push.ps1",
+        "fix:encoding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/fix_encoding.ps1",
+        "gen:contracts": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\gen_contracts_snapshot.ps1",
+        "gen:schema": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\gen_schema.ps1",
+        "green:once": "node scripts/green_gate.mjs once",
+        "green:twice": "node scripts/green_gate.mjs twice",
+        "handoff": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\handoff.ps1",
+        "handoff:commit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\handoff_commit.ps1",
+        "lint:contracts": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\contracts_lint.ps1",
+        "lint:migrations": "node scripts/lint_migrations.mjs",
+        "must:contain": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\must_contain.ps1",
+        "preflight:encoding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight_encoding.ps1",
+        "ship": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ship_guard.ps1",
+        "ship:inner": "node scripts/ship.mjs",
+        "lint:sql": "node scripts/run_lint_sql.mjs",
+        "db:push": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db_push_guard.ps1",
+        "lint:pgtap": "node scripts/lint_pgtap.mjs",
+        "prepare": "node scripts/prepare_ci_safe.mjs",
+        "ci": "npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build",
+        "toolchain:contract": "node scripts/check_toolchain.mjs",
+        "truth:sync": "node scripts/truth_sync_required_checks.mjs",
+        "truth-bootstrap": "node scripts/truth_bootstrap_check.mjs",
+        "required-checks-contract": "node scripts/required_checks_contract.mjs",
+        "docs-only-ci-skip": "node scripts/docs_only_ci_skip_contract.mjs",
+        "main-moved-guard": "node scripts/ci_main_moved_guard.mjs",
+        "proof:manifest": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proof_manifest.ps1",
+        "proofs:append-only": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_proofs_append_only.ps1",
+        "env:sanity": "node scripts/env_sanity.mjs",
+        "stop-the-line": "node scripts/stop_the_line_gate.mjs",
+        "proof:commit-binding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_proof_commit_binding.ps1",
+        "foundation:invariants": "node scripts/foundation/run_foundation_invariants.mjs"
+    },
+    "devDependencies": {
+        "husky": "^9.1.7",
+        "lint-staged": "^16.2.7",
+        "yaml": "^2.6.0"
+    },
+    "lint-staged": {
+        "supabase/**/*.sql": [
+            "node scripts/run_lint_sql.mjs"
+        ],
+        "**/*.{json,md,yml,yaml,js,mjs,ts,tsx,sql,ps1}": [
+            "node scripts/lint_bom_gate.mjs"
+        ]
+    },
+    "volta": {
+        "node": "20.18.1"
+    }
 }
-

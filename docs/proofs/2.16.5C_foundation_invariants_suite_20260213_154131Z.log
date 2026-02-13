@@ -1,0 +1,79 @@
+PROOF_ITEM=2.16.5C
+UTC=20260213_154131Z
+PROOF_HEAD=9b3ad9f1224a590d809631170170be7ac3022d31
+PROOF_SCRIPTS_HASH=fe1a1c507a24578440780be7866a7f554769559eb576471d9c3e0ee4c9663c78
+
+CMD: npm run foundation:invariants
+BLOCKED_NO_FOUNDATION_SURFACE: no SQL migrations under supabase/foundation/migrations; skipping invariants
+
+CI_WIRING_EVIDENCE: .github/workflows/ci.yml (foundation-invariants + required.needs)
+   140	    runs-on: ubuntu-latest
+   141	    steps:
+   142	      - uses: actions/checkout@v4
+   143	        with:
+   144	          fetch-depth: 0
+   145	      - uses: actions/setup-node@v4
+   146	        with:
+   147	          node-version: "20"
+   148	      - name: waiver-debt-enforcement
+   149	        run: node scripts/waiver_debt_enforcement.mjs
+   150	
+   151	
+   152	  ci-topology-audit:
+   153	    name: ci-topology-audit
+   154	    runs-on: ubuntu-latest
+   155	    steps:
+   156	      - uses: actions/checkout@v4
+   157	      - uses: actions/setup-node@v4
+   158	        with:
+   159	          node-version: "20"
+   160	      - run: npm ci
+   161	      - name: ci-topology-audit
+   162	        run: node scripts/ci_topology_audit.mjs
+   163	
+   164	  foundation-invariants:
+   165	    name: foundation-invariants
+   166	    needs: [changes]
+   167	    if: needs.changes.outputs.governance == 'true'
+   168	    runs-on: ubuntu-latest
+   169	    steps:
+   170	      - uses: actions/checkout@v4
+   171	      - uses: actions/setup-node@v4
+   172	        with: { node-version: "20" }
+   173	      - run: npm ci
+   174	      - name: foundation-invariants
+   175	        run: npm run foundation:invariants
+   176	
+   177	  ci-topology-audit:
+   178	    name: ci-topology-audit
+   179	    runs-on: ubuntu-latest
+   180	    steps:
+   181	      - uses: actions/checkout@v4
+   182	      - uses: actions/setup-node@v4
+   183	        with: { node-version: "20" }
+   184	      - run: npm ci
+   185	      - name: ci-topology-audit
+   186	        run: node scripts/ci_topology_audit.mjs
+   187	
+   188	  truth-sync-enforced:
+   189	    name: truth-sync-enforced
+   190	    runs-on: ubuntu-latest
+   191	    steps:
+   192	      - uses: actions/checkout@v4
+   193	      - uses: actions/setup-node@v4
+   194	        with: { node-version: "20" }
+   195	      - run: npm ci
+   196	      - name: truth-sync-enforced
+   197	        run: npm run truth:sync && git diff --exit-code
+   198	
+   199	  required:
+   200	    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, foundation-invariants, ci-topology-audit, truth-sync-enforced]
+   201	    runs-on: ubuntu-latest
+   202	    steps:
+   203	      - name: required (aggregate)
+   204	        shell: pwsh
+   205	        run: |
+   206	          "required PASS" | Out-File -FilePath  -Append -Encoding utf8
+   207	
+
+NOTE: 2.16.5C remains BLOCKED — missing foundation schema/surface.
