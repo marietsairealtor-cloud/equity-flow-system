@@ -188,7 +188,7 @@ jobs:
       - name: truth-sync-enforced
         run: npm run truth:sync && git diff --exit-code
 
-  required:
+  required-aggregate:
     needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest]
     runs-on: ubuntu-latest
     steps:
