@@ -43,6 +43,8 @@ jobs:
               - 'docs/**'
             workflows_changed:
               - '.github/workflows/**'
+            products:
+              - 'products/**'
             governance:
               - 'docs/truth/**'
               - '.github/workflows/**'
@@ -51,6 +53,7 @@ jobs:
               - 'docs/artifacts/CONTRACTS.md'
               - 'docs/artifacts/AUTOMATION.md'
               - 'docs/artifacts/SOP_WORKFLOW.md'
+              - 'supabase/foundation/**'
       - id: set
         shell: pwsh
         env:
@@ -177,3 +180,4 @@ jobs:
         shell: pwsh
         run: |
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
