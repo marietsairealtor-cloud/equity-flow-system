@@ -3,3 +3,5 @@
 
 # proofs should be LF-stable across OS
 docs/proofs/*.log text eol=lf
+
+docs/proofs/** text eol=lf
