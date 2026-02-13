@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   pull_request:
@@ -28,6 +28,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npm run main-moved-guard
+
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -71,6 +72,7 @@ jobs:
           } else {
             "workflows_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           }
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -101,6 +103,7 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_governance_change_guard.ps1
+
   proof-commit-binding:
     name: proof-commit-binding
     runs-on: ubuntu-latest
@@ -112,6 +115,23 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_proof_commit_binding.ps1
+
+  proof-manifest:
+    name: proof-manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: enforce LF
+        shell: bash
+        run: |
+          git config --global core.autocrlf false
+      - name: proof-manifest
+        shell: pwsh
+        run: |
+          ./scripts/ci_proof_manifest.ps1
+
   ci-semantic-contract:
     needs: [changes]
     runs-on: ubuntu-latest
@@ -134,7 +154,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npm run toolchain:contract
-      
+
   waiver-debt-enforcement:
     name: waiver-debt-enforcement
     runs-on: ubuntu-latest
@@ -147,7 +167,6 @@ jobs:
           node-version: "20"
       - name: waiver-debt-enforcement
         run: node scripts/waiver_debt_enforcement.mjs
-
 
   ci-topology-audit:
     name: ci-topology-audit
@@ -173,11 +192,21 @@ jobs:
         run: npm run truth:sync && git diff --exit-code
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced]
+    needs:
+      [
+        env-sanity,
+        test,
+        toolchain-contract,
+        ci-semantic-contract,
+        proof-commit-binding,
+        proof-manifest,
+        waiver-debt-enforcement,
+        ci-topology-audit,
+        truth-sync-enforced,
+      ]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
         shell: pwsh
         run: |
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-
