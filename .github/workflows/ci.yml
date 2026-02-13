@@ -112,6 +112,17 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_proof_commit_binding.ps1
+  proof-manifest:
+    name: proof-manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: proof-manifest
+        shell: pwsh
+        run: |
+          ./scripts/ci_proof_manifest.ps1
   ci-semantic-contract:
     needs: [changes]
     runs-on: ubuntu-latest
@@ -173,11 +184,13 @@ jobs:
         run: npm run truth:sync && git diff --exit-code
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
         shell: pwsh
         run: |
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+
 
