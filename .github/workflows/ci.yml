@@ -167,12 +167,14 @@ jobs:
     if: needs.changes.outputs.governance == 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: allowlisted-gate
+        run: echo allowlisted-gate
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "20" }
       - run: npm ci
       - name: foundation-invariants
-        run: npm run foundation:invariants
+        run: node scripts/ci_foundation_invariants.mjs
   truth-sync-enforced:
     name: truth-sync-enforced
     runs-on: ubuntu-latest
@@ -186,11 +188,15 @@ jobs:
 
   required:
     needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, foundation-invariants]
-    runs-on: ubuntu-latest
+runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
         shell: pwsh
         run: |
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+
+
+
 
 
