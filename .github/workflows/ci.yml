@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   pull_request:
@@ -173,7 +173,7 @@ jobs:
         run: npm run truth:sync && git diff --exit-code
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
@@ -181,3 +181,18 @@ jobs:
         run: |
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
+  proof-manifest:
+    name: proof-manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: enforce LF
+        shell: bash
+        run: |
+          git config --global core.autocrlf false
+      - name: proof-manifest
+        shell: pwsh
+        run: |
+          ./scripts/ci_proof_manifest.ps1
