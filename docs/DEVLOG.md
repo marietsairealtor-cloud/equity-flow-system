@@ -1106,3 +1106,26 @@ pm run required-checks-contract PASS;
 pm run proof:manifest PASS; working tree clean.
 
 ---
+
+2026-02-14 — Governance Maintenance — proof-commit-binding Windows Parse Hardening
+
+Objective
+Fix Windows PowerShell parse failure in scripts/ci_proof_commit_binding.ps1 caused by non-ASCII em dash in authority header string, without changing governance semantics.
+
+Changes
+- Hardened header marker construction using explicit Unicode char ([char]0x2014).
+- Added governance record: docs/governance/GOVERNANCE_CHANGE_PR004.md.
+- Generated and manifest-bound proof artifact.
+
+Proof
+- docs/proofs/fix_proof_commit_binding_windows_parse_20260214_220325Z.log
+- proof:manifest → PROOF_MANIFEST_OK
+- proof:commit-binding → PROOF_COMMIT_BINDING_OK
+- CI green prior to merge.
+
+DoD
+PR opened → CI green → QA APPROVE → merged.
+Post-merge: main clean; proof gates green.
+
+Status
+Merged.
