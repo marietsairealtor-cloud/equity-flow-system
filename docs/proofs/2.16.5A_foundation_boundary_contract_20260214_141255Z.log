@@ -1,0 +1,59 @@
+PROOF_ITEM=2.16.5A
+UTC=20260214_141255Z
+BRANCH=pr/2.16.5A-redo-foundation-boundary-docs
+HEAD=e086c936419718c789e3e5afd1ffdc019a944e54
+PROOF_HEAD: 05d9f0c50ebb5265d47f7b8433091ac245673510
+PROOF_HEAD=05d9f0c50ebb5265d47f7b8433091ac245673510
+PROOF_SCRIPTS_HASH=4f3e6faec358b92def0b582847d13928210a825082168660decb7859800d42e1
+STAGED_FILES=docs/artifacts/FOUNDATION_BOUNDARY.md
+RESULT=PASS
+On branch pr/2.16.5A-redo-foundation-boundary-docs
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   docs/artifacts/FOUNDATION_BOUNDARY.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	docs/proofs/2.16.5A_foundation_boundary_contract_20260214_141255Z.log
+
+
+> equity-flow-system@0.0.0 required-checks-contract
+> node scripts/required_checks_contract.mjs
+
+=== required-checks-contract ===
+WORKFLOWS: 5
+DISCOVERED_CHECKS:
+ - CI / changes
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / db-heavy
+ - CI / env-sanity
+ - CI / governance-change-guard
+ - CI / main-moved-guard
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / required
+ - CI / test
+ - CI / toolchain-contract
+ - CI / truth-sync-enforced
+ - CI / waiver-debt-enforcement
+ - placeholder / placeholder
+ - policy-drift-attestation / policy-drift-attestation
+ - secrets-scan / secrets-scan
+ - stop-the-line / stop-the-line
+REQUIRED_CHECKS:
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / env-sanity
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / test
+ - CI / toolchain-contract
+ - CI / truth-sync-enforced
+ - CI / waiver-debt-enforcement
+=== verify: no lane-only checks in required_checks.json ===
+PASS lane-only excluded
+=== verify: required_checks.json matches workflow job names (string-exact) ===
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+REQUIRED_CHECKS_EXITCODE=0
