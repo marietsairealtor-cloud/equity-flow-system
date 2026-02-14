@@ -172,15 +172,6 @@ jobs:
       - name: truth-sync-enforced
         run: npm run truth:sync && git diff --exit-code
 
-  required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest]
-    runs-on: ubuntu-latest
-    steps:
-      - name: required (aggregate)
-        shell: pwsh
-        run: |
-          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-
   proof-manifest:
     name: proof-manifest
     runs-on: ubuntu-latest
@@ -196,3 +187,15 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_proof_manifest.ps1
+
+
+  required:
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: required (aggregate)
+        shell: pwsh
+        run: |
+          "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+ 
