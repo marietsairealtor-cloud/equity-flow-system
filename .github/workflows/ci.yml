@@ -33,6 +33,7 @@ jobs:
     outputs:
       docs_only: ${{ steps.set.outputs.docs_only }}
       workflows_changed: ${{ steps.set.outputs.workflows_changed }}
+      foundation_changed: ${{ steps.set.outputs.foundation_changed }}
     steps:
       - uses: actions/checkout@v4
       - id: filter
@@ -43,6 +44,8 @@ jobs:
               - 'docs/**'
             workflows_changed:
               - '.github/workflows/**'
+            foundation_changed:
+              - 'supabase/foundation/**'
             products:
               - 'products/**'
             governance:
@@ -60,6 +63,7 @@ jobs:
           DOCS_ONLY: ${{ steps.filter.outputs.docs_only }}
           GOVERNANCE: ${{ steps.filter.outputs.governance }}
           WORKFLOWS_CHANGED: ${{ steps.filter.outputs.workflows_changed }}
+          FOUNDATION_CHANGED: ${{ steps.filter.outputs.foundation_changed }}
         run: |
           if ($env:DOCS_ONLY -eq 'true' -and $env:GOVERNANCE -ne 'true') {
             "docs_only=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
@@ -70,6 +74,11 @@ jobs:
             "workflows_changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           } else {
             "workflows_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+          if ($env:FOUNDATION_CHANGED -eq 'true') {
+            "foundation_changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            "foundation_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           }
   test:
     runs-on: ${{ matrix.os }}
@@ -191,9 +200,33 @@ jobs:
         run: |
           ./scripts/ci_proof_manifest.ps1
 
+  foundation-invariants:
+    name: foundation-invariants
+    needs: [changes]
+    runs-on: ubuntu-latest
+    steps:
+      - name: foundation-invariants (not applicable) PASS
+        if: needs.changes.outputs.docs_only == 'true' || needs.changes.outputs.foundation_changed != 'true'
+        run: echo "foundation-invariants (skipped: no foundation changes or docs-only) PASS"
+
+      - uses: actions/checkout@v4
+        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
+
+      - uses: actions/setup-node@v4
+        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
+        with: { node-version: "20" }
+
+      - run: npm ci
+        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
+
+      - run: npm run foundation:invariants
+        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
+
+
+
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
