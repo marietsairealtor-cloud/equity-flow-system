@@ -294,3 +294,13 @@ Approval-before-merge enforced
 Stop conditions hardened
 Execution surface stability enforced
 Governance stack consistent
+---
+## Shell Selection & Lock (Authoritative)
+
+* For Windows workflows involving proofs, manifests, governance scripts, or file-writing automation, **pwsh is the default execution shell**.
+* Shell choice is made at objective start and is **locked for the entire objective (one PR)**.
+* Do not switch shells mid-objective.
+* If shell instability blocks progress, stop, record reason, and restart the objective in the new shell.
+* Purpose: prevent encoding drift, proof-binding failures, and inconsistent script behavior.
+
+---
