@@ -1,5 +1,10 @@
 UTC=20260214_220325Z
 BRANCH=pr/fix-proof-commit-binding-windows-parse
+HEAD=bcb3952fdd25947e033d079b228a7eba30f5834e
+PROOF_HEAD: bcb3952fdd25947e033d079b228a7eba30f5834e
+PROOF_HEAD=bcb3952fdd25947e033d079b228a7eba30f5834e
+UTC=20260214_220325Z
+BRANCH=pr/fix-proof-commit-binding-windows-parse
 HEAD=5829dd69d8610dcca554ea7f4c0683da742aa8d8
 
 COMMAND=npm run proof:commit-binding
