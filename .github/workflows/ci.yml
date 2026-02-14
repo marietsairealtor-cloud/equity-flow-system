@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   pull_request:
@@ -207,7 +207,8 @@ jobs:
     steps:
       - name: foundation-invariants (not applicable) PASS
         if: needs.changes.outputs.docs_only == 'true' || needs.changes.outputs.foundation_changed != 'true'
-        run: echo "foundation-invariants (skipped: no foundation changes or docs-only) PASS"
+        run: |
+          echo foundation-invariants (skipped: no foundation changes or docs-only) PASS
 
 
       - uses: actions/checkout@v4
