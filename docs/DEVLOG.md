@@ -1075,3 +1075,34 @@ Add and enforce the `proof-manifest` CI job as a required status check for 2.16.
 ### Status
 - Repo fully validated and CI-gate for proof-manifest is active.
 - Ready for next objectives in Build Route 2.16.5 follow-up.
+
+## 2026-02-14 — Build Route v2.16.5A — Foundation Boundary Contract
+
+### Objective
+
+Define the authoritative boundary between Foundation (governance + core DB security layer) and Product/UI, per Build Route 2.16.5A DoD.
+
+### Changes
+
+- Added docs/artifacts/FOUNDATION_BOUNDARY.md defining owned surfaces (Foundation vs Product/UI) and enforcement intent (gates).
+- Added 2.16.5A proof log and updated proof manifest.
+
+### Proof
+
+- docs/proofs/2.16.5A_foundation_boundary_contract_20260214_141255Z.log
+
+### DoD
+
+- Boundary documented in docs/artifacts/FOUNDATION_BOUNDARY.md.
+- Foundation ownership list includes: tenancy model, memberships+roles, entitlement truth, activity log contract, baseline RLS + negative tests, core CI contracts/proofs.
+- Product/UI ownership list includes: product domain tables, WeWeb pages/flows, product-specific views/functions extending baseline (must not weaken Foundation invariants).
+- Proof recorded and docs/proofs/manifest.json updated (repo-relative POSIX paths; valid JSON).
+
+### Status
+
+- MERGED to main via PR #89.
+- Local verification on main: 
+pm run required-checks-contract PASS; 
+pm run proof:manifest PASS; working tree clean.
+
+---
