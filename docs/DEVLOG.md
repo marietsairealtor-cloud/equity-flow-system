@@ -1038,3 +1038,19 @@ Working tree clean on main
 Status  
 MERGED
 
+## 2026-02-13 — Build Route v2.16.5 — Proof Manifest Reset
+
+### Objective
+Return the repository to a stable baseline for 2.16.5 before setting up the proof manifest.
+
+### Rationale
+- Multiple proof artifacts (2.16.5A/B and _archive files) were inconsistent, misnamed, or missing in the manifest.
+- Previous attempts to reconcile hashes and PROOF_HEADs across commits had caused conflicts, MISSING PROOF_HEAD, and MANIFEST_INVALID errors.
+- Resetting to **PR 66**, the commit where 2.16.5 was finalized and the DEVLOG recorded, ensures a **clean, authoritative starting point**.
+- Provides a deterministic foundation to correctly create or update the proof manifest without conflicts from later, partial, or uncommitted changes.
+
+### Status
+Repo now reflects the state immediately after 2.16.5 completion.
+All proof files and DEVLOG entries align with this baseline.
+Ready to begin generating the proof manifest.
+
