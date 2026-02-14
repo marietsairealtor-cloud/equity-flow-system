@@ -1,0 +1,13 @@
+UTC=20260214_220325Z
+BRANCH=pr/fix-proof-commit-binding-windows-parse
+HEAD=5829dd69d8610dcca554ea7f4c0683da742aa8d8
+
+COMMAND=npm run proof:commit-binding
+
+> equity-flow-system@0.0.0 proof:commit-binding
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ci_proof_commit_binding.ps1
+
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+PROOF_COMMIT_BINDING_SKIP: no proof files changed in PR
