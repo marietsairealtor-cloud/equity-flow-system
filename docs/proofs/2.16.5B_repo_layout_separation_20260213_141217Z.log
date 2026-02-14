@@ -1,0 +1,140 @@
+UTC=20260213_141217Z
+BRANCH=pr/2.16.5B-repo-layout-separation-clean
+HEAD=7eef32a1c48f1fa6e3193762257df624228d8ddd
+PROOF_HEAD=7eef32a1c48f1fa6e3193762257df624228d8ddd
+PROOF_SCRIPTS_HASH=4f3e6faec358b92def0b582847d13928210a825082168660decb7859800d42e1
+
+=== TREE (foundation + products) ===
+supabase
+supabase/.branches
+supabase/.branches/_current_branch
+supabase/.temp
+supabase/.temp/cli-latest
+supabase/foundation
+supabase/foundation/migrations
+supabase/foundation/migrations/.gitkeep
+supabase/snippets
+products
+products/placeholder
+
+=== CI FILTERS (ci.yml excerpt) ===
+      workflows_changed: ${{ steps.set.outputs.workflows_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docs_only:
+              - 'docs/**'
+            workflows_changed:
+              - '.github/workflows/**'
+            products:
+              - 'products/**'
+            governance:
+              - 'docs/truth/**'
+              - '.github/workflows/**'
+              - 'scripts/**'
+              - 'docs/artifacts/GUARDRAILS.md'
+              - 'docs/artifacts/CONTRACTS.md'
+              - 'docs/artifacts/AUTOMATION.md'
+              - 'docs/artifacts/SOP_WORKFLOW.md'
+              - 'supabase/foundation/**'
+      - id: set
+        shell: pwsh
+        env:
+          DOCS_ONLY: ${{ steps.filter.outputs.docs_only }}
+          GOVERNANCE: ${{ steps.filter.outputs.governance }}
+          WORKFLOWS_CHANGED: ${{ steps.filter.outputs.workflows_changed }}
+        run: |
+          if ($env:DOCS_ONLY -eq 'true' -and $env:GOVERNANCE -ne 'true') {
+            "docs_only=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            "docs_only=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+          if ($env:WORKFLOWS_CHANGED -eq 'true') {
+            "workflows_changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            "workflows_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [16.x, 18.x, 20.x, 22.x]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - run: npm run truth-bootstrap
+
+  db-heavy:
+    needs: [changes]
+
+=== GOV CHANGE FILE ===
+-rw-r--r-- 1 marie 197609 435 Feb 13 09:12 docs/governance/GOVERNANCE_CHANGE_PR003.md
+
+=== REQUIRED CHECKS TRUTH (required_checks.json) ===
+{
+  "checks": [
+    {
+      "name": "CI / ci-semantic-contract",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / ci-topology-audit",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / env-sanity",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / proof-commit-binding",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / test",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / toolchain-contract",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / truth-sync-enforced",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / waiver-debt-enforcement",
+      "type": "github_status",
+      "required": true
+    }
+  ]
+}
+
+PASS
+
+=== NO CROSS-WRITE (docs/artifacts/CONTRACTS.md excerpt) ===
+211:## Repo Layer Boundary — No Cross-Write
+## Repo Layer Boundary — No Cross-Write
+
+- Product layer (products/**) MUST NOT modify Foundation (supabase/foundation/**).
+- Foundation changes ONLY via approved upgrade protocol (governance PR with proof).
+
+=== DENYLIST / NEVER-PORT EVIDENCE (gitignore + tracked-files check) ===
+.gitignore entries:
+Tracked under supabase/.branches or supabase/.temp (should be none):
+
+PASS

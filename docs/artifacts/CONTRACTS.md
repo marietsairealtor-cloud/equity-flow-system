@@ -207,3 +207,8 @@ No globbing.
 No silent fallback.
 
 
+
+## Repo Layer Boundary — No Cross-Write
+
+- Product layer (products/**) MUST NOT modify Foundation (supabase/foundation/**).
+- Foundation changes ONLY via approved upgrade protocol (governance PR with proof).
