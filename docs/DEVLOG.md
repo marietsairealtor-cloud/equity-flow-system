@@ -1038,35 +1038,19 @@ Working tree clean on main
 Status  
 MERGED
 
+## 2026-02-13 — Build Route v2.16.5 — Proof Manifest Reset
 
-## 2026-02-13 — Build Route v2.4 — 2.16.5B Repo Layout Separation
+### Objective
+Return the repository to a stable baseline for 2.16.5 before setting up the proof manifest.
 
-Objective
-Implement physical directory separation between Foundation and Product layers, with deterministic CI path-filter enforcement and explicit no-cross-write rule.
+### Rationale
+- Multiple proof artifacts (2.16.5A/B and _archive files) were inconsistent, misnamed, or missing in the manifest.
+- Previous attempts to reconcile hashes and PROOF_HEADs across commits had caused conflicts, MISSING PROOF_HEAD, and MANIFEST_INVALID errors.
+- Resetting to **PR 66**, the commit where 2.16.5 was finalized and the DEVLOG recorded, ensures a **clean, authoritative starting point**.
+- Provides a deterministic foundation to correctly create or update the proof manifest without conflicts from later, partial, or uncommitted changes.
 
-Changes
-- Added CI path filters:
-  * governance includes supabase/foundation/**
-  * products includes products/**
-- Documented explicit boundary rule (no cross-write) in:
-  docs/artifacts/CONTRACTS.md
-- Moved Foundation DB placeholder path:
-  supabase/migrations/.gitkeep -> supabase/foundation/migrations/.gitkeep
-- Added governance change justification:
-  docs/governance/GOVERNANCE_CHANGE_PR003.md
+### Status
+Repo now reflects the state immediately after 2.16.5 completion.
+All proof files and DEVLOG entries align with this baseline.
+Ready to begin generating the proof manifest.
 
-Proof
-- Proof log committed:
-  docs/proofs/2.16.5B_repo_layout_separation_20260213_141217Z.log
-- CI green incl. proof-commit-binding PASS
-
-DoD
-PR opened → CI green → QA PASS → merged
-Post-merge verify-only gates PASS on main
-Working tree clean
-
-Refs
-- Merge commit: 640c7428725188564f1955e623603b618b7720d9
-
-Status
-MERGED
