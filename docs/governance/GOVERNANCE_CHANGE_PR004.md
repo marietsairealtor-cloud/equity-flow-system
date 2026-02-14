@@ -1,75 +1,23 @@
-# GOVERNANCE_CHANGE_PR<PR004>.md
+# Governance Change PR004 — proof-commit-binding Windows parse hardening
 
 ## Summary
+Harden scripts/ci_proof_commit_binding.ps1 to avoid Windows PowerShell parse failure caused by non-ASCII em dash usage in the authority header string.
 
-This PR updates governance workflow sequencing in `docs/SOP_WORKFLOW.md`.
+## Why
 
-Change:
+pm run proof:commit-binding failed to parse on Windows due to mojibake / em dash tokenization (â€”), blocking governed proof enforcement.
 
-* QA review timing moved to occur **after CI reaches green**.
-* Workflow is now:
+## Change
+- Replace embedded em dash byte usage with explicit [char]0x2014 construction for the header marker match.
+- No change to policy semantics, marker text, or authority source (docs/artifacts/AUTOMATION.md).
 
-Implement → Proof → Open PR → CI green → QA APPROVE → Merge.
+## Safety / Impact
+- Scope: enforcement script parsing reliability only.
+- Behavior: same header marker requirement; same script list extraction; same hashing rules.
+- Risk: low; reduces platform-specific false failures.
 
----
-
-## Reason for Change
-
-Recent objectives experienced repeated CI instability, creating repeated QA cycles before CI became stable.
-This caused process churn where QA validation had to be repeated multiple times without meaningful signal.
-
-Moving QA review to occur after CI green:
-
-* Reduces non-actionable QA loops.
-* Ensures QA reviews only stable candidate states.
-* Improves workflow efficiency without weakening enforcement.
-
----
-
-## Safety / Governance Impact
-
-No reduction in governance guarantees.
-
-Completion law remains unchanged:
-
-PR opened → CI green → approved → merged.
-
-Safety controls retained:
-
-* Proof artifacts still required before PR.
-* Manifest discipline unchanged.
-* CI remains merge-blocking.
-* QA approval still required before merge.
-
----
-
-## Files Affected
-
-* docs/SOP_WORKFLOW.md (Sections 3 and 4)
-
----
-
-## Risk Assessment
-
-Risk level: LOW.
-
-This change modifies sequencing only; it does not alter:
-
-* CI enforcement
-* Required checks
-* Proof binding
-* Merge protections
-
----
-
-## Validation
-
-* SOP reviewed for internal coherence.
-* Completion law remains consistent with Command for Chat.
-* Workflow remains audit-compatible.
-
----
-
-## Decision
-
-Approved governance adjustment to reduce CI-related QA churn while preserving merge safety guarantees.
+## Evidence
+- Proof log: docs/proofs/fix_proof_commit_binding_windows_parse_20260214_220325Z.log
+- Gates: 
+pm run proof:manifest PASS; 
+pm run proof:commit-binding PASS.

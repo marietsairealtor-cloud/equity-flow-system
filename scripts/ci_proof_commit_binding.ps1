@@ -8,7 +8,7 @@ function GetScriptsHashAuthority(){
   $u=New-Object System.Text.UTF8Encoding($false); $r=(git rev-parse --show-toplevel).Trim()
   $ap=Join-Path $r 'docs\artifacts\AUTOMATION.md'; if(-not (Test-Path $ap)){ throw ('MISSING AUTHORITY DOC: '+$ap) }
   $t=[IO.File]::ReadAllText($ap,$u) -replace "`r`n","`n" -replace "`r","`n"; $L=$t -split "`n"
-  $hdr="### proof-commit-binding — scripts hash authority"; $end="END scripts hash authority"
+  $hdr=("### proof-commit-binding " + [char]0x2014 + " scripts hash authority"); $end="END scripts hash authority"
   $i=[Array]::IndexOf($L,$hdr); if($i -lt 0){ throw "MISSING AUTHORITY HEADER" }
   $files=@(); for($x=$i+1;$x -lt $L.Count;$x++){ $s=$L[$x]; if($s -eq $end){ break }
     if($s.Length -ge 5 -and $s.Substring(0,3) -eq '- `' -and $s.EndsWith('`')){ $files += $s.Substring(3,$s.Length-4) }
