@@ -475,11 +475,11 @@ Proof header contract \+ validator binding proofs to reality.
 
 **DoD:**
 
-* `docs/AUTOMATION.md` contains a subsection **“proof-commit-binding — scripts hash authority”** that defines, **string-exact**:  
+* `docs/artifacts/AUTOMATION.md` contains a subsection **“proof-commit-binding — scripts hash authority”** that defines, **string-exact**:  
   * the **script file list** included in `PROOF_SCRIPTS_HASH`  
   * the **ordering rule** (explicit order or path-sorted)  
   * the **normalization rule** (**CRLF→LF** before hashing)  
-* `scripts/ci_proof_commit_binding.ps1` computes `PROOF_SCRIPTS_HASH` **exactly per `docs/AUTOMATION.md`** (no inference, no globbing).  
+* `scripts/ci_proof_commit_binding.ps1` computes `PROOF_SCRIPTS_HASH` **exactly per `docs/artifacts/AUTOMATION.md`** (no inference, no globbing).  
 * The 2.16.2 proof log shows **matching** `PROOF_SCRIPTS_HASH` between proof header and validator output.
 
 **Proof:** `docs/proofs/2.16.2A_hash_authority_contract_<UTC>.log`
