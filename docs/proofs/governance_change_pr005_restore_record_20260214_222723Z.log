@@ -1,0 +1,10 @@
+UTC=20260214_222723Z
+BRANCH=pr/governance-change-pr005-restore-record
+HEAD=41c5124847220c06087cd8f67b4900510f1521ce
+PROOF_HEAD: 41c5124847220c06087cd8f67b4900510f1521ce
+PROOF_HEAD=41c5124847220c06087cd8f67b4900510f1521ce
+
+ACTION=Add governance record PR005 to restore lost PR004 content (SOP sequencing change).
+
+FILES:
+- docs/governance/GOVERNANCE_CHANGE_PR005.md
