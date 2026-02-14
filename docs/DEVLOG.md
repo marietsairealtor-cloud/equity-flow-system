@@ -1054,3 +1054,24 @@ Repo now reflects the state immediately after 2.16.5 completion.
 All proof files and DEVLOG entries align with this baseline.
 Ready to begin generating the proof manifest.
 
+
+## 2026-02-14 — Build Route v2.16.5 — Proof-Manifest CI Gate
+
+### Objective
+Add and enforce the `proof-manifest` CI job as a required status check for 2.16.5 proof artifacts.
+
+### Changes
+- Created `proof-manifest` job in `.github/workflows/ci.yml`.
+- Added `proof-manifest` to the aggregate `required` job so it acts as a merge-blocking gate.
+- Updated `docs/truth/required_checks.json` to include `CI / proof-manifest`.
+- Regenerated all SHA256 hashes in `docs/proofs/manifest.json` to ensure consistency.
+- Verified all 2.16.5 proof artifacts (2.16.5A, 2.16.5B, and `_archive` logs) are correctly referenced and pass hash validation.
+- PR merged, CI verified, repo stable.
+
+### Proof
+- `ci_proof_manifest.ps1` execution confirms all artifacts and hashes are correct.
+- `npm run truth:sync` verifies `required_checks.json` matches CI workflow jobs.
+
+### Status
+- Repo fully validated and CI-gate for proof-manifest is active.
+- Ready for next objectives in Build Route 2.16.5 follow-up.
