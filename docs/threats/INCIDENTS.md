@@ -378,3 +378,28 @@ Status: CLOSED
 - Remediation: Reinforce merge-after-QA rule; require QA PASS confirmation before merge.
 - Evidence: Post-merge verify-only gates PASS on main (required-checks-contract, proof-commit-binding).
 
+
+## 2026-02-14 — Workflow Order Change (QA moved after CI green)
+
+Symptom:
+Frequent CI instability caused repeated QA cycles before CI reached green, creating process churn and non-actionable QA loops.
+
+Classification:
+Process efficiency / governance workflow adjustment (not safety reduction).
+
+Change:
+Workflow order updated:
+
+Implement → Proof → PR opened → CI green → QA review → Merge.
+
+Rationale:
+QA review now occurs only once CI is stable, reducing repeated QA passes during CI troubleshooting while preserving merge safety.
+
+Safety Impact:
+None. Completion law remains unchanged:
+PR opened → CI green → approved → merged.
+
+Preventive Controls:
+- Proof artifacts still required before PR.
+- QA approval still required before merge.
+- CI remains merge-blocking.

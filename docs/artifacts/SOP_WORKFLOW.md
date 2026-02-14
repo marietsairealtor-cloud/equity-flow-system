@@ -1,4 +1,5 @@
 # SOP_WORKFLOW.md
+
 Authoritative — Governed Execution (Final Aligned Version)
 
 ---
@@ -28,11 +29,11 @@ An objective is complete ONLY if:
 
 PR opened → CI green → approved → merged
 
-No PR = not complete  
-Local pass ≠ complete  
-“Nothing to commit” ≠ complete  
+No PR = not complete
+Local pass ≠ complete
+“Nothing to commit” ≠ complete
 
-One objective = One PR  
+One objective = One PR
 
 No multi-objective PRs.
 
@@ -44,15 +45,15 @@ If an objective requires no functional code change:
 
 A Proof PR is still required containing at least one:
 
-- Committed proof artifact under docs/proofs/**
-- pgTAP / invariant assertion
-- DEVLOG update with evidence
+* Committed proof artifact under docs/proofs/**
+* pgTAP / invariant assertion
+* DEVLOG update with evidence
 
 Proof must be:
 
-- In-repo
-- Commit-bound
-- CI validated
+* In-repo
+* Commit-bound
+* CI validated
 
 Screenshots or pasted terminal output are invalid.
 
@@ -64,33 +65,37 @@ Required order:
 
 1. Implement objective
 2. Run required local gates
-3. Generate proof artifact under docs/proofs/**
+3. Generate proof artifact under `docs/proofs/**`
 4. Update manifest (if required)
 5. Commit proof artifact
-6. Submit proof evidence to QA
-7. Receive explicit QA PASS
-8. Open PR
+6. Open PR
+7. CI must reach green
+8. Submit PR evidence to QA
+9. Receive explicit QA APPROVE
+10. Merge
 
-A PR opened without required proof artifacts and QA PASS is invalid.
+Completion requires: **PR opened → CI green → approved → merged**.
 
 ---
 
 ## 4) QA Submission Rule (LOCKED)
 
-Before opening a PR, the operator must provide:
+QA review occurs **after CI is green**.
 
-- PR diff (or staged file list)
-- Proof artifact path
-- Gate output
-- Manifest status (if applicable)
+Before QA review, the operator must provide:
+
+* PR diff (or changed file list)
+* Proof artifact path
+* Gate output
+* Manifest status (if applicable)
 
 QA must return:
 
-PASS  
-or  
-FAIL (first failing gate only)
+* APPROVE
+* or
+* REJECT (first failing gate only)
 
-No PR is valid without QA PASS.
+No merge is valid without QA approval.
 
 ---
 
@@ -99,13 +104,15 @@ No PR is valid without QA PASS.
 ### 5.1 Executor Mode (Default)
 
 Use when:
-- Implementing a scoped Build Route item
-- Producing required artifacts
+
+* Implementing a scoped Build Route item
+* Producing required artifacts
 
 Rules:
-- One objective → one PR
-- No redesign
-- No debugging unless triggered
+
+* One objective → one PR
+* No redesign
+* No debugging unless triggered
 
 ---
 
@@ -113,17 +120,17 @@ Rules:
 
 Enter Debugger Mode if ANY:
 
-- A gate is red (local or CI)
-- Same named gate fails twice
-- A blocking error prevents required proof generation
+* A gate is red (local or CI)
+* Same named gate fails twice
+* A blocking error prevents required proof generation
 
 Debugger Mode Rules:
 
-- Identify first failing gate by name
-- Fix that gate only
-- Exit once green
-- Do not redesign system
-- Do not stack fixes
+* Identify first failing gate by name
+* Fix that gate only
+* Exit once green
+* Do not redesign system
+* Do not stack fixes
 
 ---
 
@@ -137,23 +144,25 @@ This governs session output only and does not alter documentation structure.
 
 ## 7) Shell Discipline (LOCKED)
 
-Default interactive shell: Git Bash (MINGW64)
+Execution Shell Policy (Authoritative)
 
-PowerShell allowed only when:
-- Windows-safe file writing required
-- Encoding control required
-- Running PowerShell-based gates
+Default interactive shell on Windows is pwsh (PowerShell 7) for objectives involving:
 
-Do not mix shells inside a single command block.
+* proof generation
+* manifest updates
+* file-writing scripts
+* governance / CI scripts
 
-Execution Surface Stability Rule:
+Git Bash may be used for lightweight git or Unix-style operations only if chosen at objective start.
 
-During a single objective/PR:
-- Do not change shell
-- Do not introduce new runtime
-- Do not swap execution surface mid-item
+Execution surface is locked per objective (one PR):
 
-If required → stop and open a new objective.
+* Do not switch shells mid-objective.
+* If shell change is required due to instability, close or restart the objective and continue in the new shell.
+
+Rationale:
+Prevent encoding drift, line-ending corruption, and proof-binding failures.
+Maintain deterministic auditability.
 
 ---
 
@@ -162,25 +171,30 @@ If required → stop and open a new objective.
 For all docs/proofs/** artifacts:
 
 ### 8.1 PROOF_HEAD
-- Must equal tested SHA at runtime
-- Must be ancestor of PR_HEAD
-- Commits after PROOF_HEAD may modify only:
-  - docs/proofs/**
-  - optionally docs/DEVLOG.md
+
+* Must equal tested SHA at runtime
+* Must be ancestor of PR_HEAD
+* Commits after PROOF_HEAD may modify only:
+
+  * docs/proofs/**
+  * optionally docs/DEVLOG.md
 
 ---
 
 ### 8.2 PROOF_SCRIPTS_HASH
+
 Must be:
-- Deterministic
-- Explicit file list (no globbing)
-- Deterministic ordering
-- CRLF normalized to LF before hashing
+
+* Deterministic
+* Explicit file list (no globbing)
+* Deterministic ordering
+* CRLF normalized to LF before hashing
 
 Must match:
-- AUTOMATION.md specification
-- Validator implementation
-- Proof log header
+
+* AUTOMATION.md specification
+* Validator implementation
+* Proof log header
 
 Mismatch = FAIL.
 
@@ -189,15 +203,18 @@ Mismatch = FAIL.
 ## 9) CI Lane Isolation (Policy)
 
 Docs-only PR:
-- Skip DB-heavy tests
-- Run minimal gates only
+
+* Skip DB-heavy tests
+* Run minimal gates only
 
 Artifacts-only PR:
-- Run drift + policy + proof-commit-binding
-- Skip full DB suite
+
+* Run drift + policy + proof-commit-binding
+* Skip full DB suite
 
 Code PR:
-- Run full CI
+
+* Run full CI
 
 If YAML does not enforce this, repository is noncompliant until corrected via objective PR.
 
@@ -207,10 +224,10 @@ If YAML does not enforce this, repository is noncompliant until corrected via ob
 
 Waivers must be:
 
-- Explicit
-- Scoped
-- Time-bounded
-- Auditable
+* Explicit
+* Scoped
+* Time-bounded
+* Auditable
 
 Expired waivers must fail CI.
 
@@ -223,17 +240,17 @@ PR opened → CI green → approved → merged
 
 Stop immediately if:
 
-- Authoritative file missing
-- CI red
-- Unexpected file drift
-- Build Route ambiguity
+* Authoritative file missing
+* CI red
+* Unexpected file drift
+* Build Route ambiguity
 
 When a stop condition is triggered:
 
-- Do not proceed with implementation
-- Do not switch modes to bypass
-- Do not redesign system
-- Resolve the blocking issue first
+* Do not proceed with implementation
+* Do not switch modes to bypass
+* Do not redesign system
+* Resolve the blocking issue first
 
 ---
 
@@ -241,14 +258,15 @@ When a stop condition is triggered:
 
 The following are prohibited:
 
-- Hand-edit robot-owned files
-- Commit directly to main
-- Merge on red CI
-- Open PR without QA PASS
-- Multi-objective PRs
-- Retro-edit historical migrations
-- Introduce dynamic SQL in migrations
-- Bypass proof artifact requirements
+* Hand-edit robot-owned files
+* Commit directly to main
+* Merge on red CI
+* Open PR without required proof artifacts
+* Merge without QA approval
+* Multi-objective PRs
+* Retro-edit historical migrations
+* Introduce dynamic SQL in migrations
+* Bypass proof artifact requirements
 
 Violation = governance failure.
 
@@ -258,10 +276,10 @@ Violation = governance failure.
 
 After merge to main:
 
-git checkout main  
-git pull  
-git status → must show clean working tree  
-npm run ship → must pass  
+git checkout main
+git pull
+git status → must show clean working tree
+npm run ship → must pass
 
 `docs/handoff_latest.txt` internal git status line is informational only and not authoritative.
 
@@ -273,13 +291,37 @@ Entries must follow exactly:
 
 YYYY-MM-DD — Build Route vX.Y — Item
 
-Objective  
-Changes  
-Proof  
-DoD  
-Status  
+Objective
+Changes
+Proof
+DoD
+Status
 
 No structural deviation allowed.
+
+---
+
+## 15) Local Green Gate Loop (LOCKED)
+
+Required sequence:
+
+* green:once
+* green:twice
+
+Both runs must pass with no edits between runs.
+
+No generators may run during the gate loop.
+
+---
+
+## 16) Truth Artifact Rule (LOCKED)
+
+Truth files are generated only via:
+
+* npm run handoff
+* npm run handoff:commit
+
+ship is verify-only.
 
 ---
 
@@ -289,18 +331,8 @@ Aligned with Build Route v2.4
 Aligned with AUTOMATION
 Aligned with GUARDRAILS
 Proof-before-PR enforced
-QA-before-PR enforced
-Approval-before-merge enforced
+CI-green-before-QA enforced
+QA-before-merge enforced
 Stop conditions hardened
 Execution surface stability enforced
 Governance stack consistent
----
-## Shell Selection & Lock (Authoritative)
-
-* For Windows workflows involving proofs, manifests, governance scripts, or file-writing automation, **pwsh is the default execution shell**.
-* Shell choice is made at objective start and is **locked for the entire objective (one PR)**.
-* Do not switch shells mid-objective.
-* If shell instability blocks progress, stop, record reason, and restart the objective in the new shell.
-* Purpose: prevent encoding drift, proof-binding failures, and inconsistent script behavior.
-
----
