@@ -208,7 +208,7 @@ jobs:
       - name: foundation-invariants (not applicable) PASS
         if: needs.changes.outputs.docs_only == 'true' || needs.changes.outputs.foundation_changed != 'true'
         run: |
-          echo foundation-invariants (skipped: no foundation changes or docs-only) PASS
+          echo "foundation-invariants (skipped: no foundation changes or docs-only) PASS"
 
 
       - uses: actions/checkout@v4
@@ -237,3 +237,4 @@ jobs:
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
  
+

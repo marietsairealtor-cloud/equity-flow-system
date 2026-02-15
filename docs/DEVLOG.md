@@ -1129,3 +1129,26 @@ Post-merge: main clean; proof gates green.
 
 Status
 Merged.
+## 2026-02-14 — Build Route v2.16.5C — Foundation Invariants Suite
+
+Objective
+- Add foundation invariants runner + CI wiring; safe BLOCKED mode until foundation schema exists.
+
+Changes
+- Added 
+pm run foundation:invariants runner + deterministic stubs under supabase/foundation/invariants/
+- CI job oundation-invariants (triggered by supabase/foundation/**) + required-checks truth sync
+- ci-semantic-contract allowlist updated for 
+pm run foundation:invariants
+- Governance change doc added (CI behavior change)
+
+Proof
+- docs/proofs/2.16.5C_foundation_invariants_suite_2026-02-14_1805.log (BLOCKED exit-0 mode)
+- docs/proofs/manifest.json updated
+
+DoD
+- Runner prints BLOCKED_NO_FOUNDATION_SURFACE, sets FOUNDATION_INVARIANTS_BLOCKED=1, exits 0 when schema missing
+
+Status
+- MERGED (PR: pr/2.16.5C-foundation-invariants)
+- BLOCKED — pending Build Route item 6.9 (foundation schema + surface definition)
