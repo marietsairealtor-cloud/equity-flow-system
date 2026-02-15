@@ -1216,3 +1216,21 @@ Notes:
 
 Outcome:
 Operators can run one command before PR creation to catch most governance/proof failures locally, reducing CI reruns and workflow detours.
+
+2026-02-15 — Build Route v2.4 — 2.16.5E
+
+Objective
+Foundation versioning + fork protocol (tagging, product pinning, upgrade rules) recorded as governed proof.
+
+Changes
+- Protocol recorded in proof logs (commit-binding policy required proofs-only).
+- No DB scope.
+
+Proof
+docs/proofs/2.16.5E_foundation_fork_protocol_20260215_212411Z.log
+
+DoD
+PR opened → CI green → QA approved → merged; ship PASS; clean tree.
+
+Status
+PASS
