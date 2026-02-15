@@ -205,22 +205,20 @@ jobs:
     needs: [changes]
     runs-on: ubuntu-latest
     steps:
-      - name: foundation-invariants (not applicable) PASS
+      - name: foundation-invariants (skipped) PASS
         if: needs.changes.outputs.docs_only == 'true' || needs.changes.outputs.foundation_changed != 'true'
-        run: |
-          echo "foundation-invariants (skipped: no foundation changes or docs-only) PASS"
-
-
+        run: echo "foundation-invariants (skipped: no foundation changes or docs-only) PASS"
+     
       - uses: actions/checkout@v4
         if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
-
+      
       - uses: actions/setup-node@v4
         if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
         with: { node-version: "20" }
-
+      
       - run: npm ci
         if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
-
+    
       - run: npm run foundation:invariants
         if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
 
