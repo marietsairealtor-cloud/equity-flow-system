@@ -1,0 +1,4 @@
+BRANCH: pr/2.16.5D-lane-separation
+DIFF: 
+LANE_RULE_SOURCE: docs/FOUNDATION_BOUNDARY.md (lines X-Y)
+CI_STATUS: All green
