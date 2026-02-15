@@ -1129,6 +1129,7 @@ Post-merge: main clean; proof gates green.
 
 Status
 Merged.
+
 ## 2026-02-14 — Build Route v2.16.5C — Foundation Invariants Suite
 
 Objective
@@ -1150,5 +1151,4 @@ DoD
 - Runner prints BLOCKED_NO_FOUNDATION_SURFACE, sets FOUNDATION_INVARIANTS_BLOCKED=1, exits 0 when schema missing
 
 Status
-- MERGED (PR: pr/2.16.5C-foundation-invariants)
-- BLOCKED — pending Build Route item 6.9 (foundation schema + surface definition)
+- MERGED (PR: pr/2.16.5C-foundation-invariants). BLOCKED — pending foundation schema surface (item 6.9).
