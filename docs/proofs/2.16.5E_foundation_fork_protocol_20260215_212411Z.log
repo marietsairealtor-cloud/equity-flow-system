@@ -1,0 +1,16 @@
+PROOF_HEAD=95ff0ac8741318ca09865de219b79308fe75e050
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+2.16.5E Ã¢â‚¬â€ Foundation Versioning + Fork Protocol Ã¢â‚¬â€ PROOF
+UTC=20260215_212411Z
+BRANCH=pr/2.16.5E-foundation-versioning-fork-protocol
+HEAD=a8845c82723b5e2acbed2f937b319b5b583808cd
+
+CHANGED_FILES:
+docs/artifacts/FOUNDATION_VERSIONING.md docs/proofs/2.16.5E_foundation_fork_protocol_20260215_211536Z.log docs/proofs/manifest.json
+
+ARTIFACT:
+- docs/artifacts/FOUNDATION_VERSIONING.md
+
+RESULT=PASS
