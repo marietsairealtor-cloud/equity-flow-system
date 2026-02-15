@@ -229,7 +229,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: npm run stop-the-line
   lane-policy-contract:
-name: lane-policy-contract
+    name: lane-policy-contract
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
