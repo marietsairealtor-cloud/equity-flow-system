@@ -1,0 +1,9 @@
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+PROOF_HEAD=f95776a629c3cb973eaf7cfce53946c7983444ae
+
+PROOF_HEAD: 573f3ac36881ccc01fae8e82dfb747b378b5e982
+PROOF_SCRIPTS_HASH: Microsoft.PowerShell.Commands.FileHashInfo.Hash
+CI status: GREEN (for now, validate proof)
+FOUNDATION_INVARIANTS_BLOCKED: true (no foundation schema)
+BLOCKED_REASON: Missing foundation surface/schema
+

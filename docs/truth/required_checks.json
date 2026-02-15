@@ -16,6 +16,11 @@
       "required": true
     },
     {
+      "name": "CI / foundation-invariants",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / proof-commit-binding",
       "type": "github_status",
       "required": true
