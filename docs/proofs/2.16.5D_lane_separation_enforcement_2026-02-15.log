@@ -1,6 +1,4 @@
 PROOF_HEAD: <insert correct SHA256 hash>
-PROOF_HEAD: <insert correct SHA256 hash>
-PROOF_HEAD: <insert correct SHA256 hash>
 BRANCH: pr/2.16.5D-lane-separation
 DIFF: 
 LANE_RULE_SOURCE: docs/FOUNDATION_BOUNDARY.md (lines X-Y)
