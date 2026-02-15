@@ -1152,10 +1152,25 @@ DoD
 
 Status
 - MERGED (PR: pr/2.16.5C-foundation-invariants). BLOCKED — pending foundation schema surface (item 6.9).
-## 2026-02-15 — Build Route 2.16.5D — Lane Separation Enforcement
-Objective: Implement CI lane separation based on Foundation/Product/UI boundary.
-Changes: Updated CI workflow for lane separation. Added proof for Foundation and Product lanes.
-Proof: docs/proofs/2.16.5D_lane_separation_enforcement_2026-02-15.log
-DoD: CI passes with lane separation. Proof log committed.
-Status: Green CI, awaiting QA review.
+
+## 2026-02-15 — Build Route v2.16.5D — CI Lane Separation Enforcement
+
+**Objective**: Implemented lane separation for Foundation and Product/UI in CI configuration.
+
+**Changes**:
+- Updated `.github/workflows/ci.yml` to enforce lane separation between Foundation and Product/UI changes.
+- Adjusted `docs/proofs/2.16.5D_lane_separation_enforcement_2026-02-15.log` to reflect the correct proof hash.
+- Added proper lane rules and conditions to ensure that Foundation changes trigger the required checks, and Product/UI changes skip Foundation gates.
+- Edited `docs/proofs/manifest.json` to include the new proof file entry.
+
+**Proof**:
+- `docs/proofs/2.16.5D_lane_separation_enforcement_2026-02-15.log` — Proof file generated to validate lane separation logic.
+
+**DoD**: 
+- CI passes with all relevant gates triggered.
+- Foundation changes run required checks: **Invariant + RLS-negative + stop-the-line + ci-topology-audit**.
+- Product/UI changes skip Foundation checks and only run Product lane checks + **ci-topology-audit**.
+
+**Status**: Completed and merged. All checks are green, and validation through two PRs (Foundation and Product-only) was successful.
+
 
