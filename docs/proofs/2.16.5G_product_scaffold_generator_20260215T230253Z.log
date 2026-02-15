@@ -1,0 +1,36 @@
+PROOF_HEAD=b4d80a85956d9d21341eb206b4188fe130974a5f
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+### 2.16.5G Product Scaffold Generator Proof
+UTC=20260215T230253Z
+BRANCH=pr/2.16.5g-product-scaffold-generator
+HEAD=3fe88b8e5d395f10cb79e2bf4d8d569e04a26c6e
+
+## npm scripts (scaffold)
+node scripts/product_scaffold.mjs
+node scripts/verify_product_scaffold.mjs
+## scaffold:verify run
+
+> equity-flow-system@0.0.0 scaffold:verify
+> node scripts/verify_product_scaffold.mjs
+
+
+> equity-flow-system@0.0.0 product:scaffold
+> node scripts/product_scaffold.mjs scaffold-verify
+
+OK: scaffolded products\scaffold-verify
+
+> equity-flow-system@0.0.0 product:scaffold
+> node scripts/product_scaffold.mjs scaffold-verify
+
+FAIL: target exists: products\scaffold-verify
+PASS: scaffold verify
+EXIT=0
+## created sample-product inventory
+products\sample-product\capabilities.json
+products\sample-product\README.md
+products\sample-product\db\schema_placeholder.sql
+products\sample-product\db\rls\rls_placeholder.sql
+products\sample-product\docs\PROOFS.md
+products\sample-product\ui\README.md
