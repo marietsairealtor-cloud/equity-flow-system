@@ -1152,3 +1152,10 @@ DoD
 
 Status
 - MERGED (PR: pr/2.16.5C-foundation-invariants). BLOCKED — pending foundation schema surface (item 6.9).
+## 2026-02-15 — Build Route 2.16.5D — Lane Separation Enforcement
+Objective: Implement CI lane separation based on Foundation/Product/UI boundary.
+Changes: Updated CI workflow for lane separation. Added proof for Foundation and Product lanes.
+Proof: docs/proofs/2.16.5D_lane_separation_enforcement_2026-02-15.log
+DoD: CI passes with lane separation. Proof log committed.
+Status: Green CI, awaiting QA review.
+
