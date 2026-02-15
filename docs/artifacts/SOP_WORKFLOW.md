@@ -84,10 +84,17 @@ QA review occurs **after CI is green**.
 
 Before QA review, the operator must provide:
 
-* PR diff (or changed file list)
-* Proof artifact path
-* Gate output
-* Manifest status (if applicable)
+- PR number and branch name
+- PR diff (or changed file list)
+- Proof artifact path (if applicable)
+- Manifest status (if applicable)
+- CI checks evidence showing:
+  - CI / required = SUCCESS (not skipped)
+  - Any newly introduced gate = SUCCESS
+- Gate output (local or CI where relevant)
+
+QA must reject the submission if required-check status evidence is missing or ambiguous.
+
 
 QA must return:
 
