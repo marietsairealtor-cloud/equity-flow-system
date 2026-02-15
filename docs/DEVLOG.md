@@ -1257,3 +1257,23 @@ DoD
 
 Status
 MERGED
+
+
+2026-02-15 — Build Route v2.4 — Governance Hardening (pwsh enforcement)
+
+Objective
+Force proof:finalize to run under pwsh to prevent Windows PowerShell incompatibility.
+
+Changes
+- Updated package.json script proof:finalize to use pwsh.
+
+Proof
+PR #115
+
+DoD
+- npm run proof:finalize invokes pwsh
+- Get-FileHash available
+- CI green
+
+Status
+MERGED
