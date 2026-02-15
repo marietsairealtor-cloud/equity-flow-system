@@ -39,7 +39,9 @@
     "proof:commit-binding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_proof_commit_binding.ps1",
     "foundation:invariants": "node scripts/foundation_invariants.mjs",
     "proof:finalize": "pwsh -NoProfile -File scripts/proof_finalize.ps1 -File",
-    "pr:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1"
+    "pr:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1",
+    "product:scaffold": "node scripts/product_scaffold.mjs",
+    "scaffold:verify": "node scripts/verify_product_scaffold.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
