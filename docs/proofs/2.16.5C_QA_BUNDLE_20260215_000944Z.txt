@@ -1,0 +1,14 @@
+PR: pr/2.16.5C-foundation-invariants
+
+HEAD: 7853439fccad7d162ed85420929b938814b6aa95
+
+CHANGED:
+.github/workflows/ci.yml docs/governance/GOVERNANCE_CHANGE_PR006.md docs/proofs/2.16.5C_foundation_invariants_suite_2026-02-14_1805.log docs/proofs/manifest.json docs/truth/required_checks.json package.json scripts/ci_semantic_contract.mjs scripts/foundation_invariants.mjs supabase/foundation/invariants/01_tenant_isolation.stub.sql supabase/foundation/invariants/02_role_enforcement.stub.sql supabase/foundation/invariants/03_entitlement_truth_compiles.stub.sql supabase/foundation/invariants/04_activity_log_write_path.stub.sql supabase/foundation/invariants/05_cross_tenant_negative.stub.sql
+
+CI GREEN: (attach screenshot / link from PR checks)
+
+PROOF LOG: docs/proofs/2.16.5C_foundation_invariants_suite_2026-02-14_1805.log
+
+MANIFEST: docs/proofs/manifest.json
+GOV: docs/governance/GOVERNANCE_CHANGE_PR006.md
+
