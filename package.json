@@ -52,7 +52,12 @@
             "node scripts/lint_bom_gate.mjs"
         ]
     },
+    "scripts": {
+      "test": "npm run lint && npm run truth:sync",
+      "lint": "node scripts/lint_bom_gate.mjs",
+      "truth:sync": "node scripts/truth_sync_required_checks.mjs"
+    },
     "volta": {
-        "node": "20.18.1"
-    }
+      "node": "20.18.1"
+    }      
 }

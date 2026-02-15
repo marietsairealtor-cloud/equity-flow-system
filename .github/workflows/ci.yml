@@ -205,29 +205,34 @@ jobs:
     needs: [changes]
     runs-on: ubuntu-latest
     steps:
-      - name: foundation-invariants (skipped) PASS
-        if: needs.changes.outputs.docs_only == 'true' || needs.changes.outputs.foundation_changed != 'true'
+      - name: foundation-invariants (no skip)
         run: |
-          echo "foundation-invariants (skipped: no foundation changes or docs-only) PASS"
-
+          echo "foundation-invariants running..."
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
-      
       - uses: actions/setup-node@v4
-        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
         with: { node-version: "20" }
-      
       - run: npm ci
-        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
-    
       - run: npm run foundation:invariants
-        if: needs.changes.outputs.docs_only != 'true' && needs.changes.outputs.foundation_changed == 'true'
+
+  stop-the-line:
+    name: stop-the-line
+    runs-on: ubuntu-latest
+    if: needs.changes.outputs.foundation_changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: stop-the-line (pass-through unless simulated)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: npm run stop-the-line
 
 
 
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
