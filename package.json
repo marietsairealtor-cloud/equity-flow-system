@@ -37,7 +37,8 @@
       "env:sanity": "node scripts/env_sanity.mjs",
       "stop-the-line": "node scripts/stop_the_line_gate.mjs",
       "proof:commit-binding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_proof_commit_binding.ps1",
-      "foundation:invariants": "node scripts/foundation_invariants.mjs"
+      "foundation:invariants": "node scripts/foundation_invariants.mjs",
+      "proof:finalize": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/proof_finalize.ps1"
     },
     "devDependencies": {
       "husky": "^9.1.7",
