@@ -1234,3 +1234,26 @@ PR opened → CI green → QA approved → merged; ship PASS; clean tree.
 
 Status
 PASS
+
+2026-02-15 — Build Route v2.4 — 2.16.5F
+
+Objective
+Implement Anti-Divergence Drift Detector wired into existing stop-the-line gate.
+
+Changes
+- Added scripts/foundation_drift_detector.mjs
+- Patched scripts/stop_the_line_gate.mjs to derive FAILURE_CLASS=FOUNDATION_DRIFT
+- Updated ci.yml stop-the-line checkout to fetch-depth: 0
+- Added proof log + manifest update
+
+Proof
+docs/proofs/2.16.5F_foundation_drift_detector_.log
+
+DoD
+- Drift detection triggers stop-the-line on foundation path edits
+- No new required check added
+- CI / required green
+- proof-manifest + proof-commit-binding green
+
+Status
+MERGED
