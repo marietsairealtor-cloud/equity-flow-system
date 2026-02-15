@@ -1,4 +1,4 @@
-PROOF_HEAD=67a1188ee797ccfd7cf973b0be75005587b2d1ab
+PROOF_HEAD=b00460864d72113472c5d37981355c97c61eaf8e
 PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
 PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
 PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
@@ -11,3 +11,6 @@ STOP_THE_LINE: wired (classKey derived from detectFoundationDriftClass)
 CI_FIX: stop-the-line checkout fetch-depth=0
 LOCAL_PARSE: node -c scripts/foundation_drift_detector.mjs; node -c scripts/stop_the_line_gate.mjs
 RESULT: PASS
+
+QA_STATUS: APPROVE
+QA_NOTES: drift detector wired into stop-the-line; CI required + proof gates green
