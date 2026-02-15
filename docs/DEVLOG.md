@@ -1277,3 +1277,24 @@ DoD
 
 Status
 MERGED
+
+2026-02-15 — Build Route v2.4 — 2.16.5G
+
+Objective
+Implement Product Scaffold Generator for Foundation/Product split.
+
+Changes
+- Added scripts/product_scaffold.mjs
+- Wired npm script: product:scaffold
+- Generated proof 2.16.5G_product_scaffold_generator_<UTC>
+- Updated proof manifest
+- Rebound PROOF_HEAD to final functional commit
+
+Proof
+docs/proofs/2.16.5G_product_scaffold_generator_20260215T230253Z.log
+
+DoD
+Scaffold creates deterministic product shell under products/<name>, fails on re-run, CI green, QA approved, PR merged.
+
+Status
+PASS
