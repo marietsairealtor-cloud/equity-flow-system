@@ -1,11 +1,12 @@
 import fs from "node:fs";
+import { detectFoundationDriftClass } from "./foundation_drift_detector.mjs";
 
 function fail(msg){ console.error(msg); process.exit(1); }
 function ok(msg){ console.log(msg); process.exit(0); }
 
 const pr = process.env.PR_NUMBER || "";
 const sim = process.env.SIMULATE_FAILURE_CLASS || ""; // proof-only
-const classKey = sim || ""; // CI discovery added in next step
+const classKey = sim || detectFoundationDriftClass(); // CI-discovered
 
 if(!pr) fail("STOP_THE_LINE FAIL: PR_NUMBER missing");
 if(!classKey) ok("STOP_THE_LINE PASS: no stop-the-line condition (no failing class detected)");

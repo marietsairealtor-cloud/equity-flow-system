@@ -1,0 +1,16 @@
+PROOF_HEAD=b00460864d72113472c5d37981355c97c61eaf8e
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+UTC: 20260215T215741Z
+BRANCH: pr/2.16.5f-foundation-drift-detector
+HEAD: eecc4cbbf74ee0d6c1345da1901f08fde88a33e6
+FOUNDATION_ROOT: supabase/foundation/**
+PRODUCT_ROOT: products/** (NOTE: products dir absent locally)
+STOP_THE_LINE: wired (classKey derived from detectFoundationDriftClass)
+CI_FIX: stop-the-line checkout fetch-depth=0
+LOCAL_PARSE: node -c scripts/foundation_drift_detector.mjs; node -c scripts/stop_the_line_gate.mjs
+RESULT: PASS
+
+QA_STATUS: APPROVE
+QA_NOTES: drift detector wired into stop-the-line; CI required + proof gates green

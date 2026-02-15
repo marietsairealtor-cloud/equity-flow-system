@@ -64,6 +64,7 @@
     "docs/proofs/2.16.5D_lane_separation_enforcement_2026-02-15.log": "53b2bc72450c76ffe2be1a0bb5f28abade14ad9c65615450b73e3dc2433498d5",
     "docs/proofs/test_proof_log_2026-02-15.log": "dd1d376d1df02b4dcc59a1dd298631946f9f71b30dec3fb7e7588415e9b1f890",
     "docs/proofs/2.16.5E_foundation_fork_protocol_20260215_211536Z.log": "4d5f794a8bc799291c3ecb226d46b48d77fb7762252c732fb6ffdb4a530e6561",
-    "docs/proofs/2.16.5E_foundation_fork_protocol_20260215_212411Z.log": "451f098ab01a1d981d0aac5c756bdd1053a564820ea8514f72698e0fe3d5cfcb"
+    "docs/proofs/2.16.5E_foundation_fork_protocol_20260215_212411Z.log": "451f098ab01a1d981d0aac5c756bdd1053a564820ea8514f72698e0fe3d5cfcb",
+    "docs/proofs/2.16.5F_foundation_drift_detector_.log": "02adcc296a6680e75fd3f24254f68b12acdc6ec5d41d287231bd6950f5efa855"
   }
 }
