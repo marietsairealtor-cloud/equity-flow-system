@@ -65,19 +65,25 @@ Required order:
 
 1. Implement objective
 2. Run required local gates
-3. Generate proof artifact under docs/proofs/**
-4. Run:
+3. Run PR preflight before proof generation:
+
+npm run pr:preflight
+
+   (runs governance-safe local checks to reduce CI-red before opening a PR)
+
+4. Generate proof artifact under docs/proofs/**
+5. Run:
 
 npm run proof:finalize -- -File docs/proofs/<proof_log>.log
 
    (normalizes LF/UTF-8, injects proof headers, updates manifest, validates proof gates)
 
-5. Commit proof artifact + manifest
-6. Open PR
-7. CI must reach green (required checks not skipped)
-8. Submit PR evidence to QA
-9. Receive explicit QA APPROVE
-10. Merge
+6. Commit proof artifact + manifest
+7. Open PR
+8. CI must reach green (required checks not skipped)
+9. Submit PR evidence to QA
+10. Receive explicit QA APPROVE
+11. Merge
 
 Completion requires: PR opened → CI green → approved → merged.
 
@@ -85,7 +91,7 @@ Completion requires: PR opened → CI green → approved → merged.
 
 ## 4) QA Submission Rule (LOCKED)
 
-QA review occurs **after CI is green**.
+QA review occurs after CI is green.
 
 Before QA review, the operator must provide:
 
@@ -100,12 +106,11 @@ Before QA review, the operator must provide:
 
 QA must reject the submission if required-check status evidence is missing or ambiguous.
 
-
 QA must return:
 
-* APPROVE
-* or
-* REJECT (first failing gate only)
+- APPROVE
+- or
+- REJECT (first failing gate only)
 
 No merge is valid without QA approval.
 
