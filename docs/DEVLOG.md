@@ -1174,3 +1174,22 @@ Status
 **Status**: Completed and merged. All checks are green, and validation through two PRs (Foundation and Product-only) was successful.
 
 
+## 2026-02-15 — Proof Finalize Command (Tooling Hardening)
+
+Objective: Eliminate Windows proof-manifest / proof-commit-binding friction by providing a single deterministic finalize command.
+
+Implemented
+Added scripts/proof_finalize.ps1.
+Added npm run proof:finalize.
+
+Command now:
+normalizes proof logs to UTF-8 (no BOM) + LF
+injects PROOF_HEAD + scripts hash authority headers
+updates docs/proofs/manifest.json
+runs proof validators locally.
+
+Proof
+docs/proofs/test_proof_log_2026-02-15.log
+CI: proof-manifest ✅, proof-commit-binding ✅ (ALL GREEN).
+
+Outcome: Proof workflow reduced to one command; prevents recurring hash/binding failures.
