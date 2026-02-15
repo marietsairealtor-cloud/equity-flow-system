@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "lanes": [
+    {
+      "lane": "docs_only",
+      "include_globs": [
+        "docs/**"
+      ],
+      "exclude_globs": [
+        "docs/truth/**",
+        "docs/artifacts/**",
+        "docs/governance/**"
+      ],
+      "required_checks": [
+        "CI / ci-semantic-contract",
+        "CI / ci-topology-audit",
+        "CI / env-sanity",
+        "CI / foundation-invariants",
+        "CI / proof-commit-binding",
+        "CI / proof-manifest",
+        "CI / stop-the-line",
+        "CI / test",
+        "CI / toolchain-contract",
+        "CI / truth-sync-enforced",
+        "CI / waiver-debt-enforcement"
+      ]
+    },
+    {
+      "lane": "governance",
+      "include_globs": [
+        ".github/workflows/**",
+        "scripts/**",
+        "docs/truth/**",
+        "docs/artifacts/**",
+        "docs/governance/**",
+        ".gitattributes",
+        ".editorconfig",
+        "package.json",
+        "package-lock.json"
+      ],
+      "exclude_globs": [],
+      "required_checks": [
+        "CI / ci-semantic-contract",
+        "CI / ci-topology-audit",
+        "CI / env-sanity",
+        "CI / foundation-invariants",
+        "CI / proof-commit-binding",
+        "CI / proof-manifest",
+        "CI / stop-the-line",
+        "CI / test",
+        "CI / toolchain-contract",
+        "CI / truth-sync-enforced",
+        "CI / waiver-debt-enforcement"
+      ]
+    },
+    {
+      "lane": "runtime",
+      "include_globs": [
+        "supabase/**",
+        "generated/**"
+      ],
+      "exclude_globs": [],
+      "required_checks": [
+        "CI / ci-semantic-contract",
+        "CI / ci-topology-audit",
+        "CI / env-sanity",
+        "CI / foundation-invariants",
+        "CI / proof-commit-binding",
+        "CI / proof-manifest",
+        "CI / stop-the-line",
+        "CI / test",
+        "CI / toolchain-contract",
+        "CI / truth-sync-enforced",
+        "CI / waiver-debt-enforcement"
+      ]
+    }
+  ]
+}

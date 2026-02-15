@@ -21,6 +21,11 @@
       "required": true
     },
     {
+      "name": "CI / lane-policy-contract",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / proof-commit-binding",
       "type": "github_status",
       "required": true

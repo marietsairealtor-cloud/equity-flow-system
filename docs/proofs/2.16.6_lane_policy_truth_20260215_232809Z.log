@@ -1,0 +1,15 @@
+PROOF_HEAD=c493b906446956ea4a8693279b1a29958936d370
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+PROOF: 2.16.6 lane policy truth
+UTC: 20260215_232809Z
+BRANCH: pr/2.16.6-lane-policy-truth
+PR_HEAD: c493b906446956ea4a8693279b1a29958936d370
+FILES:
+- docs/truth/lane_policy.json
+- scripts/lane_policy_contract.mjs
+- .github/workflows/ci.yml
+- docs/truth/required_checks.json
+
+LANE_POLICY_CONTRACT PASS
