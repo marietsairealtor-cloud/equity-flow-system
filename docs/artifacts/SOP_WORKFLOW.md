@@ -45,17 +45,17 @@ If an objective requires no functional code change:
 
 A Proof PR is still required containing at least one:
 
-* Committed proof artifact under docs/proofs/**
-* pgTAP / invariant assertion
-* DEVLOG update with evidence
+- Committed proof artifact under docs/proofs/**
+- pgTAP / invariant assertion
+- DEVLOG update with evidence
 
 Proof must be:
 
-* In-repo
-* Commit-bound
-* CI validated
+- In-repo
+- Commit-bound (PROOF_HEAD + scripts hash authority)
+- CI validated (proof-manifest + proof-commit-binding)
 
-Screenshots or pasted terminal output are invalid.
+Screenshots, pasted terminal output, or out-of-branch evidence are invalid.
 
 ---
 
@@ -65,16 +65,21 @@ Required order:
 
 1. Implement objective
 2. Run required local gates
-3. Generate proof artifact under `docs/proofs/**`
-4. Update manifest (if required)
-5. Commit proof artifact
+3. Generate proof artifact under docs/proofs/**
+4. Run:
+
+npm run proof:finalize -- -File docs/proofs/<proof_log>.log
+
+   (normalizes LF/UTF-8, injects proof headers, updates manifest, validates proof gates)
+
+5. Commit proof artifact + manifest
 6. Open PR
-7. CI must reach green
+7. CI must reach green (required checks not skipped)
 8. Submit PR evidence to QA
 9. Receive explicit QA APPROVE
 10. Merge
 
-Completion requires: **PR opened → CI green → approved → merged**.
+Completion requires: PR opened → CI green → approved → merged.
 
 ---
 
