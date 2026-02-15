@@ -1193,3 +1193,26 @@ docs/proofs/test_proof_log_2026-02-15.log
 CI: proof-manifest ✅, proof-commit-binding ✅ (ALL GREEN).
 
 Outcome: Proof workflow reduced to one command; prevents recurring hash/binding failures.
+
+### 2.16.X — PR Preflight Command (Governance Hardening)
+
+Objective:
+Reduce avoidable CI-red outcomes by adding a deterministic local preflight check before opening PRs.
+
+Implemented:
+- Added `scripts/pr_preflight.ps1`.
+- Added `npm run pr:preflight`.
+- Preflight now runs governance-safe local checks:
+  - encoding preflight
+  - toolchain contract
+  - truth sync (if present)
+  - proof manifest validation
+  - proof commit binding validation
+
+Notes:
+- `pr:preflight` is verification-only and does NOT modify files.
+- Proof artifact mutation remains handled exclusively by:
+  - `npm run proof:finalize -- -File docs/proofs/<proof_log>.log`
+
+Outcome:
+Operators can run one command before PR creation to catch most governance/proof failures locally, reducing CI reruns and workflow detours.
