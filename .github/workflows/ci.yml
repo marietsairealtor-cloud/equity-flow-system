@@ -100,7 +100,7 @@ jobs:
 
   db-heavy:
     needs: [changes]
-    if: needs.changes.outputs.docs_only != 'true'
+    
     runs-on: ubuntu-latest
     steps:
       - run: echo "db-heavy (skipped on docs-only) PASS"
@@ -217,7 +217,7 @@ jobs:
   stop-the-line:
     name: stop-the-line
     runs-on: ubuntu-latest
-    if: needs.changes.outputs.foundation_changed == 'true'
+    
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -241,4 +241,5 @@ jobs:
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
  
+
 
