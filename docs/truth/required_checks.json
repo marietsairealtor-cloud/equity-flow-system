@@ -69,6 +69,11 @@
       "name": "CI / waiver-debt-enforcement",
       "type": "github_status",
       "required": true
+    },
+    {
+      "name": "CI / waiver-rate-limit",
+      "type": "github_status",
+      "required": true
     }
   ]
 }

@@ -147,6 +147,19 @@ jobs:
       - run: npm ci
       - run: npm run toolchain:contract
       
+  waiver-rate-limit:
+    name: waiver-rate-limit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: waiver-rate-limit
+        run: node scripts/waiver_rate_limit.mjs
   waiver-debt-enforcement:
     name: waiver-debt-enforcement
     runs-on: ubuntu-latest
@@ -265,7 +278,7 @@ jobs:
         run: node scripts/lane_policy_contract.mjs
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
