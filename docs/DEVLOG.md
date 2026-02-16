@@ -1317,3 +1317,30 @@ PR opened → CI green → QA APPROVED → merged.
 
 Status
 CLOSED
+2026-02-15 — Build Route v2.4 — 2.16.7 — Lane Enforcement Gate
+
+Objective:
+Implement and close lane-enforcement merge-blocking CI gate (2.16.7) with SOP-compliant proof.
+
+Changes:
+- Added lane-enforcement job to .github/workflows/ci.yml
+- Wired job dependencies correctly (needs: [changes], no self-dependency)
+- Finalized proof log: docs/proofs/2.16.7_lane_enforcement_20260215_200148.log
+- Manifest updated automatically by proof_finalize.ps1
+- Duplicates removed from required_checks.json via truth:sync
+
+Proof:
+- PROOF_FINALIZE_OK
+- PROOF_MANIFEST_OK
+- CI preflight passed (npm run pr:preflight)
+- All merge-blocking gates green
+
+DoD:
+- PR merged to main
+- CI green at merge
+- Proof log and manifest verified
+- QA APPROVE received
+
+Status:
+✅ Complete — SOP-compliant, merge-blocking gates satisfied, lane-enforcement operational.
+
