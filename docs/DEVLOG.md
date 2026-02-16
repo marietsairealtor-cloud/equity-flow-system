@@ -1298,3 +1298,22 @@ Scaffold creates deterministic product shell under products/<name>, fails on re-
 
 Status
 PASS
+2026-02-15 — Build Route v2.4 — 2.16.6
+
+Objective
+Introduce machine-readable lane policy truth and enforce via merge-blocking CI gate (lane-policy-contract).
+
+Changes
+- Added docs/truth/lane_policy.json (authoritative lane taxonomy).
+- Added scripts/lane_policy_contract.mjs (validator).
+- Wired lane-policy-contract into CI and required.needs.
+- Updated docs/proofs/manifest.json accordingly.
+
+Proof
+docs/proofs/2.16.6_lane_policy_truth_20260215_232809Z.log
+
+DoD
+PR opened → CI green → QA APPROVED → merged.
+
+Status
+CLOSED
