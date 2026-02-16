@@ -41,6 +41,11 @@
       "required": true
     },
     {
+      "name": "CI / robot-owned-guard",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / stop-the-line",
       "type": "github_status",
       "required": true
