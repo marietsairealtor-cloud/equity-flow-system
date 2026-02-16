@@ -213,6 +213,17 @@ jobs:
         run: |
           ./scripts/ci_proof_manifest.ps1
 
+  robot-owned-guard:
+    name: robot-owned-guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: robot-owned-guard
+        shell: pwsh
+        run: |
+          ./scripts/ci_robot_owned_guard.ps1
   foundation-invariants:
     name: foundation-invariants
     needs: [changes, lane-enforcement]
@@ -278,7 +289,7 @@ jobs:
         run: node scripts/lane_policy_contract.mjs
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
@@ -287,5 +298,6 @@ jobs:
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
  
+
 
 
