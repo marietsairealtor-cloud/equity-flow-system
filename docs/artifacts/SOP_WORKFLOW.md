@@ -61,42 +61,67 @@ Screenshots, pasted terminal output, or out-of-branch evidence are invalid.
 
 ## 3) Proof Artifact Sequencing (LOCKED)
 
-Required order:
+**Objective:** Produce exactly **one final proof log per Build Route item**, bound to a tested commit, with a machine-managed manifest.
 
-1. Implement objective
-2. Run required local gates
-3. Run PR preflight before proof generation:
+---
 
-npm run pr:preflight
+### 3.1 Core Rules
 
-   (runs governance-safe local checks to reduce CI-red before opening a PR)
+**Rule A — Proof is last**
+Do not touch proofs until implementation is complete and all required local checks are green.
 
-4. Generate proof artifact under docs/proofs/**
-5. Run:
+**Rule B — Proof log is NOT automatic**
+`npm run proof:finalize` does **not** generate the proof log.
+The coder must first create the proof log file under `docs/proofs/**` by running the relevant gate and saving its output.
 
-npm run proof:finalize -- -File docs/proofs/<proof_log>.log
-
-   (normalizes LF/UTF-8, injects proof headers, updates manifest, validates proof gates)
-
-6. Commit proof artifact + manifest
-7. Open PR
-8. CI must reach green (required checks not skipped)
-9. Submit PR evidence to QA
-10. Receive explicit QA APPROVE
-11. Merge
-
-Completion requires: PR opened → CI green → approved → merged.
-
-Proof logs and docs/proofs/manifest.json are machine-managed artifacts.
-They must never be manually edited during normal workflow.
-
+**Rule C — Manifest is machine-managed**
+`docs/proofs/manifest.json` must never be edited manually.
 The only permitted mutation path is:
 npm run proof:finalize -- -File docs/proofs/<proof_log>.log
 
-If manifest integrity fails due to a stale or incorrect entry, manual repair is permitted only as an explicit corrective action:
-- The incorrect proof file must be deleted or corrected.
-- The manifest must be updated to match repository truth.
-- The change must be documented in DEVLOG as a manifest repair.
+**Rule D — No non-proof changes after PROOF_HEAD (HARD STOP)**
+After `proof:finalize` runs (PROOF_HEAD established), all subsequent commits in the PR may modify only:
+
+* `docs/proofs/**`
+* optional `docs/DEVLOG.md`
+
+Any non-proof change after finalize is forbidden and requires restarting proof generation.
+
+**Rule E — One canonical proof log per item per PR**
+Iteration is allowed locally, but the PR must end with exactly **one canonical proof log** for the item.
+
+### 3.2 Minimal Procedure (Required Order)
+1. Implement objective (all code / truth / workflow changes complete).
+2. Run local verification, including:
+npm run pr:preflight
+
+3. Generate proof log (create or overwrite working file until PASS):
+docs/proofs/<ITEM>_WORKING.log
+
+4. Finalize exactly once:
+npm run proof:finalize -- -File docs/proofs/<ITEM>_WORKING.log
+
+5. Rename to timestamped canonical format:
+docs/proofs/<ITEM>_<UTC>.log
+
+6. Commit only:
+   * `docs/proofs/<ITEM>_<UTC>.log`
+   * `docs/proofs/manifest.json`
+   * optional `docs/DEVLOG.md`
+
+7. Open PR → CI green → QA approve → merge.
+
+
+### 3.3 Repair Protocol (If You Created Multiple Proof Logs)
+
+If multiple proof logs exist for the same item in the same PR:
+1. Select one canonical proof log to keep.
+2. Delete duplicate proof logs.
+3. Ensure manifest reflects only the canonical log (via `proof:finalize` if required).
+4. Commit deletions + manifest update together.
+5. Add a DEVLOG entry:
+
+Proof repair: removed duplicate logs; kept canonical <file>.
 
 ---
 
