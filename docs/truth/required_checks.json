@@ -59,6 +59,11 @@
       "name": "CI / waiver-debt-enforcement",
       "type": "github_status",
       "required": true
+    },
+    {
+      "name": "CI / lane-enforcement",
+      "required": true,
+      "type": "github_status"
     }
   ]
 }
