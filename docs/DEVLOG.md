@@ -1405,3 +1405,32 @@ Status
 **Status**
 
 * PASS
+
+
+## 2026-02-16 — Build Route v2.4 — 2.16.10 Robot-Owned File Guard
+
+Objective  
+- Enforce robot-owned artifact protection to prevent manual edits to machine-managed outputs.
+
+Changes  
+- Implemented `scripts/ci_robot_owned_guard.ps1`.
+- Sourced robot-owned paths from `docs/truth/robot_owned_paths.json`.
+- Allowed only canonical `<UTC>.log` for current objective + `docs/proofs/manifest.json`.
+- Wired `robot-owned-guard` into `.github/workflows/ci.yml`.
+- Synced `docs/truth/required_checks.json` via `truth:sync`.
+
+Proof  
+- docs/proofs/2.16.10_robot_owned_guard_20260216T210559Z.log
+- Manifest updated via `proof:finalize`.
+- CI green before merge.
+- Post-merge `pr:preflight` passed on `main`.
+
+DoD  
+- Robot-owned allowlist defined via truth.
+- Fail on unauthorized robot-owned edits.
+- Explicit PASS/FAIL output with offending paths.
+- Merge-blocking required check.
+- Canonical proof log + manifest alignment.
+
+Status  
+- PASS
