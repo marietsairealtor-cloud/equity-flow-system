@@ -33,19 +33,19 @@ docs/handoff\_latest.txt (handoff pointer \+ current state)
 generated/schema.sql (schema truth)  
 generated/contracts.snapshot.json (contracts truth)  
 Specific truth files (explicit):  
-docs/docs/docs/truth/required\_checks.json (merge-blocking checks only)  
-docs/docs/docs/truth/lane\_checks.json (lane-only checks only)  
-docs/docs/docs/truth/toolchain.json  
-docs/docs/docs/truth/qa\_requirements.json  
-docs/docs/docs/truth/expected\_surface.json  
-docs/docs/docs/truth/execute\_allowlist.json  
-docs/docs/docs/truth/definer\_allowlist.json  
-docs/docs/docs/truth/tenant\_table\_selector.json  
-docs/docs/docs/truth/blocked\_identifiers.json  
-docs/docs/docs/truth/rpc\_budget.json  
-docs/docs/docs/truth/pr\_scope\_rules.json  
-docs/docs/docs/truth/robot\_owned\_paths.json  
-docs/docs/docs/truth/privilege\_truth.json  
+docs/docs/truth/required\_checks.json (merge-blocking checks only)  
+docs/docs/truth/lane\_checks.json (lane-only checks only)  
+docs/docs/truth/toolchain.json  
+docs/docs/truth/qa\_requirements.json  
+docs/docs/truth/expected\_surface.json  
+docs/docs/truth/execute\_allowlist.json  
+docs/docs/truth/definer\_allowlist.json  
+docs/docs/truth/tenant\_table\_selector.json  
+docs/docs/truth/blocked\_identifiers.json  
+docs/docs/truth/rpc\_budget.json  
+docs/docs/truth/pr\_scope\_rules.json  
+docs/docs/truth/robot\_owned\_paths.json  
+docs/docs/truth/privilege\_truth.json  
 Proof integrity layer:  
 docs/proofs/manifest.json (hashes \+ chain-of-custody)  
 Policy docs:  
@@ -217,7 +217,7 @@ Gate: ci-boot (merge-blocking)
 
 Deliverable: Core tool versions are pinned and verified.  
 DoD:  
-docs/docs/docs/truth/toolchain.json exists and is validated by CI output comparison.  
+docs/docs/truth/toolchain.json exists and is validated by CI output comparison.  
 CI hard-fails on any toolchain mismatch (Node / runner OS).  
 Proof: docs/proofs/2.2\_toolchain\_versions\_.log  
 Gate: toolchain-contract-core (merge-blocking)  
@@ -227,7 +227,7 @@ Gate: toolchain-contract-core (merge-blocking)
 
 Deliverable: .gitattributes is actually enforced (Windows↔CI drift prevented).
 
-DoD: CI hard-fails if git add \--renormalize would change any allowlisted docs/docs/truth/robot paths.
+DoD: CI hard-fails if git add \--renormalize would change any allowlisted docs/truth/robot paths.
 
 Proof: docs/proofs/2.2a\_renormalize\_enforced\_\<UTC\>.log
 
@@ -272,24 +272,24 @@ All truth inputs \+ schemas exist (per Checklist 2.5) and validate.
 Proof shows validation command outputs (schema validation \+ any harness validations).  
 Checklist 2.5 (non-DoD):  
 Truth inputs:  
-docs/docs/docs/truth/required\_checks.json (merge-blocking only)  
-docs/docs/docs/truth/lane\_checks.json (lane-only only)  
-docs/docs/docs/truth/toolchain.json  
-docs/docs/docs/truth/qa\_requirements.json  
-docs/docs/docs/truth/expected\_surface.json  
-docs/docs/docs/truth/execute\_allowlist.json  
-docs/docs/docs/truth/definer\_allowlist.json  
-docs/docs/docs/truth/pr\_scope\_rules.json  
-docs/docs/docs/truth/robot\_owned\_paths.json  
-docs/docs/docs/truth/rpc\_budget.json  
-docs/docs/docs/truth/blocked\_identifiers.json  
-docs/docs/docs/truth/tenant\_table\_selector.json  
-docs/docs/docs/truth/privilege\_truth.json  
+docs/docs/truth/required\_checks.json (merge-blocking only)  
+docs/docs/truth/lane\_checks.json (lane-only only)  
+docs/docs/truth/toolchain.json  
+docs/docs/truth/qa\_requirements.json  
+docs/docs/truth/expected\_surface.json  
+docs/docs/truth/execute\_allowlist.json  
+docs/docs/truth/definer\_allowlist.json  
+docs/docs/truth/pr\_scope\_rules.json  
+docs/docs/truth/robot\_owned\_paths.json  
+docs/docs/truth/rpc\_budget.json  
+docs/docs/truth/blocked\_identifiers.json  
+docs/docs/truth/tenant\_table\_selector.json  
+docs/docs/truth/privilege\_truth.json  
 Schemas:  
-docs/docs/docs/truth/qa\_requirements.schema.json  
-docs/docs/docs/truth/surface\_truth.schema.json  
-docs/docs/docs/truth/cloud\_inventory.schema.json  
-docs/docs/docs/truth/privilege\_truth.schema.json  
+docs/docs/truth/qa\_requirements.schema.json  
+docs/docs/truth/surface\_truth.schema.json  
+docs/docs/truth/cloud\_inventory.schema.json  
+docs/docs/truth/privilege\_truth.schema.json  
 Proof: docs/proofs/2.5\_truth\_bootstrap\_.log  
 Gate: truth-bootstrap (merge-blocking)
 
@@ -388,7 +388,7 @@ Gate: stop-the-line (merge-blocking)
 
 ### **2.15 Governance-change guard(DONE FEB 9\)**
 
-Deliverable: Changes to core docs/docs/truth/policy require explicit justification.  
+Deliverable: Changes to core docs/truth/policy require explicit justification.  
 DoD:  
 Any PR touching core truth requires a GOVERNANCE\_CHANGE\_*.md.*  
 *Guard prevents “docs-only” classification on such PRs.*  
@@ -415,7 +415,7 @@ Scheduled CI workflow that detects GitHub governance drift outside repo control.
   * branch protection / rulesets  
   * required checks  
   * admin bypass flags  
-* Diffs against committed snapshot `docs/docs/docs/truth/github_policy_snapshot.json`.  
+* Diffs against committed snapshot `docs/docs/truth/github_policy_snapshot.json`.  
 * Any mismatch produces a loud signal (CI fail or issue).
 
 **Proof**  
@@ -540,24 +540,24 @@ Mechanical limit preventing waiver normalization.
 Close known governance gate wiring gaps by ensuring all merge-blocking governance gates **required up to this section** are present in CI as **string-exact job IDs** and are structurally merge-blocking via the repo’s aggregate `required` job. Structural enforcement only.
 
 **Authoritative Source:**  
-`docs/docs/truth/required_checks.json`
+`docs/truth/required_checks.json`
 
 **Deliverable:**  
-`.github/workflows/**` contains jobs with **string-exact job IDs** for every required check in `docs/docs/truth/required_checks.json`, and `.github/workflows/ci.yml:required.needs` depends on them.
+`.github/workflows/**` contains jobs with **string-exact job IDs** for every required check in `docs/truth/required_checks.json`, and `.github/workflows/ci.yml:required.needs` depends on them.
 
 **DoD:**
 
-* `docs/docs/truth/required_checks.json` exists and contains the authoritative list of required merge-blocking job IDs.  
-* Every entry in `docs/docs/truth/required_checks.json` exists as a **job ID** in `.github/workflows/**` (string-exact).  
+* `docs/truth/required_checks.json` exists and contains the authoritative list of required merge-blocking job IDs.  
+* Every entry in `docs/truth/required_checks.json` exists as a **job ID** in `.github/workflows/**` (string-exact).  
 * Aggregate enforcement is complete:  
   * `.github/workflows/ci.yml` contains job `required`  
-  * `required.needs` contains **all** entries from `docs/docs/truth/required_checks.json` (string-exact)  
+  * `required.needs` contains **all** entries from `docs/truth/required_checks.json` (string-exact)  
 * Workflows are runnable on PRs (`pull_request` present; not dispatch-only).
 
 **Proof:**  
 `docs/proofs/2.16.4A_ci_gate_wiring_closure_<UTC>.log`  
-Must include: PR HEAD SHA, contents of `docs/docs/truth/required_checks.json`, workflow inventory (`ls .github/workflows`), grep evidence of each job ID in workflows, extracted `required.needs`, PASS/FAIL statement:  
-`All docs/docs/truth/required_checks.json entries exist as workflow job IDs and are included in required.needs.`
+Must include: PR HEAD SHA, contents of `docs/truth/required_checks.json`, workflow inventory (`ls .github/workflows`), grep evidence of each job ID in workflows, extracted `required.needs`, PASS/FAIL statement:  
+`All docs/truth/required_checks.json entries exist as workflow job IDs and are included in required.needs.`
 
 **Gate:**  
 `ci-gate-wiring-closure` (merge-blocking)
@@ -573,7 +573,7 @@ Any truth entry missing from workflow job IDs, any string mismatch, or any truth
 Prevent silent governance drift by mechanically asserting that required merge-blocking gates are **authoritatively declared**, **wired in workflows**, and **structurally merge-blocking**, not merely present in docs or npm scripts.
 
 **Authoritative Source:**  
-`docs/docs/docs/truth/required_checks.json`
+`docs/docs/truth/required_checks.json`
 
 **Deliverable:**  
 Merge-blocking PR check `ci-topology-audit` enforcing the **No Phantom Gates** rule.
@@ -581,7 +581,7 @@ Merge-blocking PR check `ci-topology-audit` enforcing the **No Phantom Gates** r
 **DoD:**
 
 * `ci-topology-audit` runs on `pull_request`.  
-* It loads required check names from `docs/docs/truth/required_checks.json`.  
+* It loads required check names from `docs/truth/required_checks.json`.  
 * It asserts:  
   1. Every truth entry exists as a **job ID** in `.github/workflows/**` (string-exact).  
   2. `.github/workflows/ci.yml` job `required` exists and `required.needs` contains the full truth set (string-exact).  
@@ -604,14 +604,14 @@ Expected vs found lists for (a) workflow job IDs and (b) `required.needs`, plus 
 ## **2.16.4C — Truth Sync Enforcement (Machine-Derived Truth)(DONE FEB 12\)**
 
 **Objective:**  
-Eliminate human-maintained drift in truth files by making `docs/docs/truth/required_checks.json` **machine-derived** from workflow reality and enforcing a **clean regeneration invariant**.
+Eliminate human-maintained drift in truth files by making `docs/truth/required_checks.json` **machine-derived** from workflow reality and enforcing a **clean regeneration invariant**.
 
 **Deliverable:**  
-A generator command (example) `npm run truth:sync` that regenerates `docs/docs/truth/required_checks.json` from `.github/workflows/**` \+ `.github/workflows/ci.yml:required.needs`.
+A generator command (example) `npm run truth:sync` that regenerates `docs/truth/required_checks.json` from `.github/workflows/**` \+ `.github/workflows/ci.yml:required.needs`.
 
 **DoD:**
 
-* `npm run truth:sync` deterministically rewrites `docs/docs/truth/required_checks.json` (stable ordering).  
+* `npm run truth:sync` deterministically rewrites `docs/truth/required_checks.json` (stable ordering).  
 * Running `npm run truth:sync` twice produces identical output.  
 * CI runs `npm run truth:sync` and fails if regeneration produces any diff (`git diff --exit-code`).  
 * Truth remains authoritative: workflow changes that affect required gates must update truth (by regeneration) in the same PR.
@@ -810,9 +810,9 @@ merge-blocking (ops)
 
 **DoD:**
 
-* `docs/docs/truth/lane_policy.json` exists and defines:  
+* `docs/truth/lane_policy.json` exists and defines:  
   * path matchers for lanes (docs-only, governance, runtime/db/security)  
-  * for each lane: required checks set (names must match `docs/docs/truth/required_checks.json`)  
+  * for each lane: required checks set (names must match `docs/truth/required_checks.json`)  
 * Policy is deterministic (stable ordering).  
 * Lane policy is referenced by CI topology audit (or lane enforcement gate).
 
@@ -830,7 +830,7 @@ merge-blocking (ops)
 
 **DoD:**
 
-* Gate computes PR lane using `docs/docs/truth/lane_policy.json`.  
+* Gate computes PR lane using `docs/truth/lane_policy.json`.  
 * Gate asserts:  
   * docs-only PRs cannot skip governance-required checks if governance paths changed  
   * governance PRs must run full governance set  
@@ -870,7 +870,7 @@ merge-blocking (ops)
 
 **DoD:**
 
-* `docs/docs/truth/waiver_policy.json` exists with:  
+* `docs/truth/waiver_policy.json` exists with:  
   * `window_days`  
   * `max_waivers_in_window`  
   * optional per-category limits (enum)  
@@ -1104,7 +1104,7 @@ Gate: lane-only cloud-baseline
 
 ### **4.2 — Deliverable: Supabase Toolchain Contract**
 
-DoD: CI hard-fails on any mismatch for Supabase CLI \+ psql versions against docs/docs/docs/truth/toolchain.json.  
+DoD: CI hard-fails on any mismatch for Supabase CLI \+ psql versions against docs/docs/truth/toolchain.json.  
 Proof: docs/proofs/4.2\_toolchain\_versions\_supabase\_.log  
 Gate: toolchain-contract-supabase (merge-blocking)
 
@@ -1140,7 +1140,7 @@ DoD:
 All merge-blocking gates listed below exist as workflow jobs string-exact and are in required\_checks.json.  
 required\_checks\_contract proves there are no missing/phantom gates.
 
-Required merge-blocking checks (must be in docs/docs/docs/truth/required\_checks.json):  
+Required merge-blocking checks (must be in docs/docs/truth/required\_checks.json):  
 rebuild-mode-declared  
 port-manifest  
 port-governance-runnable  
@@ -1171,7 +1171,7 @@ definer-safety-audit
 handoff-contract  
 toolchain-contract-supabase
 
-Lane-only (must be in docs/docs/docs/truth/lane\_checks.json until promoted):  
+Lane-only (must be in docs/docs/truth/lane\_checks.json until promoted):  
 cloud-baseline, cloud-inventory, cloud-migration-parity, cloud-surface  
 surface-truth, e2e, weweb-drift, stable-declare, release-workflow-guard
 
