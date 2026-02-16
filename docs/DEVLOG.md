@@ -1344,3 +1344,33 @@ DoD:
 Status:
 ✅ Complete — SOP-compliant, merge-blocking gates satisfied, lane-enforcement operational.
 
+
+## 2026-02-16 — Build Route v2.4 — 2.16.8 stop-the-line-xor
+
+Objective  
+- Establish merge-blocking XOR enforcement requiring exactly one acknowledgment (INCIDENT only) when stop-the-line condition is triggered.
+
+Changes  
+- Added CI job `stop-the-line-xor` (pull_request scope).  
+- Wired job into `.github/workflows/ci.yml` `required.needs`.  
+- Synced `docs/truth/required_checks.json`.  
+- Added gate script `scripts/stop_the_line_xor_gate.mjs`.  
+- Enforced PR-bound INCIDENT entry (PR #127).  
+
+Proof  
+- docs/proofs/2.16.8_stop_the_line_xor_20260216_150524Z.log  
+
+DoD  
+- Job id string-exact: `stop-the-line-xor`.  
+- Runs on `pull_request`.  
+- Activates only when stop-the-line is triggered.  
+- PASS only if INCIDENT present AND WAIVER absent.  
+- FAIL if neither present.  
+- FAIL if both present.  
+- FAIL if waiver file exists for the PR.  
+- Included in `.github/workflows/ci.yml` `required.needs`.  
+- Listed in `docs/truth/required_checks.json`.  
+- Merge-blocking.  
+
+Status  
+- PASS
