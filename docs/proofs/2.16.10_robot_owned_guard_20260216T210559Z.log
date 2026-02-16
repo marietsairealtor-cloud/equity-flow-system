@@ -1,0 +1,15 @@
+PROOF_HEAD=e56d1022c13cb9bc5a746a6045dec54a0f8efc0e
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+From https://github.com/marietsairealtor-cloud/equity-flow-system
+ * branch            main       -> FETCH_HEAD
+=== robot-owned-guard ===
+BASE=origin/main
+CHANGED_FILES=3
+ - docs/truth/required_checks.json
+ - github/workflows/ci.yml
+ - scripts/ci_robot_owned_guard.ps1
+ROBOT_OWNED_CHANGED:
+ (none)
+STATUS: PASS
