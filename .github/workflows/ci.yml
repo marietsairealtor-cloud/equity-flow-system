@@ -228,6 +228,20 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: npm run stop-the-line
+  stop-the-line-xor:
+    name: stop-the-line-xor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: stop-the-line-xor
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npm run stop-the-line-xor
   lane-policy-contract:
     name: lane-policy-contract
     runs-on: ubuntu-latest
@@ -251,7 +265,7 @@ jobs:
         run: node scripts/lane_policy_contract.mjs
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, lane-policy-contract, lane-enforcement]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
