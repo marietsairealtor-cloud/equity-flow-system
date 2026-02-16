@@ -87,6 +87,17 @@ npm run proof:finalize -- -File docs/proofs/<proof_log>.log
 
 Completion requires: PR opened → CI green → approved → merged.
 
+Proof logs and docs/proofs/manifest.json are machine-managed artifacts.
+They must never be manually edited during normal workflow.
+
+The only permitted mutation path is:
+npm run proof:finalize -- -File docs/proofs/<proof_log>.log
+
+If manifest integrity fails due to a stale or incorrect entry, manual repair is permitted only as an explicit corrective action:
+- The incorrect proof file must be deleted or corrected.
+- The manifest must be updated to match repository truth.
+- The change must be documented in DEVLOG as a manifest repair.
+
 ---
 
 ## 4) QA Submission Rule (LOCKED)
