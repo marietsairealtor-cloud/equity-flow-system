@@ -1,0 +1,7 @@
+=== waiver-rate-limit ===
+WINDOW_DAYS= 14
+MAX_WAIVERS_IN_WINDOW= 1
+WAIVERS_TOUCHED= 1
+WAIVER_FILES=
+ - docs/waivers/WAIVER_PR999.md
+RESULT=PASS
