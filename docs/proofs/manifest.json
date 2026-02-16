@@ -67,6 +67,8 @@
     "docs/proofs/2.16.5E_foundation_fork_protocol_20260215_212411Z.log": "451f098ab01a1d981d0aac5c756bdd1053a564820ea8514f72698e0fe3d5cfcb",
     "docs/proofs/2.16.5F_foundation_drift_detector_.log": "02adcc296a6680e75fd3f24254f68b12acdc6ec5d41d287231bd6950f5efa855",
     "docs/proofs/2.16.5G_product_scaffold_generator_20260215T230253Z.log": "fd83d7ce913359e23abf811a53914722c4bd27cfb5c8be1686910d8d8c5be0c8",
-    "docs/proofs/2.16.6_lane_policy_truth_20260215_232809Z.log": "ce62da78badd36c5cdb41090308e2b5c27ef816b3de20eeec9cad9edd109508c"
+    "docs/proofs/2.16.6_lane_policy_truth_20260215_232809Z.log": "ce62da78badd36c5cdb41090308e2b5c27ef816b3de20eeec9cad9edd109508c",
+    "docs/proofs/2.16.7_lane_enforcement_20260215_195653.log": "7578b959d60495ed711497f0e7c86b4375a8e6f440770fc30da36c3367ef7470",
+    "docs/proofs/2.16.7_lane_enforcement_20260215_200148.log": "03e6826b2907f6b84f96904c71ed655bba2d2fe2ab15e8a140d57f31f6d61a1b"
   }
 }
