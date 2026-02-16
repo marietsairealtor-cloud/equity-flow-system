@@ -99,7 +99,7 @@ jobs:
 
 
   db-heavy:
-    needs: [changes]
+    needs: [changes, lane-enforcement]
     
     runs-on: ubuntu-latest
     steps:
@@ -125,7 +125,7 @@ jobs:
         run: |
           ./scripts/ci_proof_commit_binding.ps1
   ci-semantic-contract:
-    needs: [changes]
+    needs: [changes, lane-enforcement]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -202,7 +202,7 @@ jobs:
 
   foundation-invariants:
     name: foundation-invariants
-    needs: [changes]
+    needs: [changes, lane-enforcement]
     runs-on: ubuntu-latest
     steps:
       - name: foundation-invariants (no skip)
@@ -238,8 +238,20 @@ jobs:
       - run: npm ci
       - name: lane-policy-contract
         run: node scripts/lane_policy_contract.mjs
+
+  lane-enforcement:
+    name: lane-enforcement
+    runs-on: ubuntu-latest
+    needs: [changes]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: lane-enforcement
+        run: node scripts/lane_policy_contract.mjs
+
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, lane-policy-contract]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, lane-policy-contract, lane-enforcement]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
