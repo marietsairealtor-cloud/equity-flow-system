@@ -1374,3 +1374,34 @@ DoD
 
 Status  
 - PASS
+
+
+## 2026-02-16 — 2.16.9 — Waiver Policy Truth + Rate Limit Gate
+
+**Objective**
+
+* Encode mechanical anti–waiver-spam limits in truth and enforce via merge-blocking gate.
+
+**Changes**
+
+* Added `docs/truth/waiver_policy.json` (`window_days`, `max_waivers_in_window`).
+* Implemented `scripts/waiver_rate_limit.mjs` (truth-driven window + threshold).
+* Wired `waiver-rate-limit` job in `.github/workflows/ci.yml`.
+* Added `CI / waiver-rate-limit` to `docs/truth/required_checks.json`.
+* Generated + finalized proof log.
+
+**Proof**
+
+* `docs/proofs/2.16.9_waiver_rate_limit_20260216_201124Z.log`
+
+**DoD**
+
+* Truth file exists with required keys.
+* Gate counts waivers in window.
+* Gate fails if limit exceeded.
+* Output includes window, counts, offending waivers.
+* Merge-blocking wiring enforced.
+
+**Status**
+
+* PASS
