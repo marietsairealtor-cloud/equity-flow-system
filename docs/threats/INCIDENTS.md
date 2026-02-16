@@ -403,3 +403,9 @@ Preventive Controls:
 - Proof artifacts still required before PR.
 - QA approval still required before merge.
 - CI remains merge-blocking.
+
+- PR: 999
+  SHA: 1d162796119741829fdc0d2817faac695d85b30c
+  FailureClass: SIM
+  Note: proof-only incident entry for 2.16.8 gate
+

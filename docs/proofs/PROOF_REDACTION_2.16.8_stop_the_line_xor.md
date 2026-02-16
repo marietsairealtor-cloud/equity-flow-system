@@ -1,0 +1,5 @@
+PROOF_HEAD=335cd276019dfec182a1643d27749a43ccc6d1f7
+PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=547fb37ceb0c3e00815308898df4f8d1aa98ba5036fc9ee5380ea8c62c88b6fb
+Redaction: proof log 2.16.8_stop_the_line_xor_20260216_145522Z.log used fictional PR:999. It is invalid. Replacement proof binds to PR:127 at SHA:335cd276019dfec182a1643d27749a43ccc6d1f7.

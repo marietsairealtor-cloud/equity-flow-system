@@ -46,6 +46,11 @@
       "required": true
     },
     {
+      "name": "CI / stop-the-line-xor",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / test",
       "type": "github_status",
       "required": true
