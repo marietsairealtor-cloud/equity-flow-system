@@ -114,14 +114,18 @@ docs/proofs/<ITEM>_<UTC>.log
 
 ### 3.3 Repair Protocol (If You Created Multiple Proof Logs)
 
-If multiple proof logs exist for the same item in the same PR:
-1. Select one canonical proof log to keep.
-2. Delete duplicate proof logs.
-3. Ensure manifest reflects only the canonical log (via `proof:finalize` if required).
-4. Commit deletions + manifest update together.
-5. Add a DEVLOG entry:
+If a proof/manifest mistake causes CI to go red (duplicate proof logs, stale manifest entry, or broken proof tail):
 
-Proof repair: removed duplicate logs; kept canonical <file>.
+**Canonical repair (mechanical):**
+1) Identify the last clean commit **before any proof/finalize/manifest changes** (`PREPROOF_HEAD`).
+2) Reset the branch to `PREPROOF_HEAD` (discard the broken proof tail).
+3) Fix the underlying objective/gate issue (non-proof work) until CI/local gates are green.
+4) Generate the proof log again (canonical `<UTC>.log` only).
+5) Run `npm run proof:finalize -- -File docs/proofs/<proof_log>.log` exactly once.
+6) After finalize: proof-only tail commits only (`docs/proofs/**` + optional `docs/DEVLOG.md`).
+7) Push.
+
+**Do NOT** attempt to “prune” manifest entries via delete-first + re-finalize; `proof:finalize` does not prune and `ci_proof_manifest` will fail on stale entries.
 
 ---
 
