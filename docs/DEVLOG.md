@@ -1605,3 +1605,24 @@ Fix 2 — DEVLOG dormant/active contradiction
 
 Status
 Both remediation items complete. Section 2.16 fully closed.
+
+## 2026-02-17 — Build Route v2.4 — Added 13.2 Incident Resolution Deadline Enforcement
+
+Objective
+Add Build Route item 13.2 to close the gap identified in Section 2.16 readiness audit: INCIDENT entries required by 2.16.8 had no resolution deadline, allowing unresolved incidents to accumulate indefinitely while CI stayed green.
+
+Changes
+- Added item 13.2 to docs/artifacts/BUILD_ROUTE_V2.4.md under Section 13 (Recovery + Rollback).
+- Item introduces incident_policy.json truth file, resolution marker convention, and merge-blocking gate incident-resolution-deadline.
+- Waiver path explicitly forbidden for this gate.
+
+Proof
+- PR merged to main. Working tree clean post-merge.
+
+DoD
+- 13.2 exists in Build Route under Section 13.
+- Hardening target explicitly references 2.16.8 as the legacy item being hardened.
+- Implementation deferred to Section 13 execution.
+
+Status
+ADDED — implementation deferred until Section 13.
