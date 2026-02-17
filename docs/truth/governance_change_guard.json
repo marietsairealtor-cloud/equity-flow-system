@@ -7,7 +7,9 @@
     "docs/artifacts/GUARDRAILS.md",
     "docs/artifacts/CONTRACTS.md",
     "docs/artifacts/AUTOMATION.md",
-    "docs/artifacts/SOP_WORKFLOW.md"
+    "docs/artifacts/SOP_WORKFLOW.md",
+    "supabase/foundation/**",
+    "docs/artifacts/FOUNDATION_BOUNDARY.md"
   ],
   "justification_glob": "docs/governance/GOVERNANCE_CHANGE_PR*.md"
 }
