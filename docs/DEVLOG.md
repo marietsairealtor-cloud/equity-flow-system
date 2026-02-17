@@ -1535,7 +1535,73 @@ DoD
 
 Status  
 - PASS
-'@ | Add-Content docs/DEVLOG.md -Encoding utf8
 
 git add docs/DEVLOG.md
 git commit -m "DEVLOG: 2.16.11 Governance-Change Template Contract (closed)"
+
+## 2026-02-17 — DEVLOG Correction — 2.16.5A–2.16.5G Status Clarification
+
+The advisor review entry dated 2026-02-12 classified items 2.16.5A–2.16.5G as DORMANT.
+This was superseded by subsequent implementation decisions. All seven items were implemented and merged:
+
+- 2.16.5A — Foundation Boundary Contract — MERGED (PR #89)
+- 2.16.5B — Repo Layout Separation — MERGED
+- 2.16.5C — Foundation Invariants Suite — MERGED (BLOCKED mode, activates at 6.9)
+- 2.16.5D — Lane Separation Enforcement — MERGED
+- 2.16.5E — Foundation Versioning + Fork Protocol — MERGED
+- 2.16.5F — Anti-Divergence Drift Detector — MERGED
+- 2.16.5G — Product Scaffold Generator — MERGED
+
+The DORMANT classification is no longer accurate. All items are active.
+2.16.5C remains in BLOCKED mode pending foundation schema surface (unblocks at Build Route 6.9).
+
+## 2026-02-17 — Section 2.16 Readiness Audit — Advisor Review
+
+Purpose
+Confirm enforcement completeness, identify silent bypass vectors, and validate readiness to proceed before moving to the next section. Section 2.16 is frozen. Audit scope: risk and integrity only. No redesign, no expansion, no reopening of closed items.
+
+Advisors
+Three independent advisors reviewed. Findings converged.
+
+Question 1 — Can governance mutation occur without triggering declaration and enforcement?
+ANSWER: No, with one residual vector.
+- The enforcement stack is sound: governance-change-guard (2.15) + governance-change-template-contract (2.16.11) + truth-sync-enforced (2.16.4C) + ci-topology-audit (2.16.4B) + robot-owned-guard (2.16.10) collectively prevent silent governance mutation via normal PRs.
+- Residual vector: the governance-touch path matcher did not cover supabase/foundation/** or docs/artifacts/FOUNDATION_BOUNDARY.md. A PR touching Foundation paths would not have triggered the declaration requirement.
+- Resolution: gap closed via PR #138 (merged 2026-02-17). Both paths added to docs/truth/governance_change_guard.json.
+- Secondary vector (accepted): GitHub Actions runner environment updates can shift gate behavior without code changes. Partially mitigated by 2.17.4 and 2.16.4C. Accepted external dependency risk.
+
+Question 2 — Is proof discipline deterministic under failure?
+ANSWER: Yes.
+- Proofs are hash-tracked, append-only, and commit-bound.
+- PREPROOF_HEAD repair protocol is specified and deterministic.
+- POST_PROOF_NON_PROOF_CHANGE hard-fails.
+- PROOF_SCRIPTS_HASH authority is declared in AUTOMATION.md and enforced with no globbing.
+- Only remaining human-judgement element is identifying PREPROOF_HEAD during repair. Known, documented, accepted.
+
+Question 3 — Is there any enforcement gap making the next section unsafe?
+ANSWER: No blocking gap. Three items noted.
+- Governance-touch matcher gap: CLOSED (PR #138).
+- DEVLOG dormant/active contradiction for 2.16.5A-2.16.5G: CLOSED (this entry).
+- 2.16.5C Foundation Invariants Suite: live infrastructure in BLOCKED mode. Exits zero when foundation schema surface is absent. Will auto-activate at Build Route item 6.9. No action required now. Track as live dependency.
+
+Verdict
+Section 2.16 is complete, green, and internally consistent.
+Next section is 2.17 (Ported Files Stability Sweep).
+
+## 2026-02-17 — Section 2.16 Audit Remediation
+
+Actions taken following advisor review findings:
+
+Fix 1 — Governance-touch matcher gap (PR #138)
+- Added supabase/foundation/** and docs/artifacts/FOUNDATION_BOUNDARY.md to docs/truth/governance_change_guard.json.
+- Created docs/governance/GOVERNANCE_CHANGE_PR138.md with required structured justification.
+- npm run pr:preflight PASS before commit.
+- PR #138 merged to main. Working tree clean post-merge.
+
+Fix 2 — DEVLOG dormant/active contradiction
+- Added clarifying entry to docs/DEVLOG.md confirming 2.16.5A-2.16.5G are active and merged.
+- 2.16.5C noted as BLOCKED mode pending 6.9.
+- No PR required. DEVLOG entry only.
+
+Status
+Both remediation items complete. Section 2.16 fully closed.
