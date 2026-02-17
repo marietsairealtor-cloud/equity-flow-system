@@ -668,6 +668,40 @@ Hash authority deterministic.
 
 ---
 
+## 2026-02-11 — Build Route v2.4 — Governance Hardening (2.16.6–2.16.11)
+
+**Objective**
+
+Add structural governance enforcement after repeated CI topology drift, proof discipline violations, waiver ambiguity, and silent workflow/artifact mutations.
+
+**Why This Section Was Added**
+
+Evidence showed governance surface (truth files, workflows, required checks, artifacts) could mutate without explicit declaration, and CI could pass despite structural drift. Repeated PRs bundled governance + functional changes without trace artifacts.
+
+The 2.16.6–2.16.11 block formalizes enforcement to prevent recurrence and slow governance mutation rate.
+
+**Items Introduced**
+
+* **2.16.6 — Lane Policy Truth**
+  → Define merge-blocking vs lane-only checks in machine-readable truth.
+
+* **2.16.7 — Lane Enforcement Gate**
+  → Enforce declared lane policy in CI.
+
+* **2.16.8 — Stop-the-Line XOR Gate**
+  → Require exactly-one acknowledgment artifact when stop-the-line triggers (INCIDENT xor WAIVER).
+
+* **2.16.9 — Waiver Policy Truth + Rate Limit**
+  → Prevent silent waiver debt accumulation.
+
+* **2.16.10 — Robot-Owned File Guard**
+  → Block unauthorized edits to protected governance artifacts.
+
+* **2.16.11 — Governance-Change Template Contract**
+  → Require explicit declaration (`GOVERNANCE_CHANGE_PR<NNN>.md`) when governance surface is modified.
+
+---
+
 **2026-02-11 — Build Route v2.4 — Section 2.17 Ported Files Stability Sweep**
 
 **Objective**
@@ -1434,3 +1468,74 @@ DoD
 
 Status  
 - PASS
+
+---
+
+## 2026-02-16 — Clarified 2.16.11 Content Threshold
+
+**Item:** 2.16.11 — Governance-Change Template Contract
+**PR:** (fill in PR number after merge)
+
+### Context
+
+Item 2.16.11 required a “minimum non-whitespace content threshold per section (length floor)” but did not specify a numeric value. This left the gate underspecified and non-deterministic.
+
+### Decision
+
+Defined numeric minimum:
+
+> **Minimum non-whitespace content per required section = 40 characters**
+
+Applies individually to each required heading:
+
+* `What changed`
+* `Why safe`
+* `Risk`
+* `Rollback`
+
+### Rationale
+
+* Prevent empty or trivial boilerplate.
+* Preserve structured governance traceability.
+* Maintain low-to-moderate friction (rate-limiting governance mutation without turning it into essay-writing).
+* Remove ambiguity so CI behavior matches authoritative spec.
+
+### Impact
+
+* Makes 2.16.11 fully specified and deterministic.
+* No architectural change.
+* No expansion of governance surface.
+* Pure clarification of enforcement parameter.
+
+---
+
+## 2026-02-17 — Build Route v2.16.11 — Governance-Change Template Contract
+
+Objective  
+- Enforce structured governance-change justification with per-section length floor and merge-blocking CI gate.
+
+Changes  
+- Added CI job `governance-change-template-contract`.
+- Implemented `scripts/ci_governance_change_template_contract.ps1`.
+- Reused identical governance-touch matcher (2.15 logic via governance_touch_matcher).
+- Enforced required headings (`What changed`, `Why safe`, `Risk`, `Rollback`).
+- Enforced ≥40 non-whitespace characters per section.
+- Updated required checks truth.
+- Allowed 2.16.11 proof log in robot-owned-guard.
+
+Proof  
+- docs/proofs/2.16.11_governance_change_template_20260217T010033Z.log
+
+DoD  
+- Governance-touch PR requires `GOVERNANCE_CHANGE_PR*.md`.
+- Headings string-exact enforced.
+- Per-section ≥40 non-whitespace characters enforced.
+- Merge-blocking gate active.
+- Canonical proof log registered in manifest.
+
+Status  
+- PASS
+'@ | Add-Content docs/DEVLOG.md -Encoding utf8
+
+git add docs/DEVLOG.md
+git commit -m "DEVLOG: 2.16.11 Governance-Change Template Contract (closed)"
