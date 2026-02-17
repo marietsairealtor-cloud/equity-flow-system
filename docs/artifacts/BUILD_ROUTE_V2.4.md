@@ -917,7 +917,7 @@ merge-blocking (ops)
   * `Why safe`  
   * `Risk`  
   * `Rollback`  
-* Minimum non-whitespace content threshold per section (length floor).  
+* Minimum non-whitespace content threshold per section: 40 characters.  
 * Does not attempt to judge “quality,” only blocks empty boilerplate.
 
 **Proof:**  
