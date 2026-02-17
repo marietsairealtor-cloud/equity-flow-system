@@ -99,7 +99,7 @@ jobs:
 
 
   db-heavy:
-    needs: [changes, lane-enforcement]
+    needs: [changes, lane-enforcement, governance-change-template-contract]
     
     runs-on: ubuntu-latest
     steps:
@@ -113,6 +113,17 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/ci_governance_change_guard.ps1
+
+  governance-change-template-contract:
+    name: governance-change-template-contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: governance-change-template-contract
+        shell: pwsh
+        run: |
+          ./scripts/ci_governance_change_template_contract.ps1
+
   proof-commit-binding:
     name: proof-commit-binding
     runs-on: ubuntu-latest
@@ -298,6 +309,7 @@ jobs:
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
  
+
 
 
 
