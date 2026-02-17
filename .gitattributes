@@ -3,3 +3,8 @@
 
 # proofs should be LF-stable across OS
 docs/proofs/*.log text eol=lf
+
+# governed paths — LF + no-BOM
+docs/** text eol=lf working-tree-encoding=UTF-8
+generated/** text eol=lf working-tree-encoding=UTF-8
+supabase/** text eol=lf working-tree-encoding=UTF-8

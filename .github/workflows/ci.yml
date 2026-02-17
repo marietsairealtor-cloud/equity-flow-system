@@ -249,6 +249,18 @@ jobs:
       - run: npm ci
       - run: npm run foundation:invariants
 
+  ci-normalize-sweep:
+    name: ci-normalize-sweep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: ci-normalize-sweep
+        shell: pwsh
+        run: |
+          npm run sweep:normalize
   stop-the-line:
     name: stop-the-line
     runs-on: ubuntu-latest
@@ -300,7 +312,7 @@ jobs:
         run: node scripts/lane_policy_contract.mjs
 
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
