@@ -91,19 +91,14 @@ Any non-proof change after finalize is forbidden and requires restarting proof g
 Iteration is allowed locally, but the PR must end with exactly **one canonical proof log** for the item.
 
 ### 3.2 Minimal Procedure (Required Order)
-1. Implement objective (all code / truth / workflow changes complete).
-2. Run local verification, including:
-npm run pr:preflight
-
-3. Generate proof log (create or overwrite working file until PASS):
-docs/proofs/<ITEM>_WORKING.log
-
-4. Finalize exactly once:
-npm run proof:finalize -- -File docs/proofs/<ITEM>_WORKING.log
-
-5. Rename to timestamped canonical format:
-docs/proofs/<ITEM>_<UTC>.log
-
+1. Implement objective (all code / truth / workflow complete).
+2. Run:
+   `npm run pr:preflight`
+3. Generate/overwrite:
+   `docs/proofs/<ITEM>_WORKING.log` (until PASS)
+4. **Rename WORKING → canonical `<UTC>.log`**
+5. Finalize exactly once:
+   `npm run proof:finalize -- -File docs/proofs/<ITEM>_<UTC>.log`
 6. Commit only:
    * `docs/proofs/<ITEM>_<UTC>.log`
    * `docs/proofs/manifest.json`
