@@ -1604,3 +1604,28 @@ One rehearsal is executed and captured as proof.
 Proof: docs/proofs/13.1\_recovery\_rehearsal\_.log  
 Gate: lane-only; required for stable
 
+
+### **13.2 — Incident Resolution Deadline Enforcement**
+
+**Hardening target:**
+Item 2.16.8 (stop-the-line-xor) requires an INCIDENT entry when a stop-the-line condition is triggered. However 2.16.8 only enforces that the entry exists — it does not enforce that it is ever resolved. Under operational pressure, INCIDENTS.md can accumulate unresolved entries indefinitely while CI stays green. This item closes that gap.
+
+**Deliverable:**
+Mechanical enforcement that open INCIDENT entries do not accumulate beyond a defined resolution window.
+
+**DoD:**
+
+* `docs/truth/incident_policy.json` exists with:
+  * `max_open_days` — maximum days an INCIDENT entry may remain unresolved
+  * `resolution_marker` — exact string marking an incident closed (e.g. `RESOLVED:`)
+* Gate scans `docs/threats/INCIDENTS.md` for entries missing the resolution marker beyond `max_open_days`.
+* Gate output includes: incident identifier, age in days, deadline.
+* Gate fails if any incident exceeds `max_open_days` without a resolution marker.
+* Waiver path is explicitly forbidden for this gate. An unresolved incident cannot be waivered — it must be resolved or escalated via a new INCIDENT entry.
+* Gate is merge-blocking.
+
+**Proof:**
+`docs/proofs/13.2_incident_resolution_deadline_<UTC>.log`
+
+**Gate:**
+`incident-resolution-deadline` (merge-blocking)
