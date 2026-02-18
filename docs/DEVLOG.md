@@ -1626,3 +1626,29 @@ DoD
 
 Status
 ADDED — implementation deferred until Section 13.
+
+## 2026-02-18 — Build Route v2.4 — 2.17.1 Repository Normalization Contract
+
+Objective
+- Enforce deterministic LF + no-BOM normalization for governed paths with merge-blocking CI gate.
+
+Changes
+- Updated .gitattributes: stripped BOM, added LF rules for docs/**, generated/**, supabase/**
+- Added scripts/ci_normalize_sweep.ps1
+- Added npm run sweep:normalize to package.json
+- Added CI job ci-normalize-sweep to .github/workflows/ci.yml, wired into required.needs
+- Updated docs/truth/required_checks.json via npm run truth:sync
+- Added 2.17.1 proof log exception to scripts/ci_robot_owned_guard.ps1
+
+Proof
+- docs/proofs/2.17.1_normalize_sweep_20260218T154346Z.log
+
+DoD
+- .gitattributes enforces LF + no-BOM for docs/**, generated/**, supabase/**
+- npm run sweep:normalize runs renormalize on allowlisted paths only
+- Running twice produces zero diff
+- Any renormalization diff = failure
+- Gate ci-normalize-sweep is merge-blocking
+
+Status
+- PASS
