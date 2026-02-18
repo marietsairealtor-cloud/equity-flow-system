@@ -1718,3 +1718,31 @@ proof-manifest + proof-commit-binding green.
 
 Status
 PASS
+
+## 2026-02-18 — Build Route v2.4 — 2.17.2 Encoding & Hidden Character Audit
+
+Objective
+- Validate and enforce no BOM, no zero-width, and no disallowed control characters in all guarded paths.
+
+Changes
+- Extended scripts/fix_encoding.ps1 to strip zero-width, ANSI escapes, NUL bytes; enforce LF-only.
+- Added scripts/ci_encoding_audit.ps1 as merge-blocking gate.
+- Ran fix:encoding to sanitize repo.
+- Updated scripts/ci_robot_owned_guard.ps1 to allow repaired legacy proof logs and canonical 2.17.2 log.
+- Captured canonical proof log docs/proofs/2.17.2_encoding_audit_20260218T214411Z.log.
+
+Proof
+- PROOF_HEAD set to 2.17.2 tail commit.
+- Manifest updated for all repaired logs.
+- All CI gates green, robot-owned-guard PASS.
+
+DoD
+- No BOM in guarded paths.
+- No zero-width characters.
+- Only allowed control chars (TAB/LF/CR).
+- ci-encoding-audit gate fails only on forbidden classes.
+- Canonical proof log finalized via proof:finalize.
+- Robot-owned guard green, no manual edits to proof artifacts.
+
+Status
+- PASS
