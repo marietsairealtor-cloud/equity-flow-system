@@ -4,10 +4,10 @@ From https://github.com/Equity-Flow-Systems/equity-flow-system
 PROOF_SCRIPTS_FILES=scripts\ci_proof_commit_binding.ps1
 PROOF_SCRIPTS_FILE_SHA256=scripts\ci_proof_commit_binding.ps1:991e17550051b00a8be74955ffd9ebe0e0f19f69fd160a03b1b0e38bb593c8c8
 PROOF_SCRIPTS_HASH=ddcffe5d2d47b600fc25664e7f7c4a3fcd869e68c423a4289ec05c8f5041b987
-[31;1mGet-Content: [0mC:\Users\marie\projects\equity-flow-system\scripts\ci_proof_commit_binding.ps1:43:6[0m
-[31;1m[0m[36;1mLine |[0m
-[31;1m[0m[36;1m[36;1m  43 | [0m   $t=[36;1mGet-Content $f -Raw[0m
-[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m      ~~~~~~~~~~~~~~~~~~~[0m
-[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mCannot find path 'C:\Users\marie\projects\equity-flow-system\docs\proofs\2.16.2A_hash_authority_contract_20260211_140739Z.log' because it[0m
-[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mdoes not exist.[0m
+[31;1mGet-Content: [0mC:\Users\marie\projects\equity-flow-system\scripts\ci_proof_commit_binding.ps1:43:6[0m
+[31;1m[0m[36;1mLine |[0m
+[31;1m[0m[36;1m[36;1m  43 | [0m   $t=[36;1mGet-Content $f -Raw[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m      ~~~~~~~~~~~~~~~~~~~[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mCannot find path 'C:\Users\marie\projects\equity-flow-system\docs\proofs\2.16.2A_hash_authority_contract_20260211_140739Z.log' because it[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m[31;1m[36;1m     | [31;1mdoes not exist.[0m
 RESULT=FAIL
