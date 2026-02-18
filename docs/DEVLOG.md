@@ -1172,7 +1172,7 @@ Objective
 Changes
 - Added 
 pm run foundation:invariants runner + deterministic stubs under supabase/foundation/invariants/
-- CI job oundation-invariants (triggered by supabase/foundation/**) + required-checks truth sync
+- CI job oundation-invariants (triggered by supabase/foundation/**) + required-checks truth sync
 - ci-semantic-contract allowlist updated for 
 pm run foundation:invariants
 - Governance change doc added (CI behavior change)

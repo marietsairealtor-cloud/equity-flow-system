@@ -309,8 +309,19 @@ jobs:
       - name: ci-normalize-sweep
         shell: pwsh
         run: ./scripts/ci_normalize_sweep.ps1
+  ci-encoding-audit:
+    name: ci-encoding-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ci-encoding-audit
+        shell: pwsh
+        run: |
+          ./scripts/ci_encoding_audit.ps1
+
+
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep]
+    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
