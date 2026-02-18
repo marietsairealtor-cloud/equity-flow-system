@@ -1652,3 +1652,69 @@ DoD
 
 Status
 - PASS
+
+Understood.
+
+This is a **governance-addition rationale entry**, not an implementation entry.
+
+Insert this:
+
+---
+
+## 2026-02-18 — Build Route v2.4 — Added 2.17.1A (proof:finalize Invocation Hardening)
+
+Objective
+Record QA decision to introduce Build Route item 2.17.1A after recurring execution friction revealed a deterministic tooling weakness in `proof:finalize` argument passing.
+
+Reason for Addition
+During execution of 2.17.1, repeated failures occurred due to npm → PowerShell parameter forwarding ambiguity across Windows shells.
+Although not a governance breach, the friction caused unnecessary Debugger Mode cycles and introduced risk of improper proof finalization patterns (manual quoting, inconsistent invocation forms).
+
+QA determined this was:
+
+* A systemic tooling weakness (not operator error),
+* Recurring,
+* Deterministic,
+* And preventable through wrapper hardening.
+
+2.17.1A was added to:
+
+* Enforce positional argument canonicalization,
+* Remove dependency on `-- -File` npm semantics,
+* Preserve proof-binding invariants,
+* Reduce governance execution risk.
+
+Scope
+Additive hardening only.
+No policy change.
+No gate weakening.
+No modification to proof-commit-binding or manifest authority.
+
+Status
+Build Route updated.
+Implementation tracked under item 2.17.1A.
+
+
+2026-02-18 — Build Route v2.4 — 2.17.1A
+
+Objective
+Harden proof:finalize invocation to deterministic cross-shell positional arg form without weakening proof discipline.
+
+Changes
+Added scripts/proof_finalize_wrapper.mjs (Node wrapper enforcing positional arg + validation).
+Updated package.json proof:finalize to call wrapper.
+Updated docs/artifacts/SOP_WORKFLOW.md canonical finalize command to positional form.
+Updated scripts/ci_robot_owned_guard.ps1 to allow 2.17.1A proof log pattern.
+
+Proof
+docs/proofs/2.17.1A_proof_finalize_arg_hardening_20260218T175242Z.log
+
+DoD
+Positional npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log works on Windows without -- -File.
+Legacy -File still supported.
+Hard-fail on invalid/missing/outside path.
+Finalize only mutates proof log + manifest.
+proof-manifest + proof-commit-binding green.
+
+Status
+PASS
