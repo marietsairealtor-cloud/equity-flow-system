@@ -31,7 +31,7 @@ PR opened → CI green → approved → merged
 
 No PR = not complete
 Local pass ≠ complete
-“Nothing to commit” ≠ complete
+"Nothing to commit" ≠ complete
 
 One objective = One PR
 
@@ -77,7 +77,9 @@ The coder must first create the proof log file under `docs/proofs/**` by running
 **Rule C — Manifest is machine-managed**
 `docs/proofs/manifest.json` must never be edited manually.
 The only permitted mutation path is:
+```
 npm run proof:finalize -- -File docs/proofs/<proof_log>.log
+```
 
 **Rule D — No non-proof changes after PROOF_HEAD (HARD STOP)**
 After `proof:finalize` runs (PROOF_HEAD established), all subsequent commits in the PR may modify only:
@@ -90,37 +92,56 @@ Any non-proof change after finalize is forbidden and requires restarting proof g
 **Rule E — One canonical proof log per item per PR**
 Iteration is allowed locally, but the PR must end with exactly **one canonical proof log** for the item.
 
+---
+
 ### 3.2 Minimal Procedure (Required Order)
-1. Implement objective (all code / truth / workflow complete).
-2. Run:
-   `npm run pr:preflight`
-3. Generate/overwrite:
+
+1. Implement objective (all code / truth / workflow changes complete).
+
+2. If robot-owned-guard will block the new proof log path, add the proof log pattern to `docs/truth/robot_owned_paths.json` (or gate allowlist) as part of implementation. This is a legitimate implementation change, not a proof-only change.
+
+3. Run:
+   ```
+   npm run pr:preflight
+   ```
+
+4. Generate/overwrite:
    `docs/proofs/<ITEM>_WORKING.log` (until PASS)
-4. **Rename WORKING → canonical `<UTC>.log`**
-5. Finalize exactly once:
-   `npm run proof:finalize -- -File docs/proofs/<ITEM>_<UTC>.log`
-6. Commit only:
+
+5. **Rename WORKING → canonical `<UTC>.log`**
+
+6. Finalize exactly once:
+   ```
+   npm run proof:finalize -- -File docs/proofs/<ITEM>_<UTC>.log
+   ```
+   
+   **Note:** If npm parameter passing fails (common on Windows), use direct invocation:
+   ```
+   pwsh -File scripts/proof_finalize.ps1 -File docs/proofs/<ITEM>_<UTC>.log
+   ```
+
+7. Commit only:
    * `docs/proofs/<ITEM>_<UTC>.log`
    * `docs/proofs/manifest.json`
-   * optional `docs/DEVLOG.md`
 
-7. Open PR → CI green → QA approve → merge.
+8. Open PR → CI green → QA approve → merge.
 
+---
 
 ### 3.3 Repair Protocol (If You Created Multiple Proof Logs)
 
 If a proof/manifest mistake causes CI to go red (duplicate proof logs, stale manifest entry, or broken proof tail):
 
 **Canonical repair (mechanical):**
-1) Identify the last clean commit **before any proof/finalize/manifest changes** (`PREPROOF_HEAD`).
-2) Reset the branch to `PREPROOF_HEAD` (discard the broken proof tail).
-3) Fix the underlying objective/gate issue (non-proof work) until CI/local gates are green.
-4) Generate the proof log again (canonical `<UTC>.log` only).
-5) Run `npm run proof:finalize -- -File docs/proofs/<proof_log>.log` exactly once.
-6) After finalize: proof-only tail commits only (`docs/proofs/**` + optional `docs/DEVLOG.md`).
-7) Push.
+1. Identify the last clean commit **before any proof/finalize/manifest changes** (`PREPROOF_HEAD`).
+2. Reset the branch to `PREPROOF_HEAD` (discard the broken proof tail).
+3. Fix the underlying objective/gate issue (non-proof work) until CI/local gates are green.
+4. Generate the proof log again (canonical `<UTC>.log` only).
+5. Run `npm run proof:finalize -- -File docs/proofs/<proof_log>.log` exactly once.
+6. After finalize: proof-only tail commits only (`docs/proofs/**` + optional `docs/DEVLOG.md`).
+7. Push.
 
-**Do NOT** attempt to “prune” manifest entries via delete-first + re-finalize; `proof:finalize` does not prune and `ci_proof_manifest` will fail on stale entries.
+**Do NOT** attempt to "prune" manifest entries via delete-first + re-finalize; `proof:finalize` does not prune and `ci_proof_manifest` will fail on stale entries.
 
 ---
 
@@ -137,7 +158,10 @@ Before QA review, the operator must provide:
 - CI checks evidence showing:
   - CI / required = SUCCESS (not skipped)
   - Any newly introduced gate = SUCCESS
-- Gate output (local or CI where relevant)
+- Gate output evidence:
+  - If implementing a new gate: output from the new gate showing PASS
+  - If in Debugger Mode: output from the first failing gate (before and after fix)
+  - Otherwise: CI checks screenshot showing `required` job green is sufficient
 
 QA must reject the submission if required-check status evidence is missing or ambiguous.
 
@@ -206,6 +230,19 @@ Default interactive shell on Windows is pwsh (PowerShell 7) for objectives invol
 * governance / CI scripts
 
 Git Bash may be used for lightweight git or Unix-style operations only if chosen at objective start.
+
+### Allowed in Git Bash:
+- `git status`, `git log`, `git diff`, `git branch`
+- `git checkout`, `git pull`, `git push`, `git fetch`
+- Simple file inspection (`cat`, `head`, `tail`, `less`)
+- `ls`, `pwd`, `cd`
+
+### NOT Allowed in Git Bash (use pwsh):
+- `git add --renormalize` (encoding-sensitive)
+- Running `.ps1` scripts
+- Proof generation or `proof:finalize`
+- Any file-writing operation
+- npm scripts that invoke PowerShell
 
 Execution surface is locked per objective (one PR):
 
@@ -328,19 +365,55 @@ Violation = governance failure.
 
 After merge to main:
 
+```
 git checkout main
 git pull
 git status → must show clean working tree
-npm run ship → must pass
+npm run pr:preflight → must pass
+```
 
 `docs/handoff_latest.txt` internal git status line is informational only and not authoritative.
 
 ---
 
-## 14) DEVLOG Entry Format (LOCKED)
+## 14) DEVLOG Entry Rules (LOCKED)
 
-Entries must follow exactly:
+### When to Add Entry
 
+A DEVLOG entry is REQUIRED for:
+
+- Build Route item completion (PR merged)
+- Build Route additions or modifications
+- Advisor review findings
+- Governance artifact updates (AUTOMATION, CONTRACTS, GUARDRAILS, SOP_WORKFLOW)
+- Truth file changes (`docs/truth/*.json`)
+- Incident acknowledgment (INCIDENTS.md entry)
+- Waiver usage (WAIVER_PR*.md created)
+- Remediation actions following audit findings
+- Status corrections to prior entries
+- Proof repair (PREPROOF_HEAD reset)
+- CI gate additions or removals
+- Toolchain version changes
+- Foundation boundary or invariant changes
+
+### When NOT to Add Entry
+
+Do not add entries for:
+
+- Routine CI runs
+- Failed or abandoned PRs
+- Local debugging sessions
+- Draft/WIP work
+- Branch creation without merge
+
+### Timing
+
+DEVLOG entry is added as part of the proof-only tail commit, before merge.
+The entry records the expected completion state; merge confirms it.
+
+### Format (LOCKED)
+
+```
 YYYY-MM-DD — Build Route vX.Y — Item
 
 Objective
@@ -348,6 +421,7 @@ Changes
 Proof
 DoD
 Status
+```
 
 No structural deviation allowed.
 
