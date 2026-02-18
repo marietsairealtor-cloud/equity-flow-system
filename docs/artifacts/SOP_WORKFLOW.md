@@ -94,37 +94,43 @@ Iteration is allowed locally, but the PR must end with exactly **one canonical p
 
 ---
 
+
 ### 3.2 Minimal Procedure (Required Order)
 
-1. Implement objective (all code / truth / workflow changes complete).
+1. Complete all implementation changes. All code, truth files, and
+   workflow changes must be committed before proof begins.
 
-2. **Robot-owned allowlist (pre-proof requirement):**
-   If `robot-owned-guard` will apply to the new proof log path, you must allowlist the **exact canonical proof log path** (the final `<ITEM>_<UTC>.log` filename you will produce) in `docs/truth/robot_owned_paths.json` **before** creating/renaming the canonical log.
-   This is an **implementation** change, not a proof-only change.
+2. Allowlist the canonical proof log path in
+   docs/truth/robot_owned_paths.json before creating the log.
+
+   - All new proof logs are subject to robot-owned-guard.
+     No exceptions.
+   - The exact canonical filename (docs/proofs/<ITEM>_<UTC>.log)
+     must be present in robot_owned_paths.json before Step 5.
+   - This is an implementation change. Commit it in Step 1,
+     not as part of the proof tail.
 
 3. Run:
-   ```
    npm run pr:preflight
-   ```
-4. Generate/overwrite:
-   `docs/proofs/<ITEM>_WORKING.log` (until PASS)
 
-5. **Rename WORKING → canonical `<ITEM>_<UTC>.log`** (must match the allowlisted path from Step 2)
+4. Run the relevant gate. Save output to:
+   docs/proofs/<ITEM>_WORKING.log
+   Iterate until gate output shows PASS. No non-proof changes
+   between iterations.
+
+5. Rename to canonical form:
+   docs/proofs/<ITEM>_<UTC>.log
+   Filename must exactly match the path allowlisted in Step 2.
+   Mismatch = robot-owned-guard will fail.
 
 6. Finalize exactly once:
-   ```
    npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log
-   ```
-   **Fallback (only if npm invocation fails):**
-   ```
-   pwsh -File scripts/proof_finalize.ps1 -File docs/proofs/<ITEM>_<UTC>.log
-   ```
 
 7. Commit only:
-   * `docs/proofs/<ITEM>_<UTC>.log`
-   * `docs/proofs/manifest.json`
+   - docs/proofs/<ITEM>_<UTC>.log
+   - docs/proofs/manifest.json
 
-8. Open PR → CI green → QA approve → merge. 
+8. Open PR → CI green → QA approve → merge.
 
 ---
 
