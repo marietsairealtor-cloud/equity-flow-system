@@ -98,24 +98,24 @@ Iteration is allowed locally, but the PR must end with exactly **one canonical p
 
 1. Implement objective (all code / truth / workflow changes complete).
 
-2. If robot-owned-guard will block the new proof log path, add the proof log pattern to `docs/truth/robot_owned_paths.json` (or gate allowlist) as part of implementation. This is a legitimate implementation change, not a proof-only change.
+2. **Robot-owned allowlist (pre-proof requirement):**
+   If `robot-owned-guard` will apply to the new proof log path, you must allowlist the **exact canonical proof log path** (the final `<ITEM>_<UTC>.log` filename you will produce) in `docs/truth/robot_owned_paths.json` **before** creating/renaming the canonical log.
+   This is an **implementation** change, not a proof-only change.
 
 3. Run:
    ```
    npm run pr:preflight
    ```
-
 4. Generate/overwrite:
    `docs/proofs/<ITEM>_WORKING.log` (until PASS)
 
-5. **Rename WORKING → canonical `<UTC>.log`**
+5. **Rename WORKING → canonical `<ITEM>_<UTC>.log`** (must match the allowlisted path from Step 2)
 
 6. Finalize exactly once:
    ```
-   npm run proof:finalize -- -File docs/proofs/<ITEM>_<UTC>.log
+   npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log
    ```
-   
-   **Note:** If npm parameter passing fails (common on Windows), use direct invocation:
+   **Fallback (only if npm invocation fails):**
    ```
    pwsh -File scripts/proof_finalize.ps1 -File docs/proofs/<ITEM>_<UTC>.log
    ```
@@ -124,7 +124,7 @@ Iteration is allowed locally, but the PR must end with exactly **one canonical p
    * `docs/proofs/<ITEM>_<UTC>.log`
    * `docs/proofs/manifest.json`
 
-8. Open PR → CI green → QA approve → merge.
+8. Open PR → CI green → QA approve → merge. 
 
 ---
 

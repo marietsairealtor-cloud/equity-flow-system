@@ -957,6 +957,36 @@ merge-blocking (ops)
 
 ---
 
+### **2.17.1A — proof:finalize Invocation Hardening (Deterministic Arg Passing)**
+
+**Deliverable:** `npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log` works deterministically on Windows across shells by eliminating npm/PowerShell arg-forwarding ambiguity (no `-- -File` ceremony required), while preserving the existing proof discipline and machine-managed manifest rules.
+
+**DoD:**
+
+* `package.json` `proof:finalize` routes through a deterministic wrapper (Node) that:
+
+  * accepts the proof log path as **positional arg** (primary canonical form)
+  * supports legacy `-File <path>` (backward compatibility)
+  * hard-fails if path is missing, repeated, non-existent, or outside `docs/proofs/**`
+  * invokes `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/proof_finalize.ps1 -File <proof_path>` (string-exact)
+* `SOP_WORKFLOW.md` canonical finalize command is updated to:
+
+  * `npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log`
+  * direct `pwsh ... proof_finalize.ps1 ...` remains **fallback only**
+* Proof behavior preserved:
+
+  * proof log normalized to UTF-8 (no BOM) + LF
+  * `PROOF_HEAD` / `PROOF_SCRIPTS_HASH` injected as before
+  * `docs/proofs/manifest.json` updated **only** via finalize (never manually)
+
+**Proof:**
+`docs/proofs/2.17.1A_proof_finalize_arg_hardening_<UTC>.log`
+
+**Gate:**
+`proof-manifest` + `proof-commit-binding` must remain green; finalize must succeed using the canonical command above on Windows without `-- -File`.
+
+---
+
 ### **2.17.2 — Encoding & Hidden Character Audit**
 
 **Deliverable:** Forbidden character sweep.
