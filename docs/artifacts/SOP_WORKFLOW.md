@@ -78,7 +78,7 @@ The coder must first create the proof log file under `docs/proofs/**` by running
 `docs/proofs/manifest.json` must never be edited manually.
 The only permitted mutation path is:
 ```
-npm run proof:finalize -- -File docs/proofs/<proof_log>.log
+npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log
 ```
 
 **Rule D — No non-proof changes after PROOF_HEAD (HARD STOP)**

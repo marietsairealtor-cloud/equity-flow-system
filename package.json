@@ -38,7 +38,7 @@
     "stop-the-line": "node scripts/stop_the_line_gate.mjs",
     "proof:commit-binding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_proof_commit_binding.ps1",
     "foundation:invariants": "node scripts/foundation_invariants.mjs",
-    "proof:finalize": "pwsh -NoProfile -File scripts/proof_finalize.ps1 -File",
+    "proof:finalize": "node scripts/proof_finalize_wrapper.mjs",
     "pr:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1",
     "product:scaffold": "node scripts/product_scaffold.mjs",
     "scaffold:verify": "node scripts/verify_product_scaffold.mjs",
