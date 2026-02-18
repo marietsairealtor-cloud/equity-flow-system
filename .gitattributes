@@ -1,5 +1,8 @@
-﻿# normalize text
+# normalize text
 * text=auto
-
 # proofs should be LF-stable across OS
 docs/proofs/*.log text eol=lf
+# DoD 2.17.1 - enforce LF + no-BOM for governed paths
+docs/** text eol=lf
+generated/** text eol=lf
+supabase/** text eol=lf
