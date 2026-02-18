@@ -37,6 +37,7 @@ function ExceptionMatch([string]$p){
   if($pp -match "^docs/proofs/2\.16\.11_governance_change_template_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.11 proof log" }
   if($pp -match "^docs/proofs/2\.17\.1_normalize_sweep_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.1 proof log" }
   if($pp -match "^docs/proofs/2\.17\.1A_proof_finalize_arg_hardening_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.1A proof log" }
+if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.2 proof log" }
   return $null
 }
 
