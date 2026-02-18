@@ -5,12 +5,33 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+
+
+function Strip-ForbiddenChars([string]$text) {
+  # Remove zero-width chars (Build Route 2.17.2)
+  $zw = @([char]0x200B,[char]0x200C,[char]0x200D,[char]0x2060,[char]0xFEFF)
+  foreach ($c in $zw) { $text = $text.Replace([string]$c, "") }
+
+  # Remove control chars except TAB(0x09), LF(0x0A), CR(0x0D)
+  $sb = New-Object System.Text.StringBuilder
+  foreach ($ch in $text.ToCharArray()) {
+    $n = [int][char]$ch
+    $isControl = ($n -lt 0x20) -or ($n -eq 0x7F)
+    if ($isControl -and $n -ne 0x09 -and $n -ne 0x0A -and $n -ne 0x0D) { continue }
+    [void]$sb.Append($ch)
+  }
+  return $sb.ToString()
+}
 function ExistingRoots([string[]]$roots) {
   $out = @()
   foreach ($r in $roots) { if (Test-Path $r) { $out += $r } }
   return $out
 }
 
+function Is-GuardedPath([string]$path) {
+  $p = ($path -replace "\\","/").ToLowerInvariant()
+  return ($p -like "docs/*" -or $p -eq "docs") -or ($p -like "generated/*" -or $p -eq "generated") -or ($p -like "supabase/*" -or $p -eq "supabase")
+}
 function Convert-ToUtf8NoBom([string]$path) {
   $ext = [IO.Path]::GetExtension($path).ToLowerInvariant()
   if ($ext -in @(".png",".jpg",".jpeg",".gif",".webp",".ico",".pdf",".zip",".7z",".gz",".tar",".woff",".woff2",".ttf",".eot",".mp4",".mov",".mp3",".wav",".bin",".exe",".dll")) { return }
@@ -33,7 +54,12 @@ function Convert-ToUtf8NoBom([string]$path) {
   }
 
   $enc = New-Object System.Text.UTF8Encoding($false)
-  [IO.File]::WriteAllText($path, $text, $enc)
+  $out = (Strip-ForbiddenChars $text)
+  if (Is-GuardedPath $path) {
+    $out = $out -replace "`r`n","`n"
+    $out = $out -replace "`r","`n"
+  }
+  [IO.File]::WriteAllText($path, $out, $enc)
 }
 
 $roots = ExistingRoots $AllowlistedRoots
@@ -60,3 +86,7 @@ if ($AlsoRenormalize) {
 }
 
 Write-Host "fix:encoding complete."
+
+
+
+

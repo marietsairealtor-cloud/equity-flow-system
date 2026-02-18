@@ -1,6 +1,11 @@
 {
   "checks": [
     {
+      "name": "CI / ci-encoding-audit",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / ci-normalize-sweep",
       "type": "github_status",
       "required": true

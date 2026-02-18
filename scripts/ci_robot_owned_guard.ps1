@@ -37,6 +37,12 @@ function ExceptionMatch([string]$p){
   if($pp -match "^docs/proofs/2\.16\.11_governance_change_template_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.11 proof log" }
   if($pp -match "^docs/proofs/2\.17\.1_normalize_sweep_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.1 proof log" }
   if($pp -match "^docs/proofs/2\.17\.1A_proof_finalize_arg_hardening_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.1A proof log" }
+if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.2 proof log" }
+  if($pp -eq "docs/proofs/_archive/2.5_truth_bootstrap_20260208_231039Z.log"){ return "ALLOW:archive 2.5 repaired log" }
+  if($pp -eq "docs/proofs/2.5_truth_bootstrap_20260208_231412Z.log"){ return "ALLOW:2.5 repaired log" }
+  if($pp -eq "docs/proofs/2.6_required_checks_contract_20260208_232749Z.log"){ return "ALLOW:2.6 repaired log" }
+  if($pp -eq "docs/proofs/2.7_docs_only_ci_skip_20260208_234320Z.log"){ return "ALLOW:2.7 repaired log" }
+  if($pp -eq "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log"){ return "ALLOW:2.16.2A repaired log" }
   return $null
 }
 
