@@ -73,10 +73,11 @@
     "docs/proofs/2.16.11_governance_change_template_20260217T010033Z.log": "a2fe9199841ae2e2fc396a05a65e203fd8a683ad47b2eab062de1a16224f6952",
     "docs/proofs/2.17.1_normalize_sweep_20260218T154346Z.log": "8d818be508eb8dd133686d19e31c4b309ff8fdc5d0ccb5911d057b3f72f3567c",
     "docs/proofs/2.17.1A_proof_finalize_arg_hardening_20260218T175242Z.log": "85e0da7dd8f670ece841ca7d3d301e3d4540f531e42ecf4bb33dcb7d11e1d337",
-    "docs/proofs/_archive/2.5_truth_bootstrap_20260208_231039Z.log": "53e43704ab38b225fa413b3638093875faab3083d895dbddfe97b677879a81c0",
-    "docs/proofs/2.5_truth_bootstrap_20260208_231412Z.log": "00451d85e803909a89468a00007963d1b4662f982da5dbf0b4babd38e62272a8",
-    "docs/proofs/2.6_required_checks_contract_20260208_232749Z.log": "b97036cee98b92c39fc8f3fe631a1e50df30626f8b650a721586a9ac9060ce10",
-    "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log": "8406673be6493695ec355978a167d4bbe4c4f175a0be7350edc26e320248fe37",
-    "docs/proofs/2.7_docs_only_ci_skip_20260208_234320Z.log": "e95de108947b8b92e94956ba2515698634bd00642df5e477195d7438233fc5c4"
+    "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log": "36b36ceadd6d6f2cf02acd575e2caf4f194bd982a0cce40d6e7b2934e25235d1",
+    "docs/proofs/2.7_docs_only_ci_skip_20260208_234320Z.log": "95ceeb8f6422f29b877e79ce5a70ff392ce3322c307358c9651b14b19a8f902a",
+    "docs/proofs/2.6_required_checks_contract_20260208_232749Z.log": "7b3a576948b61623e4099460a07672279c92ae112a0663d50ecc8dd5ce9a5e4e",
+    "docs/proofs/2.5_truth_bootstrap_20260208_231412Z.log": "f3d61f102259470f21bb64f96fd4476e9e98b1dcfd8f0529d81d28b333f9b7b8",
+    "docs/proofs/_archive/2.5_truth_bootstrap_20260208_231039Z.log": "2f1d0af2ef55a096c4fee5c6ac71f3ef5929619d422c0b8cf1ad939609cc3ad3",
+    "docs/proofs/2.17.2_encoding_audit_20260218T214411Z.log": "f043e66017e6ce180ddda531dd35a614265aa1b0832c44c7cec2e006186c89dc"
   }
 }
