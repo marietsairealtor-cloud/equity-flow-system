@@ -46,8 +46,7 @@ The following workflows are required and merge-blocking:
 - `.github/workflows/secrets-scan.yml`
 - `.github/workflows/stop-the-line.yml`
 
-
-- NOTE: CI topology is structurally enforced by the merge-blocking gate `ci-topology-audit` (enforcement only; not a policy authority source).
+NOTE: CI topology is structurally enforced by the merge-blocking gate `ci-topology-audit` (enforcement only; not a policy authority source).
 
 If any required workflow fails → merge blocked.
 
@@ -163,8 +162,8 @@ Exactly one acknowledgment must exist:
 - One-PR waiver file `docs/waivers/WAIVER_PR<NNN>.md`
   containing exact text: `QA: NOT AN INCIDENT`
 
-Both present = FAIL  
-None present = FAIL  
+Both present = FAIL
+None present = FAIL
 
 Merge blocked until condition satisfied.
 
@@ -255,12 +254,14 @@ Lane isolation defined
 Approval-before-merge enforced
 Governance stack mechanically consistent
 
+---
+
 ### proof-commit-binding — scripts hash authority
 
 **Authority:** This section is the single source of truth for `PROOF_SCRIPTS_HASH`.
 
 **Script file list (string-exact, no globbing):**
-- `scripts\ci_proof_commit_binding.ps1`
+- `scripts/ci_proof_commit_binding.ps1`
 
 **Ordering rule:**
 - Hash files in the list order shown above.
@@ -278,31 +279,8 @@ Governance stack mechanically consistent
 - Encode as lowercase hex.
 
 **Parser contract (LOCKED):**
-- Start marker: ### proof-commit-binding — scripts hash authority
-- Bullet pattern: - `relpath` (no extra text)
-- End marker: END scripts hash authority
+- Start marker: `### proof-commit-binding — scripts hash authority`
+- Bullet pattern: `- \`relpath\`` (no extra text)
+- End marker: `END scripts hash authority`
+
 END scripts hash authority
-
-### proof-commit-binding — scripts hash authority
-
-**Authority:** This section is the single source of truth for `PROOF_SCRIPTS_HASH`.
-
-**Script file list (string-exact, no globbing):**
-- \scripts/ci_proof_commit_binding.ps1``
-
-**Ordering rule:**
-- Hash files in the list order shown above.
-
-**Normalization rule (before hashing):**
-- Read file as UTF-8 (no BOM).
-- Normalize line endings: CRLF (`\r\n`) → LF (`\n`); lone CR (`\r`) → LF (`\n`).
-
-**Hash input framing:**
-- For each file in order, concatenate:
-  - `FILE:<relpath>\n`
-  - normalized file text
-  - `\n`
-- Compute SHA-256 of the concatenated UTF-8 bytes.
-- Encode as lowercase hex.
-
-
