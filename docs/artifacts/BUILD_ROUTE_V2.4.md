@@ -1378,6 +1378,76 @@ Clean-room replay passes on empty DB for the baseline.
 Proof: docs/proofs/6.1\_greenfield\_baseline\_migrations\_.log  
 Gate: clean-room-replay \+ schema-drift (merge-blocking)
 
+
+
+
+## **6.1A — Handoff Preconditions Hardening (DB-State Tripwire, must_contain parity)**
+
+**Deliverable**
+Harden `handoff` by adding a **DB-state** precondition gate that runs **before** truth artifact generation, upgrading from schema-text regex checks to **live database** validation of the same minimum invariants currently enforced by `must_contain`.
+
+**DoD (all must be true)**
+
+1. **New DB-state gate exists**
+
+   * Script exists: `scripts/ci_handoff_preconditions.ps1` (or equivalent).
+   * Gate connects to the **local** database and validates **catalog state** (tables/columns/RLS), not `generated/schema.sql` text.
+
+2. **Minimum baseline preconditions (must_contain parity)**
+   Gate asserts **all** of the following from DB-state:
+
+   **Tables exist**
+
+   * `public.tenants`
+   * `public.tenant_memberships`
+   * `public.user_profiles`
+   * `public.deals`
+
+   **Deals column requirements**
+
+   * `public.deals.tenant_id` exists, type `uuid`, and is **NOT NULL**
+   * `public.deals.row_version` exists, type `bigint`
+   * `public.deals.calc_version` exists, type `integer`
+
+   **RLS enabled**
+
+   * RLS is enabled on `public.tenants`
+   * RLS is enabled on `public.deals`
+
+3. **Handoff integration (must run first)**
+
+   * `npm run handoff` executes `handoff-preconditions` **before** writing any of:
+
+     * `generated/schema.sql`
+     * `generated/contracts.snapshot.json`
+     * `docs/handoff_latest.txt`
+   * If preconditions fail, `handoff` exits non-zero and **does not** write/overwrite truth artifacts.
+
+4. **Failure output contract**
+
+   * On failure, the gate prints:
+
+     * the missing table/column/RLS state
+     * the exact expected vs found state
+   * Exit code is non-zero.
+
+5. **CI wiring**
+
+   * Workflow job exists with job id: `handoff-preconditions` (string-exact).
+   * Gate is **merge-blocking** for DB/runtime lane PRs; docs-only lane may skip.
+
+**Proof**
+`docs/proofs/6.1A_handoff_preconditions_<UTC>.log`
+Must include:
+
+* PR HEAD SHA
+* gate output showing each precondition PASS
+* `RESULT=PASS`
+
+**Gate**
+`handoff-preconditions` (merge-blocking)
+
+
 ### **6.2 SECURITY DEFINER safety (mandatory)**
 
 Deliverable: SD is allowlisted, audited, and negative-tested.  
