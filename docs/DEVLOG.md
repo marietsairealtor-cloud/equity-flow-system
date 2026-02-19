@@ -1773,3 +1773,27 @@ DoD
 Status  
 - PASS
 
+
+## 2026-02-19 — Build Route v2.4 — 2.17.4 Parser Contract Resilience Check
+
+Objective  
+- Establish fixture-based validator robustness and deterministic output verification.
+
+Changes  
+- Added adversarial fixture pack (CRLF, mixed bullets, trailing spaces, blank lines).
+- Implemented scripts/ci_validator.ps1 to normalize validator output and hash per fixture.
+- Wired lane-only CI job ci-validator in workflow (non merge-blocking).
+
+Proof  
+- docs/proofs/2.17.4_parser_fixture_check_20260219T012954Z.log
+
+DoD  
+- Fixture pack includes required adversarial cases.
+- Determinism comparator hashes normalized validator output per fixture.
+- Gate fails on any validator error class.
+- Proof finalized via proof:finalize.
+- Lane-only CI wiring (not in required checks).
+
+Status  
+- PASS
+
