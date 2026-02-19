@@ -1051,72 +1051,229 @@ merge-blocking (ops)
 
 ## **3 — Automation Build (required)**
 
+### 3.0 — Section 3 Execution Constraints (LOCKED)
+
+Section 3 modifies enforcement tools themselves
+(handoff, handoff:commit, ship, green:*, qa:verify).
+Because the validation surface is under modification,
+additional isolation discipline is required.
+
+These constraints apply to all Section 3 objectives.
+
+1. PR Isolation Rule
+   - Do not modify ship and green:* in the same PR.
+   - Do not modify proof-commit-binding in the same PR as other automation.
+   - Only one enforcement surface may be modified per PR.
+   - One objective = one PR remains mandatory.
+
+2. Self-Validation Discipline
+   - All automation modifications must complete:
+       green:once
+       green:twice
+     with no edits between runs before proof generation.
+   - No generators may run during the green gate loop.
+   - ship must remain verify-only at all times.
+
+3. No Circular Enforcement Modification
+   - If a PR modifies proof-commit-binding,
+     it must not modify any other automation command.
+   - If a PR modifies green:*,
+     it must not modify ship.
+   - If a PR modifies ship,
+     it must not modify green:*.
+
+4. New Truth Artifact Registration (Triple Registration Rule)
+   Any new truth artifact introduced in Section 3 must, in the same PR:
+     a. Be registered in robot-owned guard.
+     b. Be included in CI drift/validation enforcement
+        (truth-bootstrap or equivalent validation gate).
+     c. Be included in handoff regeneration surface if machine-derived.
+
+   No truth artifact may exist in-repo without all three registrations.
+
+5. Pre-Section-3 Governance Integrity Requirement
+   Section 3 implementation may not begin until:
+     - Section 3 Execution Constraints are merged into Build Route.
+     - Governance-change template and proof requirements are satisfied.
+     - main is clean and pr:preflight passes.
+
+Rationale:
+Section 3 modifies the system that validates itself.
+Strict PR isolation and artifact registration prevent circular
+validation failure and partially governed enforcement surfaces.
+
+---
+
 ### **3.1 Automation contract acceptance**
 
-Deliverable: Scripts obey AUTOMATION.md command separation.  
-DoD:  
-Automation behaviors match Checklist 3.1 exactly.  
-Proof log demonstrates each command mode behavior (handoff/ship/green).  
-Checklist 3.1 (non-DoD):  
-handoff may write truth artifacts only; cannot commit/push.  
-handoff:commit is the only publisher; may push PR branch only.  
-ship verify-only; no writes/commits/push; never waits/polls CI.  
-green:\* gates-only; never runs generators.  
-Proof: docs/proofs/3.1\_automation\_contract\_.log  
+Deliverable: Scripts obey AUTOMATION.md command separation.
+
+DoD:
+- A gate script (`automation-contract`) mechanically verifies command separation. The gate must be a script that asserts behaviors programmatically, not a human-authored narrative proof.
+- Gate output demonstrates each command mode behavior (handoff/ship/green).
+- Automation behaviors match Checklist 3.1 exactly.
+
+Checklist 3.1 (non-DoD):
+- handoff may write truth artifacts only; cannot commit/push.
+- handoff:commit is the only publisher; may push PR branch only.
+- ship verify-only; no writes/commits/push; never waits/polls CI.
+- green:\* gates-only; never runs generators.
+
+Pre-implementation check:
+- Determine whether `scripts/ci_automation_contract.ps1` (or equivalent) already exists from the port.
+- If it exists: this item is proof-only (verify existing gate satisfies DoD).
+- If it does not exist: this item is implementation + proof (create the gate script, then prove).
+- The distinction must be recorded in the PR description.
+
+Proof: docs/proofs/3.1\_automation\_contract\_.log
 Gate: automation-contract (merge-blocking)
 
-### **3.2 Command contract contradiction closure (handoff:commit push semantics)**
+---
 
-Deliverable: Publishing semantics are unambiguous.  
-DoD:  
-handoff:commit refuses detached HEAD and refuses pushing to main.  
-handoff:commit pushes current branch only and prints remote ref pushed.  
-Proof: docs/proofs/3.2\_handoff\_commit\_push\_.log  
-Gate: handoff-commit-safety (merge-blocking)
+### **3.2 Ship guard (LOCKED choice)**
 
-### **3.3 Ship guard (LOCKED choice)**
+Deliverable: ship is always verify-only.
 
-Deliverable: ship is always verify-only.  
-DoD:  
-ship fails on dirty tree or disallowed branch.  
-ship fails if it produces any diffs.  
-Proof: docs/proofs/3.3\_ship\_guard\_.log  
+DoD:
+- ship fails on dirty tree or disallowed branch.
+- ship fails if it produces any diffs.
+
+Pre-implementation check:
+- `ship-guard` is already listed as a required check and appears in existing CI.
+- Before starting, run `npm run ship` on main and capture output.
+- If existing behavior already satisfies DoD: this item is proof-only.
+- If hardening is needed (e.g., the "fails if it produces any diffs" check is missing): scope the delta explicitly in the PR description.
+
+Proof: docs/proofs/3.2\_ship\_guard\_.log
 Gate: ship-guard (merge-blocking)
 
-### **3.4 QA requirements truth (schema \+ lock)**
+---
 
-Deliverable: QA checklist is structured and can’t be weakened silently.  
-DoD:  
-qa\_requirements.json validates against qa\_requirements.schema.json.  
-Any change requires version bump \+ governance-change proof (enforced).  
-Proof: docs/proofs/3.4\_qa\_requirements\_.log  
-Gate: qa-requirements-contract (merge-blocking)
+### **3.3 Command contract contradiction closure (handoff:commit push semantics)**
 
-### **3.5 QA verify (merge-blocking)**
+Deliverable: Publishing semantics are unambiguous.
 
-Deliverable: QA verification is deterministic.  
-DoD:  
-npm run qa:verify emits STATUS PASS/FAIL based only on truth \+ proofs.  
-It validates manifest hashes \+ required proofs exist for PR scope.  
-Proof: docs/proofs/3.5\_qa\_verify\_.log  
-Gate: qa-verify (merge-blocking)
+DoD:
+- handoff:commit refuses detached HEAD and refuses pushing to main.
+- handoff:commit pushes current branch only and prints remote ref pushed.
 
-### **3.6 Docs publish contract (docs:push) (required)**
+Relationship to 11.2:
+- 3.3 creates or hardens the `handoff-commit-safety` gate.
+- 11.2 (Handoff publish — branch only) re-proves the same gate at release scope.
+- If the gate already exists and satisfies DoD, 3.3 is proof-only.
+- Both items share gate name `handoff-commit-safety`. This is intentional: 3.3 is the implementation checkpoint; 11.2 is the release re-verification.
 
-Deliverable: Docs publishing cannot mutate robot-owned outputs.  
-DoD:  
-docs:push refuses detached HEAD, refuses pushing to main, and requires clean tree.  
-docs:push refuses if diff touches robot-owned paths.  
-Proof: docs/proofs/3.6\_docs\_push\_.log  
+Proof: docs/proofs/3.3\_handoff\_commit\_push\_.log
+Gate: handoff-commit-safety (merge-blocking)
+
+---
+
+### **3.4 Docs publish contract (docs:push) (required)**
+
+Deliverable: Docs publishing cannot mutate robot-owned outputs.
+
+DoD:
+- docs:push refuses detached HEAD, refuses pushing to main, and requires clean tree.
+- docs:push refuses if diff touches robot-owned paths.
+
+Proof: docs/proofs/3.4\_docs\_push\_.log
 Gate: docs-push-contract (merge-blocking)
 
-### **3.7 Robot-owned generator enforcement (NEW, mandatory)**
+---
 
-Deliverable: Generator outputs cannot be produced/modified outside handoff:commit.  
-DoD:  
-CI fails if `generated/**`, `docs/proofs/**`, or `docs/handoff_latest.txt` are modified without robot-owned publisher conditions.  
-Proof: docs/proofs/3.7\_robot\_owned\_publish\_guard\_.log  
+### **3.5 QA requirements truth (schema + lock)**
+
+Deliverable: QA checklist is structured and can't be weakened silently.
+
+DoD:
+- qa\_requirements.json validates against qa\_requirements.schema.json.
+- Any change to qa\_requirements.json requires version bump + governance-change proof (enforced).
+- The governance-change enforcement triggers **only when qa\_requirements.json is in the PR diff**, not unconditionally.
+
+Triple Registration Rule (§3.0.4) applies:
+- qa\_requirements.json and qa\_requirements.schema.json must be registered in robot-owned guard (§3.0.4a).
+- Both must be included in truth-bootstrap or equivalent validation gate (§3.0.4b).
+- If machine-derived, both must be included in handoff regeneration surface (§3.0.4c).
+
+Pre-implementation check:
+- `docs/docs/truth/qa_requirements.json` and `docs/docs/truth/qa_requirements.schema.json` may already exist from truth bootstrap (2.5).
+- If files exist: this item adds the version-bump enforcement gate and governance-change coupling.
+- If files do not exist: this item creates them with all three registrations in the same PR.
+
+Proof: docs/proofs/3.5\_qa\_requirements\_.log
+Gate: qa-requirements-contract (merge-blocking)
+
+---
+
+### **3.6 Robot-owned generator enforcement (NEW, mandatory)**
+
+Deliverable: Generator outputs cannot be produced/modified outside handoff:commit.
+
+DoD:
+- CI fails if `generated/**`, `docs/proofs/**`, or `docs/handoff_latest.txt` are modified without robot-owned publisher conditions.
+- This gate (`robot-owned-publish-guard`) is **distinct from** `robot-owned-guard` (2.16.10).
+  - 2.16.10 (`robot-owned-guard`) prevents unauthorized **edits** to machine-produced files.
+  - 3.6 (`robot-owned-publish-guard`) prevents unauthorized **generation/publication** of machine-produced files.
+  - Both gates must exist independently. 3.6 must not be implemented as an extension of 2.16.10.
+
+Proof: docs/proofs/3.6\_robot\_owned\_publish\_guard\_.log
 Gate: robot-owned-publish-guard (merge-blocking)
+
+---
+
+### **3.7 QA verify (merge-blocking)**
+
+Deliverable: QA verification is deterministic.
+
+DoD:
+- npm run qa:verify emits STATUS PASS/FAIL based only on truth + proofs.
+- It validates manifest hashes + required proofs exist for PR scope.
+- qa:verify does **not** re-implement hash validation already performed by `proof-manifest`. It validates **completeness** (required proofs exist for the PR's claimed objective), not integrity (which `proof-manifest` and `proof-commit-binding` already cover).
+
+PR-scope mapping mechanism (MUST BE DEFINED BEFORE IMPLEMENTATION):
+- The mechanism by which qa:verify determines "which proofs are required for this PR" must be explicitly defined in the PR description before coding begins.
+- Acceptable mechanisms include: branch-name convention, PR label, explicit mapping file, or changed-file inference.
+- The chosen mechanism must be documented in AUTOMATION.md as part of this item.
+- Fragile or implicit inference (e.g., parsing Build Route item numbers from branch names without a contract) is not acceptable.
+
+Circular dependency mitigation:
+- qa:verify is the meta-gate that validates the proof system itself.
+- The first test run of qa:verify must validate against existing proofs from prior sections (e.g., 2.17 proofs), not against its own proof.
+- The proof for 3.7 itself must be the **last artifact generated** in this PR.
+- The PR must demonstrate that qa:verify passes against known-good prior state before its own proof is finalized.
+
+Proof: docs/proofs/3.7\_qa\_verify\_.log
+Gate: qa-verify (merge-blocking)
+
+---
+
+### Section 3 — Execution Order (Authoritative)
+
+| Item | Title | Rationale |
+|------|-------|-----------|
+| 3.1 | Automation contract acceptance | Establishes the contract all other items must satisfy |
+| 3.2 | Ship guard | Likely proof-only (ship-guard may already exist); quick close |
+| 3.3 | handoff:commit push semantics | Publisher safety; clean scope |
+| 3.4 | Docs publish contract | Same pattern as 3.3; clean scope |
+| 3.5 | QA requirements truth | Triggers triple-registration; introduces new truth artifact |
+| 3.6 | Robot-owned publish guard | Depends on understanding the publisher model from 3.3 |
+| 3.7 | QA verify | Meta-gate; validates all preceding Section 3 proofs |
+
+This ordering minimizes circular dependencies. The meta-gate (3.7) is built last so it can use the other six items' proofs as its acceptance test.
+
+---
+
+### Section 3 — Risk Summary
+
+| Item | Risk | Key Watch |
+|------|------|-----------|
+| 3.1 | Low | Confirm gate script exists vs needs creation |
+| 3.2 | Low | May be proof-only; verify existing behavior before starting |
+| 3.3 | Low | Relationship to 11.2 clarified (same gate, different proof checkpoint) |
+| 3.4 | Low | Straightforward |
+| 3.5 | Medium | Triple-registration required; governance-change coupling must be conditional on diff |
+| 3.6 | Medium | Must remain distinct gate from 2.16.10 |
+| 3.7 | High | Circular dependency; PR-scope mapping must be defined before coding; no gate duplication |
 
 ---
 

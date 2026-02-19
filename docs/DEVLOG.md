@@ -1797,3 +1797,79 @@ DoD
 Status  
 - PASS
 
+2026-02-18 — Build Route v2.4 — Section 3 Pre-Implementation Risk Hardening
+
+Objective
+Formalize execution constraints before modifying enforcement tooling (Section 3), addressing advisor-identified self-referential validation risk.
+
+Changes
+- Confirmed SECURITY DEFINER search_path enforcement is mechanically enforced by ci_definer_safety_audit (merge-blocking).
+- Verified clean main (git status clean, pr:preflight PASS).
+- Inspected docs/proofs/manifest.json — no stale entries, no WORKING logs, no duplicates.
+- Added “3.0 — Section 3 Execution Constraints (LOCKED)” to Build Route v2.4.
+- Added Triple Registration Rule for any new truth artifact introduced in Section 3.
+
+Logic
+Section 3 modifies enforcement tools (handoff, ship, green:*, proof-commit-binding).  
+Risk class shifts from governance wiring to self-referential validation.  
+Constraints added to:
+- Prevent simultaneous modification of verification paths (ship vs green:*).
+- Isolate proof-commit-binding changes from other automation changes.
+- Enforce one enforcement surface per PR for attribution and rollback clarity.
+- Require deterministic green:once + green:twice before proof generation.
+- Prevent partially governed truth artifacts via mandatory triple registration.
+
+Proof
+- pr:preflight PASS on main.
+- ci_definer_safety_audit inspection confirming search_path enforcement.
+- Governance PR updating Build Route with Section 3 constraints.
+- Advisor review returned PASS.
+
+DoD
+- Section 3 constraints committed in-repo.
+- Triple registration rule included.
+- Clean main verified per SOP §13.
+- Advisor review closed with PASS.
+
+Status
+PASS
+
+
+2026-02-18 — Build Route v2.4 — Section 3 Item Reordering and Scope Clarification
+
+Objective
+Incorporate QA-reviewed reordering and structural clarification of Section 3 (Automation Build) to minimize circular validation risk and enforce explicit dependency sequencing.
+
+Changes
+- Adopted authoritative execution order for Section 3 items (3.1 → 3.7).
+- Repositioned Ship guard to 3.2 (likely proof-only checkpoint before broader automation changes).
+- Clarified relationship between 3.3 (handoff-commit-safety implementation) and 11.2 (release re-verification of same gate).
+- Explicitly separated 3.6 robot-owned-publish-guard from 2.16.10 robot-owned-guard (edit prevention vs generation prevention).
+- Added pre-implementation checks to each item to determine proof-only vs implementation scope.
+- Elevated 3.7 QA verify as meta-gate built last to avoid circular dependency.
+- Required explicit PR-scope mapping mechanism definition before implementing 3.7.
+- Documented authoritative execution order table and risk summary table in Section 3.
+
+Logic
+Section 3 modifies enforcement tooling and therefore introduces self-referential validation risk.
+Reordering ensures:
+- Contract definition (3.1) precedes enforcement.
+- Existing guards (3.2–3.4) are validated before introducing new truth artifacts.
+- Triple-registration risk (3.5) is handled before generator enforcement (3.6).
+- Meta-gate (3.7) is implemented last to validate prior proofs rather than itself.
+
+This sequencing reduces circular dependency exposure and ensures stable validation surfaces remain during each PR.
+
+Proof
+- Governance PR updating Section 3 ordering and structure.
+- QA review confirming revised sequence minimizes circular validation risk.
+
+DoD
+- Section 3 ordering committed in-repo.
+- Pre-implementation checks explicitly defined.
+- Gate relationships clarified (3.3 ↔ 11.2, 2.16.10 ↔ 3.6).
+- QA approved revised sequence.
+
+Status
+PASS
+
