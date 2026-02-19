@@ -80,6 +80,7 @@
     "docs/proofs/2.17.1A_proof_finalize_arg_hardening_20260218T175242Z.log": "9e641d5bf778fded0e58005f31967c989fdaf1fff98f8cdf11d13bcf467ed1e5",
     "docs/proofs/2.17.2_encoding_audit_20260218T214411Z.log": "88f8831bca53d3ba594c21cf760b28d0246362bae2ec86552293615c77c5fd2b",
     "docs/proofs/2.17.3_path_leak_audit_20260219T004738Z.log": "832e1fb0146610de9da466463d8418894d5b5ebb1a165c35a3e582465adca8ce",
-    "docs/proofs/2.17.4_parser_fixture_check_20260219T013711Z.log": "7795da4fe302eed542144010075812edbc56172ae48cb104def619787e37ec4d"
+    "docs/proofs/2.17.4_parser_fixture_check_20260219T013711Z.log": "7795da4fe302eed542144010075812edbc56172ae48cb104def619787e37ec4d",
+    "docs/proofs/4.1_cloud_baseline_20260219_144802.md": "152f5d1b3afd7a0de8eba2429f397d8207047000b4312ddb5aea4f77a17eb8d8"
   }
 }
