@@ -11,6 +11,11 @@
       "required": true
     },
     {
+      "name": "CI / ci-path-leak-audit",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / ci-semantic-contract",
       "type": "github_status",
       "required": true
