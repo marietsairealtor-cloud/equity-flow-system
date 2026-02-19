@@ -1,3 +1,7 @@
+PROOF_HEAD=c3197d453dec10d2685f6c3ac8f3c52712788836
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
 UTC: 20260208_002421
 COMMIT: 8e55066cb384b6e8b845c69e4211e3ce36f5bf81
 BRANCH: main
@@ -24,15 +28,15 @@ CMD: Get-ChildItem -Force -Recurse -File -ErrorAction SilentlyContinue . | Where
 
 FullName                                                                                                Length
 --------                                                                                                ------
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_224410.log              1674
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_230804.log              1527
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_230957.log              1634
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.2_port_governance_runnable_20260207_234238.log    917
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.3_ci_local_20260208_001355.log                    672
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.3_denylist_20260208_001230.log                    535
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.3_denylist_20260208_002421.log                    759
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.4_ci_local_20260208_001520.log                    624
-C:\Users\marie\projects\equity-flow-system\docs\proofs\1.4_regen_policy_20260208_001426.log                213
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_224410.log              1674
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_230804.log              1527
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.1_port_manifest_20260207_230957.log              1634
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.2_port_governance_runnable_20260207_234238.log    917
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.3_ci_local_20260208_001355.log                    672
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.3_denylist_20260208_001230.log                    535
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.3_denylist_20260208_002421.log                    759
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.4_ci_local_20260208_001520.log                    624
+<REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\docs\proofs\1.4_regen_policy_20260208_001426.log                213
 
 
 

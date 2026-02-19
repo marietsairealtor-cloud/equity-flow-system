@@ -1,3 +1,7 @@
+PROOF_HEAD=c3197d453dec10d2685f6c3ac8f3c52712788836
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
 === 2.9 MAIN MOVED GUARD — QA BUNDLE ===
 UTC: 2026-02-09T15:32:15Z
 BRANCH: main
@@ -22,27 +26,27 @@ HEAD: 609ad319babf8093e9d00403fe0662761699e355
 
 
 === workflow: .github/workflows/ci.yml (main-moved-guard job excerpt) ===
-> C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:10:  main-moved-guard:
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:11:    name: main-moved-guard
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:12:    runs-on: ubuntu-latest
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:13:    steps:
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:14:      - uses: actions/checkout@v4
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:15:        with:
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:16:          fetch-depth: 0
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:17:      - uses: actions/setup-node@v4
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:18:        with:
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:19:          node-version: "20"
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:20:      - run: npm ci
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:21:      - run: npm run main-moved-guard
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:22:  changes:
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:23:    runs-on: ubuntu-latest
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:24:    outputs:
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:25:      docs_only: ${{ steps.filter.outputs.docs_only }}
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:26:    steps:
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:27:      - uses: actions/checkout@v4
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:28:      - id: filter
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:29:        uses: dorny/paths-filter@v3
-  C:\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:30:        with:
+> <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:10:  main-moved-guard:
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:11:    name: main-moved-guard
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:12:    runs-on: ubuntu-latest
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:13:    steps:
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:14:      - uses: actions/checkout@v4
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:15:        with:
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:16:          fetch-depth: 0
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:17:      - uses: actions/setup-node@v4
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:18:        with:
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:19:          node-version: "20"
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:20:      - run: npm ci
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:21:      - run: npm run main-moved-guard
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:22:  changes:
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:23:    runs-on: ubuntu-latest
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:24:    outputs:
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:25:      docs_only: ${{ steps.filter.outputs.docs_only }}
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:26:    steps:
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:27:      - uses: actions/checkout@v4
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:28:      - id: filter
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:29:        uses: dorny/paths-filter@v3
+  <REDACTED_ABS_WIN>\Users\marie\projects\equity-flow-system\.github\workflows\ci.yml:30:        with:
 
 === script: scripts/ci_main_moved_guard.mjs ===
 import cp from "node:child_process";
