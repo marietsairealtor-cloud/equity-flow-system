@@ -1953,3 +1953,55 @@ DoD
 
 Status
 PASS
+
+
+2026-02-19 — Build Route v2.4 — QA Ruling: Keep handoff merge-blocking; unblock via minimal baseline; add 6.1A hardening
+
+Objective
+Record QA decision to keep `handoff` as a merge-blocking truth publisher, unblock current REBUILD-mode execution with the smallest legitimate baseline schema change, resume Section 3 after Section 4.2 baseline, and define a later hardening step (6.1A) to prevent regex-only preconditions from being trivially satisfiable.
+
+Reasoning
+- `handoff` generates authoritative truth artifacts (`generated/schema.sql`, `generated/contracts.snapshot.json`, `docs/handoff_latest.txt`). It must remain merge-blocking in DB/runtime lanes because publishing truth from an empty/wrong DB normalizes invalid state.
+- Current failure (`must_contain` missing `public.tenants`) is a legitimate tripwire firing: the schema dump lacks the required object because baseline migrations do not yet exist in REBUILD MODE. This is not a script bug and does not justify weakening gates or skipping checks.
+- Immediate unblock strategy is not a bypass: introduce the minimum forward-only baseline migration required to make the invariant true (create `public.tenants` so the dumped schema reflects real minimum structure and `handoff` can proceed).
+- With DB baseline established via Section 4.2 (enough to run DB-coupled commands), the correct sequencing is to return to Section 3 to lock down automation/publisher behavior before expanding further DB work.
+- Future hardening is required because the current `must_contain` tripwire is regex-based against schema text and can be satisfied by a minimal stub indefinitely. Add Build Route item 6.1A immediately after 6.1 (baseline migrations) to upgrade `handoff` preconditions to DB-state validation (table/column/PK presence) before truth generation.
+
+Action
+- Keep `handoff` merge-blocking; do not conditionalize/disable `must_contain`.
+- Unblock `handoff` now via minimal baseline migration (create `public.tenants`).
+- After Section 4.2 baseline, resume Section 3 execution.
+- Add 6.1A after 6.1 to harden `handoff` with DB-state preconditions once baseline migrations exist.
+
+Status
+Recorded — merge-blocking stance preserved; minimal-baseline unblock accepted; sequencing set to return to Section 3; 6.1A defined and correctly placed.
+
+
+
+## 2026-02-19 — Build Route v2.4 — 4.2a Command Smoke (DB Lane)
+
+Objective
+Prove DB-coupled commands run end-to-end without crash on a machine with Supabase running.
+
+Changes
+- Added greenfield baseline migrations (REBUILD MODE, no legacy import):
+  - supabase/migrations/20260219000000_baseline_tenants.sql
+  - supabase/migrations/20260219000001_baseline_tenant_memberships.sql
+  - supabase/migrations/20260219000002_baseline_user_profiles.sql
+  - supabase/migrations/20260219000003_baseline_deals.sql
+- Fixed scripts/contracts_lint.ps1 patterns to match current CONTRACTS.md format (Debugger Mode).
+- Added handoff artifact exceptions to scripts/ci_robot_owned_guard.ps1.
+- handoff wrote generated/schema.sql, generated/contracts.snapshot.json, docs/handoff_latest.txt.
+- Proof log sanitized after secret exposure in prior attempt (branch reset per SOP repair protocol).
+
+Proof
+- docs/proofs/4.2a_command_smoke_db_20260219T180422Z.log
+
+DoD
+- green:once -- PASS
+- green:twice -- PASS
+- handoff -- PASS (artifacts written, CONTRACTS LINT OK, MUST_CONTAIN OK)
+- ship -- PASS (verify-only, zero diffs, no writes/commits/push)
+
+Status
+PASS
