@@ -33,6 +33,7 @@ function IsRobotOwned([string]$p, $patterns){
 function ExceptionMatch([string]$p){
   $pp = Norm $p
   if($pp -eq "docs/proofs/manifest.json"){ return "ALLOW:manifest.json" }
+  if($pp -match "^docs/proofs/2\.17\.4_parser_fixture_check_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.4 proof log" }
   if($pp -match "^docs/proofs/2\.16\.10_robot_owned_guard_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.10 proof log" }
   if($pp -match "^docs/proofs/2\.16\.11_governance_change_template_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.11 proof log" }
   if($pp -match "^docs/proofs/2\.17\.1_normalize_sweep_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.1 proof log" }
