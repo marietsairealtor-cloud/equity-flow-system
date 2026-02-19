@@ -1874,10 +1874,21 @@ Status
 PASS
 
 
+
 ## 2026-02-19 — Build Route v2.4 — Section 3 Deferred (DB Dependency)
 
 Objective
 Defer Section 3 (Automation Build) until Section 4 establishes a functional DB.
+
+Changes
+- No files modified. Deferral recorded only.
+
+Proof
+- N/A (deferral entry; no proof artifact required)
+
+DoD
+- Section 3 constraints documented in Build Route (DONE — merged).
+- Deferral reason recorded here per SOP §14.
 
 Reason
 - ship hangs at encoding preflight without DB.
@@ -1892,3 +1903,27 @@ Section 3 resumes after 4.1 + 4.2a (Command Smoke DB lane) confirms commands are
 
 Status
 BLOCKED — resumed after Section 4
+
+---
+
+## 2026-02-19 — Build Route v2.4 — 4.1 Cloud Baseline
+
+Objective
+Establish a fresh Supabase cloud project with no legacy imports as the clean DB foundation for all subsequent sections.
+
+Changes
+- Created new Supabase project WHOLESALEHUB (ref: upnelewdvbicxvfgzojg) on supabase.com.
+- Linked local repo via npx supabase link --project-ref upnelewdvbicxvfgzojg.
+- No migrations pushed to cloud (Section 6 scope).
+- Allowlisted docs/proofs/4.1_cloud_baseline_20260219_144802.md in scripts/ci_robot_owned_guard.ps1.
+
+Proof
+- docs/proofs/4.1_cloud_baseline_20260219_144802.md
+
+DoD
+- New project created on supabase.com — project ref captured: upnelewdvbicxvfgzojg
+- Proof asserts no legacy schema or data import occurred
+- REBUILD MODE: no legacy migrations ported, no restore from backup
+
+Status
+PASS
