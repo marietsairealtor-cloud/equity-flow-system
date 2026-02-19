@@ -46,6 +46,7 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -eq "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log"){ return "ALLOW:2.16.2A repaired log" }
   if($pp -match "^docs/proofs/2\.17\.3_path_leak_audit_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.3 proof log" }
   if($pp -eq "docs/proofs/4.1_cloud_baseline_20260219_144802.md"){ return "ALLOW:4.1 proof log" }
+  if($pp -match "^docs/proofs/4\.2_toolchain_versions_supabase_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.2 proof log" }
 
   # Allowed historical proof repairs (SOP §3.2) — explicit file allowlist
   if($pp -eq "docs/proofs/1.3_denylist_20260208_002421.log"){ return "ALLOW:1.3 repaired log" }

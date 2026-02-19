@@ -1,1 +1,1 @@
-{"schema_version":1,"runner":{"runs_on":"ubuntu-24.04"},"node":{"expect":"v20.","match":"prefix"},"npm":{"expect":"10.","match":"prefix"}}
+{"schema_version":1,"runner":{"runs_on":"ubuntu-24.04"},"node":{"expect":"v20.","match":"prefix"},"npm":{"expect":"10.","match":"prefix"},"supabase_cli":{"expect":"2.76.","match":"prefix"},"psql":{"expect":"16.","match":"prefix","ci_only":true}}

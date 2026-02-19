@@ -1,0 +1,35 @@
+PROOF_HEAD=65152320ff71df3dd994c65c49afcfbd51ed83d0
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+TOOLCHAIN CONTRACT SUPABASE PROOF
+Item: Build Route v2.4 -- 4.2 Supabase Toolchain Contract
+PROOF_HEAD: 6515232
+UTC: 20260219T152845Z
+
+=== toolchain.json entries added ===
+supabase_cli: expect=2.76., match=prefix
+psql: expect=16., match=prefix, ci_only=true
+
+=== gate output (local) ===
+PASS: supabase_cli = 2.76.11
+WARN: psql not available locally -- CI-only enforcement. Skipping.
+TOOLCHAIN_CONTRACT_SUPABASE_OK
+
+=== psql enforcement ===
+psql version pinned in toolchain.json as ci_only=true.
+CI runner (ubuntu-24.04) enforces psql version match.
+Local skip with WARN is expected and correct per QA-approved Option A.
+
+=== DoD Checklist ===
+[PASS] supabase_cli version pinned in docs/truth/toolchain.json
+[PASS] psql version pinned in docs/truth/toolchain.json (ci_only=true)
+[PASS] Gate script scripts/ci_toolchain_supabase.ps1 created
+[PASS] CI job toolchain-contract-supabase added to .github/workflows/ci.yml
+[PASS] toolchain-contract-supabase added to required job needs (merge-blocking)
+[PASS] required_checks.json updated via npm run truth:sync
+[PASS] Gate passes locally: TOOLCHAIN_CONTRACT_SUPABASE_OK
+
+=== Gate ===
+Gate: toolchain-contract-supabase (merge-blocking)
+Status: PASS
