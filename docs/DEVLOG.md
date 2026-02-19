@@ -1927,3 +1927,29 @@ DoD
 
 Status
 PASS
+
+
+## 2026-02-19 — Build Route v2.4 — 4.2 Supabase Toolchain Contract
+
+Objective
+Pin Supabase CLI and psql versions in toolchain truth and enforce via merge-blocking CI gate.
+
+Changes
+- Added supabase_cli and psql entries to docs/truth/toolchain.json.
+- Added scripts/ci_toolchain_supabase.ps1 gate script.
+- Added toolchain:contract:supabase npm script to package.json.
+- Added toolchain-contract-supabase CI job to .github/workflows/ci.yml.
+- Added toolchain-contract-supabase to required job needs list.
+- Updated docs/truth/required_checks.json via npm run truth:sync.
+- Allowlisted 4.2 proof log in scripts/ci_robot_owned_guard.ps1.
+
+Proof
+- docs/proofs/4.2_toolchain_versions_supabase_<UTC>.log
+
+DoD
+- CI hard-fails on Supabase CLI version mismatch.
+- CI hard-fails on psql version mismatch (CI-only; graceful skip locally).
+- Gate toolchain-contract-supabase is merge-blocking.
+
+Status
+PASS

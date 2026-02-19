@@ -81,6 +81,11 @@
       "required": true
     },
     {
+      "name": "CI / toolchain-contract-supabase",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / truth-sync-enforced",
       "type": "github_status",
       "required": true

@@ -158,6 +158,15 @@ jobs:
       - run: npm ci
       - run: npm run toolchain:contract
       
+  toolchain-contract-supabase:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm run toolchain:contract:supabase
   waiver-rate-limit:
     name: waiver-rate-limit
     runs-on: ubuntu-latest
@@ -331,7 +340,7 @@ jobs:
         run: |
           ./scripts/ci_path_leak_audit.ps1
   required:
-    needs: [env-sanity, test, toolchain-contract, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
+    needs: [env-sanity, test, toolchain-contract, toolchain-contract-supabase, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)

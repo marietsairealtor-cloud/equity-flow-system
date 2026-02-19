@@ -28,6 +28,7 @@
     "prepare": "node scripts/prepare_ci_safe.mjs",
     "ci": "npm run lint:migrations && npm run lint:sql && npm run lint:pgtap && npm run build",
     "toolchain:contract": "node scripts/check_toolchain.mjs",
+    "toolchain:contract:supabase": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ci_toolchain_supabase.ps1",
     "truth:sync": "node scripts/truth_sync_required_checks.mjs",
     "truth-bootstrap": "node scripts/truth_bootstrap_check.mjs",
     "required-checks-contract": "node scripts/required_checks_contract.mjs",
