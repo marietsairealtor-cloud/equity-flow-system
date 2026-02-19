@@ -166,7 +166,7 @@ jobs:
         with:
           node-version: "20"
       - run: npm ci
-      - run: pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ci_automation_contract.ps1
+      - run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/ci_automation_contract.ps1
   toolchain-contract-supabase:
     runs-on: ubuntu-24.04
     steps:
