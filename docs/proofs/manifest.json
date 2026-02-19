@@ -82,6 +82,7 @@
     "docs/proofs/2.17.3_path_leak_audit_20260219T004738Z.log": "832e1fb0146610de9da466463d8418894d5b5ebb1a165c35a3e582465adca8ce",
     "docs/proofs/2.17.4_parser_fixture_check_20260219T013711Z.log": "7795da4fe302eed542144010075812edbc56172ae48cb104def619787e37ec4d",
     "docs/proofs/4.1_cloud_baseline_20260219_144802.md": "152f5d1b3afd7a0de8eba2429f397d8207047000b4312ddb5aea4f77a17eb8d8",
-    "docs/proofs/4.2_toolchain_versions_supabase_20260219T152845Z.log": "dbcb4e2fdd5789e255f1224eb7f0f1ef3a131b205e70842bc3c85deefeb88d5d"
+    "docs/proofs/4.2_toolchain_versions_supabase_20260219T152845Z.log": "dbcb4e2fdd5789e255f1224eb7f0f1ef3a131b205e70842bc3c85deefeb88d5d",
+    "docs/proofs/4.2a_command_smoke_db_20260219T180422Z.log": "0642c739b2b3a992075a2346e2883b2cdf54cb3b69d1ad029b676be7414b0922"
   }
 }
