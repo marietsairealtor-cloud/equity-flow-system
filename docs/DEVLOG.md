@@ -2005,3 +2005,28 @@ DoD
 
 Status
 PASS
+
+## 2026-02-19 — Build Route v2.4 — 3.1 Automation Contract Acceptance
+
+Objective
+Create gate script that mechanically verifies command separation per AUTOMATION.md Checklist 3.1.
+
+Changes
+- Added scripts/ci_automation_contract.ps1 (11 behavioral assertions).
+- Added automation:contract npm script to package.json.
+- Added automation-contract CI job to .github/workflows/ci.yml.
+- Added automation-contract to required job needs list (merge-blocking).
+- Updated docs/truth/required_checks.json via npm run truth:sync.
+- Allowlisted 3.1 proof log in scripts/ci_robot_owned_guard.ps1.
+
+Proof
+- docs/proofs/3.1_automation_contract_<UTC>.log
+
+DoD
+- Gate script asserts behaviors programmatically (not narrative).
+- Gate output demonstrates each command mode: handoff / handoff:commit / ship / green:*.
+- Behaviors match Checklist 3.1 exactly.
+- Gate is merge-blocking.
+
+Status
+PASS
