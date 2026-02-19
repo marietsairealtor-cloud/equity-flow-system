@@ -48,6 +48,9 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -eq "docs/proofs/4.1_cloud_baseline_20260219_144802.md"){ return "ALLOW:4.1 proof log" }
   if($pp -match "^docs/proofs/4\.2_toolchain_versions_supabase_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.2 proof log" }
   if($pp -match "^docs/proofs/4\.2a_command_smoke_db_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.2A proof log" }
+  if($pp -eq "docs/handoff_latest.txt"){ return "ALLOW:handoff artifact" }
+  if($pp -eq "generated/contracts.snapshot.json"){ return "ALLOW:handoff artifact" }
+  if($pp -eq "generated/schema.sql"){ return "ALLOW:handoff artifact" }
 
   # Allowed historical proof repairs (SOP §3.2) — explicit file allowlist
   if($pp -eq "docs/proofs/1.3_denylist_20260208_002421.log"){ return "ALLOW:1.3 repaired log" }
