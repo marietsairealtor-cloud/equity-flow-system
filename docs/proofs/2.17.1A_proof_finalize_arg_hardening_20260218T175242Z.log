@@ -1,4 +1,4 @@
-PROOF_HEAD=775cad18622e6b0bb5f9d1e1ca7c439f0ff4065d
+PROOF_HEAD=fdadeed844b565bd7a6d546eb547ad1268a5a5e1
 PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
 PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
 PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
@@ -9,9 +9,9 @@ PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955
 
 == preflight:encoding ==
 Exception calling "ReadAllBytes" with "1" argument(s): "The process cannot access the file 
-'C:\Users\marie\projects\equity-flow-system\docs\proofs\2.17.1A_WORKING.log' because it is being used by another 
+'<REDACTED_ABS_WIN>\\Users\marie\projects\equity-flow-system\docs\proofs\2.17.1A_WORKING.log' because it is being used by another 
 process."
-At C:\Users\marie\projects\equity-flow-system\scripts\preflight_encoding.ps1:46 char:3
+At <REDACTED_ABS_WIN>\\Users\marie\projects\equity-flow-system\scripts\preflight_encoding.ps1:46 char:3
 +   $bytes = [IO.File]::ReadAllBytes($path)
 +   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : NotSpecified: (:) [], ParentContainsErrorRecordException
@@ -42,7 +42,7 @@ TOOLCHAIN_CONTRACT_OK
 == truth:sync ==
 == truth:check (skip: missing) ==
 == proof:manifest ==
-C:\Users\marie\projects\equity-flow-system\scripts\ci_proof_manifest.ps1 : MISSING IN MANIFEST: 
+<REDACTED_ABS_WIN>\\Users\marie\projects\equity-flow-system\scripts\ci_proof_manifest.ps1 : MISSING IN MANIFEST: 
 docs/proofs/2.17.1A_WORKING.log
     + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
     + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,ci_proof_manifest.ps1

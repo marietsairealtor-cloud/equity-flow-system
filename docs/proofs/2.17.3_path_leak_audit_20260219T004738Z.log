@@ -1,4 +1,4 @@
-PROOF_HEAD=451d971894d25dc71c4396e42c6a97397e4d011a
+PROOF_HEAD=fdadeed844b565bd7a6d546eb547ad1268a5a5e1
 PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
 PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
 PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
@@ -9,25 +9,25 @@ Alert-only scope: docs/** outside docs/proofs/**
 
 == run: ci_path_leak_audit ==
 PATH LEAK WARN (alert-only docs/** outside docs/proofs/**):
-  docs/artifacts/BUILD_ROUTE_V2.4.md :: /home/runner/
-  docs/artifacts/BUILD_ROUTE_V2.4.md :: /Users/
-  docs/artifacts/BUILD_ROUTE_V2.4.md :: C:/
-  docs/artifacts/BUILD_ROUTE_V2.4.md :: C:\
-  docs/artifacts/GUARDRAILS.md :: C:/
-  docs/threats/INCIDENTS.md :: /Users/
-  docs/threats/INCIDENTS.md :: C:/
+  docs/artifacts/BUILD_ROUTE_V2.4.md :: <REDACTED_ABS_RUNNER>/
+  docs/artifacts/BUILD_ROUTE_V2.4.md :: <REDACTED_ABS_MAC>/
+  docs/artifacts/BUILD_ROUTE_V2.4.md :: <REDACTED_ABS_WIN>/
+  docs/artifacts/BUILD_ROUTE_V2.4.md :: <REDACTED_ABS_WIN>\\
+  docs/artifacts/GUARDRAILS.md :: <REDACTED_ABS_WIN>/
+  docs/threats/INCIDENTS.md :: <REDACTED_ABS_MAC>/
+  docs/threats/INCIDENTS.md :: <REDACTED_ABS_WIN>/
 
 PATH LEAK AUDIT FAILED (blocking scope):
-  docs/proofs/_archive/1.3_ci_local_20260208_001355.log :: C:\
-  docs/proofs/_archive/1.3_denylist_20260208_001230.log :: /Users/
-  docs/proofs/_archive/1.3_denylist_20260208_001230.log :: C:/
-  docs/proofs/_archive/1.3_denylist_20260208_001230.log :: C:\
-  docs/proofs/_archive/2.5_truth_bootstrap_20260208_231039Z.log :: C:\
-  docs/proofs/_archive/2.9_QA_BUNDLE_20260209_103215Z.txt :: C:\
-  docs/proofs/1.3_denylist_20260208_002421.log :: C:\
-  docs/proofs/2.15_governance_change_20260210_001959Z.log :: C:\
-  docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log :: C:\
-  docs/proofs/2.17.1A_proof_finalize_arg_hardening_20260218T175242Z.log :: C:\
-  docs/proofs/2.17.2_encoding_audit_20260218T214411Z.log :: C:\
+  docs/proofs/_archive/1.3_ci_local_20260208_001355.log :: <REDACTED_ABS_WIN>\\
+  docs/proofs/_archive/1.3_denylist_20260208_001230.log :: <REDACTED_ABS_MAC>/
+  docs/proofs/_archive/1.3_denylist_20260208_001230.log :: <REDACTED_ABS_WIN>/
+  docs/proofs/_archive/1.3_denylist_20260208_001230.log :: <REDACTED_ABS_WIN>\\
+  docs/proofs/_archive/2.5_truth_bootstrap_20260208_231039Z.log :: <REDACTED_ABS_WIN>\\
+  docs/proofs/_archive/2.9_QA_BUNDLE_20260209_103215Z.txt :: <REDACTED_ABS_WIN>\\
+  docs/proofs/1.3_denylist_20260208_002421.log :: <REDACTED_ABS_WIN>\\
+  docs/proofs/2.15_governance_change_20260210_001959Z.log :: <REDACTED_ABS_WIN>\\
+  docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log :: <REDACTED_ABS_WIN>\\
+  docs/proofs/2.17.1A_proof_finalize_arg_hardening_20260218T175242Z.log :: <REDACTED_ABS_WIN>\\
+  docs/proofs/2.17.2_encoding_audit_20260218T214411Z.log :: <REDACTED_ABS_WIN>\\
 
 Fix: remove/replace absolute machine roots in generated/** or docs/proofs/**.
