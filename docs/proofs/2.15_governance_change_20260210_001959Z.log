@@ -1,9 +1,13 @@
+PROOF_HEAD=fdadeed844b565bd7a6d546eb547ad1268a5a5e1
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
 UTC=20260210_001959Z
 BRANCH=main
 HEAD=53bd2b00cbf1b3d791bb8d8a7c733da467e4faa8
 
 === FAIL (missing justification in PR changes) ===
-C:\Users\marie\projects\equity-flow-system\scripts\ci_governance_change_guard.ps1 : GOV_CHANGE_GUARD FAIL: governance touched; missing 
+<REDACTED_ABS_WIN>\\Users\marie\projects\equity-flow-system\scripts\ci_governance_change_guard.ps1 : GOV_CHANGE_GUARD FAIL: governance touched; missing 
 docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md (must be included in PR changes)
     + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
     + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,ci_governance_change_guard.ps1
