@@ -1746,3 +1746,30 @@ DoD
 
 Status
 - PASS
+
+## 2026-02-19 — Build Route v2.4 — 2.17.3 Absolute Path / Machine Leak Audit
+
+Objective  
+- Enforce repo-relative path discipline for high-risk outputs (`generated/**`, `docs/proofs/**`) and block absolute machine root leaks.
+
+Changes  
+- Added `scripts/ci_path_leak_audit.ps1` (blocking scope + alert-only docs scope).
+- Wired new CI job `ci-path-leak-audit` in `.github/workflows/ci.yml`.
+- Added required check entry in `docs/truth/required_checks.json`.
+- Expanded `ci_robot_owned_guard.ps1` allowlist per SOP §3.2 repair.
+- Redacted historical proof logs to remove absolute machine roots.
+- Re-finalized affected proof logs via `npm run proof:finalize`.
+- Updated `docs/proofs/manifest.json` via finalize only.
+
+Proof  
+- docs/proofs/2.17.3_path_leak_audit_20260219T004738Z.log
+
+DoD  
+- Blocking scope: `generated/**`, `docs/proofs/**` (incl. manifest.json).
+- No `C:\`, `C:/`, `/Users/`, `/home/runner/` in blocking scope.
+- `docs/**` outside `docs/proofs/**` = alert-only.
+- Gate `ci_path_leak_audit` blocks only on blocking scope.
+
+Status  
+- PASS
+
