@@ -1873,3 +1873,22 @@ DoD
 Status
 PASS
 
+
+## 2026-02-19 — Build Route v2.4 — Section 3 Deferred (DB Dependency)
+
+Objective
+Defer Section 3 (Automation Build) until Section 4 establishes a functional DB.
+
+Reason
+- ship hangs at encoding preflight without DB.
+- ship and green:twice previously pulled unwanted Supabase data (cleanup required).
+- green:once, green:twice non-functional without DB.
+- Section 3.0 constraint #2 (green:once + green:twice before proof) cannot be satisfied.
+- 3.1 DoD requires demonstrating command behaviors that are unsafe to execute in current state.
+
+Decision
+Section 3 deferred. Section 4 (Fresh Supabase Project Baseline) proceeds next.
+Section 3 resumes after 4.1 + 4.2a (Command Smoke DB lane) confirms commands are safe.
+
+Status
+BLOCKED — resumed after Section 4
