@@ -43,6 +43,17 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -eq "docs/proofs/2.6_required_checks_contract_20260208_232749Z.log"){ return "ALLOW:2.6 repaired log" }
   if($pp -eq "docs/proofs/2.7_docs_only_ci_skip_20260208_234320Z.log"){ return "ALLOW:2.7 repaired log" }
   if($pp -eq "docs/proofs/2.16.2A_hash_authority_contract_20260211_161401Z.log"){ return "ALLOW:2.16.2A repaired log" }
+  if($pp -match "^docs/proofs/2\.17\.3_path_leak_audit_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.17.3 proof log" }
+
+  # Allowed historical proof repairs (SOP §3.2) — explicit file allowlist
+  if($pp -eq "docs/proofs/1.3_denylist_20260208_002421.log"){ return "ALLOW:1.3 repaired log" }
+  if($pp -eq "docs/proofs/2.15_governance_change_20260210_001959Z.log"){ return "ALLOW:2.15 repaired log" }
+  if($pp -eq "docs/proofs/2.17.1A_proof_finalize_arg_hardening_20260218T175242Z.log"){ return "ALLOW:2.17.1A repaired log" }
+  if($pp -eq "docs/proofs/2.17.2_encoding_audit_20260218T214411Z.log"){ return "ALLOW:2.17.2 repaired log" }
+
+  if($pp -eq "docs/proofs/_archive/1.3_ci_local_20260208_001355.log"){ return "ALLOW:archive 1.3 repaired log" }
+  if($pp -eq "docs/proofs/_archive/1.3_denylist_20260208_001230.log"){ return "ALLOW:archive 1.3 repaired log" }
+  if($pp -eq "docs/proofs/_archive/2.9_QA_BUNDLE_20260209_103215Z.txt"){ return "ALLOW:archive 2.9 repaired bundle" }
   return $null
 }
 

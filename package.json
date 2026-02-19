@@ -43,7 +43,8 @@
     "pr:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1",
     "product:scaffold": "node scripts/product_scaffold.mjs",
     "scaffold:verify": "node scripts/verify_product_scaffold.mjs",
-    "stop-the-line-xor": "node scripts/stop_the_line_xor_gate.mjs"
+    "stop-the-line-xor": "node scripts/stop_the_line_xor_gate.mjs",
+    "ci_path_leak_audit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_path_leak_audit.ps1"
   },
   "devDependencies": {
     "husky": "^9.1.7",
