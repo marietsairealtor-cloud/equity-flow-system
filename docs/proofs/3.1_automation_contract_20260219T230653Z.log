@@ -1,0 +1,51 @@
+PROOF_HEAD=e8adab480acccfb36bec94f2fe7bf178ed95912c
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+AUTOMATION CONTRACT PROOF
+Item: Build Route v2.4 -- 3.1 Automation Contract Acceptance
+PROOF_HEAD: e8adab480acccfb36bec94f2fe7bf178ed95912c
+UTC: 20260219T230653.Z
+
+=== Section 3.0 Constraint #2 -- Green Gate Loop ===
+green:once:  ALL GREEN: 1 consecutive pass(es) completed. (post-implementation)
+green:twice: ALL GREEN: 2 consecutive pass(es) completed. (no edits between runs)
+Gate loop ran after all 3.1 implementation commits. No edits between green:once and green:twice.
+
+=== Gate script: scripts/ci_automation_contract.ps1 ===
+Mechanical assertion script -- not a narrative proof.
+11 behavioral assertions covering all 4 command modes.
+
+=== Gate output (local run) ===
+=== automation-contract ===
+PASS: handoff: writes truth artifacts
+PASS: handoff: no git commit
+PASS: handoff: no git push
+PASS: handoff:commit: commits
+PASS: handoff:commit: pushes
+PASS: handoff:commit: main branch guard
+PASS: ship: no git commit
+PASS: ship: no git push
+PASS: ship: no generators
+PASS: green:*: no generators
+PASS: green:*: runs gates
+AUTOMATION_CONTRACT_OK
+
+=== Checklist 3.1 verification ===
+[PASS] handoff: writes truth artifacts only; no commit; no push
+[PASS] handoff:commit: commits + pushes; refuses main branch
+[PASS] ship: verify-only; no writes/commits/push; no generators
+[PASS] green:*: gates-only; no generators
+
+=== CI wiring ===
+Job: automation-contract added to .github/workflows/ci.yml
+Step: pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/ci_automation_contract.ps1
+Gate added to required.needs (merge-blocking)
+required_checks.json updated via npm run truth:sync
+
+=== PR type ===
+Execution path: implementation + proof (no prior ci_automation_contract.ps1 existed)
+
+=== Gate ===
+Gate: automation-contract (merge-blocking)
+Status: PASS
