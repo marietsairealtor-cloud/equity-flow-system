@@ -1,0 +1,43 @@
+PROOF_HEAD=4ae96dd088ce83cb8083dc0477c9492f9e29296a
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+COMMAND SMOKE DB LANE PROOF
+Item: Build Route v2.4 -- 4.2a Command Smoke (DB Lane)
+PROOF_HEAD: 4ae96dd088ce83cb8083dc0477c9492f9e29296a
+UTC: 20260219T180422Z
+
+=== DoD Commands -- all completed without crash ===
+
+[PASS] green:once  -- 1 consecutive pass completed
+[PASS] green:twice -- 2 consecutive passes completed
+[PASS] handoff     -- truth artifacts written (schema.sql, contracts.snapshot.json, handoff_latest.txt). CONTRACTS LINT OK. MUST_CONTAIN OK.
+[PASS] ship        -- verify-only, zero diffs, no writes/commits/push
+
+=== Baseline DB tables (REBUILD MODE, greenfield) ===
+Migrations applied cleanly on empty DB:
+- public.tenants (tenant_id NOT NULL)
+- public.tenant_memberships (tenant_id NOT NULL)
+- public.user_profiles
+- public.deals (tenant_id NOT NULL, row_version bigint, calc_version integer)
+RLS enabled on: tenants, deals
+
+=== Contracts lint fix (scoped to this PR, Debugger Mode) ===
+contracts_lint.ps1 patterns aligned to current CONTRACTS.md format.
+No CONTRACTS.md changes. Linter conforms to document.
+
+=== Gate output summary ===
+green:once:   ALL GREEN: 1 consecutive pass(es) completed.
+green:twice:  ALL GREEN: 2 consecutive pass(es) completed.
+handoff:      CONTRACTS LINT OK. Wrote generated/schema.sql, generated/contracts.snapshot.json, docs/handoff_latest.txt.
+ship:         GATES PASSED. Zero diffs. Verify-only confirmed.
+pr:preflight: All checks green.
+
+=== Secret exposure remediation ===
+Prior proof commit contained Supabase CLI output with token-bearing strings.
+Branch reset to PREPROOF_HEAD per SOP repair protocol.
+This proof log contains structured output only -- no secrets, no raw CLI dumps.
+
+=== Gate ===
+Gate: command-smoke-db (lane-only)
+Status: PASS
