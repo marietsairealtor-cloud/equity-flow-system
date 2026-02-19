@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-& powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight_encoding.ps1
+& pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight_encoding.ps1
 
 # ShipMergeEnforcement: refuse publish unless on main
 $branch = (& git rev-parse --abbrev-ref HEAD).Trim()
