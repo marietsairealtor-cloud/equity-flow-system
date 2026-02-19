@@ -101,12 +101,13 @@ Iteration is allowed locally, but the PR must end with exactly **one canonical p
    workflow changes must be committed before proof begins.
 
 2. Allowlist the canonical proof log path in
-   docs/truth/robot_owned_paths.json before creating the log.
+   scripts/ci_robot_owned_guard.ps1 before creating the log.
 
    - All new proof logs are subject to robot-owned-guard.
      No exceptions.
    - The exact canonical filename (docs/proofs/<ITEM>_<UTC>.log)
-     must be present in robot_owned_paths.json before Step 5.
+     must be present in scripts/ci_robot_owned_guard.ps1 before
+     Step 5.
    - This is an implementation change. Commit it in Step 1,
      not as part of the proof tail.
 
