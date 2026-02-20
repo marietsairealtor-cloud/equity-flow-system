@@ -2211,3 +2211,39 @@ PASS
 **Status**
 
 * PASS
+
+
+Copy/paste block below.
+
+---
+
+## 2026-02-20 — Build Route v2.4 — Governance Change Guard Merge-Blocking Hardening (PER QA INSTRUCTION)
+
+Objective
+
+* Enforce governance-change-guard as true merge-blocking control.
+
+Changes
+
+* Added `governance-change-guard` to `required.needs` (string-exact).
+* Synced `docs/truth/required_checks.json`.
+* Verified `docs/truth/governance_change_guard.json` path scope.
+* Executed regression: fail without `GOVERNANCE_CHANGE_PR<NNN>.md`, pass with it.
+* Removed regression artifacts after validation.
+* Locked governance wiring requirements in SOP.
+
+Proof
+
+* Red CI on missing governance file.
+* Green CI after adding `GOVERNANCE_CHANGE_PR008.md`.
+* Ship passed on main.
+
+DoD
+
+* Guard blocks merges on governance path mutation.
+* Required job includes guard string-exactly.
+* Regression validated.
+
+Status
+
+* PASS
