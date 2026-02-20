@@ -485,6 +485,44 @@ ship never generates. ship never commits. ship never pushes.
 
 ---
 
+## 17) Governance-scoped paths (ENFORCED)
+
+Governance scope is defined by `docs/truth/governance_change_guard.json`.
+Any PR that changes a governance-scoped path **must** include:
+
+`docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md`
+
+Required template sections:
+- What changed
+- Why safe
+- Risk
+- Rollback
+
+### Always Governance (GOVERNANCE_CHANGE_PR<NNN>.md required)
+
+- `docs/truth/**`
+- `.github/workflows/**`
+- `scripts/**`
+- `docs/artifacts/GUARDRAILS.md`
+- `docs/artifacts/CONTRACTS.md`
+- `docs/artifacts/AUTOMATION.md`
+- `docs/artifacts/SOP_WORKFLOW.md`
+- `docs/artifacts/FOUNDATION_BOUNDARY.md`
+- `supabase/foundation/**`
+
+### Explicitly Exempt (does not trigger governance)
+
+- `docs/DEVLOG.md`
+
+### Merge-blocking requirement (LOCKED)
+
+Governance enforcement is valid only if CI is merge-blocking:
+
+- Jobs `governance-change-guard` and `governance-change-template-contract` must run on `pull_request`.
+- The aggregate merge-blocking job (`required`) must include both jobs in its `needs:` list **string-exactly** (or GitHub rulesets must require them string-exactly).
+
+If a governance-scoped file is modified and CI does not block merges without the governance change template, the repository is noncompliant until the required-check wiring is corrected.
+
 STATUS:
 Aligned with Command for Chat
 Aligned with Build Route v2.4
