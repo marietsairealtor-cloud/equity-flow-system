@@ -106,11 +106,14 @@ jobs:
       - run: echo "db-heavy (skipped on docs-only) PASS"
 
   governance-change-guard:
+    name: governance-change-guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+        with:
+          fetch-depth: 0
+      - name: governance-change-guard
+        shell: pwsh
         run: |
           ./scripts/ci_governance_change_guard.ps1
 
