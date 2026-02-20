@@ -85,6 +85,7 @@
     "docs/proofs/4.2_toolchain_versions_supabase_20260219T152845Z.log": "dbcb4e2fdd5789e255f1224eb7f0f1ef3a131b205e70842bc3c85deefeb88d5d",
     "docs/proofs/4.2a_command_smoke_db_20260219T180422Z.log": "0642c739b2b3a992075a2346e2883b2cdf54cb3b69d1ad029b676be7414b0922",
     "docs/proofs/3.1_automation_contract_20260219T230653Z.log": "3d19d25764f353fbf8ec66adec4ac57c1b74db0a7cda3c10803a7b401cabeb84",
-    "docs/proofs/3.2_ship_guard_20260219T231834Z.log": "76f19e18b0a424eca8d62e595d3f1c5e772c2eecec4059f902873b669f85490b"
+    "docs/proofs/3.2_ship_guard_20260219T231834Z.log": "76f19e18b0a424eca8d62e595d3f1c5e772c2eecec4059f902873b669f85490b",
+    "docs/proofs/3.3_handoff_commit_push_20260220T003148Z.log": "ad2d7c0ec02d94051b387eb14b5acfb4f7b38a1b032afef0279a0fc90b13b80f"
   }
 }
