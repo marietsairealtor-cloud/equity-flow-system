@@ -2154,3 +2154,26 @@ DoD
 
 Status
 PASS
+
+## 2026-02-20 — Build Route v2.4 — 3.6 Robot-Owned Generator Enforcement
+
+Objective
+Establish robot-owned-publish-guard as a merge-blocking CI gate proving generator outputs cannot be produced/modified outside handoff:commit.
+
+Changes
+- Created scripts/ci_robot_owned_publish_guard.ps1 -- independent gate distinct from robot-owned-guard (2.16.10).
+- Added robot-owned-publish-guard CI job to .github/workflows/ci.yml (fetch-depth: 0).
+- Added robot-owned-publish-guard to required.needs (merge-blocking).
+- Updated docs/truth/required_checks.json via npm run truth:sync.
+- Allowlisted 3.6 proof log in scripts/ci_robot_owned_guard.ps1.
+
+Proof
+- docs/proofs/3.6_robot_owned_publish_guard_20260220T151622Z.log
+
+DoD
+- CI fails if generated/** or docs/handoff_latest.txt modified outside handoff:commit.
+- Gate is distinct from robot-owned-guard (2.16.10) -- different enforcement surface.
+- Gate is merge-blocking.
+
+Status
+PASS
