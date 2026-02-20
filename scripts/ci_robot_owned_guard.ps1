@@ -53,6 +53,7 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/3\.3_handoff_commit_push_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.3 proof log" }
   if($pp -match "^docs/proofs/3\.4_docs_push_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.4 proof log" }
   if($pp -match "^docs/proofs/3\.5_qa_requirements_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.5 proof log" }
+  if($pp -match "^docs/proofs/3\.6_robot_owned_publish_guard_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.6 proof log" }
   if($pp -match "^docs/proofs/3\.5_qa_requirements_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.5 proof log" }
   if($pp -eq "docs/handoff_latest.txt"){ return "ALLOW:handoff artifact" }
   if($pp -eq "generated/contracts.snapshot.json"){ return "ALLOW:handoff artifact" }

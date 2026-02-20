@@ -81,6 +81,11 @@
       "required": true
     },
     {
+      "name": "CI / robot-owned-publish-guard",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / ship-guard",
       "type": "github_status",
       "required": true
