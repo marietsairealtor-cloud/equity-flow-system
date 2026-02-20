@@ -2103,3 +2103,29 @@ DoD
 
 Status
 PASS
+
+## 2026-02-20 — Build Route v2.4 — 3.4 Docs Publish Contract
+
+Objective
+Establish docs-push-contract as a merge-blocking CI gate proving docs:push cannot mutate robot-owned outputs.
+
+Changes
+- Hardened scripts/docs_push.ps1: added detached HEAD, main refusal, clean tree, and robot-owned path checks.
+- Created scripts/ci_docs_push_contract.ps1 -- structural assertion gate (9 assertions).
+- Added docs-push-contract CI job to .github/workflows/ci.yml.
+- Added docs-push-contract to required.needs (merge-blocking).
+- Updated docs/truth/required_checks.json via npm run truth:sync.
+- Allowlisted 3.4 proof log in scripts/ci_robot_owned_guard.ps1.
+
+Proof
+- docs/proofs/3.4_docs_push_20260220T135829Z.log
+
+DoD
+- docs:push refuses detached HEAD.
+- docs:push refuses pushing to main.
+- docs:push requires clean tree.
+- docs:push refuses if diff touches robot-owned paths.
+- Gate docs-push-contract is merge-blocking.
+
+Status
+PASS
