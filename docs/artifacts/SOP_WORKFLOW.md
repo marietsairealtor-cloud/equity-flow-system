@@ -85,7 +85,6 @@ npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log
 After `proof:finalize` runs (PROOF_HEAD established), all subsequent commits in the PR may modify only:
 
 * `docs/proofs/**`
-* optional `docs/DEVLOG.md`
 
 Any non-proof change after finalize is forbidden and requires restarting proof generation.
 
@@ -273,7 +272,6 @@ For all docs/proofs/** artifacts:
 * Commits after PROOF_HEAD may modify only:
 
   * docs/proofs/**
-  * optionally docs/DEVLOG.md
 
 ---
 
@@ -418,8 +416,9 @@ Do not add entries for:
 
 ### Timing
 
-DEVLOG entry is added as part of the proof-only tail commit, before merge.
-The entry records the expected completion state; merge confirms it.
+DEVLOG entry is added **after the item is QA-approved and merged to main**.
+The entry is committed in the next PR or a standalone governance PR.
+DEVLOG is never part of the proof tail commit.
 
 ### Format (LOCKED)
 
