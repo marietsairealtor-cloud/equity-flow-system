@@ -110,7 +110,6 @@ CI must validate the integrity of proof artifacts.
 - Must be ancestor of PR_HEAD
 - Commits after PROOF_HEAD may modify only:
   - docs/proofs/**
-  - optionally docs/DEVLOG.md
 
 Violation → FAIL
 
