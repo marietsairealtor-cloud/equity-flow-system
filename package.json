@@ -20,7 +20,7 @@
     "must:contain": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\must_contain.ps1",
     "preflight:encoding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight_encoding.ps1",
     "ci_encoding_audit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_encoding_audit.ps1",
-    "ship": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ship_guard.ps1",
+    "ship": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_ship_guard.ps1",
     "ship:inner": "node scripts/ship.mjs",
     "lint:sql": "node scripts/run_lint_sql.mjs",
     "db:push": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db_push_guard.ps1",
