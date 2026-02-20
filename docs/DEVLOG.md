@@ -2030,3 +2030,31 @@ DoD
 
 Status
 PASS
+
+## 2026-02-19 — Build Route v2.4 — 3.2 Ship Guard
+
+Objective
+Establish ship-guard as a merge-blocking CI gate proving ship is always verify-only.
+
+Changes
+- Renamed scripts/ship_guard.ps1 to scripts/ci_ship_guard.ps1 (pwsh-fixed for Ubuntu CI).
+- Created scripts/ci_ship_guard_contract.ps1 -- structural assertion gate (8 assertions, Option A per QA ruling).
+- Added ship-guard CI job to .github/workflows/ci.yml calling ci_ship_guard_contract.ps1.
+- Added ship-guard to required.needs (merge-blocking).
+- Updated docs/truth/required_checks.json via npm run truth:sync.
+- Updated package.json to reference ci_ship_guard.ps1.
+- Allowlisted 3.2 proof log in scripts/ci_robot_owned_guard.ps1.
+
+Proof
+- docs/proofs/3.2_ship_guard_20260219T231834Z.log
+
+DoD
+- ship fails on dirty tree -- ci_ship_guard.ps1 throws on dirty working tree.
+- ship fails on disallowed branch -- ci_ship_guard.ps1 throws if branch != main.
+- ship fails if it produces diffs -- artifact diff check in ci_ship_guard.ps1.
+- ship-guard is merge-blocking CI gate.
+- QA Option A complied with -- no bypass flags in enforcement script.
+- npm run ship on main post-merge: GATES PASSED, zero diffs, EXIT 0.
+
+Status
+PASS
