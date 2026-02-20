@@ -1,0 +1,13 @@
+PROOF_HEAD=b2c8e854f7d24585efc51b65bc59ee80dab92627
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== handoff-commit-safety-contract ===
+PASS: handoff_commit.ps1 exists
+PASS: handoff:commit: refuses detached HEAD
+PASS: handoff:commit: throws on detached HEAD
+PASS: handoff:commit: refuses main branch
+PASS: handoff:commit: auto-creates PR branch
+PASS: handoff:commit: pushes current branch only
+PASS: handoff:commit: prints remote ref pushed
+HANDOFF_COMMIT_SAFETY_CONTRACT_OK

@@ -41,6 +41,11 @@
       "required": true
     },
     {
+      "name": "CI / handoff-commit-safety",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / lane-enforcement",
       "type": "github_status",
       "required": true
