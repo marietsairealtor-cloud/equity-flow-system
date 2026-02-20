@@ -1,0 +1,10 @@
+PROOF_HEAD=2c051704580a7c5dfcfbc46c92ba624dbd57bed0
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== qa-requirements-contract ===
+PASS: qa_requirements.json exists
+PASS: qa_requirements.schema.json exists
+PASS: qa_requirements.json validates against schema
+PASS: qa_requirements.json not in PR diff -- version bump check skipped
+QA_REQUIREMENTS_CONTRACT_OK
