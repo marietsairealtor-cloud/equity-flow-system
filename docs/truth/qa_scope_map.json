@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "items": {
+    "1.1": {
+      "proof_pattern": "^docs/proofs/1\\.1_port_manifest_"
+    },
+    "1.2": {
+      "proof_pattern": "^docs/proofs/1\\.2_"
+    },
+    "1.3": {
+      "proof_pattern": "^docs/proofs/1\\.3_denylist_"
+    },
+    "1.4": {
+      "proof_pattern": "^docs/proofs/1\\.4_regen_policy_"
+    },
+    "1.5": {
+      "proof_pattern": "^docs/proofs/1\\.5_doc_corrections_"
+    },
+    "2.1": {
+      "proof_pattern": "^docs/proofs/2\\.1_repo_bootstrap_"
+    },
+    "2.2": {
+      "proof_pattern": "^docs/proofs/2\\.2_toolchain_versions_"
+    },
+    "2.2a": {
+      "proof_pattern": "^docs/proofs/2\\.2a_renormalize_enforced_"
+    },
+    "2.3": {
+      "proof_pattern": "^docs/proofs/2\\.3_repo_rules_enforced_"
+    },
+    "2.4": {
+      "proof_pattern": "^docs/proofs/2\\.4_confirmation_"
+    },
+    "2.5": {
+      "proof_pattern": "^docs/proofs/2\\.5_truth_bootstrap_"
+    },
+    "2.6": {
+      "proof_pattern": "^docs/proofs/2\\.6_required_checks_contract_"
+    },
+    "2.7": {
+      "proof_pattern": "^docs/proofs/2\\.7_docs_only_ci_skip_"
+    },
+    "2.8": {
+      "proof_pattern": "^docs/proofs/2\\.8_command_smoke_gov_"
+    },
+    "2.9": {
+      "proof_pattern": "^docs/proofs/2\\.9_main_moved_guard_"
+    },
+    "2.10": {
+      "proof_pattern": "^docs/proofs/2\\.10_proof_manifest_"
+    },
+    "2.11": {
+      "proof_pattern": "^docs/proofs/2\\.11_proof_redaction_escape_hatch_"
+    },
+    "2.12": {
+      "proof_pattern": "^docs/proofs/2\\.12_secrets_scan_"
+    },
+    "2.13": {
+      "proof_pattern": "^docs/proofs/2\\.13_env_sanity_"
+    },
+    "2.14": {
+      "proof_pattern": "^docs/proofs/2\\.14_stop_the_line_"
+    },
+    "2.15": {
+      "proof_pattern": "^docs/proofs/2\\.15_governance_change_"
+    },
+    "2.16.1": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.1_policy_drift_attestation_"
+    },
+    "2.16.2": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.2_proof_commit_binding_"
+    },
+    "2.16.2A": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.2A_hash_authority_contract_"
+    },
+    "2.16.3": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.3_ci_semantic_contract_"
+    },
+    "2.16.4": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.4_waiver_debt_enforcement_"
+    },
+    "2.16.4A": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.4A_ci_gate_wiring_closure_"
+    },
+    "2.16.4B": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.4B_ci_topology_audit_"
+    },
+    "2.16.4C": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.4C_truth_sync_"
+    },
+    "2.16.5": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5_governance_change_justification_"
+    },
+    "2.16.5A": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5A_foundation_boundary_contract_"
+    },
+    "2.16.5B": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5B_repo_layout_separation_"
+    },
+    "2.16.5C": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5C_foundation_invariants_suite_"
+    },
+    "2.16.5D": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5D_lane_separation_enforcement_"
+    },
+    "2.16.5E": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5E_foundation_fork_protocol_"
+    },
+    "2.16.5F": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5F_foundation_drift_detector_"
+    },
+    "2.16.5G": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5G_product_scaffold_generator_"
+    },
+    "2.16.6": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.6_lane_policy_truth_"
+    },
+    "2.16.7": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.7_lane_enforcement_"
+    },
+    "2.16.8": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.8_stop_the_line_xor_"
+    },
+    "2.16.9": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.9_waiver_rate_limit_"
+    },
+    "2.16.10": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.10_robot_owned_guard_"
+    },
+    "2.16.11": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.11_governance_change_template_"
+    },
+    "2.17.1": {
+      "proof_pattern": "^docs/proofs/2\\.17\\.1_normalize_sweep_"
+    },
+    "2.17.1A": {
+      "proof_pattern": "^docs/proofs/2\\.17\\.1A_proof_finalize_arg_hardening_"
+    },
+    "2.17.2": {
+      "proof_pattern": "^docs/proofs/2\\.17\\.2_encoding_audit_"
+    },
+    "2.17.3": {
+      "proof_pattern": "^docs/proofs/2\\.17\\.3_path_leak_audit_"
+    },
+    "2.17.4": {
+      "proof_pattern": "^docs/proofs/2\\.17\\.4_parser_fixture_check_"
+    },
+    "4.1": {
+      "proof_pattern": "^docs/proofs/4\\.1_cloud_baseline_"
+    },
+    "4.2": {
+      "proof_pattern": "^docs/proofs/4\\.2_toolchain_versions_supabase_"
+    },
+    "4.2a": {
+      "proof_pattern": "^docs/proofs/4\\.2a_command_smoke_db_"
+    },
+    "3.1": {
+      "proof_pattern": "^docs/proofs/3\\.1_automation_contract_"
+    },
+    "3.2": {
+      "proof_pattern": "^docs/proofs/3\\.2_ship_guard_"
+    },
+    "3.3": {
+      "proof_pattern": "^docs/proofs/3\\.3_handoff_commit_push_"
+    },
+    "3.4": {
+      "proof_pattern": "^docs/proofs/3\\.4_docs_push_"
+    },
+    "3.5": {
+      "proof_pattern": "^docs/proofs/3\\.5_qa_requirements_"
+    },
+    "3.6": {
+      "proof_pattern": "^docs/proofs/3\\.6_robot_owned_publish_guard_"
+    },
+    "3.7": {
+      "proof_pattern": "^docs/proofs/3\\.7_qa_verify_"
+    }
+  }
+}
