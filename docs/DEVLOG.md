@@ -2177,3 +2177,37 @@ DoD
 
 Status
 PASS
+
+---
+
+## 2026-02-20 — Build Route v2.4 — 3.7 QA Verify (Meta-Gate)
+
+**Objective**
+
+* Establish deterministic PR-scope completeness gate enforcing required proof presence per claimed Build Route item.
+
+**Changes**
+
+* Added `scripts/qa_verify.mjs` completeness gate.
+* Added `docs/truth/qa_scope_map.json` (item → required proof patterns).
+* Added `docs/truth/qa_claim.json` (single claimed item per PR).
+* Wired `qa:verify` script in `package.json`.
+* Added CI job `qa-verify` and registered in `required_checks.json`.
+* Registered truth artifacts in robot-owned guard + truth-bootstrap.
+* Documented scope mechanism in `docs/artifacts/AUTOMATION.md`.
+
+**Proof**
+
+* `docs/proofs/3.7_qa_verify_<UTC>.log`
+
+**DoD**
+
+* `npm run qa:verify` emits STATUS PASS/FAIL.
+* Validates required proofs for claimed item exist in manifest.
+* No branch-name / label / inference logic.
+* No hash duplication of proof-manifest.
+* Scope mechanism documented in AUTOMATION.md.
+
+**Status**
+
+* PASS
