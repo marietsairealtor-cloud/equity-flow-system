@@ -1,0 +1,8 @@
+PROOF_HEAD=b0b58b5b59d1726be4ec78fa1fb94eefef39b826
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== robot-owned-publish-guard ===
+BASE=origin/main
+CHANGED_FILES=4
+ROBOT_OWNED_PUBLISH_GUARD_OK
