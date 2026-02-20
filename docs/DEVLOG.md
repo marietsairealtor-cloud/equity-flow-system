@@ -2129,3 +2129,28 @@ DoD
 
 Status
 PASS
+
+## 2026-02-20 — Build Route v2.4 — 3.5 QA Requirements Truth
+
+Objective
+Establish qa-requirements-contract as a merge-blocking CI gate proving qa_requirements.json validates against schema and cannot be weakened silently.
+
+Changes
+- Created scripts/ci_qa_requirements_contract.ps1 -- schema validation + version-bump enforcement gate.
+- Added qa-requirements-contract CI job to .github/workflows/ci.yml.
+- Added qa-requirements-contract to required.needs (merge-blocking).
+- Updated docs/truth/required_checks.json via npm run truth:sync.
+- Registered 3.5 proof log in scripts/ci_robot_owned_guard.ps1 (§3.0.4a).
+- §3.0.4b already satisfied: qa_requirements.json + schema in truth_bootstrap_check.mjs.
+- §3.0.4c exempt: hand-authored file, not machine-derived.
+
+Proof
+- docs/proofs/3.5_qa_requirements_20260220T144336Z.log
+
+DoD
+- qa_requirements.json validates against qa_requirements.schema.json.
+- Version bump enforced only when qa_requirements.json is in PR diff.
+- Gate qa-requirements-contract is merge-blocking.
+
+Status
+PASS
