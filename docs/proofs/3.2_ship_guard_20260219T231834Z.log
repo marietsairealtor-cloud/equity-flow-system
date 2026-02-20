@@ -1,0 +1,42 @@
+PROOF_HEAD=c96f8eb0a2d0443ebcff8dfc72f827e226888806
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+SHIP GUARD PROOF
+Item: Build Route v2.4 -- 3.2 Ship Guard
+PROOF_HEAD: c96f8eb0a2d0443ebcff8dfc72f827e226888806
+UTC: 20260219T231834Z
+
+=== Execution path ===
+IMPLEMENTATION + PROOF: ship-guard CI job did not exist. Added and wired as merge-blocking.
+
+=== Section 3.0 Constraint #2 -- Green Gate Loop ===
+green:once:  ALL GREEN: 1 consecutive pass(es) completed. (post-implementation)
+green:twice: ALL GREEN: 2 consecutive pass(es) completed. (no edits between runs)
+
+=== Gate design ===
+ci_ship_guard_contract.ps1: structural assertion script (Option A per QA ruling).
+Does not execute ship in real mode. Asserts guard logic exists and is correct.
+ci_ship_guard.ps1: enforcement script called by npm run ship (renamed from ship_guard.ps1, pwsh-fixed).
+
+=== Gate output (local run) ===
+=== ship-guard-contract ===
+PASS: ci_ship_guard.ps1 exists
+PASS: ship-guard: branch enforcement exists
+PASS: ship-guard: throws on violation
+PASS: ship-guard: clean tree check exists
+PASS: ship-guard: artifact diff check exists
+PASS: ship.mjs: no git commit
+PASS: ship.mjs: no git push
+PASS: ship.mjs: no generators
+SHIP_GUARD_CONTRACT_OK
+
+=== DoD verification ===
+[PASS] ship fails on dirty tree -- ci_ship_guard.ps1 throws on dirty working tree
+[PASS] ship fails on disallowed branch -- ci_ship_guard.ps1 throws if branch != main
+[PASS] ship fails if it produces any diffs -- ci_ship_guard.ps1 checks generated artifact diffs
+[PASS] ship-guard is now a merge-blocking CI gate
+
+=== Gate ===
+Gate: ship-guard (merge-blocking)
+Status: PASS
