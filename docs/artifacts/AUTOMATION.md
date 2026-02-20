@@ -196,6 +196,38 @@ Truth artifacts must be commit-bound and reproducible.
 
 (`handoff`/`handoff:commit` generation path enforcement deferred until implemented.)
 
+
+---
+
+## 8.1 QA Verify Scope Mapping (Build Route 3.7)
+
+`qa:verify` is a completeness gate only: it answers “does this PR include the required proof artifacts for the claimed Build Route item?”
+
+**Scope mechanism (no inference):**
+- Truth map: `docs/truth/qa_scope_map.json`
+  - Maps Build Route item ID → required proof filename patterns (regex).
+  - Updated when new items are implemented.
+- Per-PR claim file: `docs/truth/qa_claim.json`
+  - Contains exactly one claimed Build Route item ID for the PR.
+  - Overwritten each PR (single canonical path; git history preserves past claims).
+
+**Inputs read by `qa:verify`:**
+- `docs/truth/qa_claim.json`
+- `docs/truth/qa_scope_map.json`
+- `docs/proofs/manifest.json` (keys only)
+
+**PASS/FAIL rule (deterministic):**
+- FAIL if claim missing/blank/multiple items
+- FAIL if claim ID not in `qa_scope_map.json`
+- FAIL if any required proof pattern has no matching manifest entry
+- Otherwise PASS
+
+**Forbidden:**
+- No branch-name parsing
+- No PR labels / GitHub API calls
+- No changed-file inference
+- No hash verification (integrity is `proof-manifest` / `proof-commit-binding`)
+
 ---
 
 ## 9) Waiver Debt Enforcement (Build Route 2.16.4)
