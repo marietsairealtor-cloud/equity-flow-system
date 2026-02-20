@@ -368,16 +368,19 @@ Violation = governance failure.
 
 ---
 
-## 13) Gate Close — Clean Tree Verification
+## 13) Gate Close — Post-Merge Verification (LOCKED)
 
 After merge to main:
 
 ```
 git checkout main
 git pull
-git status → must show clean working tree
+git status           → must show clean working tree
 npm run pr:preflight → must pass
+npm run ship         → must PASS, zero diffs, exit 0
 ```
+
+If `ship` fails on main after merge, enter Debugger Mode immediately.
 
 `docs/handoff_latest.txt` internal git status line is informational only and not authoritative.
 
@@ -455,6 +458,31 @@ Truth files are generated only via:
 * npm run handoff:commit
 
 ship is verify-only.
+
+### When to run handoff
+
+Run `handoff` + `handoff:commit` on the **PR branch, before merge**, when the PR changes anything that affects truth artifacts:
+
+* Migration changes (supabase/migrations/**)
+* Schema changes
+* Contract changes (CONTRACTS.md or snapshot)
+* Any change that would alter generated/schema.sql, generated/contracts.snapshot.json, or docs/handoff_latest.txt
+
+Do NOT run handoff for governance-only PRs (CI wiring, docs, proof-only work) that do not touch the DB or contracts.
+
+### When to run ship
+
+Run `ship` on **main, after merge**, as the post-merge verification step (see §13).
+
+ship never generates. ship never commits. ship never pushes.
+
+### Summary
+
+| Command | When | Branch | Writes files? |
+|---------|------|--------|---------------|
+| handoff | Before merge | PR branch | Yes (truth artifacts) |
+| handoff:commit | Before merge | PR branch | Yes (commits + pushes artifacts) |
+| ship | After merge | main only | No (verify-only) |
 
 ---
 

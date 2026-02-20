@@ -2083,3 +2083,23 @@ DoD
 
 Status
 PASS
+
+## 2026-02-20 — Build Route v2.4 — SOP_WORKFLOW §13 + §16 Clarification
+
+Objective
+Clarify post-merge verification sequence and handoff/ship execution timing in SOP_WORKFLOW.md.
+
+Changes
+- §13 renamed to "Post-Merge Verification (LOCKED)"; added npm run ship as mandatory post-merge step; added Debugger Mode trigger if ship fails on main.
+- §16 added "When to run handoff" and "When to run ship" subsections with summary table (command / when / branch / writes files).
+
+Proof
+- Governance artifact update. No gate or proof artifact required.
+
+DoD
+- §13 includes ship in post-merge sequence.
+- §16 clarifies handoff = PR branch before merge, ship = main after merge.
+- No policy change. No gate weakening. Clarification only.
+
+Status
+PASS
