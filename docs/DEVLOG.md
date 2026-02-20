@@ -2058,3 +2058,28 @@ DoD
 
 Status
 PASS
+
+## 2026-02-20 — Build Route v2.4 — 3.3 handoff:commit Push Semantics
+
+Objective
+Establish unambiguous publishing semantics for handoff:commit -- refuses detached HEAD, refuses main, pushes current branch only.
+
+Changes
+- Hardened scripts/handoff_commit.ps1: added detached HEAD check, fixed powershell -> pwsh.
+- Created scripts/ci_handoff_commit_contract.ps1 -- structural assertion gate (7 assertions).
+- Added handoff-commit-safety CI job to .github/workflows/ci.yml.
+- Added handoff-commit-safety to required.needs (merge-blocking).
+- Updated docs/truth/required_checks.json via npm run truth:sync.
+- Allowlisted 3.3 proof log in scripts/ci_robot_owned_guard.ps1.
+
+Proof
+- docs/proofs/3.3_handoff_commit_push_20260220T003148Z.log
+
+DoD
+- handoff:commit refuses detached HEAD.
+- handoff:commit refuses pushing to main (auto-creates PR branch).
+- handoff:commit pushes current branch only and prints remote ref pushed.
+- Gate handoff-commit-safety is merge-blocking.
+
+Status
+PASS
