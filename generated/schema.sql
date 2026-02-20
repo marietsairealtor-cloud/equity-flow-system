@@ -59,15 +59,3 @@ ALTER TABLE ONLY "public"."user_profiles"
 ALTER TABLE "public"."deals" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
-
-GRANT ALL ON TABLE "public"."deals" TO "anon";
-GRANT ALL ON TABLE "public"."deals" TO "authenticated";
-
-GRANT ALL ON TABLE "public"."tenant_memberships" TO "anon";
-GRANT ALL ON TABLE "public"."tenant_memberships" TO "authenticated";
-
-GRANT ALL ON TABLE "public"."tenants" TO "anon";
-GRANT ALL ON TABLE "public"."tenants" TO "authenticated";
-
-GRANT ALL ON TABLE "public"."user_profiles" TO "anon";
-GRANT ALL ON TABLE "public"."user_profiles" TO "authenticated";
