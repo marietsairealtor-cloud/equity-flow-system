@@ -15,6 +15,8 @@ const required = [
   "docs/truth/tenant_table_selector.json",
   "docs/truth/privilege_truth.json",
   "docs/truth/qa_requirements.schema.json",
+  "docs/truth/qa_scope_map.json",
+  "docs/truth/qa_claim.json",
   "docs/truth/surface_truth.schema.json",
   "docs/truth/cloud_inventory.schema.json",
   "docs/truth/privilege_truth.schema.json",
@@ -65,6 +67,12 @@ for (const p of required) {
 }
 
 console.log("=== truth-bootstrap: schema-lite checks (no Ajv) ===");
+if (parsed.has("docs/truth/qa_claim.json")) {
+  assertHas(parsed.get("docs/truth/qa_claim.json"), ["item"], "qa_claim.json");
+}
+if (parsed.has("docs/truth/qa_scope_map.json")) {
+  assertHas(parsed.get("docs/truth/qa_scope_map.json"), ["version","items"], "qa_scope_map.json");
+}
 if (parsed.has("docs/truth/qa_requirements.json")) {
   assertHas(parsed.get("docs/truth/qa_requirements.json"), ["version","requirements"], "qa_requirements.json");
 }
