@@ -71,6 +71,11 @@
       "required": true
     },
     {
+      "name": "CI / qa-requirements-contract",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / robot-owned-guard",
       "type": "github_status",
       "required": true
