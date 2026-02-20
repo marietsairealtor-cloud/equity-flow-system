@@ -166,7 +166,7 @@ jobs:
         with:
           node-version: "20"
       - run: npm ci
-      - run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/ship_guard.ps1
+      - run: pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/ci_ship_guard_contract.ps1
   automation-contract:
     runs-on: ubuntu-24.04
     steps:
