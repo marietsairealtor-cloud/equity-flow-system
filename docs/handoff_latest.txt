@@ -1,11 +1,9 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 6b0318f
+HEAD: 942bab3
 
 === git status --porcelain=v1 ===
- M scripts/contracts_lint.ps1
-?? docs/proofs/4.2a_command_smoke_db_WORKING.log
-?? generated/
-?? supabase/migrations/
+ M docs/handoff_latest.txt
+ M generated/schema.sql
 
 === supabase status (sanitized summary) ===
 {
@@ -32,5 +30,5 @@ HEAD: 6b0318f
 - handoff checkpoint: yes
 - CI workflow present: yes (.github/workflows/ci.yml)
 - pgTAP workflow present: no (.github/workflows/database-tests.yml)
-- privilege firewall (REVOKE core tables) detected in schema.sql: no
+- privilege firewall (REVOKE core tables) detected in schema.sql: yes
 - SECURITY DEFINER detected in schema.sql: no
