@@ -46,6 +46,11 @@
       "required": true
     },
     {
+      "name": "CI / governance-change-guard",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / handoff-commit-safety",
       "type": "github_status",
       "required": true
