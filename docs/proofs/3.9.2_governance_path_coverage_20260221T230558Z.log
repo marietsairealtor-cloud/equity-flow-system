@@ -1,0 +1,12 @@
+PROOF_HEAD=ee7cbddd590d06326a04b32c0d94d1f6e3131746
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== governance-path-coverage gate ===
+Total repo files: 255
+Governance surface patterns: 12
+Guard patterns: 12
+Exclusions: 3
+Files on governance surface: 74
+All governance-surface files are covered by guard patterns.
+STATUS: PASS
