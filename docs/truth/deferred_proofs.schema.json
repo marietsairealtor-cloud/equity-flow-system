@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["gate", "stub_reason", "deferred_invariant", "conversion_trigger"],
+    "additionalProperties": false,
+    "properties": {
+      "gate": { "type": "string" },
+      "stub_reason": { "type": "string" },
+      "deferred_invariant": { "type": "string" },
+      "conversion_trigger": { "type": "string" }
+    }
+  }
+}

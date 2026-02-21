@@ -177,6 +177,9 @@
     },
     "3.8": {
       "proof_pattern": "^docs/proofs/3\\.8_handoff_idempotency_"
+    },
+    "3.9.1": {
+      "proof_pattern": "^docs/proofs/3\\.9\\.1_deferred_proof_registry_"
     }
   }
 }
