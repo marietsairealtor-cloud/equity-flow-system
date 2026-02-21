@@ -42,4 +42,8 @@ if ($fail) {
 }
 
 Write-Host "STATUS: PASS — handoff is idempotent (second run produced zero diffs)"
+
+# Restore truth artifacts — gate proved idempotency, clean up working tree
+git checkout -- generated/ docs/handoff_latest.txt
+
 exit 0
