@@ -2522,3 +2522,36 @@ DoD
 6. CI green, QA approved, merged
 
 Status: COMPLETE
+
+2026-02-21 — Build Route v2.4 — 3.9.2 Governance Path Coverage Audit
+
+Objective
+Mechanically assert that governance_change_guard.json path matchers cover every governance-surface file in the repo — closing the bypass class where new governance-surface paths silently escape the guard.
+
+Changes
+- docs/truth/governance_surface_definition.json — new versioned governance surface definition (12 patterns, 3 exclusions)
+- docs/truth/governance_change_guard.json — added BUILD_ROUTE_V2.4.md, RELEASES.md, governance_surface_definition.json
+- scripts/ci_governance_path_coverage.ps1 — new gate
+- .github/workflows/ci.yml — governance-path-coverage job added, wired into required:
+- docs/truth/required_checks.json — CI / governance-path-coverage added
+- docs/truth/qa_claim.json — updated to 3.9.2
+- docs/truth/qa_scope_map.json — added 3.9.2 entry
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 3.9.2 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR018.md — governance file
+
+Decisions
+- package.json: Option B — excluded from governance scope
+- docs/governance/**: excluded — circular by design
+- BUILD_ROUTE_V2.4.md + RELEASES.md: added to guard
+
+Proof
+docs/proofs/3.9.2_governance_path_coverage_20260221T230558Z.log
+
+DoD
+1. governance_surface_definition.json exists with versioned path patterns
+2. Gate fails if any surface file uncovered by guard
+3. governance_change_guard.json updated to cover all gaps
+4. governance_surface_definition.json added to guard scope (self-registering)
+5. CI green, QA approved, merged
+
+Status: COMPLETE
