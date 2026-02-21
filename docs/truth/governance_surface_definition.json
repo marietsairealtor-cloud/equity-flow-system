@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "description": "Authoritative definition of governance surface. Coverage gate checks against this file.",
+  "exclusions": [
+    {
+      "path": "docs/DEVLOG.md",
+      "rationale": "Explicitly exempt per governance_change_guard.json — routine operational log."
+    },
+    {
+      "path": "package.json",
+      "rationale": "Option B: excluded from governance scope. Most PRs touch package.json for script additions; full-path scoping creates excessive friction. npm script changes are unguarded — acknowledged risk."
+    },
+    {
+      "path": "docs/governance/**",
+      "rationale": "Circular exclusion: these files ARE the governance justification artifacts. Including them would require a governance file to add a governance file."
+    }
+  ],
+  "paths": [
+    {
+      "pattern": "scripts/ci_*.ps1",
+      "rationale": "CI gate scripts enforce merge-blocking governance checks.",
+      "version": 1
+    },
+    {
+      "pattern": "scripts/ci_*.mjs",
+      "rationale": "CI gate scripts (Node) enforce merge-blocking governance checks.",
+      "version": 1
+    },
+    {
+      "pattern": ".github/workflows/**",
+      "rationale": "CI workflow definitions control what gates run and when.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/truth/**",
+      "rationale": "Truth files are the authoritative source for CI gate configuration.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/artifacts/SOP_WORKFLOW.md",
+      "rationale": "Authoritative execution procedure for all Build Route items.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/artifacts/AUTOMATION.md",
+      "rationale": "Authoritative automation and proof-commit-binding specification.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/artifacts/GUARDRAILS.md",
+      "rationale": "Authoritative security and architecture boundary rules.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/artifacts/CONTRACTS.md",
+      "rationale": "Authoritative RPC and tenancy contract definitions.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/artifacts/FOUNDATION_BOUNDARY.md",
+      "rationale": "Authoritative foundation boundary definition.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/artifacts/BUILD_ROUTE_V2.4.md",
+      "rationale": "Authoritative build route — changes affect all future objectives.",
+      "version": 1
+    },
+    {
+      "pattern": "docs/artifacts/RELEASES.md",
+      "rationale": "Release discipline and rollback policy.",
+      "version": 1
+    },
+    {
+      "pattern": "supabase/foundation/**",
+      "rationale": "Foundation migrations define the immutable DB baseline.",
+      "version": 1
+    }
+  ]
+}

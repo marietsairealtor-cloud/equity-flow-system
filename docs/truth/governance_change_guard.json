@@ -9,7 +9,10 @@
     "docs/artifacts/AUTOMATION.md",
     "docs/artifacts/SOP_WORKFLOW.md",
     "supabase/foundation/**",
-    "docs/artifacts/FOUNDATION_BOUNDARY.md"
+    "docs/artifacts/FOUNDATION_BOUNDARY.md",
+    "docs/artifacts/BUILD_ROUTE_V2.4.md",
+    "docs/artifacts/RELEASES.md",
+    "docs/truth/governance_surface_definition.json"
   ],
   "justification_glob": "docs/governance/GOVERNANCE_CHANGE_PR*.md"
 }
