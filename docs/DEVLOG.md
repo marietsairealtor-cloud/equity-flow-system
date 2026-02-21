@@ -2317,3 +2317,179 @@ Verification evidence
 - handoff_latest.txt HEAD drift: expected by design (one commit behind after handoff:commit)
 
 Status: COMPLETE
+
+
+## 2026-02-21 — Build Route v2.4 — Advisor Review: Section 3 Seal + Forward Risk (Sections 4–7)
+
+Objective
+- Record findings from external adversarial advisor review of Section 3
+  seal status and forward risk across Sections 4–7, per SOP §14
+  (advisor review findings require DEVLOG entry).
+
+Changes
+- No implementation changes. Findings only.
+
+Proof
+- Advisor review transcript (session record).
+
+DoD
+- Section 3 seal status assessed.
+- Forward risk for Sections 4–7 documented.
+- All actionable findings converted to Build Route items or hardening
+  DoD additions in the same session (see companion entry below).
+
+Findings summary
+
+Section 3 — Seal Status
+- Governance and automation layer: SEALED.
+- Security layer: claimed but unproven. Privilege firewall and
+  SECURITY DEFINER assertions are text-match detections on
+  generated/schema.sql, not live-DB proofs. Security seal deferred
+  to Section 6 pgTAP tests. DB-heavy stubs must be explicitly catalogued
+  before Section 4 entry — addressed by 3.9.1.
+- qa:verify deliberate-failure regression not documented in 3.7 DEVLOG.
+  Addressed by 3.9.3.
+- Governance-change-guard reuse-of-prior-governance-file bypass: low
+  risk for solo team, documented.
+- AUTOMATION.md §2 declares database-tests.yml as required; file does
+  not exist. Live compliance gap. Catalogued in 3.9.1 deferred proof
+  registry.
+
+Section 4 — Integrity Gate
+- anon role default privilege gap: no gate proves anon has zero access.
+  New item: 4.4.
+- Tenancy resolution deviation detection absent. New item: 4.5.
+- PostgREST and Auth version not pinned in inventory. Hardening: 4.3.
+- JWT context drift in background/trigger contexts identified as risk.
+  Addressed by 6.3 hardening (background_context_review.json).
+- write_path_registry gap: no proof that all write paths check
+  row_version. Addressed by 6.6 hardening.
+
+Section 5 — Reliability Gate
+- Partial migration exposure window: table created before RLS enabled.
+  New item: 5.1.
+- Manifest corruption has no documented repair path beyond SOP §4.2.
+  Existing SOP §4.2 Repair Protocol is the authoritative path; no
+  separate recovery script warranted.
+- Rollback migration tested on empty DB only — risk noted for future
+  Section 8 work.
+
+Section 6 — Product Gate
+- UI error bucketing: PGRST301 vs 42501 indistinguishable at HTTP
+  layer. Risk documented for Section 10 (WeWeb integration).
+- Empty-result tenant isolation false-pass: tests must use populated
+  data. Addressed by 6.3 hardening.
+- View and FK embedding coverage absent from isolation suite.
+  Addressed by 6.3 hardening.
+- Unregistered table access (table added without selector entry).
+  New item: 6.3A.
+- Share token not proven tenant-scoped at planner level. Addressed
+  by 6.7 hardening.
+- calc_version change protocol absent. New item: 7.6.
+
+Section 7 — Launch Gate
+- Service role key in CI log risk via PowerShell Write-Error paths.
+  Addressed by 3.9.5 (proof secret scan).
+- Studio direct mutation has no drift detection. New item: 7.7.
+- PostgREST cloud version drift undetected. Addressed by 4.3 hardening.
+- anon role not explicitly in privilege_truth.json. Addressed by
+  7.2 hardening.
+- pg_proc.prosrc used incorrectly for search_path check — correct
+  field is pg_proc.proconfig. Addressed by 6.2 hardening.
+
+Status
+- RECORDED (findings only — no gate, no proof artifact required per
+  SOP §14 advisor review entry type)
+
+---
+
+## 2026-02-21 — Build Route v2.4 — Build Route Additions: Section 3.9 + Sections 4–7 Hardenings
+
+Objective
+- Record all Build Route additions and hardenings produced from the
+  advisor review session. Per SOP §14, Build Route additions require
+  a DEVLOG entry.
+
+Changes
+
+Section 3.9 — Pre-Section-4 Bridge Hardening (new section)
+- Added Section 3.9 as a formal addendum to Section 3, comprising
+  sub-items 3.9.0 through 3.9.6.
+- 3.9.0: Bridge execution constraints (LOCKED).
+- 3.9.1: Deferred proof registry — catalogs all DB-heavy stub gates
+  and AUTOMATION.md §2 compliance gap. Gate: deferred-proof-registry.
+- 3.9.2: Governance path coverage audit — closes guard coverage gap,
+  adds governance_surface_definition.json, resolves package.json scope
+  ambiguity. Gate: governance-path-coverage.
+- 3.9.3: QA scope map coverage enforcement — closes qa:verify
+  trivial-pass blind spot, adds deliberate-failure regression
+  requirement. Gate: qa-scope-coverage.
+- 3.9.4: Job graph ordering verification — proves lane-enforcement is
+  prerequisite of docs-only-ci-skip. Gate: job-graph-ordering.
+- 3.9.5: Proof secret scan — hardens proof:finalize to reject secrets
+  before manifest entry. Must be on main before first Section 4 proof.
+- 3.9.6: Bridge close verification — formal §17-style close with
+  DEVLOG entry requirement before Section 4 entry.
+- Governance position clarified: Section 3 is not reopened. 3.9 is
+  an addendum. Second DEVLOG entry ("Section 3.9 Bridge Closed")
+  required before Section 4 opens.
+
+Section 4 — Fresh Supabase Project Baseline
+- 4.3 hardened: PostgREST and Auth version pinning added as lane-only
+  cloud-version-pin gate. toolchain-contract-supabase not extended.
+- 4.4 added: anon role default privilege audit.
+  Gate: anon-privilege-audit (merge-blocking, DB lane).
+- 4.5 added: Tenancy resolution contract enforcement — forbidden
+  pattern detection only, no re-adjudication of CONTRACTS.md §3.
+  Gate: rls-strategy-consistent (merge-blocking, migration lane).
+
+Section 5 — Governance Gates
+- 5.0 hardened: new gates registered per-item in their own PRs,
+  not batched. Governance-change-guard trigger documented per item.
+- 5.1 added: Migration RLS co-location lint — CREATE TABLE must be
+  accompanied by ENABLE ROW LEVEL SECURITY + REVOKE ALL in same file.
+  Includes baseline migration pre-check requirement.
+  Gate: migration-rls-colocation (merge-blocking).
+
+Section 6 — Greenfield Schema Build
+- 6.2 hardened: pg_proc.proconfig (not prosrc) used for search_path
+  catalog check. Helper function schema-qualification enumerated.
+- 6.3 hardened: populated-data requirement for negative tests,
+  view-based access tests, FK embedding HTTP tests, and
+  background_context_review.json with catalog cross-check gate added.
+- 6.3A added: Unregistered table access gate.
+  Gate: unregistered-table-access (merge-blocking).
+- 6.4 hardened: specific forbidden policy patterns enumerated.
+  Policy expression enumeration added to proof artifact requirement.
+- 6.6 hardened: write_path_registry.json (machine-derived, full Triple
+  Registration) and concurrent row_version update test added.
+- 6.7 hardened: tenant-scoped token lookup WHERE clause requirement,
+  EXPLAIN query plan evidence requirement added.
+
+Section 7 — Schema + Privilege Truth
+- 7.2 hardened: anon role explicit in privilege_truth.json.
+  Contract-based GRANT allowlist lint replaces documentation-comment
+  approach.
+- 7.6 added: calc_version change protocol.
+  Gate: calc-version-registry (merge-blocking).
+- 7.7 added: Supabase Studio direct-mutation guard.
+  Operator-run only. No CI job. Policy-governed.
+
+Proof
+- Advisor review transcript (session record).
+- BUILD_ROUTE_V2_4_SECTION_3.9.md (revised Section 3.9 document).
+- BUILD_ROUTE_V2_4_SECTIONS_4_7_ADDITIONS.md (revised Sections 4–7
+  additions in Build Route format).
+
+DoD
+- All advisor findings converted to Build Route items or hardening
+  additions.
+- Section 3.9 document revised: numbering, governance position,
+  execution constraints, and all six sub-item corrections applied.
+- Sections 4–7 additions formatted in Build Route standard and
+  corrections from advisor review applied.
+- No implementation changes in this entry. Implementation follows
+  per-item PRs beginning with 3.9.1.
+
+Status
+- RECORDED

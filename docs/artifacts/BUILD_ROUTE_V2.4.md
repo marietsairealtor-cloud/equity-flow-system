@@ -1305,6 +1305,705 @@ This ordering minimizes circular dependencies. The meta-gate (3.7) is built last
 
 ---
 
+## **3.9 Pre-Section-4 Bridge Hardening
+
+**Status:** LOCKED pending merge
+**Scope:** Post-Section-3-seal, pre-Section-4-entry
+**Authority:** Section 3.0 constraints apply to all sub-items
+**Execution order:** 3.9.1 → 3.9.2 → 3.9.3 → 3.9.4 → 3.9.5 → 3.9.6
+**Section 4 entry condition:** All six sub-items merged and `ship` passes
+on main with zero diffs before Section 4 is declared open.
+
+---
+
+## Governance Position
+
+Section 3 was formally closed per the DEVLOG entry dated 2026-02-21.
+Items 3.9.1–3.9.6 are **addenda to Section 3**, not a reopening of it.
+They close structural blind spots identified during the Section 3
+adversarial review. The "Section 3 Closed" DEVLOG entry documents the
+state of 3.1–3.8. A second DEVLOG entry — **"Section 3.9 Bridge Closed"**
+— must be added after all sub-items are merged to record the completed
+bridge state. Section 4 may not be declared open until that second
+entry exists.
+
+---
+
+## 3.9.0 — Bridge Execution Constraints (LOCKED)
+
+These constraints apply to all items 3.9.1 through 3.9.6 without exception.
+
+### 1. Scope Boundary
+
+Items 3.9.1–3.9.6 close structural blind spots identified during
+Section 3 adversarial review. They are automation and governance layer
+work only. They do not touch DB schema, migrations, or RLS policies.
+Any PR that touches those surfaces is out of scope for this block
+and belongs in Section 6+.
+
+### 2. PR Isolation
+
+All Section 3.0 PR isolation rules apply:
+- One enforcement surface per PR.
+- One objective per PR.
+- No bundling of any two sub-items into a single PR.
+
+### 3. Self-Validation Discipline
+
+All PRs in this block must complete:
+
+    green:once
+    green:twice
+
+with no edits between runs before proof generation.
+This applies even to sub-items characterized as low-risk.
+
+### 4. Truth Artifact Registration (Triple Registration Rule)
+
+Any new truth artifact introduced in this block must satisfy §3.0.4
+in the same PR:
+
+    a. Registered in robot-owned guard.
+    b. Included in truth-bootstrap or equivalent validation gate.
+    c. Included in handoff regeneration surface if machine-derived.
+       If hand-authored, state the §3.0.4c exemption explicitly in the DoD.
+
+### 5. Section 4 Entry Gate
+
+Section 4 may not be declared open until all sub-items 3.9.1–3.9.6
+are merged, the "Section 3.9 Bridge Closed" DEVLOG entry exists,
+and `ship` passes on main with zero diffs.
+
+### 6. Governance Change Guard Trigger
+
+Any PR in this block that modifies a governance-surface file — including
+`docs/artifacts/SOP_WORKFLOW.md`, `docs/artifacts/AUTOMATION.md`,
+`docs/artifacts/GUARDRAILS.md`, `.github/workflows/**`,
+`docs/truth/**`, or `scripts/ci_*.ps1` — must include a
+`docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md` file. This is not
+optional. Failure to include it will produce a red governance-change-guard
+gate. Pre-declare this requirement in the PR description before coding begins.
+
+### Rationale
+
+These items harden the governance and automation layer before the first
+live DB work begins in Section 4. Stub debt must be declared, scope gaps
+must be closed, the proof chain must be exfiltration-hardened, and
+governance coverage must be auditable before any Supabase output enters
+the proof record. These are structural prerequisites for honest Section 4
+entry, not optional hardening.
+
+---
+
+## 3.9.1 — Deferred Proof Registry
+
+**Objective**
+Establish a machine-readable registry that explicitly catalogs every CI
+gate currently passing as a DB-heavy stub — recording what invariant
+each defers and what Build Route item triggers conversion — so that
+stub-passing gates cannot be silently interpreted as security evidence.
+
+**Rationale**
+The handoff checkpoint confirms `stack_running: false`. Multiple
+merge-blocking gates pass CI in this state via DB-heavy stubs
+(confirmed: `handoff-idempotency`, `definer-safety-audit`,
+`schema-drift`, `clean-room-replay`, `pgtap`). No artifact currently
+exists that distinguishes a stub-passing gate from a live-verified gate.
+Without this registry, Section 4+ work inherits a growing body of
+formally-green but security-unverified claims. Build Route 8.0 exists
+to convert all stubs to live gates — this item ensures that conversion
+is tracked and cannot be silently skipped.
+
+Additionally, AUTOMATION.md §2 lists `database-tests.yml` as a required
+merge-blocking workflow, but the handoff checkpoint confirms it does not
+exist. This is a live compliance gap. It must be catalogued in the
+registry as a deferred item (conversion trigger: Section 6 / 8.0)
+rather than left as a silent mismatch between the governance doc and
+repo reality.
+
+**Deliverable**
+`docs/truth/deferred_proofs.json` — a machine-readable catalog of every
+current DB-heavy stub gate, with its deferred invariant and conversion
+trigger.
+
+**DoD (all must be true)**
+
+1. `docs/truth/deferred_proofs.json` exists with one entry per current
+   DB-heavy stub gate, containing exactly these fields:
+   - `gate` — job name string-exact as it appears in `required_checks.json`
+   - `stub_reason` — one sentence: why this gate runs as a stub today
+   - `deferred_invariant` — one sentence: what security or correctness
+     property this gate does NOT currently prove
+   - `conversion_trigger` — the Build Route item whose closure converts
+     this stub to a live gate (e.g. `"8.0"`)
+
+2. `docs/truth/deferred_proofs.schema.json` exists and validates the
+   structure of `deferred_proofs.json`. The gate fails if JSON is
+   invalid or missing required fields.
+
+3. A CI gate (`deferred-proof-registry`) fails if any job listed in
+   `required_checks.json` is declared db-heavy in the CI YAML
+   but has no corresponding entry in `deferred_proofs.json`.
+   The known-stub list is derived from the explicit `db-heavy`
+   pattern in CI YAML — not inferred heuristically.
+
+4. Future stub gates are self-declaring: any PR that introduces a new
+   DB-heavy stub gate must include the corresponding `deferred_proofs.json`
+   entry in the same PR. The `deferred-proof-registry` gate enforces
+   this by failing if a CI YAML job is marked db-heavy without a
+   registry entry. This closes the future-stub gap without relying on
+   human discipline.
+
+5. When Build Route 8.0 converts a stub to a live gate, the
+   corresponding registry entry must be removed in that same PR.
+   The `deferred-proof-registry` gate fails if a converted gate
+   (i.e., one no longer marked db-heavy in CI YAML) still has
+   a registry entry.
+
+6. The AUTOMATION.md §2 compliance gap (`database-tests.yml` declared
+   required but absent) is catalogued as a deferred entry with
+   `conversion_trigger: "6.0/8.0"`. The entry is hand-authored.
+   Resolution requires either creating the workflow (Section 6+)
+   or correcting AUTOMATION.md §2 via a governance-change PR.
+   This item does not resolve the gap — it makes it visible and tracked.
+
+7. `docs/truth/deferred_proofs.json` is hand-authored (initial contents
+   seeded from CI YAML inspection, then maintained manually as stubs are
+   converted). §3.0.4c exemption applies: this file is not machine-derived
+   and is not included in the handoff regeneration surface.
+   This exemption is stated explicitly here and in the DoD to satisfy
+   the Triple Registration Rule.
+   Registrations required: (a) robot-owned guard, (b) truth-bootstrap.
+
+8. `docs/truth/deferred_proofs.schema.json` is similarly hand-authored.
+   Same §3.0.4c exemption applies. Same registrations required.
+
+9. The proof explicitly lists every stub gate cataloged and confirms
+   each entry validates against the schema.
+
+**Pre-implementation check**
+Inspect `.github/workflows/ci.yml` for all jobs carrying the `db-heavy`
+marker before writing any code. Capture the exhaustive list. This is
+the authoritative input for the initial registry contents. Do not infer
+stub status from job names. Derive it from the explicit db-heavy gating
+pattern in CI YAML only.
+
+**Proof:** `docs/proofs/3.9.1_deferred_proof_registry_<UTC>.log`
+
+**Gate:** `deferred-proof-registry` (merge-blocking)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 3.9.2 — Governance Path Coverage Audit
+
+**Objective**
+Mechanically assert that `governance_change_guard.json` path matchers
+cover every governance-surface file currently in the repo — closing the
+class of bypass where new governance-surface paths silently escape
+the guard.
+
+**Rationale**
+The governance-change-guard is merge-blocking and regression-validated.
+However the guard only protects paths it knows about. This failure mode
+was confirmed in production: Foundation paths were omitted from the
+matcher, allowing silent governance mutation. There is currently no gate
+that audits the *coverage* of the guard's path scope. A new script or
+config file type not added to the matcher bypasses the guard with no CI
+failure.
+
+**Deliverable**
+A gate that fails if any governance-surface file exists in the repo
+that is not covered by any path matcher in `governance_change_guard.json`,
+plus an explicit versioned definition of what constitutes the governance
+surface.
+
+**DoD (all must be true)**
+
+1. `docs/truth/governance_surface_definition.json` exists with an
+   explicit versioned list of path patterns that define the governance
+   surface. This file is the authoritative definition — the coverage
+   gate checks against it, not against heuristics or naming conventions.
+   Required fields per entry:
+   - `pattern` — glob pattern string
+   - `rationale` — one sentence explaining why this path is governance
+   - `version` — incremented when the definition changes
+
+2. The definition covers at minimum these path classes:
+   - `scripts/ci_*.ps1` and `scripts/ci_*.mjs`
+   - `.github/workflows/**`
+   - `docs/truth/**`
+   - `docs/governance/**`
+   - `docs/artifacts/SOP_WORKFLOW.md`
+   - `docs/artifacts/AUTOMATION.md`
+   - `docs/artifacts/GUARDRAILS.md`
+
+3. **`package.json` governance scope — explicit decision required.**
+   `package.json` defines npm scripts and is modified in many PRs.
+   One of the following three options must be chosen and documented
+   in the PR description before coding begins:
+
+   - **Option A (Content-filtered scope):** `package.json` is in
+     governance scope, but the guard applies content-level filtering —
+     it triggers only when the `scripts` section changes. This requires
+     the governance-change-guard to support content-level filtering,
+     which must be proven in the same PR.
+   - **Option B (Excluded from governance scope):** `package.json`
+     is explicitly excluded from the governance surface definition
+     with a documented rationale. npm script changes become
+     unguarded; this risk must be acknowledged in the rationale field.
+   - **Option C (Full-path scope):** `package.json` is in governance
+     scope with full-path matching, meaning any PR that touches
+     `package.json` must include a governance-change file. This is
+     high-friction and must be explicitly accepted.
+
+   The chosen option is recorded in `governance_surface_definition.json`
+   as either an entry (Options A or C) or an explicit exclusion record
+   (Option B). Leaving this undecided causes governance fatigue and
+   silent bypass — it must be resolved before the gate passes.
+
+4. A gate script enumerates all files in the repo matching the
+   governance surface definition and cross-references against
+   `governance_change_guard.json` path matchers. The gate fails if any
+   governance-surface file is not covered by at least one matcher.
+
+5. Gate output on failure lists every uncovered path by name — not
+   just a count.
+
+6. `governance_change_guard.json` is updated in this same PR to cover
+   any currently uncovered paths before the gate passes for the first
+   time.
+
+7. `governance_surface_definition.json` is itself a governance artifact.
+   It is added to `governance_change_guard.json` path scope so that
+   any future change to the definition triggers governance-change-guard.
+
+8. **Bootstrap trigger:** This PR modifies `governance_change_guard.json`
+   and `governance_surface_definition.json` — both governance-surface
+   files. Therefore this PR triggers the governance-change-guard and must
+   include `docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md`. Pre-declare
+   this in the PR description.
+
+9. `governance_surface_definition.json` is hand-authored and satisfies
+   §3.0.4c exemption (not machine-derived).
+   Registrations required: (a) robot-owned guard, (b) truth-bootstrap.
+
+10. Gate (`governance-path-coverage`) is merge-blocking.
+
+**Pre-implementation check**
+Run the enumeration script against the current repo before writing
+any gate logic. Capture the full list of currently uncovered paths.
+This becomes the initial gap list in the proof log. Do not attempt to
+fix uncovered paths and write the gate simultaneously. Enumerate first,
+fix the coverage gaps in `governance_change_guard.json`, then write and
+pass the gate — all within the same PR but in that documented order.
+
+**Proof:** `docs/proofs/3.9.2_governance_path_coverage_<UTC>.log`
+
+**Gate:** `governance-path-coverage` (merge-blocking)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 3.9.3 — QA Scope Map Coverage Enforcement
+
+**Objective**
+Assert that `qa_scope_map.json` has an entry for every Build Route item
+that has been merged into main, and prove that `qa:verify` fails
+deterministically on a missing proof — closing the blind spot where an
+unmapped item trivially passes the meta-gate.
+
+**Rationale**
+`qa:verify` (3.7) validates proof completeness only for items that have
+an entry in `qa_scope_map.json`. Any item with no scope map entry
+requires nothing and trivially passes. The scope map is human-authored
+and no gate detects missing entries. Additionally, the 3.7 DEVLOG
+confirms `qa:verify` passes on good proofs but does not document a
+deliberate-failure regression test confirming it fails on missing proofs.
+Both gaps are closed here.
+
+**DEVLOG format prerequisite**
+The existing DEVLOG format uses inconsistent status strings:
+`Status: PASS`, `Status: COMPLETE`, and `* PASS` all appear across
+entries. Free-text status detection is not acceptable per DoD item 1.
+Before writing the coverage gate, a DEVLOG format constraint must be
+established. This is a governance artifact change and requires its own
+governance-change PR if the DEVLOG format amendment cannot be scoped
+entirely within this PR.
+
+**Decision required before coding begins:** Determine whether the DEVLOG
+format correction can be scoped as a prerequisite sub-step within this
+PR (documented explicitly in the PR description and DoD before any code
+is written), or whether it requires a prior standalone governance PR.
+Attempting to resolve this mid-implementation is a Section 3.0 violation.
+
+**DoD (all must be true)**
+
+1. **DEVLOG parsing contract is defined and implemented before the
+   coverage gate is written.**
+   The parsing approach must be one of:
+   - A structured machine-readable status block in DEVLOG entries
+     using a contract-validated format, OR
+   - A separate machine-readable status registry file that DEVLOG
+     entries reference.
+   If the DEVLOG format requires amendment, that amendment is either
+   included as a documented sub-step in this PR or completed in a
+   prior standalone governance PR. The choice is declared in the
+   PR description. Free-text detection of status strings is forbidden.
+
+2. If the DEVLOG format is amended in this PR, the amended format
+   applies to all future entries. Existing entries are not retroactively
+   modified — the parser must handle both legacy format (alert-only)
+   and new format (authoritative for coverage checking).
+
+3. A gate script (`scripts/ci_qa_scope_coverage.ps1` or equivalent)
+   reads the completed item list per the parsing contract and
+   cross-references against `qa_scope_map.json`. Gate fails if any
+   completed item has no scope map entry.
+
+4. Gate output on failure names every unmapped completed item
+   explicitly — not just a count.
+
+5. `qa_scope_map.json` is updated in this same PR to include entries
+   for all currently completed items before the gate passes for the
+   first time.
+
+6. If the DEVLOG format changes in the future, the gate fails loudly
+   on an unrecognized format — not silently passes. This behavior is
+   asserted in the proof.
+
+7. **Deliberate-failure regression proof (complete sequence required):**
+   - One `qa_scope_map.json` entry is temporarily removed on a local branch.
+   - `npm run qa:verify` is run.
+   - FAIL is confirmed. The output is captured and must name the
+     missing item explicitly — not just exit non-zero.
+   - The entry is restored.
+   - `npm run qa:verify` is run again.
+   - PASS is confirmed.
+   - The full sequence (remove → fail output showing item name →
+     restore → pass output) is included in the proof log.
+
+8. Gate (`qa-scope-coverage`) is merge-blocking.
+
+9. Triple Registration Rule §3.0.4 applies to any new truth artifacts
+   introduced by this item.
+
+**Pre-implementation check**
+Read the existing DEVLOG format before writing any code. Confirm whether
+the current format supports deterministic status parsing. Document the
+finding in the PR description before any code is written. Do not assume
+the format is parseable. Prove it or define the fix first.
+
+**Proof:** `docs/proofs/3.9.3_qa_scope_coverage_<UTC>.log`
+
+**Gate:** `qa-scope-coverage` (merge-blocking)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 3.9.4 — Job Graph Ordering Verification
+
+**Objective**
+Prove that `lane-enforcement` is a provable prerequisite of
+`docs-only-ci-skip` in the CI job dependency graph — closing the
+structural race where a governance-touching PR miscategorized as
+docs-only has its required governance checks skipped before lane
+classification can catch the error.
+
+**Rationale**
+`docs-only-ci-skip` (2.7) intentionally skips DB-heavy jobs on
+docs-only PRs. `lane-enforcement` (2.16.7) classifies PRs by lane
+and asserts required checks. If `docs-only-ci-skip` runs before
+`lane-enforcement` in the job graph, a governance-touching PR
+miscategorized as docs-only will have its governance checks skipped
+before lane enforcement fires. The ordering of these two jobs has never
+been explicitly verified or documented.
+
+**Deliverable**
+A structural graph validation confirming that `lane-enforcement` is a
+provable prerequisite of `docs-only-ci-skip`, with a CI gate asserting
+this ordering is maintained in perpetuity.
+
+**DoD (all must be true)**
+
+1. A gate script (`scripts/ci_job_graph_contract.ps1` or equivalent)
+   parses `.github/workflows/ci.yml` using a proper YAML parser — not
+   grep or regex string matching. The script constructs the actual job
+   dependency graph from `needs:` declarations and walks it.
+
+2. The script asserts the following safe ordering — listed in preference
+   order. Option A is strongly preferred:
+
+   - **Option A (preferred):** `docs-only-ci-skip` has `lane-enforcement`
+     in its `needs:` array (direct dependency). This is a true ordering
+     guarantee in the GitHub Actions scheduling model.
+   - **Option B (acceptable with caveat):** `docs-only-ci-skip` is gated
+     on the output of `lane-enforcement` via an `if:` condition referencing
+     `jobs.lane-enforcement.result`. This provides a runtime gate but not
+     a strict scheduling guarantee — both jobs may start in the same
+     scheduling wave. If Option B is chosen, this limitation must be
+     documented in the proof and in `governance_surface_definition.json`.
+
+   String-matching against YAML text does not satisfy this requirement.
+   The assertion must be graph-theoretic (walk the `needs:` graph).
+
+3. Gate output prints the full resolved dependency chain for both jobs —
+   not just pass/fail. On failure, it prints the actual ordering found
+   and why it is unsafe.
+
+4. **If the current CI YAML does not satisfy the ordering requirement,
+   it is corrected in this same PR.** Only the job ordering is touched —
+   no other CI changes are in scope.
+
+   **Section 3.0 compliance note:** Modifying CI YAML job ordering is a
+   governance-surface change and constitutes a second enforcement surface
+   in the same PR as the gate script. This is permitted only because the
+   YAML correction is a direct prerequisite for the gate to pass — not an
+   independent objective. The PR description must explicitly state this
+   dependency and scope it to ordering-only. Any CI YAML change beyond
+   job ordering re-ordering is out of scope and belongs in a separate PR.
+
+5. The proof documents which ordering option was chosen (A or B) and why.
+   The choice is treated as a governance decision — documented, not
+   implicit.
+
+6. Gate (`job-graph-ordering`) is merge-blocking for any PR touching
+   `.github/workflows/**`.
+
+**Pre-implementation check**
+Before writing any code, manually inspect the current `needs:` declarations
+for `docs-only-ci-skip` and `lane-enforcement` in `ci.yml`. Document the
+current state in the PR description.
+- If the current state already satisfies Option A or B: this item is
+  proof-only. Prove the existing ordering satisfies DoD without changing
+  CI YAML.
+- If the current state is unsafe: scope the YAML correction explicitly
+  in the PR description before coding begins.
+
+**Proof:** `docs/proofs/3.9.4_job_graph_ordering_<UTC>.log`
+
+**Gate:** `job-graph-ordering` (merge-blocking, governance-surface)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 3.9.5 — Proof Secret Scan
+
+**Objective**
+Harden `proof:finalize` to reject proof log files containing strings
+matching defined secret patterns before they enter the append-only
+proof chain — preventing secrets from becoming permanently embedded
+in `manifest.json`.
+
+**Rationale**
+PowerShell `Write-Error` and `Write-Host` paths in CI scripts can
+inadvertently interpolate `$env:*` variables (including
+`SUPABASE_SERVICE_ROLE_KEY`) into verbose error output. Proof logs are
+append-only once finalized and hashed into `manifest.json`. A secret
+captured in a proof log cannot be removed without breaking the proof
+chain. Section 4 will produce the first proofs containing live Supabase
+output — `supabase status`, cloud inventory captures, and toolchain
+verification commands that may expose connection strings or keys. The
+path-leak audit (2.17.3) covers absolute path disclosure but does not
+cover secret value interpolation. This item is additive and does not
+replace or overlap 2.17.3.
+
+**This item must be merged before the first Section 4 proof is
+finalized.** Section 4.2 (`supabase status` output) is the first proof
+expected to contain live Supabase connection output. 3.9.5 must be on
+main before that proof is generated.
+
+**Deliverable**
+A pre-finalization secret scan integrated into `proof:finalize` that
+fails before normalizing or writing to manifest if any defined secret
+pattern is matched in the proof log content.
+
+**DoD (all must be true)**
+
+1. `docs/truth/secret_scan_patterns.json` exists with the following
+   initial pattern set — and only this set:
+   - Supabase service role key format: the known static JWT header prefix
+     (`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9`) that prefixes all
+     Supabase service role JWTs.
+   - Postgres connection string: structural match on `postgresql://` or
+     `postgres://` scheme prefix.
+   - Supabase personal access token: structural match on `sbp_` prefix.
+
+   No other patterns are included in the initial set.
+   No entropy-based or generic "long random string" heuristics.
+   No general three-segment base64 matching (this would false-positive
+   on migration hashes, proof file content, and other legitimate outputs).
+
+2. Each entry in `secret_scan_patterns.json` contains:
+   - `name` — human-readable pattern class name
+   - `pattern` — the structural match expression
+   - `false_positive_analysis` — one sentence documenting what
+     legitimate content this pattern could match and why it is safe
+   - `rationale` — one sentence explaining what secret type this detects
+
+3. `scripts/proof_finalize.ps1` is hardened to run the secret scan
+   against the proof log file content before normalizing encoding or
+   writing to manifest. If any pattern matches, the script:
+   - Exits non-zero.
+   - Prints the matched pattern `name` only — not the matched value
+     and not the surrounding text.
+   - Prints the line number of the match.
+   - Does NOT write to manifest.
+   - Does NOT normalize the file.
+
+   **Output sufficiency note:** Line number alone may be insufficient
+   for the operator to locate and redact the source without re-reading
+   the full proof log. The script should additionally print a sanitized
+   excerpt: the matched line with all characters between position 5 and
+   the last 4 replaced with `****` — enough to confirm which pattern
+   fired without exposing the secret value. This behavior is asserted
+   in the deliberate-failure proof.
+
+4. **Deliberate-failure regression proof (complete sequence required,
+   one per pattern):**
+   A proof log file containing a test string matching each of the three
+   initial patterns is run through `proof:finalize`. FAIL is confirmed
+   for each. For each failure, the proof log captures: the exit code,
+   the printed pattern name, the line number, and the sanitized excerpt.
+   The full sequence is included in the proof log.
+
+5. **False-positive regression proof:**
+   A proof log file containing a legitimate base64 migration hash, a
+   legitimate proof manifest hash, and a legitimate UTC timestamp string
+   is run through `proof:finalize`. PASS is confirmed — none of the
+   three patterns false-positive on these inputs.
+
+6. Adding new patterns to `secret_scan_patterns.json` requires a
+   governance-change PR (the file is in governance-guard scope) and must
+   include a false-positive analysis for each new pattern. This
+   constraint is documented in `docs/artifacts/AUTOMATION.md` as part
+   of this item.
+
+7. `docs/artifacts/AUTOMATION.md` is updated in this PR to document
+   the secret scan step and the pattern governance policy.
+   `docs/artifacts/SOP_WORKFLOW.md` is updated to document the
+   hardened `proof:finalize` behavior.
+
+   **Governance guard trigger:** Both `AUTOMATION.md` and
+   `SOP_WORKFLOW.md` are governance-surface files. This PR triggers
+   the governance-change-guard and must include
+   `docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md`. Pre-declare this
+   in the PR description.
+
+8. `secret_scan_patterns.json` is hand-authored. §3.0.4c exemption
+   applies (not machine-derived).
+   Registrations required: (a) robot-owned guard, (b) truth-bootstrap.
+
+9. The hardening of `proof:finalize` is the only script enforcement
+   surface in this PR. No other scripts are modified.
+
+**Pre-implementation check**
+Verify the three initial patterns do not false-positive against any
+existing proof log in `docs/proofs/**` before writing any code. If any
+false-positive is found, resolve it before implementation begins —
+either by tightening the pattern or by documenting why the matching
+content is acceptable and must be cleaned. Document this verification
+result in the PR description.
+
+**Proof:** `docs/proofs/3.9.5_proof_secret_scan_<UTC>.log`
+
+**Gate:** Pre-finalization enforcement built into `proof:finalize`.
+No separate CI job. Downstream enforcement is `proof-manifest` —
+a failed finalize produces no manifest entry, which causes
+`proof-manifest` to fail on the next CI run.
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 3.9.6 — Section 3.9 Bridge Close Verification
+
+**Objective**
+Verify all Section 3.9 sub-items are complete and main is stable before
+Section 4 is declared open.
+
+**This item is verification-only. No implementation changes.**
+
+**Verification sequence (per SOP §17):**
+
+    git checkout main
+    git pull
+    git status              → clean
+    npm run pr:preflight    → PASS
+    npm run ship            → PASS, zero diffs
+    npm run handoff         → zero diffs (idempotency check)
+    git status              → still clean
+    npm run green:twice     → PASS
+
+**DoD (all must be true)**
+
+1. All sub-items 3.9.1–3.9.5 have merged PRs with QA APPROVE.
+2. DEVLOG entries exist for every sub-item.
+3. The verification sequence above passes without error.
+4. `docs/truth/required_checks.json` is current — no phantom or missing
+   gates relative to the new gates introduced in this block.
+5. The deferred proof registry (3.9.1) is current — all db-heavy stub
+   gates are catalogued.
+6. Governance path coverage (3.9.2) passes — no uncovered governance
+   paths.
+
+**DEVLOG entry format:**
+
+    YYYY-MM-DD — Build Route v2.4 — Section 3.9 Bridge Closed
+
+    Objective
+    Verify all Section 3.9 sub-items complete and main is stable
+    per SOP §17.
+
+    Changes
+    No implementation changes. Verification only.
+
+    Verification evidence
+    - git status: clean
+    - pr:preflight: PASS
+    - ship: PASS, zero diffs
+    - handoff: zero diffs
+    - green:twice: PASS
+    - required_checks.json: current
+    - deferred_proofs.json: current
+    - governance-path-coverage: PASS
+
+    Status: COMPLETE
+
+**Proof:** No separate proof artifact required. The DEVLOG entry and
+the verification command outputs (captured in that entry) constitute
+the proof for this item.
+
+**Gate:** Enforced by existing `ship`, `green:twice`, and
+`required-checks-contract` gates. No new gate introduced.
+
+---
+
+## Section 3.9 Completion Checklist
+
+| Item  | Title                            | Gate                        | Status |
+|-------|----------------------------------|-----------------------------|--------|
+| 3.9.1 | Deferred Proof Registry          | deferred-proof-registry     | OPEN   |
+| 3.9.2 | Governance Path Coverage Audit   | governance-path-coverage    | OPEN   |
+| 3.9.3 | QA Scope Map Coverage            | qa-scope-coverage           | OPEN   |
+| 3.9.4 | Job Graph Ordering Verification  | job-graph-ordering          | OPEN   |
+| 3.9.5 | Proof Secret Scan                | proof:finalize hardening    | OPEN   |
+| 3.9.6 | Bridge Close Verification        | existing gates (no new)     | OPEN   |
+
+**Execution order:** 3.9.1 → 3.9.2 → 3.9.3 → 3.9.4 → 3.9.5 → 3.9.6
+
+**Section 4 entry condition:**
+All items above show DONE, main is clean,
+"Section 3.9 Bridge Closed" DEVLOG entry exists,
+`ship` passes with zero diffs, `green:twice` passes.
+
+---
+
+
 ## **4 — Fresh Supabase Project Baseline (No Reuse)**
 
 ### **4.1 Create brand-new Supabase project**
@@ -1335,63 +2034,148 @@ Gate: toolchain-contract-supabase (merge-blocking)
  **Proof:** `docs/proofs/4.2a_command_smoke_db_<UTC>.log`  
  **Gate:** lane-only `command-smoke-db` (promote to merge-blocking only after stable)
 
-### **4.3 — Cloud baseline inventory (DB-metadata lane)**
+### **4.3 — Cloud Baseline Inventory (DB-metadata lane) [HARDENED]
+Deliverable:
+Baseline inventory is real, schema-validated, and pins critical
+Supabase infrastructure versions alongside the existing inventory.
+DoD additions (appended to existing 4.3 DoD):
 
-Deliverable: Baseline inventory is real and schema-validated.  
-DoD:  
-Inventory JSON is produced under docs/proofs//cloud\_baseline\_inventory.json and validates.  
-Proof includes least-priv evidence for inventory credentials.  
-Checklist 4.3 (non-DoD):  
-Inventory includes at minimum: extensions, schemas, roles, grants, default privileges, publications, functions, triggers.  
-Proof: docs/proofs/4.2\_cloud\_inventory\_.log (+ 4.2b...)  
-Gate: lane-only cloud-inventory
+Inventory captures PostgREST version and Supabase Auth version from
+the live cloud project (response headers or /_internal/health
+equivalent).
+docs/truth/toolchain.json is extended to include postgrest_version
+and supabase_auth_version fields.
+Version capture and pinning runs in the cloud-inventory lane only.
+It requires live cloud credentials and is not part of the
+merge-blocking toolchain-contract-supabase gate, which covers local
+toolchain assertions only and is not extended by this item.
+A new lane-only gate (cloud-version-pin) asserts PostgREST and Auth
+versions match pinned truth when cloud credentials are present. Gate
+fails if either version drifts from pinned values, naming the service
+and the expected vs found version.
+Proof explicitly records which assertions ran in which lane (local vs
+cloud) and shows both version values captured and pinned.
+
+Proof: docs/proofs/4.3_cloud_baseline_inventory_<UTC>.log
+Gate: toolchain-contract-supabase (merge-blocking, local assertions
+only — unchanged) + cloud-version-pin (lane-only, cloud assertions).
+
+### **4.4 — anon Role Default Privilege Audit (NEW)
+Deliverable:
+Explicit proof that anon holds zero privileges on every core table
+and on user_profiles through any path — direct grant, default ACL,
+view, or function.
+DoD:
+
+docs/truth/anon_privilege_truth.json exists, generated from a live
+DB catalog query, enumerating every explicit and default privilege
+held by anon on all objects in the public schema.
+Gate asserts zero anon privileges on every core table as defined
+by tenant_table_selector.json.
+Gate additionally asserts zero anon privileges on user_profiles
+explicitly. user_profiles is the CONTRACTS.md §12 controlled
+exception for authenticated access — anon must have no access
+whatsoever. This assertion is separate from the selector check and
+cannot be omitted.
+Gate fails naming the object, the privilege type, and the source
+(direct grant or default ACL).
+anon_privilege_truth.json is machine-derived (captured from DB
+catalog). §3.0.4c exemption does NOT apply. Triple Registration Rule
+§3.0.4 applies in full:
+a. Registered in robot-owned guard.
+b. Included in truth-bootstrap validation gate.
+c. Included in handoff regeneration surface.
+
+Proof: docs/proofs/4.4_anon_privilege_audit_<UTC>.log
+Gate: anon-privilege-audit (merge-blocking, DB/runtime lane).
+
+### **4.5 — Tenancy Resolution Contract Enforcement (NEW)
+Deliverable:
+Mechanical detection of forbidden tenant resolution patterns in
+migrations. The resolution strategy itself is already frozen in
+CONTRACTS.md §3 and is not re-adjudicated here.
+DoD:
+
+scripts/ci_rls_strategy_lint.ps1 (or equivalent) scans all RLS
+policies in supabase/migrations/** and fails on either of the two
+forbidden patterns:
+
+Raw auth.uid() or auth.jwt() used directly to resolve tenant
+context. All tenant resolution must use current_tenant_id() or
+the approved helper per CONTRACTS.md §3.
+Inline JWT claim parsing for tenant ID within a policy body.
+
+
+Gate does NOT validate the full resolution logic structure. It detects
+only the two forbidden patterns above. The authoritative resolution
+order (profile → app.tenant_id → JWT) is frozen in CONTRACTS.md §3
+and is not re-defined by this gate.
+Gate output references CONTRACTS.md §3 as the authority.
+Gate fails naming the migration file, the policy name, and which
+forbidden pattern was matched.
+
+Proof: docs/proofs/4.5_tenancy_resolution_enforcement_<UTC>.log
+Gate: rls-strategy-consistent (merge-blocking, migration lane).
 
 ---
 
 ## **5 — Governance Gates (CI required-now)**
 
-Deliverable: Required merge-blocking gates exist before feature work.  
-DoD:  
-All merge-blocking gates listed below exist as workflow jobs string-exact and are in required\_checks.json.  
-required\_checks\_contract proves there are no missing/phantom gates.
+### **5.0 — Required Gates Inventory [HARDENED]
+DoD additions (appended to existing 5.0 DoD):
 
-Required merge-blocking checks (must be in docs/docs/truth/required\_checks.json):  
-rebuild-mode-declared  
-port-manifest  
-port-governance-runnable  
-truth-bootstrap  
-policy-coupling  
-required-checks-contract  
-toolchain-contract-core  
-**gitattributes-renormalize** (NEW)  
-**docs-only-ci-skip** (NEW)  
-proof-manifest  
-proofs-append-only  
-pr-scope  
-qa-verify  
-ship-guard  
-automation-contract  
-handoff-commit-safety  
-docs-push-contract  
-**robot-owned-publish-guard** (NEW)  
-secrets-scan  
-env-sanity  
-stop-the-line  
-governance-change-guard  
-blocked-identifiers  
-clean-room-replay  
-pgtap  
-schema-drift  
-definer-safety-audit  
-handoff-contract  
-toolchain-contract-supabase
+The following new gates are added to docs/truth/required_checks.json
+each in the PR that creates the corresponding CI job — not in a batch
+update. No gate may be registered before its CI job exists string-exact
+in .github/workflows/**.
 
-Lane-only (must be in docs/docs/truth/lane\_checks.json until promoted):  
-cloud-baseline, cloud-inventory, cloud-migration-parity, cloud-surface  
-surface-truth, e2e, weweb-drift, stable-declare, release-workflow-guard
+anon-privilege-audit (registered in 4.4 PR)
+rls-strategy-consistent (registered in 4.5 PR)
+migration-rls-colocation (registered in 5.1 PR)
+unregistered-table-access (registered in 6.3A PR)
+calc-version-registry (registered in 7.6 PR)
 
-Proof: docs/proofs/5.0\_required\_gates\_.md  
-Gate: enforced by required-checks-contract
+
+Each registration PR triggers the governance-change-guard and must
+include docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md.
+npm run truth:sync must be run in each registration PR to regenerate
+required_checks.json from workflow reality before submission.
+
+
+### **5.1 — Migration RLS Co-location Lint (NEW)
+Deliverable:
+A lint gate that fails if any migration creates a table without enabling
+RLS and revoking default privileges in the same file — closing the
+partial-migration exposure window where a table exists with RLS disabled
+between steps.
+DoD:
+
+scripts/ci_migration_rls_lint.ps1 (or equivalent) asserts: any
+CREATE TABLE or CREATE TABLE IF NOT EXISTS statement in a migration
+file must be accompanied, in the same file, by all three of:
+
+ALTER TABLE ... ENABLE ROW LEVEL SECURITY
+REVOKE ALL ON ... FROM authenticated
+REVOKE ALL ON ... FROM anon
+
+
+RLS enabled in a later migration within the same PR is rejected.
+Same-file co-location is required without exception.
+Gate fails naming the migration file, the table name, and which of
+the three required statements is missing.
+Baseline migration pre-check (mandatory): Before this gate is
+activated, 20260219000003_baseline_deals.sql is verified against the
+co-location rule. If it does not satisfy the rule, a corrective forward
+migration is authored and merged before this gate is activated.
+Retroactive editing of 20260219000003 is forbidden per migration
+discipline (GUARDRAILS §Forbidden: Dynamic SQL in Migrations).
+The pre-check result — pass or corrective migration required — is
+documented in the proof log.
+Authoring constraint is documented in docs/ops/ as a standing rule
+for all future migrations.
+
+Proof: docs/proofs/5.1_migration_rls_colocation_<UTC>.log
+Gate: migration-rls-colocation (merge-blocking).
 
 ---
 
@@ -1476,32 +2260,95 @@ Must include:
 `handoff-preconditions` (merge-blocking)
 
 
-### **6.2 SECURITY DEFINER safety (mandatory)**
+### **6.2 — SECURITY DEFINER Safety [HARDENED]
+Deliverable:
+SD functions are allowlisted, audited, negative-tested, and statically
+proven to have search_path set at the catalog level — not just in
+source text.
+DoD additions (appended to existing 6.2 DoD):
 
-Deliverable: SD is allowlisted, audited, and negative-tested.  
-DoD:  
-Any SD function is allowlisted and audit passes.  
-pgTAP negative proof exists for SD membership checks.  
-Proof: docs/proofs/6.2\_definer\_audit\_.log  
-Gate: definer-safety-audit (merge-blocking)
+definer-safety-audit gate is extended to assert, for every function
+on definer_allowlist.json, that pg_proc.proconfig contains a
+search_path entry.
+Note: pg_proc.proconfig is the correct catalog field for
+function-level SET search_path declarations. pg_proc.prosrc
+contains only the function body and is insufficient for this check.
+Gate fails naming the function and the missing proconfig entry.
+Helper functions called by SD functions are explicitly enumerated in
+the proof. Each helper is confirmed to use only schema-qualified object
+references — no unqualified identifiers.
 
-### **6.3 Tenant integrity suite**
 
-Deliverable: Tenant isolation proven with negative proofs.  
-DoD:  
-pgTAP tenant isolation suite passes.  
-Suite includes negative tests for teleportation/write bypass.  
-Proof: docs/proofs/6.3\_tenant\_integrity\_.log  
-Gate: pgtap (merge-blocking)
+### **6.3 — Tenant Integrity Suite [HARDENED]
+Deliverable:
+Tenant isolation proven with negative proofs against populated data,
+with view and FK embedding coverage, and a catalog-validated background
+context review.
+DoD additions (appended to existing 6.3 DoD):
 
-### **6.4 Tenant-owned table selector (mechanical)**
+All negative isolation tests must seed at least 2 rows in Tenant A
+and 2 rows in Tenant B before asserting that Tenant A's session cannot
+read or write Tenant B's rows. Empty-table negative tests do not
+satisfy this requirement.
+Suite includes negative tests for view-based access: authenticated
+cannot use any view to reach another tenant's rows.
+Suite includes negative tests for FK embedding via PostgREST
+?select=*,related(*) syntax. These tests must run against a live
+local Supabase instance as HTTP-layer tests against the local PostgREST
+endpoint — pure pgTAP unit tests do not satisfy this requirement.
+docs/truth/background_context_review.json exists, hand-authored,
+listing every trigger, pg_cron job, or other function that executes
+outside a request context, with explicit confirmation that each has
+tenant parameter binding and does not rely on session-level JWT context.
+§3.0.4c exemption applies (hand-authored, not machine-derived).
+Triple Registration: (a) robot-owned guard, (b) truth-bootstrap.
+A gate cross-checks background_context_review.json against
+pg_catalog at runtime and fails if any trigger or background function
+exists in the catalog that is absent from the review file. This
+prevents the review file from silently drifting as new triggers are
+added.
 
-Deliverable: Tenant-owned table definition is auditable.  
-DoD:  
-Selector truth exists and enumerator asserts RLS enabled on selected tables.  
-pgTAP rejects permissive policy patterns on selected tables.  
-Proof: docs/proofs/6.4\_rls\_structural\_audit\_.log  
-Gate: pgtap (merge-blocking)
+
+### **6.3A — Unregistered Table Access Gate (NEW)
+Deliverable:
+Fails if any table accessible to authenticated is absent from
+tenant_table_selector.json — closing the gap where a new table
+receives default privileges without revocation and escapes the selector.
+DoD:
+
+Script enumerates every table in the public schema on which
+authenticated holds any privilege (SELECT, INSERT, UPDATE,
+or DELETE) via direct grant or default ACL.
+Script cross-references the enumerated set against
+tenant_table_selector.json.
+Gate fails if any accessible table is absent from the selector,
+naming the table and the specific privilege that exposes it.
+
+Proof: docs/proofs/6.3A_unregistered_table_access_<UTC>.log
+Gate: unregistered-table-access (merge-blocking).
+
+### **6.4 — Tenant-Owned Table Selector [HARDENED]
+Deliverable:
+Tenant-owned table definition is auditable, permissive policy patterns
+are rejected by name, and full policy expression enumeration is
+captured in the proof artifact.
+DoD additions (appended to existing 6.4 DoD):
+
+pgTAP suite explicitly tests and rejects the following specific
+patterns on every tenant-owned table:
+
+USING (true)
+USING (1=1)
+Any policy with no tenant_id predicate.
+Any policy that does not include either auth.uid() or a call
+to the approved tenant resolution helper (current_tenant_id()
+or equivalent as defined in CONTRACTS.md §3).
+
+
+Gate enumerates all existing RLS policy expressions on tenant-owned
+tables and prints each policy name and expression text.
+Policy expression enumeration output is part of the proof artifact —
+not just a PASS/FAIL line.
 
 ### **6.5 Blocked identifiers lint**
 
@@ -1512,31 +2359,51 @@ Proof shows lint run and PASS condition.
 Proof: docs/proofs/6.5\_blocked\_identifiers\_.log  
 Gate: blocked-identifiers (merge-blocking)
 
-### **6.6 Product core tables (MAO \+ Deals)**
+### **6.6 — Product Core Tables [HARDENED]
+Deliverable:
+Core domain tables exist with calc_version binding, all write paths
+are registered, and concurrent row_version enforcement is proven by
+test.
+DoD additions (appended to existing 6.6 DoD):
 
-Deliverable: Core domain tables exist (deals \+ MAO inputs/outputs) with calc\_version binding.  
- DoD:
+docs/truth/write_path_registry.json exists enumerating every write
+path to core tables (RPC names, trigger names, and any background
+write paths).
+write_path_registry.json is machine-derived (generated from
+schema and RPC surface). §3.0.4c exemption does NOT apply. Triple
+Registration Rule §3.0.4 applies in full:
+a. Registered in robot-owned guard.
+b. Included in truth-bootstrap validation gate.
+c. Included in handoff regeneration surface.
+For each registered write path: proof that it increments row_version
+and checks the expected value on update via WHERE row_version = $expected.
+A write path without this clause fails the proof.
+pgTAP test: two concurrent UPDATEs are issued against the same row
+using the same row_version value. Test asserts exactly one succeeds
+and the other returns a conflict response. A stale-version update must
+never silently overwrite.
 
-* Tables exist for: deals, deal\_inputs, deal\_outputs (or equivalent), calc\_versions.
 
-* Every persisted MAO/Deal row stores: calc\_version \+ assumptions snapshot reference.
+### **6.7 — Share-Link Surface [HARDENED]
+Deliverable:
+Public share-link mechanism exists without breaking tenant isolation,
+with tenant-scoped token lookup proven at the query planner level —
+not just at the source level.
+DoD additions (appended to existing 6.7 DoD):
 
-* No nullable “tenant\_id” on tenant-owned tables.  
-   Proof: docs/proofs/6.6\_product\_core\_tables\_.md  
-   Gate: merge-blocking (runtime)
-
-### **6.7 Share-link surface (public deal packet)**
-
-Deliverable: Public share-link mechanism exists without breaking tenant isolation.  
- DoD:
-
-* Share token table exists (random, non-guessable token; expiry optional).
-
-* Share link only exposes explicitly allowlisted fields (packet view).
-
-* Negative tests prove: token cannot reveal other tenant data.  
-   Proof: docs/proofs/6.7\_share\_link\_surface\_.md  
-   Gate: merge-blocking (security)
+The share token lookup RPC WHERE clause must include both
+token = $token AND tenant_id = $tenant_id. Token uniqueness alone
+is not sufficient.
+Negative test: a valid token from Tenant A, looked up in a context
+that resolves to Tenant B's tenant ID, returns no result.
+Token expiry behavior is explicitly defined: expired tokens return a
+distinguishable code value per the RPC envelope contract
+(CONTRACTS.md §1).
+Query plan evidence required: Proof includes EXPLAIN output or
+equivalent confirming the planner uses the tenant_id predicate.
+A source-level assertion is not sufficient — index selection can cause
+the planner to skip a predicate that is syntactically present in the
+WHERE clause.
 
 ### **6.8 Seat \+ role model (per-seat billing-ready)**
 
@@ -1590,14 +2457,22 @@ Drift check passes with no unexpected delta.
 Proof: docs/proofs/7.1\_schema\_snapshot\_.log  
 Gate: schema-drift (merge-blocking)
 
-### **7.2 Privilege truth \+ default privileges lockdown**
+### **7.2 — Privilege Truth + Default Privileges Lockdown [HARDENED]
+Deliverable:
+Privileges and default privileges are truth for all roles including
+anon, with contract-based enforcement preventing unauthorized GRANTs
+in migrations.
+DoD additions (appended to existing 7.2 DoD):
 
-Deliverable: Privileges \+ default privileges are truth.  
-DoD:  
-Privilege truth exists including default privileges state.  
-Drift check detects and fails privilege/default privilege regressions.  
-Proof: docs/proofs/7.2\_privilege\_truth\_.log  
-Gate: schema-drift \+ pgtap (merge-blocking)
+privilege_truth.json explicitly includes anon role grants and
+default ACL entries alongside authenticated entries. Absence of
+anon entries must be stated explicitly — it is not implied.
+A lint gate fails if any migration contains a GRANT to anon or
+authenticated that is not on the explicit allowlist defined in
+CONTRACTS.md §12 and privilege_truth.json. A documentation comment
+in the migration is not the control mechanism. The allowlist is the
+single authority — an undocumented GRANT fails the gate regardless of
+any comments present.
 
 ### **7.3 Contracts snapshot discipline**
 
@@ -1631,6 +2506,60 @@ Deliverable: Product tables are tenant-isolated and negative-tested.
 * Share-link access cannot bypass tenant boundaries.  
    Proof: docs/proofs/7.5\_product\_rls\_negative\_suite\_.md  
    Gate: merge-blocking (security)
+
+### **7.6 — calc_version Change Protocol (NEW)
+Deliverable:
+Gate-enforced protocol ensuring calculation logic changes always trigger
+a version bump — guaranteeing historical deals cannot silently produce
+different results after a logic update.
+DoD:
+
+docs/truth/calc_version_registry.json exists listing every
+calc_version value with its associated calculation logic description
+and the PR that introduced it.
+A lint gate (scripts/ci_calc_version_lint.ps1 or equivalent) fails
+if any PR modifies calculation logic files without an accompanying
+calc_version_registry.json update in the same PR. Gate names the
+logic files changed and the missing registry update.
+calc_version_registry.json is machine-derived (updated by the
+calculation logic build process). §3.0.4c exemption does NOT apply.
+Triple Registration Rule §3.0.4 applies in full:
+a. Registered in robot-owned guard.
+b. Included in truth-bootstrap validation gate.
+c. Included in handoff regeneration surface.
+pgTAP test: a deal row seeded at calc_version = N returns identical
+input and output values on reopen after the current calculator version
+is incremented to N+1. Value identity is asserted field by field —
+not as a JSON blob comparison.
+
+Proof: docs/proofs/7.6_calc_version_protocol_<UTC>.log
+Gate: calc-version-registry (merge-blocking).
+
+### **7.7 — Supabase Studio Direct-Mutation Guard (NEW)
+Deliverable:
+Operational policy and operator-run drift detection preventing out-of-band
+DB mutations via the cloud console from silently diverging from
+migration history.
+DoD:
+
+docs/ops/STUDIO_MUTATION_POLICY.md exists stating: all schema
+changes must go through migrations; any emergency Studio write must
+be immediately followed by a compensating migration merged via PR.
+No exceptions without a stop-the-line acknowledgment per
+AUTOMATION.md §6.
+scripts/cloud_schema_drift_check.ps1 connects to the live cloud
+project and compares its schema against generated/schema.sql. Script
+exits non-zero with a named diff if any drift is detected.
+This script is never run in CI. Cloud credentials must not be
+exposed in workflow logs. It is operator-run only, with output
+captured in a proof log and finalized via npm run proof:finalize.
+STUDIO_MUTATION_POLICY.md is added to the governance-change-guard
+path scope and to docs/truth/governance_surface_definition.json
+(3.9.2) so that any future change to the policy triggers the
+governance-change-guard.
+
+Proof: docs/proofs/7.7_studio_mutation_guard_<UTC>.log
+Gate: Operator-run only. No CI job. Policy-governed.
 
 ---
 
