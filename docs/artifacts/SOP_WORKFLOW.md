@@ -34,7 +34,7 @@ This is the complete step-by-step sequence from starting an objective to closing
    - Code, scripts, workflow changes
    - Governance files (`docs/governance/GOVERNANCE_CHANGE_PR*.md`) if governance surface touched
    - Allowlist canonical proof log path in `scripts/ci_robot_owned_guard.ps1`
-   - Update `docs/truth/qa_claim.json` with the claimed Build Route item ID
+   - Update `docs/truth/qa_claim.json` and `docs/truth/qa_scope_map.json`  with the claimed Build Route item ID
    - All of the above are implementation changes. Commit them here, not in the proof tail.
 
 ### Phase 2 — Truth Artifacts (only if PR touches DB/contracts/schema)
