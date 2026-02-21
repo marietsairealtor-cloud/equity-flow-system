@@ -34,7 +34,7 @@ This is the complete step-by-step sequence from starting an objective to closing
    - Code, scripts, workflow changes
    - Governance files (`docs/governance/GOVERNANCE_CHANGE_PR*.md`) if governance surface touched
    - Allowlist canonical proof log path in `scripts/ci_robot_owned_guard.ps1`
-   - Update `docs/truth/qa_scope_map.json` and `docs/truth/qa_claim.json` with the claimed Build Route item ID
+   - Update `docs/truth/qa_claim.json` with the claimed Build Route item ID
    - All of the above are implementation changes. Commit them here, not in the proof tail.
 
 ### Phase 2 — Truth Artifacts (only if PR touches DB/contracts/schema)
@@ -79,8 +79,10 @@ Skip Phase 2 if the PR does not touch migrations, schema, or contracts.
     git status              → must show clean working tree
     npm run pr:preflight    → must pass
     npm run ship            → must PASS, zero diffs, exit 0
+    npm run handoff         → must produce zero diffs (idempotency check)
+    git status              → must still show clean working tree
     ```
-19. If `ship` fails on main after merge, enter Debugger Mode immediately.
+19. If `ship` or `handoff` fails on main after merge, enter Debugger Mode immediately.
 
 ### Phase 7 — DEVLOG
 
@@ -480,6 +482,12 @@ Run `ship` on **main, after merge**, as the post-merge verification step (see §
 
 ship never generates. ship never commits. ship never pushes.
 
+### When to run handoff on main
+
+Run `handoff` on **main, after merge**, as the post-merge idempotency check (see §1 Phase 6).
+
+On clean main with committed truth artifacts, `npm run handoff` must produce zero diffs. If it dirties the tree, the generators are nondeterministic — enter Debugger Mode.
+
 ### Summary
 
 | Command | When | Branch | Writes files? |
@@ -487,7 +495,37 @@ ship never generates. ship never commits. ship never pushes.
 | handoff | Before merge | PR branch | Yes (truth artifacts) |
 | handoff:commit | Before merge | PR branch | Yes (commits + pushes artifacts) |
 | ship | After merge | main only | No (verify-only) |
+| handoff (idempotency) | After merge | main only | No (must produce zero diffs) |
 
+## 17) Section Close Verification (LOCKED)
+
+Before declaring a major section complete (e.g., Section 3, Section 4):
+
+1. All items in the section have merged PRs with QA APPROVE.
+2. DEVLOG entries exist for every item in the section.
+3. On clean main after all merges, run full verification:
+
+    git checkout main
+    git pull
+    git status              → clean
+    npm run pr:preflight    → PASS
+    npm run ship            → PASS, zero diffs
+    npm run handoff         → zero diffs
+    git status              → still clean
+    npm run green:twice     → PASS
+
+4. docs/truth/required_checks.json is current (no phantom or missing gates).
+
+If any step fails, enter Debugger Mode before declaring the section closed.
+
+Section close is recorded as a DEVLOG entry with format:
+
+    YYYY-MM-DD — Build Route vX.Y — Section N Closed
+
+    Objective
+    Changes
+    Verification evidence
+    Status
 ---
 
 STATUS:
