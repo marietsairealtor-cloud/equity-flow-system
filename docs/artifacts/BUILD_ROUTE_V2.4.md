@@ -1275,6 +1275,34 @@ This ordering minimizes circular dependencies. The meta-gate (3.7) is built last
 | 3.6 | Medium | Must remain distinct gate from 2.16.10 |
 | 3.7 | High | Circular dependency; PR-scope mapping must be defined before coding; no gate duplication |
 
+
+---
+
+### **3.8 — Handoff Idempotency Enforcement (NEW, mandatory)**
+
+**Deliverable:** `handoff` is idempotent — running it twice on a clean tree produces zero diffs.
+
+**DoD (all must be true):**
+
+1. On clean main with committed truth artifacts, `npm run handoff` produces zero diffs (`git status --porcelain` is empty after run).
+2. Running `npm run handoff` twice back-to-back produces identical output (second run = zero diffs).
+3. Root causes fixed:
+   - `generated/schema.sql` output is deterministic (stable sorting, no timestamps, consistent encoding)
+   - `generated/contracts.snapshot.json` output is deterministic
+   - `docs/handoff_latest.txt` does not self-reference (no `git status` captured after its own writes)
+4. Gate asserts idempotency: after handoff runs, `git status --porcelain` must be empty on a tree where artifacts are already committed.
+5. `ship` can now meaningfully verify: on clean main, `npm run handoff && git status --porcelain` returns empty.
+
+**Section 3.0 constraints apply:**
+- One enforcement surface per PR
+- green:once + green:twice before proof
+- ship remains verify-only
+
+**Proof:** `docs/proofs/3.8_handoff_idempotency_<UTC>.log`
+
+**Gate:** `handoff-idempotency` (merge-blocking)
+
+
 ---
 
 ## **4 — Fresh Supabase Project Baseline (No Reuse)**

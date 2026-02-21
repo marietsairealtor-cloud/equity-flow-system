@@ -2247,3 +2247,29 @@ DoD
 Status
 
 * PASS
+
+## 2026-02-20 — Build Route v2.4 — Added 3.8 Handoff Idempotency Enforcement
+
+Objective
+Add Build Route item 3.8 to close handoff convergence gap discovered during advisor meeting prep.
+
+Reason for Addition
+Running npm run handoff on clean main with committed truth artifacts always dirties the tree. This creates an impossible loop: ship verifies zero diffs, but handoff always produces diffs even when nothing changed. The generator is not idempotent — it either produces nondeterministic output or self-references its own writes (handoff_latest.txt records git status after writing files).
+
+This means:
+- ship verification is meaningless (handoff always dirties tree)
+- handoff:commit is required even when nothing changed
+- Post-merge clean tree invariant is fragile
+
+3.8 was added to:
+- Make handoff idempotent (second run = zero diffs)
+- Fix nondeterministic generators (schema.sql, contracts.snapshot.json, handoff_latest.txt)
+- Enable ship to meaningfully verify truth artifact correctness
+
+Scope
+Section 3 item. Section 3.0 constraints apply.
+One enforcement surface per PR.
+No gate weakening.
+
+Status
+ADDED — implementation immediate (pre-advisor meeting).
