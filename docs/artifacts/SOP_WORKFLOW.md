@@ -1,6 +1,6 @@
 # SOP_WORKFLOW.md
 
-Authoritative — Governed Execution (Final Aligned Version)
+Authoritative — Governed Execution (Revised 2026-02-21)
 
 ---
 
@@ -23,7 +23,73 @@ If any instruction conflicts with Command for Chat, Command for Chat wins.
 
 ---
 
-## 1) Completion Law (AUTHORITATIVE)
+## 1) Full Execution Procedure (LOCKED)
+
+This is the complete step-by-step sequence from starting an objective to closing it. Every Build Route item follows this procedure. No steps may be skipped.
+
+### Phase 1 — Implementation
+
+1. Create a PR branch from clean main.
+2. Complete all implementation changes:
+   - Code, scripts, workflow changes
+   - Governance files (`docs/governance/GOVERNANCE_CHANGE_PR*.md`) if governance surface touched
+   - Allowlist canonical proof log path in `scripts/ci_robot_owned_guard.ps1`
+   - Update `docs/truth/qa_claim.json` with the claimed Build Route item ID
+   - All of the above are implementation changes. Commit them here, not in the proof tail.
+
+### Phase 2 — Truth Artifacts (only if PR touches DB/contracts/schema)
+
+3. Run: `npm run handoff` — generates truth artifacts.
+4. Run: `npm run handoff:commit` — commits and pushes truth artifacts on PR branch.
+
+Skip Phase 2 if the PR does not touch migrations, schema, or contracts.
+
+### Phase 3 — Verification
+
+5. Run semantic contract locally: `node scripts/ci_semantic_contract.mjs` — catch CI wiring issues early.
+6. Run new gate locally (if implementing a new gate) — confirm it passes before green loop.
+7. Run: `npm run green:once` — must PASS.
+8. Run: `npm run green:twice` — must PASS. No edits between green:once and green:twice.
+9. Run: `npm run pr:preflight`
+
+### Phase 4 — Proof
+
+10. Run the relevant gate. Save output to: `docs/proofs/<ITEM>_WORKING.log`
+    Iterate until gate output shows PASS. No non-proof changes between iterations.
+11. Rename to canonical form: `docs/proofs/<ITEM>_<UTC>.log`
+    Filename must exactly match the path allowlisted in Step 2.
+12. Finalize exactly once: `npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log`
+13. Commit only:
+    - `docs/proofs/<ITEM>_<UTC>.log`
+    - `docs/proofs/manifest.json`
+14. Push (force-with-lease if branch diverged).
+
+### Phase 5 — Review and Merge
+
+15. CI green → submit to QA with required evidence (see §4).
+16. QA returns APPROVE or REJECT.
+17. If APPROVE → merge to main.
+
+### Phase 6 — Post-Merge Verification
+
+18. Run:
+    ```
+    git checkout main
+    git pull
+    git status              → must show clean working tree
+    npm run pr:preflight    → must pass
+    npm run ship            → must PASS, zero diffs, exit 0
+    ```
+19. If `ship` fails on main after merge, enter Debugger Mode immediately.
+
+### Phase 7 — DEVLOG
+
+20. DEVLOG entry is added **after merge**, in the next PR or a standalone governance PR.
+    DEVLOG is never part of the proof tail commit.
+
+---
+
+## 2) Completion Law (AUTHORITATIVE)
 
 An objective is complete ONLY if:
 
@@ -39,7 +105,7 @@ No multi-objective PRs.
 
 ---
 
-## 2) Proof-Only Work Rule
+## 3) Proof-Only Work Rule
 
 If an objective requires no functional code change:
 
@@ -47,7 +113,6 @@ A Proof PR is still required containing at least one:
 
 - Committed proof artifact under docs/proofs/**
 - pgTAP / invariant assertion
-- DEVLOG update with evidence
 
 Proof must be:
 
@@ -59,13 +124,11 @@ Screenshots, pasted terminal output, or out-of-branch evidence are invalid.
 
 ---
 
-## 3) Proof Artifact Sequencing (LOCKED)
+## 4) Proof Artifact Rules (LOCKED)
 
 **Objective:** Produce exactly **one final proof log per Build Route item**, bound to a tested commit, with a machine-managed manifest.
 
----
-
-### 3.1 Core Rules
+### 4.1 Core Rules
 
 **Rule A — Proof is last**
 Do not touch proofs until implementation is complete and all required local checks are green.
@@ -93,48 +156,7 @@ Iteration is allowed locally, but the PR must end with exactly **one canonical p
 
 ---
 
-
-### 3.2 Minimal Procedure (Required Order)
-
-1. Complete all implementation changes. All code, truth files, and
-   workflow changes must be committed before proof begins.
-
-2. Allowlist the canonical proof log path in
-   scripts/ci_robot_owned_guard.ps1 before creating the log.
-
-   - All new proof logs are subject to robot-owned-guard.
-     No exceptions.
-   - The exact canonical filename (docs/proofs/<ITEM>_<UTC>.log)
-     must be present in scripts/ci_robot_owned_guard.ps1 before
-     Step 5.
-   - This is an implementation change. Commit it in Step 1,
-     not as part of the proof tail.
-
-3. Run:
-   npm run pr:preflight
-
-4. Run the relevant gate. Save output to:
-   docs/proofs/<ITEM>_WORKING.log
-   Iterate until gate output shows PASS. No non-proof changes
-   between iterations.
-
-5. Rename to canonical form:
-   docs/proofs/<ITEM>_<UTC>.log
-   Filename must exactly match the path allowlisted in Step 2.
-   Mismatch = robot-owned-guard will fail.
-
-6. Finalize exactly once:
-   npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log
-
-7. Commit only:
-   - docs/proofs/<ITEM>_<UTC>.log
-   - docs/proofs/manifest.json
-
-8. Open PR → CI green → QA approve → merge.
-
----
-
-### 3.3 Repair Protocol (If You Created Multiple Proof Logs)
+### 4.2 Repair Protocol (If Proof/Manifest Is Broken)
 
 If a proof/manifest mistake causes CI to go red (duplicate proof logs, stale manifest entry, or broken proof tail):
 
@@ -143,15 +165,15 @@ If a proof/manifest mistake causes CI to go red (duplicate proof logs, stale man
 2. Reset the branch to `PREPROOF_HEAD` (discard the broken proof tail).
 3. Fix the underlying objective/gate issue (non-proof work) until CI/local gates are green.
 4. Generate the proof log again (canonical `<UTC>.log` only).
-5. Run `npm run proof:finalize -- -File docs/proofs/<proof_log>.log` exactly once.
-6. After finalize: proof-only tail commits only (`docs/proofs/**` + optional `docs/DEVLOG.md`).
+5. Run `npm run proof:finalize docs/proofs/<proof_log>.log` exactly once.
+6. After finalize: proof-only tail commits only (`docs/proofs/**`).
 7. Push.
 
 **Do NOT** attempt to "prune" manifest entries via delete-first + re-finalize; `proof:finalize` does not prune and `ci_proof_manifest` will fail on stale entries.
 
 ---
 
-## 4) QA Submission Rule (LOCKED)
+## 5) QA Submission Rule (LOCKED)
 
 QA review occurs after CI is green.
 
@@ -181,9 +203,9 @@ No merge is valid without QA approval.
 
 ---
 
-## 5) Operating Modes
+## 6) Operating Modes
 
-### 5.1 Executor Mode (Default)
+### 6.1 Executor Mode (Default)
 
 Use when:
 
@@ -198,7 +220,7 @@ Rules:
 
 ---
 
-### 5.2 Debugger Mode (Triggered Only)
+### 6.2 Debugger Mode (Triggered Only)
 
 Enter Debugger Mode if ANY:
 
@@ -216,7 +238,7 @@ Debugger Mode Rules:
 
 ---
 
-## 6) Execution Format (Session Rule)
+## 7) Execution Format (Session Rule)
 
 Interactive step responses must follow the exact execution format defined in Command for Chat.
 
@@ -224,7 +246,7 @@ This governs session output only and does not alter documentation structure.
 
 ---
 
-## 7) Shell Discipline (LOCKED)
+## 8) Shell Discipline (LOCKED)
 
 Execution Shell Policy (Authoritative)
 
@@ -261,11 +283,11 @@ Maintain deterministic auditability.
 
 ---
 
-## 8) Proof-Commit-Binding Compliance
+## 9) Proof-Commit-Binding Compliance
 
 For all docs/proofs/** artifacts:
 
-### 8.1 PROOF_HEAD
+### 9.1 PROOF_HEAD
 
 * Must equal tested SHA at runtime
 * Must be ancestor of PR_HEAD
@@ -275,7 +297,7 @@ For all docs/proofs/** artifacts:
 
 ---
 
-### 8.2 PROOF_SCRIPTS_HASH
+### 9.2 PROOF_SCRIPTS_HASH
 
 Must be:
 
@@ -294,7 +316,7 @@ Mismatch = FAIL.
 
 ---
 
-## 9) CI Lane Isolation (Policy)
+## 10) CI Lane Isolation (Policy)
 
 Docs-only PR:
 
@@ -314,7 +336,7 @@ If YAML does not enforce this, repository is noncompliant until corrected via ob
 
 ---
 
-## 10) Waiver Debt Enforcement (Build Route 2.16.4)
+## 11) Waiver Debt Enforcement (Build Route 2.16.4)
 
 Waivers must be:
 
@@ -330,7 +352,7 @@ PR opened → CI green → approved → merged
 
 ---
 
-## 11) Stop Conditions (LOCKED)
+## 12) Stop Conditions (LOCKED)
 
 Stop immediately if:
 
@@ -348,7 +370,7 @@ When a stop condition is triggered:
 
 ---
 
-## 12) Forbidden Actions
+## 13) Forbidden Actions
 
 The following are prohibited:
 
@@ -361,26 +383,9 @@ The following are prohibited:
 * Retro-edit historical migrations
 * Introduce dynamic SQL in migrations
 * Bypass proof artifact requirements
+* Include DEVLOG in proof tail commit
 
 Violation = governance failure.
-
----
-
-## 13) Gate Close — Post-Merge Verification (LOCKED)
-
-After merge to main:
-
-```
-git checkout main
-git pull
-git status           → must show clean working tree
-npm run pr:preflight → must pass
-npm run ship         → must PASS, zero diffs, exit 0
-```
-
-If `ship` fails on main after merge, enter Debugger Mode immediately.
-
-`docs/handoff_latest.txt` internal git status line is informational only and not authoritative.
 
 ---
 
@@ -471,7 +476,7 @@ Do NOT run handoff for governance-only PRs (CI wiring, docs, proof-only work) th
 
 ### When to run ship
 
-Run `ship` on **main, after merge**, as the post-merge verification step (see §13).
+Run `ship` on **main, after merge**, as the post-merge verification step (see §1 Phase 6).
 
 ship never generates. ship never commits. ship never pushes.
 
@@ -485,52 +490,16 @@ ship never generates. ship never commits. ship never pushes.
 
 ---
 
-## 17) Governance-scoped paths (ENFORCED)
-
-Governance scope is defined by `docs/truth/governance_change_guard.json`.
-Any PR that changes a governance-scoped path **must** include:
-
-`docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md`
-
-Required template sections:
-- What changed
-- Why safe
-- Risk
-- Rollback
-
-### Always Governance (GOVERNANCE_CHANGE_PR<NNN>.md required)
-
-- `docs/truth/**`
-- `.github/workflows/**`
-- `scripts/**`
-- `docs/artifacts/GUARDRAILS.md`
-- `docs/artifacts/CONTRACTS.md`
-- `docs/artifacts/AUTOMATION.md`
-- `docs/artifacts/SOP_WORKFLOW.md`
-- `docs/artifacts/FOUNDATION_BOUNDARY.md`
-- `supabase/foundation/**`
-
-### Explicitly Exempt (does not trigger governance)
-
-- `docs/DEVLOG.md`
-
-### Merge-blocking requirement (LOCKED)
-
-Governance enforcement is valid only if CI is merge-blocking:
-
-- Jobs `governance-change-guard` and `governance-change-template-contract` must run on `pull_request`.
-- The aggregate merge-blocking job (`required`) must include both jobs in its `needs:` list **string-exactly** (or GitHub rulesets must require them string-exactly).
-
-If a governance-scoped file is modified and CI does not block merges without the governance change template, the repository is noncompliant until the required-check wiring is corrected.
-
 STATUS:
 Aligned with Command for Chat
 Aligned with Build Route v2.4
 Aligned with AUTOMATION
 Aligned with GUARDRAILS
+Full procedure in §1
 Proof-before-PR enforced
 CI-green-before-QA enforced
 QA-before-merge enforced
+DEVLOG post-merge enforced
 Stop conditions hardened
 Execution surface stability enforced
 Governance stack consistent
