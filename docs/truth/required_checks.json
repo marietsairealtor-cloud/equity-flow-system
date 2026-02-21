@@ -71,6 +71,11 @@
       "required": true
     },
     {
+      "name": "CI / job-graph-ordering",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / lane-enforcement",
       "type": "github_status",
       "required": true
