@@ -1636,6 +1636,19 @@ Deliverable: Product tables are tenant-isolated and negative-tested.
 
 ## **8 — Clean-Room Replay (Core)**
 
+### 8.0 — CI Database Infrastructure (NEW, mandatory)
+
+Deliverable: CI runners can start Supabase and run DB-dependent gates.
+
+DoD:
+- CI workflow includes supabase start in runner environment.
+- DB-dependent gates (db-heavy, handoff-idempotency, clean-room-replay, pgtap) run against a live DB in CI.
+- All current db-heavy pass-through stubs are replaced with real gate execution.
+
+Proof: docs/proofs/8.0_ci_db_infrastructure_<UTC>.log
+
+Gate: merge-blocking (replaces all db-heavy stubs)
+
 ### **8.1 Local clean-room replay proof**
 
 Deliverable: Replay is deterministic.  
