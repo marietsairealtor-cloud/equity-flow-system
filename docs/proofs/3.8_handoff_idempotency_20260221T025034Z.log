@@ -1,0 +1,18 @@
+PROOF_HEAD=d3bc89f8865635b8efddda031698a0351277b7c7
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== handoff-idempotency gate ===
+--- Run 1: pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/handoff.ps1 ---
+Wrote generated/schema.sql (schemas: public)
+Wrote generated/contracts.snapshot.json (deterministic)
+CONTRACTS LINT OK
+MUST-CONTAIN OK
+Wrote docs/handoff_latest.txt
+--- Run 2: pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/handoff.ps1 ---
+Wrote generated/schema.sql (schemas: public)
+Wrote generated/contracts.snapshot.json (deterministic)
+CONTRACTS LINT OK
+MUST-CONTAIN OK
+Wrote docs/handoff_latest.txt
+STATUS: PASS - handoff is idempotent (second run produced zero diffs)

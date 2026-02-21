@@ -1,9 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 942bab3
+HEAD: 7819dfd
 
 === git status --porcelain=v1 ===
- M docs/handoff_latest.txt
- M generated/schema.sql
+
 
 === supabase status (sanitized summary) ===
 {

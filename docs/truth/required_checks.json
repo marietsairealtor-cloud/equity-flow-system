@@ -56,6 +56,11 @@
       "required": true
     },
     {
+      "name": "CI / handoff-idempotency",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / lane-enforcement",
       "type": "github_status",
       "required": true

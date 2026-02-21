@@ -30,8 +30,11 @@ Set-Location $repoRoot
 & (Join-Path $PSScriptRoot "contracts_lint.ps1") | Out-String | Out-Null
 & (Join-Path $PSScriptRoot "must_contain.ps1") | Out-String | Out-Null
 
-# Git state (should be stable if nothing changed)
+# Git state -- exclude robot-owned handoff outputs to achieve idempotency
+# generated/schema.sql, generated/contracts.snapshot.json, docs/handoff_latest.txt
+# are written by this script and must not self-reference
 $gitStatus = (git status --porcelain=v1 2>&1 | Out-String).TrimEnd()
+$gitStatus = ($gitStatus -split "`n" | Where-Object { $_ -notmatch "generated/schema\.sql|generated/contracts\.snapshot\.json|docs/handoff_latest\.txt" }) -join "`n"
 $head = (git rev-parse --short HEAD 2>&1 | Out-String).Trim()
 
 # Supabase status summary (safe)
