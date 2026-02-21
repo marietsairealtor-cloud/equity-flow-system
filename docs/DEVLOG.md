@@ -2273,3 +2273,29 @@ No gate weakening.
 
 Status
 ADDED — implementation immediate (pre-advisor meeting).
+
+2026-02-21 — Build Route v2.4 — 3.8 Handoff Idempotency Enforcement
+
+Objective
+Assert handoff is idempotent: two consecutive runs (no commits between) produce identical output.
+
+Changes
+- scripts/ci_handoff_idempotency.ps1 — new gate (CI-stub; full local run + working tree restore)
+- scripts/handoff.ps1 — filter robot-owned files from git status capture
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 3.8 proof log pattern
+- .github/workflows/ci.yml — handoff-idempotency job added, wired into required:
+- docs/truth/required_checks.json — CI / handoff-idempotency added
+- generated/contracts.snapshot.json — corrected stale artifact via handoff:commit
+- docs/governance/GOVERNANCE_CHANGE_PR011.md — governance file
+
+Proof
+docs/proofs/3.8_handoff_idempotency_20260221T025034Z.log
+
+DoD
+1. Two consecutive handoff runs produce zero diffs ✓
+2. Gate asserts idempotency locally ✓
+3. CI stub passes (db-heavy pattern) ✓
+4. handoff:commit published truth artifacts per SOP §16 ✓
+5. ship passed on main post-merge ✓
+
+Status: COMPLETE
