@@ -1,0 +1,12 @@
+PROOF_HEAD=742e0946e39358720f2e70b314609b00d2106849
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== deferred-proof-registry gate ===
+Registry entries: 2
+DB-heavy stub jobs found in CI YAML:
+  - db-heavy
+Registry entries validated:
+  - db-heavy [conversion: 8.0]
+  - database-tests.yml [conversion: 6.0/8.0]
+STATUS: PASS
