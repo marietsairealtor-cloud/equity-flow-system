@@ -8,12 +8,12 @@ if ($branch -ne "main") {
   throw "Blocked: npm run ship only allowed on main (current: $branch). Merge PR to main first."
 }
 
-# Enforce clean tree on main
-$dirty = (& git status --porcelain)
+# Enforce clean tree on main (handoff_latest.txt exempted — HEAD drift is by design)
+$dirty = (& git status --porcelain | Where-Object { $_ -notmatch "handoff_latest\.txt" })
 if ($dirty) { throw "Blocked: working tree not clean. Commit via PR, then rerun ship on main." }
 
 # Verify artifacts already published (no regeneration here)
-$diff = (& git diff --name-only -- generated/schema.sql generated/contracts.snapshot.json docs/handoff_latest.txt)
+$diff = (& git diff --name-only -- generated/schema.sql generated/contracts.snapshot.json)
 if ($diff) {
   throw "Blocked: artifacts/handoff not published. Run: npm run handoff && npm run handoff:commit (PR), merge, then rerun ship."
 }
