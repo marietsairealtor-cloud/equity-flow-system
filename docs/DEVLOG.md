@@ -2493,3 +2493,32 @@ DoD
 
 Status
 - RECORDED
+
+2026-02-21 — Build Route v2.4 — 3.9.1 Deferred Proof Registry
+
+Objective
+Establish a machine-readable registry cataloging every CI gate currently passing as a DB-heavy stub, so stub-passing gates cannot be silently interpreted as security evidence.
+
+Changes
+- docs/truth/deferred_proofs.json — new registry (db-heavy, database-tests.yml)
+- docs/truth/deferred_proofs.schema.json — schema validating registry structure
+- scripts/ci_deferred_proof_registry.ps1 — new gate
+- .github/workflows/ci.yml — deferred-proof-registry job added, wired into required:
+- docs/truth/required_checks.json — CI / deferred-proof-registry added
+- docs/truth/qa_claim.json — updated to 3.9.1
+- docs/truth/qa_scope_map.json — added 3.9.1 entry
+- docs/governance/GOVERNANCE_CHANGE_PR016.md — governance file
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 3.9.1 proof log
+
+Proof
+docs/proofs/3.9.1_deferred_proof_registry_20260221T213946Z.log
+
+DoD
+1. deferred_proofs.json exists with one entry per db-heavy stub gate
+2. deferred_proofs.schema.json validates registry structure
+3. Gate fails if stub gate has no registry entry
+4. Gate fails if converted gate still has registry entry
+5. AUTOMATION.md gap (database-tests.yml) catalogued with conversion_trigger 6.0/8.0
+6. CI green, QA approved, merged
+
+Status: COMPLETE
