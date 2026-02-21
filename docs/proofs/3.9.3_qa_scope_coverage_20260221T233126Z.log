@@ -1,0 +1,9 @@
+PROOF_HEAD=f84d6fa0b6963dfe51316560acb0e184ed976846
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== qa-scope-coverage gate ===
+Completed items: 61
+Scope map entries: 62
+All completed items have qa_scope_map.json entries.
+STATUS: PASS
