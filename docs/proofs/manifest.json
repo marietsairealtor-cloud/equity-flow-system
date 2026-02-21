@@ -93,6 +93,7 @@
     "docs/proofs/3.7_qa_verify_20260220T193128Z.log": "be060101c036bf84e5d47c8ee5948baa49a309656eb3b99ff655ebd841ba0d4a",
     "docs/proofs/3.8_handoff_idempotency_20260221T025034Z.log": "015ca3fb20c9a3fc64c224ea881fe98c76b9f6641101007b14a0a1900f1aded9",
     "docs/proofs/3.9.1_deferred_proof_registry_20260221T213946Z.log": "1fe57ded8350f0d4af422b71f4c0dba900cf47a7bd7a8fe05ded9fd64dae43cb",
-    "docs/proofs/3.9.2_governance_path_coverage_20260221T230558Z.log": "2de7db30d8fce16ab1712a24c952cd07fb7cdab26034e1472458005bfb0455c2"
+    "docs/proofs/3.9.2_governance_path_coverage_20260221T230558Z.log": "2de7db30d8fce16ab1712a24c952cd07fb7cdab26034e1472458005bfb0455c2",
+    "docs/proofs/3.9.3_qa_scope_coverage_20260221T233126Z.log": "383859d0d0a9e86a4983cea32387a614553c2ece549323c30fd35f02f380e9b6"
   }
 }

@@ -96,6 +96,11 @@
       "required": true
     },
     {
+      "name": "CI / qa-scope-coverage",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / qa-verify",
       "type": "github_status",
       "required": true
