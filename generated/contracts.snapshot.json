@@ -1,6 +1,6 @@
 {
-    "version":  1,
-    "source":  "docs/artifacts/CONTRACTS.md",
-    "sha256":  "bc2580b9d8889db6120d8dd4eeb8d7534d0adefd3754e9c4c2b5bea4da6fb50e",
-    "bytes":  5761
+  "version": 1,
+  "source": "docs/artifacts/CONTRACTS.md",
+  "sha256": "e55ed979577af770042fcbe28c79d8442937e02658c5b56ee97be8642d479729",
+  "bytes": 5718
 }
