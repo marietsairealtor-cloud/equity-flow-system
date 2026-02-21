@@ -183,6 +183,9 @@
     },
     "3.9.2": {
       "proof_pattern": "^docs/proofs/3\\.9\\.2_governance_path_coverage_"
+    },
+    "3.9.3": {
+      "proof_pattern": "^docs/proofs/3\\.9\\.3_qa_scope_coverage_"
     }
   }
 }
