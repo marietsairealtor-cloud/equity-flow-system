@@ -2582,3 +2582,31 @@ DoD
 5. CI green, QA approved, merged
 
 Status: COMPLETE
+
+2026-02-22 — Build Route v2.4 — 3.9.4 Job Graph Ordering Verification
+
+Objective
+Prove that lane-enforcement is a provable prerequisite of the docs-only-skip behavior (db-heavy) in the CI job dependency graph — closing the structural race where a governance-touching PR miscategorized as docs-only has its required governance checks skipped.
+
+Changes
+- scripts/ci_job_graph_contract.ps1 — new gate (parses ci.yml job graph, asserts db-heavy needs lane-enforcement)
+- .github/workflows/ci.yml — job-graph-ordering job added, wired into required:
+- docs/truth/required_checks.json — CI / job-graph-ordering added
+- docs/truth/qa_claim.json — updated to 3.9.4
+- docs/truth/qa_scope_map.json — added 3.9.4 entry
+- docs/truth/completed_items.json — added 3.9.4
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 3.9.4 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR020.md — governance file
+
+Proof
+docs/proofs/3.9.4_job_graph_ordering_20260222T000218Z.log
+
+DoD
+1. Gate parses ci.yml job graph from needs: declarations
+2. Asserts db-heavy has lane-enforcement in direct needs: (Option A)
+3. Proof-only — existing CI YAML already satisfies ordering requirement
+4. Gate is merge-blocking for any PR touching .github/workflows/**
+5. CI green, QA approved, merged
+
+Status: COMPLETE
+
