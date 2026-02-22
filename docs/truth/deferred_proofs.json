@@ -1,5 +1,6 @@
 [
   {
+    "_proof_authoring_requirement": "While this registry is non-empty, every proof log finalized via proof:finalize must include a STUB_GATES_ACTIVE block immediately after the PR HEAD SHA line. List every active stub gate by name and conversion_trigger from this file. See SOP_WORKFLOW.md Phase 4 Rule G.",
     "gate": "db-heavy",
     "stub_reason": "No live Supabase DB available in CI runners; job echoes PASS unconditionally.",
     "deferred_invariant": "This gate does not currently prove any DB-level correctness or security property.",

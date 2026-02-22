@@ -2667,3 +2667,258 @@ Sub-items completed
 
 Status: COMPLETE
 
+
+## 2026-02-22 — Build Route v2.4 — Advisor Review: Section 4 Entry Readiness + 8.0 Stub Conversion Strategy
+
+Objective
+- Record findings from three-advisor review of Section 4 entry
+  readiness and 8.0 stub conversion strategy, per SOP §14
+  (advisor review findings require DEVLOG entry).
+
+Changes
+- No implementation changes. Findings and decisions only.
+
+Proof
+- Advisor review transcript (session record).
+- Artifact cross-check against Build Route v2.4, CONTRACTS.md,
+  GUARDRAILS.md, AUTOMATION.md, SOP_WORKFLOW.md confirmed.
+
+DoD
+- Two questions resolved with three-advisor input.
+- All decisions grounded against authoritative documents.
+- Build Route modifications identified and recorded in companion entry.
+
+Findings summary
+
+Question 1 — Section 4 entry before or after 8.0?
+
+Three advisors reviewed. Advisors A and C: Section 4 before 8.0.
+Advisor B: 8.0 first to preserve manifest integrity.
+
+Resolution: Section 4 proceeds before 8.0. No authoritative document
+prohibits Section 4 entry while stub gates are active. The deferred
+proof registry (3.9.1, already on main) was designed explicitly for
+this situation. Advisor B's manifest integrity concern is valid but
+does not rise to a hard prohibition — it is addressed by a required
+header block in every proof log finalized while stubs are active.
+
+Adopted mitigation (Advisor B): every Section 4, 5, and 6 proof log
+finalized while any stub gate remains active must include a
+STUB_GATES_ACTIVE block immediately after the PR HEAD SHA line,
+listing every active stub gate by name and conversion_trigger as
+recorded in docs/truth/deferred_proofs.json.
+
+Key structural reason for Section 4 first: 8.0 infrastructure design
+depends on seeing real Section 4 migration shape, pgTAP structure, and
+Supabase startup timing. 8.0.4 (definer-safety-audit conversion) is
+hard-blocked on 6.2 hardening. 8.0.5 (pgtap conversion) is hard-blocked
+on 6.3 + 6.4 test suite completion. Forcing 8.0 before Section 4
+creates a circular dependency — Section 4 and 6 must inform 8.0 design,
+not the other way around.
+
+Question 2 — All five stubs in one 8.0 PR, or separate PRs?
+
+All three advisors: separate PRs, one stub per PR.
+Grounds: SOP §2 (one objective = one PR), Section 3.0 (one enforcement
+surface per PR), 3.9.1 DoD item 4 (converted gate entry removed in same
+PR as conversion — five separate removal events require five PRs).
+
+Conversion order decided:
+1. 8.0   — CI DB infrastructure (smoke proof only, no stubs converted)
+2. 8.0.1 — clean-room-replay conversion
+3. 8.0.2 — schema-drift conversion
+4. 8.0.3 — handoff-idempotency conversion
+5. 8.0.4 — definer-safety-audit conversion
+6. 8.0.5 — pgtap conversion + database-tests.yml creation
+
+Hard blocking dependencies:
+- 8.0.4 cannot open until 6.2 hardening (pg_proc.proconfig check +
+  CONTRACTS.md §8 tenant membership assertion) is on main.
+- 8.0.5 cannot open until 6.3 tenant integrity suite and 6.4 RLS
+  structural audit are authored, locally passing, and on main.
+  A live pgtap gate with no substantive tests is a vacuous pass.
+
+Artifact corrections identified during review:
+- 4.5 (Tenancy Resolution) framing in prior advisor response was wrong.
+  CONTRACTS.md §3 already locks the resolution order. 4.5 is lint
+  enforcement of the locked contract, not a new decision. Build Route
+  as written is correct.
+- 4.4 scope: authority for core table list is CONTRACTS.md §12
+  (explicit named tables), not tenant_table_selector.json. 4.4 must
+  also assert authenticated has only SELECT, UPDATE on user_profiles
+  per §12 controlled exception — not just anon zero privileges.
+- CONTRACTS.md §13 (ALTER DEFAULT PRIVILEGES private-by-default) must
+  be included in 4.4 DoD scope.
+- 8.0 current DoD bundles infrastructure + all five conversions, which
+  violates SOP §2. Requires Build Route amendment before any 8.0 PR opens.
+- 8.0.4 conversion must assert CONTRACTS.md §8 tenant membership
+  enforcement internally, not just search_path via pg_proc.proconfig.
+- 8.0.5 pre-conversion audit of all pgTAP files against GUARDRAILS
+  §25–28 required before stub removal.
+- RELEASES.md implication: no stable release tag (11.6) is valid while
+  any DB-security gate (8.0.3, 8.0.4, 8.0.5) remains a stub.
+
+Status
+- RECORDED (findings only — no gate, no proof artifact required per
+  SOP §14 advisor review entry type)
+
+---
+
+## 2026-02-22 — Build Route v2.4 — Build Route Modifications: 8.0 Decomposition
+
+Objective
+- Record all Build Route modifications produced from the three-advisor
+  review session. Per SOP §14, Build Route modifications require a
+  DEVLOG entry.
+
+Changes
+
+Section 8 — CI Database Infrastructure
+
+8.0 revised (DoD narrowed to infrastructure-only):
+- Original DoD bundled supabase start + all five stub conversions into
+  one deliverable. Violates SOP §2 and Section 3.0 one-enforcement-
+  surface-per-PR rule. DoD narrowed to infrastructure smoke proof only.
+- New DoD: CI workflow proves supabase start succeeds and live DB is
+  reachable (SELECT 1). database-tests.yml file created (closes
+  AUTOMATION.md §2 compliance gap). No stubs converted. deferred_proofs.json
+  conversion triggers updated from generic "8.0" to specific 8.0.x items
+  in the same PR.
+- Gate: ci-db-smoke (new, merge-blocking).
+
+8.0.1 added — clean-room-replay stub conversion:
+- Converts clean-room-replay from db-heavy stub to live CI gate.
+- DoD: supabase start → migrations replay → gate passes on live DB.
+  Deliberate-failure test required. deferred_proofs.json entry removed.
+- Gate: clean-room-replay (merge-blocking, now live).
+- Prerequisite: 8.0 on main.
+
+8.0.2 added — schema-drift stub conversion:
+- Converts schema-drift from db-heavy stub to live CI gate.
+- DoD: post-replay schema dump matches generated/schema.sql exactly.
+  Deliberate-failure test required (introduce drift, confirm FAIL, restore).
+  deferred_proofs.json entry removed.
+- Gate: schema-drift (merge-blocking, now live).
+- Prerequisite: 8.0.1 on main.
+
+8.0.3 added — handoff-idempotency stub conversion:
+- Converts handoff-idempotency from db-heavy stub to live CI gate.
+- DoD: two consecutive handoff runs against live CI DB produce zero
+  diffs. deferred_proofs.json entry removed.
+- Gate: handoff-idempotency (merge-blocking, now live).
+- Prerequisite: 8.0.2 on main.
+
+8.0.4 added — definer-safety-audit stub conversion:
+- Converts definer-safety-audit from db-heavy stub to live CI gate.
+- DoD: gate queries pg_proc.proconfig on live catalog (not prosrc).
+  Asserts search_path present for every allowlisted SD function.
+  Asserts tenant membership enforcement per CONTRACTS.md §8 for every
+  allowlisted SD function. deferred_proofs.json entry removed.
+- Gate: definer-safety-audit (merge-blocking, now live).
+- Prerequisite: 8.0.3 on main AND 6.2 hardening on main.
+- HARD BLOCK: do not open until 6.2 is merged.
+
+8.0.5 added — pgtap stub conversion:
+- Converts pgtap from db-heavy stub to live CI gate. Creates
+  database-tests.yml full execution (smoke job exists from 8.0; this
+  wires the full test suite).
+- DoD: pre-conversion audit of all pgTAP files against GUARDRAILS
+  §25–28 (SQL-only, no DO blocks, no psql meta-commands, plan()/finish()
+  present, no $$ anywhere). npx supabase test db passes on live CI DB.
+  Suite must include 6.3 tenant integrity tests and 6.4 RLS structural
+  audit — vacuous pass not acceptable. Both deferred_proofs.json entries
+  removed: pgtap and database-tests.yml. deferred-proof-registry gate
+  must pass after both removals.
+- Gate: pgtap (merge-blocking, now live).
+- Prerequisite: 8.0.4 on main AND 6.3 + 6.4 on main.
+- HARD BLOCK: do not open until 6.3 and 6.4 are merged.
+
+deferred_proofs.json trigger updates (applied in 8.0 PR):
+- clean-room-replay:     8.0  → 8.0.1
+- schema-drift:          8.0  → 8.0.2
+- handoff-idempotency:   8.0  → 8.0.3
+- definer-safety-audit:  8.0  → 8.0.4 (requires 6.2)
+- pgtap:                 8.0  → 8.0.5 (requires 6.3, 6.4)
+- database-tests.yml:    6.0/8.0 → 8.0.5
+
+STUB_GATES_ACTIVE proof log header adopted (operator requirement):
+- Every proof log finalized while any stub gate remains active must
+  include a STUB_GATES_ACTIVE block listing active stub gates by name
+  and conversion_trigger, referencing deferred_proofs.json as authority.
+- This is an operator authoring requirement, not a CI gate.
+
+Proof
+- Advisor review transcript (session record).
+- Three-advisor synthesis document (session record).
+
+DoD
+- 8.0 DoD revised to infrastructure-only scope.
+- 8.0.1–8.0.5 defined as separate Build Route items with individual
+  DoDs, prerequisites, and hard blocking dependencies.
+- Conversion order locked.
+- deferred_proofs.json trigger update plan recorded.
+- STUB_GATES_ACTIVE header requirement documented.
+- No implementation changes in this entry. Implementation begins
+  with Build Route amendment governance PR, then Section 4 items.
+
+Status
+- RECORDED
+
+## 2026-02-22 — Build Route v2.4 — Build Route Correction: 4.4 DoD Revision + STUB_GATES_ACTIVE Placement
+
+Objective
+- Correct 4.4 (anon Role Default Privilege Audit) DoD per three-advisor
+  review findings, and record the authoritative placement of the
+  STUB_GATES_ACTIVE operator requirement across governance artifacts.
+
+Changes
+
+4.4 DoD — three corrections applied:
+- Core table authority changed from tenant_table_selector.json to
+  CONTRACTS.md §12 named list (tenants, tenant_memberships,
+  tenant_invites, deals, documents). tenant_table_selector.json is a
+  product-layer artifact and does not define the security boundary.
+- authenticated privilege assertion on user_profiles added: gate must
+  assert authenticated holds exactly SELECT and UPDATE — no more, no
+  less — per CONTRACTS.md §12 controlled exception. Over-grant and
+  under-grant both fail.
+- CONTRACTS.md §13 default privilege posture added to DoD scope: gate
+  must query pg_default_acl to confirm no permissive default ACL exists
+  for anon or authenticated on schema public. Closes the exposure window
+  that 5.1 addresses at the migration layer.
+- STUB_GATES_ACTIVE proof log authoring block added to 4.4 DoD as a
+  one-time reminder (4.4 is the first Section 4 item; SOP Rule G is
+  the ongoing authority going forward).
+
+STUB_GATES_ACTIVE operator requirement — placement decisions:
+- SOP_WORKFLOW.md Phase 4: added as Rule G immediately after Rule F
+  (proof secret scan). Rule G is the single authoritative enforcement
+  home for this requirement.
+- AUTOMATION.md §8: explanatory note added clarifying relationship
+  between the registry (machine enforcement) and the header block
+  (operator authoring). CI does not enforce the block presence.
+- docs/truth/deferred_proofs.json: _proof_authoring_requirement field
+  added at top of object as a point-of-lookup reminder referencing
+  SOP Rule G. Edit to be bundled into the 8.0 PR (where conversion
+  triggers are updated from generic 8.0 to specific 8.0.1–8.0.5)
+  rather than opened as a standalone PR.
+- Build Route item DoDs: no further per-item additions needed beyond
+  4.4. SOP Rule G is the single authority going forward. Repeating
+  the requirement in every item DoD creates drift risk.
+
+Proof
+- Advisor review transcript (session record).
+- Three-advisor synthesis document (session record).
+- 4.4_REVISED_BUILD_ROUTE_BLOCK.md (revised 4.4 block in Build Route
+  format, confirmed correct).
+
+DoD
+- 4.4 DoD corrected in Build Route: three substantive changes applied.
+- STUB_GATES_ACTIVE requirement has one authoritative home
+  (SOP_WORKFLOW.md Rule G) with supporting references in AUTOMATION.md
+  §8 and deferred_proofs.json.
+- No implementation changes in this entry. All changes are governance
+  artifact updates to be committed in the next appropriate PR.
+
+Status
+- RECORDED
