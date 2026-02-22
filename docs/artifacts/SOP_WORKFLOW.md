@@ -139,6 +139,9 @@ Do not touch proofs until implementation is complete and all required local chec
 `npm run proof:finalize` does **not** generate the proof log.
 The coder must first create the proof log file under `docs/proofs/**` by running the relevant gate and saving its output.
 
+**Rule F — proof:finalize runs a secret scan before writing**
+`proof:finalize` scans the proof log for secret patterns (defined in `docs/truth/secret_scan_patterns.json`) before normalizing or writing to manifest. If any pattern matches, finalize exits non-zero, prints the pattern name and line number, and does NOT write to manifest. Redact the proof log before retrying.
+
 **Rule C — Manifest is machine-managed**
 `docs/proofs/manifest.json` must never be edited manually.
 The only permitted mutation path is:
