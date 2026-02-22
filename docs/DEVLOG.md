@@ -2640,3 +2640,30 @@ DoD
 
 Status: COMPLETE
 
+2026-02-22 — Build Route v2.4 — Section 3.9 Bridge Closed
+
+Objective
+Verify all Section 3.9 sub-items complete and main is stable per SOP §17.
+
+Changes
+No implementation changes. Verification only.
+
+Verification evidence
+- git status: clean
+- pr:preflight: PASS
+- ship: PASS, zero diffs
+- handoff: zero diffs (schema/contracts only — handoff_latest.txt HEAD drift expected)
+- green:twice: PASS
+- required_checks.json: current
+- deferred_proofs.json: current (db-heavy catalogued, conversion_trigger 8.0)
+- governance-path-coverage: PASS
+
+Sub-items completed
+- 3.9.1 deferred-proof-registry: COMPLETE
+- 3.9.2 governance-path-coverage: COMPLETE
+- 3.9.3 qa-scope-coverage: COMPLETE
+- 3.9.4 job-graph-ordering: COMPLETE
+- 3.9.5 proof-secret-scan: COMPLETE
+
+Status: COMPLETE
+
