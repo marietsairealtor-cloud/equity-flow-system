@@ -2922,3 +2922,31 @@ DoD
 
 Status
 - RECORDED
+
+2026-02-22 — Build Route v2.4 — 4.3 Cloud Baseline Inventory
+
+Objective
+Extend toolchain truth with PostgREST and Auth versions captured from live cloud project, and add lane-only gate asserting versions match pinned truth.
+
+Changes
+- docs/truth/toolchain.json — extended with postgrest_version (14.1) and supabase_auth_version (v2.186.0), lane: cloud-inventory
+- scripts/ci_cloud_version_pin.ps1 — new lane-only gate
+- docs/truth/qa_claim.json — updated to 4.3
+- docs/truth/qa_scope_map.json — added 4.3 entry
+- docs/truth/completed_items.json — added 4.3
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 4.3 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR023.md — governance file
+
+Proof
+docs/proofs/4.3_cloud_baseline_inventory_20260222T173125Z.log
+
+DoD
+1. toolchain.json extended with postgrest_version and supabase_auth_version (cloud-inventory lane)
+2. cloud-version-pin gate passes against live cloud project
+3. PostgREST 14.1 and Auth v2.186.0 captured and pinned
+4. Gate self-skips when credentials absent
+5. STUB_GATES_ACTIVE block included in proof log per Rule F
+6. CI green, QA approved, merged
+
+Status: COMPLETE
+
