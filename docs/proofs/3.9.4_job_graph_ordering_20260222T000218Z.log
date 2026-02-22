@@ -1,0 +1,12 @@
+PROOF_HEAD=1894fea0b8771a15f2dfc534ec7776ecadc660ac
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== job-graph-ordering gate ===
+Jobs parsed: 39
+db-heavy needs: changes, lane-enforcement, governance-change-template-contract
+Ordering option chosen: Option A (direct needs: dependency)
+  db-heavy needs: lane-enforcement - direct dependency confirmed
+  lane-enforcement job exists: YES
+  Ordering guarantee: STRUCTURAL (GitHub Actions scheduling model)
+STATUS: PASS
