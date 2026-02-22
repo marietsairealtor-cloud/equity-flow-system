@@ -2950,3 +2950,24 @@ DoD
 
 Status: COMPLETE
 
+2026-02-XX — Build Route v2.4 — 4.4 DoD Clarification
+
+Objective
+Clarify pg_default_acl scope for platform-managed roles.
+
+Changes
+Amended 4.4 DoD to scope default ACL cleanliness to operator-owned roles (postgres + app roles).
+Explicitly excluded supabase_% roles with materialization proof requirement.
+
+Proof
+Advisor escalation ruling documented.
+Governance change PR merged.
+
+DoD
+4.4 gate now evaluates:
+- Direct grants
+- Operator-owned default ACL entries
+- Materialization proof for platform-owned roles
+
+Status
+RECORDED
