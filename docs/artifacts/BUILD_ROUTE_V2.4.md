@@ -2060,60 +2060,117 @@ Proof: docs/proofs/4.3_cloud_baseline_inventory_<UTC>.log
 Gate: toolchain-contract-supabase (merge-blocking, local assertions
 only — unchanged) + cloud-version-pin (lane-only, cloud assertions).
 
-### **4.4 — anon Role Default Privilege Audit (NEW)**
+---
 
-Deliverable:
-Explicit proof that `anon` holds zero privileges on all core tables
-through any path, that `authenticated` holds exactly the controlled
-exception privileges defined in CONTRACTS.md §12, and that default
-privileges for new objects in the public schema are private-by-default
-per CONTRACTS.md §13.
+### **4.4 — anon Role Default Privilege Audit (REVISED)
 
-DoD:
-- `docs/truth/anon_privilege_truth.json` exists, generated from a live
-  DB catalog query, enumerating every explicit and default privilege
-  held by `anon` and `authenticated` on all objects in the public schema.
-- Gate asserts zero `anon` privileges on every core table named in
-  CONTRACTS.md §12: `tenants`, `tenant_memberships`, `tenant_invites`,
-  `deals`, `documents`. Authority is CONTRACTS.md §12 — not
-  `tenant_table_selector.json`, which is a product-layer artifact
-  and does not define the security boundary.
-- Gate asserts zero `anon` privileges on `user_profiles`.
-- Gate asserts `authenticated` holds **exactly** `SELECT` and `UPDATE`
-  on `user_profiles` — no more, no less. Any deviation from the
-  CONTRACTS.md §12 controlled exception (over-grant or under-grant)
-  fails the gate.
-- Gate asserts the default privilege posture for the public schema
-  is private-by-default per CONTRACTS.md §13: new objects created
-  in `public` do not inherit any public grant. Gate confirms via
-  `pg_default_acl` catalog that no permissive default ACL entries
-  exist for `anon` or `authenticated` on schema `public`.
-- Gate fails naming the object, the privilege type, the source
-  (direct grant or default ACL), and the CONTRACTS.md section violated.
-- `anon_privilege_truth.json` is **machine-derived** (captured from DB
-  catalog). §3.0.4c exemption does NOT apply. Triple Registration Rule
-  §3.0.4 applies in full:
-    a. Registered in robot-owned guard.
-    b. Included in truth-bootstrap validation gate.
-    c. Included in handoff regeneration surface.
+## Deliverable
 
-Proof log authoring requirement (STUB_GATES_ACTIVE):
-This item will be implemented while DB-heavy stub gates remain active.
-The proof log must include a STUB_GATES_ACTIVE block immediately after
-the PR HEAD SHA line, listing every active stub gate by name and
-conversion_trigger as recorded in `docs/truth/deferred_proofs.json`
-at the time of proof generation. Expected active stubs at 4.4 time:
-  clean-room-replay     (conversion_trigger: 8.0.1)
-  schema-drift          (conversion_trigger: 8.0.2)
-  handoff-idempotency   (conversion_trigger: 8.0.3)
-  definer-safety-audit  (conversion_trigger: 8.0.4)
-  pgtap                 (conversion_trigger: 8.0.5)
-This is an operator authoring requirement, not a CI gate. The block
-must appear in the proof log before `proof:finalize` is run.
-Authority: three-advisor review 2026-02-22 (DEVLOG entry).
+Explicit proof that:
 
-Proof: `docs/proofs/4.4_anon_privilege_audit_<UTC>.log`
-Gate: `anon-privilege-audit` (merge-blocking, DB/runtime lane).
+1. `anon` holds zero privileges on all core tables through any path.
+2. `authenticated` holds exactly the controlled exception privileges defined in CONTRACTS.md §12.
+3. Default privileges for new objects in schema `public` are private-by-default for all operator-owned roles.
+
+---
+
+## DoD
+
+### A. Direct Object-Level Privilege Audit (Materialization Check)
+
+* `docs/truth/anon_privilege_truth.json` exists and is generated from a live database catalog query.
+* Gate asserts zero `anon` privileges on every core table named in CONTRACTS.md §12:
+
+  * `tenants`
+  * `tenant_memberships`
+  * `tenant_invites`
+  * `deals`
+  * `documents`
+* Gate asserts zero `anon` privileges on `user_profiles`.
+* Gate asserts `authenticated` holds exactly `SELECT` and `UPDATE` on `user_profiles` — no more, no less.
+* Gate fails if any privilege exists outside the CONTRACTS.md §12 controlled exception.
+
+Authority: CONTRACTS.md §12 (privilege firewall evaluated on final database state).
+
+---
+
+### B. Default Privilege Posture — Operator-Owned Roles
+
+* Gate queries `pg_default_acl` for entries where `defaclrole` resolves to:
+
+  * `postgres`
+  * Any application-owned role created via migrations
+* Gate fails if any such entry grants privileges to:
+
+  * `anon`
+  * `authenticated`
+    on schema `public`.
+
+This enforces private-by-default posture for all roles that create repo-owned objects.
+
+---
+
+### C. Platform-Managed Role Carve-Out (Supabase Boundary)
+
+* Roles matching `supabase_%` are explicitly excluded from the default ACL cleanliness requirement.
+* Rationale:
+
+  * These roles are platform-managed superusers.
+  * Migrations do not execute as these roles.
+  * PostgreSQL default privileges apply only to objects created by the owning role.
+
+Exclusion is valid only if materialization proof confirms:
+
+* No object-level privileges exist for `anon` or `authenticated`
+* On any `public` schema object created by our migrations
+
+If materialization is detected, the carve-out is invalid and the gate fails.
+
+---
+
+### D. Gate Failure Requirements
+
+Gate must fail naming:
+
+* Object
+* Privilege type
+* Source (direct grant vs default ACL)
+* Role
+* CONTRACTS.md section violated
+
+---
+
+### E. Truth Artifact Requirements
+
+`anon_privilege_truth.json` must be:
+
+* Machine-derived from live catalog queries
+* Registered in robot-owned guard
+* Included in truth-bootstrap validation gate
+* Included in handoff regeneration surface
+
+Triple Registration Rule applies in full.
+
+---
+
+### F. Proof Log Authoring Requirement (STUB_GATES_ACTIVE)
+
+Proof log must include STUB_GATES_ACTIVE block per SOP requirements if stub gates remain active at proof time.
+
+---
+
+## Proof
+
+`docs/proofs/4.4_anon_privilege_audit_<UTC>.log`
+
+---
+
+## Gate
+
+`anon-privilege-audit`
+(merge-blocking, DB/runtime lane)
+
+---
 
 ### **4.5 — Tenancy Resolution Contract Enforcement (NEW)
 Deliverable:
