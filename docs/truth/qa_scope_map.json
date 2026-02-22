@@ -192,6 +192,9 @@
     },
     "3.9.5": {
       "proof_pattern": "^docs/proofs/3\\.9\\.5_proof_secret_scan_"
+    },
+    "4.3": {
+      "proof_pattern": "^docs/proofs/4\\.3_cloud_baseline_inventory_"
     }
   }
 }
