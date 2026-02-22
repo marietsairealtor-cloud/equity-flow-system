@@ -2060,34 +2060,60 @@ Proof: docs/proofs/4.3_cloud_baseline_inventory_<UTC>.log
 Gate: toolchain-contract-supabase (merge-blocking, local assertions
 only — unchanged) + cloud-version-pin (lane-only, cloud assertions).
 
-### **4.4 — anon Role Default Privilege Audit (NEW)
+### **4.4 — anon Role Default Privilege Audit (NEW)**
+
 Deliverable:
-Explicit proof that anon holds zero privileges on every core table
-and on user_profiles through any path — direct grant, default ACL,
-view, or function.
+Explicit proof that `anon` holds zero privileges on all core tables
+through any path, that `authenticated` holds exactly the controlled
+exception privileges defined in CONTRACTS.md §12, and that default
+privileges for new objects in the public schema are private-by-default
+per CONTRACTS.md §13.
+
 DoD:
+- `docs/truth/anon_privilege_truth.json` exists, generated from a live
+  DB catalog query, enumerating every explicit and default privilege
+  held by `anon` and `authenticated` on all objects in the public schema.
+- Gate asserts zero `anon` privileges on every core table named in
+  CONTRACTS.md §12: `tenants`, `tenant_memberships`, `tenant_invites`,
+  `deals`, `documents`. Authority is CONTRACTS.md §12 — not
+  `tenant_table_selector.json`, which is a product-layer artifact
+  and does not define the security boundary.
+- Gate asserts zero `anon` privileges on `user_profiles`.
+- Gate asserts `authenticated` holds **exactly** `SELECT` and `UPDATE`
+  on `user_profiles` — no more, no less. Any deviation from the
+  CONTRACTS.md §12 controlled exception (over-grant or under-grant)
+  fails the gate.
+- Gate asserts the default privilege posture for the public schema
+  is private-by-default per CONTRACTS.md §13: new objects created
+  in `public` do not inherit any public grant. Gate confirms via
+  `pg_default_acl` catalog that no permissive default ACL entries
+  exist for `anon` or `authenticated` on schema `public`.
+- Gate fails naming the object, the privilege type, the source
+  (direct grant or default ACL), and the CONTRACTS.md section violated.
+- `anon_privilege_truth.json` is **machine-derived** (captured from DB
+  catalog). §3.0.4c exemption does NOT apply. Triple Registration Rule
+  §3.0.4 applies in full:
+    a. Registered in robot-owned guard.
+    b. Included in truth-bootstrap validation gate.
+    c. Included in handoff regeneration surface.
 
-docs/truth/anon_privilege_truth.json exists, generated from a live
-DB catalog query, enumerating every explicit and default privilege
-held by anon on all objects in the public schema.
-Gate asserts zero anon privileges on every core table as defined
-by tenant_table_selector.json.
-Gate additionally asserts zero anon privileges on user_profiles
-explicitly. user_profiles is the CONTRACTS.md §12 controlled
-exception for authenticated access — anon must have no access
-whatsoever. This assertion is separate from the selector check and
-cannot be omitted.
-Gate fails naming the object, the privilege type, and the source
-(direct grant or default ACL).
-anon_privilege_truth.json is machine-derived (captured from DB
-catalog). §3.0.4c exemption does NOT apply. Triple Registration Rule
-§3.0.4 applies in full:
-a. Registered in robot-owned guard.
-b. Included in truth-bootstrap validation gate.
-c. Included in handoff regeneration surface.
+Proof log authoring requirement (STUB_GATES_ACTIVE):
+This item will be implemented while DB-heavy stub gates remain active.
+The proof log must include a STUB_GATES_ACTIVE block immediately after
+the PR HEAD SHA line, listing every active stub gate by name and
+conversion_trigger as recorded in `docs/truth/deferred_proofs.json`
+at the time of proof generation. Expected active stubs at 4.4 time:
+  clean-room-replay     (conversion_trigger: 8.0.1)
+  schema-drift          (conversion_trigger: 8.0.2)
+  handoff-idempotency   (conversion_trigger: 8.0.3)
+  definer-safety-audit  (conversion_trigger: 8.0.4)
+  pgtap                 (conversion_trigger: 8.0.5)
+This is an operator authoring requirement, not a CI gate. The block
+must appear in the proof log before `proof:finalize` is run.
+Authority: three-advisor review 2026-02-22 (DEVLOG entry).
 
-Proof: docs/proofs/4.4_anon_privilege_audit_<UTC>.log
-Gate: anon-privilege-audit (merge-blocking, DB/runtime lane).
+Proof: `docs/proofs/4.4_anon_privilege_audit_<UTC>.log`
+Gate: `anon-privilege-audit` (merge-blocking, DB/runtime lane).
 
 ### **4.5 — Tenancy Resolution Contract Enforcement (NEW)
 Deliverable:
@@ -2565,18 +2591,497 @@ Gate: Operator-run only. No CI job. Policy-governed.
 
 ## **8 — Clean-Room Replay (Core)**
 
-### 8.0 — CI Database Infrastructure (NEW, mandatory)
+# Build Route v2.4 — Section 8.0 Revised + Items 8.0.1–8.0.5
+# Stub Conversion Block
+# Grounded in: DEVLOG 3.9.1 (deferred_proofs.json contents),
+#              DEVLOG 3.8 (handoff-idempotency stub confirmation),
+#              Build Route 8.0 current DoD (amended below),
+#              CONTRACTS.md §8, GUARDRAILS.md §25–28, SOP §2
 
-Deliverable: CI runners can start Supabase and run DB-dependent gates.
+---
 
-DoD:
-- CI workflow includes supabase start in runner environment.
-- DB-dependent gates (db-heavy, handoff-idempotency, clean-room-replay, pgtap) run against a live DB in CI.
-- All current db-heavy pass-through stubs are replaced with real gate execution.
+## Governance prerequisite
 
-Proof: docs/proofs/8.0_ci_db_infrastructure_<UTC>.log
+Before any PR in this block is opened, a Build Route amendment
+governance PR must be merged that:
 
-Gate: merge-blocking (replaces all db-heavy stubs)
+1. Replaces the current 8.0 DoD with the revised DoD below.
+2. Adds items 8.0.1–8.0.5 to the Build Route.
+3. Updates docs/truth/deferred_proofs.json conversion_trigger
+   fields from the current value "8.0" to the specific item
+   for each stub (see table at end of this document).
+
+That PR requires docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md
+because it modifies the Build Route (a governance-surface file).
+
+---
+
+## 8.0 — CI Database Infrastructure [REVISED]
+
+**Objective**
+Prove that CI runners can start Supabase and reach a live database.
+This is infrastructure-only. No stub gates are converted in this PR.
+
+**Deliverable**
+A CI job that starts Supabase in a GitHub Actions runner and confirms
+DB connectivity via a smoke query. The job passes before any
+stub conversion work begins.
+
+**DoD (all must be true)**
+
+1. `.github/workflows/ci.yml` (or a new `database-tests.yml`)
+   includes a job that runs `supabase start` in the runner
+   environment and succeeds without error.
+
+2. A smoke query confirms the DB is reachable:
+   `psql -c "SELECT 1"` (or equivalent) returns successfully
+   in the CI runner context.
+
+3. Proof captures: supabase CLI startup output, DB connection
+   confirmation, runner OS, Node version, Supabase CLI version
+   (must match `docs/truth/toolchain.json`).
+
+4. **No stub gates are converted in this PR.**
+   `docs/truth/deferred_proofs.json` entries are not touched.
+   `deferred-proof-registry` gate must still pass — all six
+   stub entries remain present.
+
+5. `docs/truth/completed_items.json` updated with 8.0.
+   `docs/truth/qa_claim.json` updated to 8.0.
+   `docs/truth/qa_scope_map.json` updated with 8.0 entry.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0 proof
+   log pattern.
+
+6. Section 3.0 constraints apply: one enforcement surface per PR.
+   The only new enforcement surface is the CI DB smoke job.
+
+**Pre-implementation check**
+Confirm the runner has sufficient memory to start Supabase. The
+Supabase local dev stack requires approximately 4GB RAM. GitHub
+Actions `ubuntu-latest` runners provide 7GB. Verify this before
+writing the workflow step. If memory is insufficient, document
+the limitation in the proof log and in `deferred_proofs.json`
+as a new entry before opening the PR.
+
+**Proof:** `docs/proofs/8.0_ci_db_infrastructure_<UTC>.log`
+
+**Gate:** `ci-db-smoke` (merge-blocking)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 8.0.1 — clean-room-replay Stub Conversion
+
+**Objective**
+Convert the `clean-room-replay` merge-blocking gate from a
+db-heavy stub to live execution against the CI database.
+
+**Context from DEVLOG**
+3.9.1 catalogued `clean-room-replay` in `deferred_proofs.json`
+with `conversion_trigger: "8.0"` (updated to "8.0.1" in the
+amendment PR). This is the foundational DB gate — every other
+stub conversion depends on CI being able to replay migrations.
+
+**Deliverable**
+`clean-room-replay` gate runs full migration replay on an empty
+CI DB and passes.
+
+**DoD (all must be true)**
+
+1. On CI (live DB via 8.0 infrastructure), `supabase db reset`
+   replays all migrations in `supabase/migrations/**` in order
+   on an empty database without error.
+
+2. The `clean-room-replay` CI job is updated to run actual
+   replay instead of the db-heavy stub pass-through. The stub
+   pattern is removed from this job only.
+
+3. Gate fails if any migration errors during replay. Proof
+   captures the full migration list and replay output.
+
+4. **Deliberate-failure proof required:** Introduce a syntax
+   error into a migration file locally, run the gate, confirm
+   FAIL with migration name in output, restore the file, confirm
+   PASS. Full sequence captured in proof log.
+
+5. `docs/truth/deferred_proofs.json` entry for `clean-room-replay`
+   is removed in this PR. `deferred-proof-registry` gate must
+   pass after removal — the gate fails if a converted gate still
+   has a registry entry (DEVLOG 3.9.1 DoD item 4).
+
+6. `docs/truth/completed_items.json` updated with 8.0.1.
+   `docs/truth/qa_claim.json` updated to 8.0.1.
+   `docs/truth/qa_scope_map.json` updated with 8.0.1 entry.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.1 proof
+   log pattern.
+
+7. `STUB_GATES_ACTIVE` block in this proof log reflects the
+   remaining active stubs after this conversion:
+   schema-drift, definer-safety-audit, handoff-idempotency,
+   pgtap, database-tests.yml.
+
+**Prerequisite:** 8.0 merged and main clean.
+
+**Proof:** `docs/proofs/8.0.1_clean_room_replay_conversion_<UTC>.log`
+
+**Gate:** `clean-room-replay` (merge-blocking, now live)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 8.0.2 — schema-drift Stub Conversion
+
+**Objective**
+Convert the `schema-drift` merge-blocking gate from a db-heavy
+stub to live execution — comparing a schema dump from the live
+CI DB against `generated/schema.sql`.
+
+**Context from DEVLOG**
+3.9.1 catalogued `schema-drift` in `deferred_proofs.json` with
+`conversion_trigger: "8.0"` (updated to "8.0.2" in amendment PR).
+Currently the gate performs a text-match check on the static
+`generated/schema.sql` file without a live DB comparison. After
+conversion it will dump the schema from the live post-replay DB
+and diff it against the committed artifact.
+
+**Deliverable**
+`schema-drift` gate compares a live CI DB schema dump against
+`generated/schema.sql` and fails on any delta.
+
+**DoD (all must be true)**
+
+1. After `clean-room-replay` runs in CI, `schema-drift` dumps
+   the schema from the live DB (`pg_dump --schema-only` or
+   `supabase db dump` equivalent) and diffs against
+   `generated/schema.sql`.
+
+2. Gate fails if any drift is detected, printing the exact diff.
+   Gate passes if schema matches byte-for-byte after encoding
+   normalization (LF, UTF-8 no BOM per GUARDRAILS §29–31).
+
+3. The db-heavy stub pass-through is removed from the
+   `schema-drift` CI job.
+
+4. **Deliberate-failure proof required:** Introduce a column
+   addition to a migration locally without regenerating
+   `generated/schema.sql`, run the gate, confirm FAIL with
+   diff output showing the added column, restore and re-run
+   handoff to regenerate schema, confirm PASS.
+
+5. `docs/truth/deferred_proofs.json` entry for `schema-drift`
+   removed. `deferred-proof-registry` gate must pass after removal.
+
+6. `docs/truth/completed_items.json` updated with 8.0.2.
+   `docs/truth/qa_claim.json` updated to 8.0.2.
+   `docs/truth/qa_scope_map.json` updated with 8.0.2 entry.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.2 proof
+   log pattern.
+
+7. `STUB_GATES_ACTIVE` block reflects remaining active stubs:
+   definer-safety-audit, handoff-idempotency, pgtap,
+   database-tests.yml.
+
+**Prerequisite:** 8.0.1 merged and main clean.
+
+**Proof:** `docs/proofs/8.0.2_schema_drift_conversion_<UTC>.log`
+
+**Gate:** `schema-drift` (merge-blocking, now live)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 8.0.3 — handoff-idempotency Stub Conversion
+
+**Objective**
+Convert the `handoff-idempotency` merge-blocking gate from a
+db-heavy stub to live execution against the CI database.
+
+**Context from DEVLOG**
+3.8 confirmed the gate was introduced as a CI-stub: "CI stub
+passes (db-heavy pattern)" (DEVLOG 3.8 DoD item 3). The local
+proof demonstrates zero diffs on a live local DB. The CI gate
+currently passes the stub without running the actual handoff
+cycle. After conversion it will run `npm run handoff` against
+the CI DB and assert zero diffs in the working tree.
+
+**Deliverable**
+`handoff-idempotency` gate runs the full handoff cycle in CI
+against a live DB and asserts zero diffs.
+
+**DoD (all must be true)**
+
+1. In CI, after clean-room-replay has run, `npm run handoff`
+   is executed. `git status --porcelain` must be empty
+   (zero diffs) on a tree where truth artifacts are already
+   committed.
+
+2. A second consecutive `npm run handoff` run also produces
+   zero diffs. Both runs are captured in the proof log.
+
+3. The db-heavy stub pass-through is removed from the
+   `handoff-idempotency` CI job.
+
+4. Gate fails if first or second run produces any diff,
+   printing the diff output.
+
+5. **Deliberate-failure proof required:** Introduce a
+   determinism bug locally (e.g. inject a timestamp into
+   schema output), run the gate, confirm FAIL with diff shown,
+   restore, confirm PASS.
+
+6. `docs/truth/deferred_proofs.json` entry for
+   `handoff-idempotency` removed. `deferred-proof-registry`
+   gate must pass after removal.
+
+7. `docs/truth/completed_items.json` updated with 8.0.3.
+   `docs/truth/qa_claim.json` updated to 8.0.3.
+   `docs/truth/qa_scope_map.json` updated with 8.0.3 entry.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.3 proof
+   log pattern.
+
+8. `STUB_GATES_ACTIVE` block reflects remaining active stubs:
+   definer-safety-audit, pgtap, database-tests.yml.
+
+**Prerequisite:** 8.0.2 merged and main clean.
+
+**Proof:** `docs/proofs/8.0.3_handoff_idempotency_conversion_<UTC>.log`
+
+**Gate:** `handoff-idempotency` (merge-blocking, now live)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 8.0.4 — definer-safety-audit Stub Conversion
+
+**Objective**
+Convert the `definer-safety-audit` merge-blocking gate from a
+db-heavy stub to live catalog queries against the CI database,
+implementing the full 6.2 hardening spec.
+
+**Context from DEVLOG**
+3.9.1 catalogued `definer-safety-audit` in `deferred_proofs.json`
+with `conversion_trigger: "8.0"` (updated to "8.0.4" in amendment
+PR). The DEVLOG advisor review entry (2026-02-21) confirmed the
+original gate used `pg_proc.prosrc` for search_path detection,
+which is incorrect — the correct field is `pg_proc.proconfig`.
+The 6.2 hardening (Build Route item 6.2 hardened) specifies the
+correct catalog field and adds CONTRACTS.md §8 tenant membership
+enforcement assertion. Both requirements are implemented here.
+
+**HARD BLOCK: This item cannot be opened until Build Route item
+6.2 hardening is merged to main. The live gate must implement the
+full 6.2 DoD additions, not just convert the stub. Opening this
+PR before 6.2 would produce a live gate less rigorous than the
+hardened spec.**
+
+**Deliverable**
+`definer-safety-audit` gate queries the live CI DB catalog and
+asserts all SECURITY DEFINER functions on the allowlist satisfy
+CONTRACTS.md §8 requirements.
+
+**DoD (all must be true)**
+
+1. Gate queries `pg_proc.proconfig` (not `pg_proc.prosrc`) on
+   the live CI DB for every function listed in
+   `docs/truth/definer_allowlist.json`. Confirms `search_path`
+   is present in proconfig for each function.
+
+2. Gate additionally asserts, per CONTRACTS.md §8, that every
+   allowlisted SD function:
+   - Has `search_path` set in `pg_proc.proconfig`
+   - Has schema-qualified object references (confirmed via
+     `pg_proc.prosrc` text scan for unqualified identifiers)
+   - Enforces tenant membership internally (confirmed via
+     `pg_proc.prosrc` text scan for `current_tenant_id()` or
+     approved equivalent per CONTRACTS.md §3)
+
+3. Gate fails naming the function and the specific missing
+   requirement if any assertion fails.
+
+4. Helper functions called by SD functions are enumerated in
+   the proof. Each is confirmed to use only schema-qualified
+   references.
+
+5. The db-heavy stub pass-through is removed from the
+   `definer-safety-audit` CI job.
+
+6. **Deliberate-failure proof required:** Add a test SD function
+   to a non-production migration locally with missing
+   `SET search_path`, run the gate, confirm FAIL naming the
+   function and the missing proconfig entry, remove the test
+   function, confirm PASS.
+
+7. `docs/truth/deferred_proofs.json` entry for
+   `definer-safety-audit` removed. `deferred-proof-registry`
+   gate must pass after removal.
+
+8. `docs/truth/completed_items.json` updated with 8.0.4.
+   `docs/truth/qa_claim.json` updated to 8.0.4.
+   `docs/truth/qa_scope_map.json` updated with 8.0.4 entry.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.4 proof
+   log pattern.
+
+9. `STUB_GATES_ACTIVE` block reflects remaining active stubs:
+   pgtap, database-tests.yml.
+
+**Prerequisites:**
+- 8.0.3 merged and main clean.
+- Build Route item 6.2 hardening merged and main clean.
+  Do not open this PR before both conditions are met.
+
+**Proof:** `docs/proofs/8.0.4_definer_safety_audit_conversion_<UTC>.log`
+
+**Gate:** `definer-safety-audit` (merge-blocking, now live)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## 8.0.5 — pgtap + database-tests.yml Stub Conversion
+
+**Objective**
+Convert the `pgtap` merge-blocking gate from a db-heavy stub to
+live test execution, and create `database-tests.yml` to close the
+AUTOMATION.md §2 compliance gap catalogued in `deferred_proofs.json`.
+
+**Context from DEVLOG**
+3.9.1 catalogued two entries with this conversion:
+- `pgtap` (db-heavy stub, conversion_trigger: "8.0" → "8.0.5")
+- `database-tests.yml` (AUTOMATION.md §2 gap, conversion_trigger:
+  "6.0/8.0" → "8.0.5")
+
+AUTOMATION.md §2 lists `.github/workflows/database-tests.yml` as
+a required merge-blocking workflow. That file does not exist.
+Its absence means the full DB test suite has never run in CI.
+This item creates it and converts the pgtap stub simultaneously
+because they are the same enforcement surface: live DB tests.
+
+**HARD BLOCK: This item cannot be opened until Build Route items
+6.3 (tenant integrity suite with populated data, view tests, FK
+embedding tests) and 6.4 (RLS structural audit with specific
+forbidden pattern enumeration) are both merged to main. A live
+pgtap gate with an empty or incomplete test suite produces a
+vacuous pass — worse than a stub because it appears enforced.**
+
+**Deliverable**
+`.github/workflows/database-tests.yml` exists and runs the full
+pgTAP suite against a live CI DB. `pgtap` gate passes on real
+test execution. Both `deferred_proofs.json` entries removed.
+
+**DoD (all must be true)**
+
+1. `.github/workflows/database-tests.yml` exists with:
+   - Trigger: `pull_request` (main target) and `push` to main
+   - Steps: `supabase start`, migration replay, `supabase test db`
+   - Required check context string-exact: `database-tests / pgtap`
+     (or equivalent matching `required_checks.json` entry)
+
+2. All pgTAP test files satisfy GUARDRAILS §25–28:
+   - SQL-only (no `DO` blocks, no PL/pgSQL)
+   - No lines beginning with `\`
+   - Every file declares `plan(n)` or `no_plan()` and reaches
+     `finish()`
+   - Tests fail deterministically (no swallowed errors)
+   A pre-conversion audit of all existing pgTAP files against
+   these rules is performed and documented in the proof log
+   before the stub is removed. Any violations are fixed in this
+   same PR as a documented sub-step.
+
+3. `npx supabase test db` passes on the live CI DB against the
+   full test suite including:
+   - Tenant isolation negative tests (from 6.3) with populated
+     data in both Tenant A and Tenant B
+   - RLS structural audit (from 6.4) with policy expression
+     enumeration
+   - Any other pgTAP tests authored by the time this item runs
+
+4. The db-heavy stub pass-through is removed from the `pgtap`
+   CI job.
+
+5. `docs/truth/required_checks.json` is updated to include the
+   `database-tests.yml` workflow check context string-exact.
+
+6. **Deliberate-failure proof required:** Temporarily introduce
+   a failing pgTAP assertion (e.g. `ok(false, 'deliberate fail')`),
+   run the gate, confirm FAIL with test name in output, restore,
+   confirm PASS.
+
+7. Both `deferred_proofs.json` entries removed in this PR:
+   - `pgtap`
+   - `database-tests.yml`
+   `deferred-proof-registry` gate must pass after both removals.
+   If this is the last remaining entry, the registry becomes
+   empty — the gate must pass on an empty registry (no entries
+   required when no stubs remain).
+
+8. `STUB_GATES_ACTIVE` block is removed from all future proof
+   logs after this item merges. No stubs remain.
+
+9. `docs/truth/completed_items.json` updated with 8.0.5.
+   `docs/truth/qa_claim.json` updated to 8.0.5.
+   `docs/truth/qa_scope_map.json` updated with 8.0.5 entry.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.5 proof
+   log pattern.
+
+**Prerequisites:**
+- 8.0.4 merged and main clean.
+- Build Route 6.3 (tenant integrity suite, populated-data
+  negative tests, view tests, FK embedding HTTP tests) merged.
+- Build Route 6.4 (RLS structural audit, specific forbidden
+  pattern enumeration) merged.
+  Do not open this PR before all three conditions are met.
+
+**Proof:** `docs/proofs/8.0.5_pgtap_conversion_<UTC>.log`
+
+**Gate:** `pgtap` (merge-blocking, now live) +
+          `database-tests.yml` workflow created (closes
+          AUTOMATION.md §2 compliance gap)
+
+**Section 3.0 constraints apply.**
+
+---
+
+## deferred_proofs.json Trigger Update Table
+
+To be applied in the Build Route amendment governance PR:
+
+| Gate                | Current trigger | Updated trigger        |
+|---------------------|-----------------|------------------------|
+| clean-room-replay   | 8.0             | 8.0.1                  |
+| schema-drift        | 8.0             | 8.0.2                  |
+| handoff-idempotency | 8.0             | 8.0.3                  |
+| definer-safety-audit| 8.0             | 8.0.4 (requires 6.2)   |
+| pgtap               | 8.0             | 8.0.5 (requires 6.3+6.4)|
+| database-tests.yml  | 6.0/8.0         | 8.0.5 (requires 6.3+6.4)|
+
+---
+
+## Execution Order Summary
+
+```
+Amendment governance PR    (revises 8.0, adds 8.0.1–8.0.5,
+                            updates deferred_proofs.json triggers)
+↓
+8.0  CI DB Infrastructure  (smoke only, no stubs converted)
+↓
+8.0.1 clean-room-replay    (foundational — all others depend on this)
+↓
+8.0.2 schema-drift         (requires 8.0.1)
+↓
+8.0.3 handoff-idempotency  (requires 8.0.2)
+↓
+8.0.4 definer-safety-audit (requires 8.0.3 + 6.2 hardening)
+↓
+8.0.5 pgtap +              (requires 8.0.4 + 6.3 + 6.4)
+      database-tests.yml
+      → deferred_proofs.json now empty
+      → STUB_GATES_ACTIVE block removed from all future proofs
+      → AUTOMATION.md §2 compliance gap closed
+```
 
 ### **8.1 Local clean-room replay proof**
 

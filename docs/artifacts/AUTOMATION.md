@@ -196,6 +196,7 @@ Truth artifacts must be commit-bound and reproducible.
 
 (`handoff`/`handoff:commit` generation path enforcement deferred until implemented.)
 
+Stub-active proof acknowledgment: While any gate in docs/truth/deferred_proofs.json remains active, proof logs must include a STUB_GATES_ACTIVE block per SOP_WORKFLOW.md Rule F. This is an operator authoring requirement. CI does not enforce the presence of the block — the deferred proof registry (3.9.1) is the machine enforcement layer. The two controls are complementary: the registry makes stubs visible; the header makes the limitation explicit in the artifact itself.
 
 ---
 

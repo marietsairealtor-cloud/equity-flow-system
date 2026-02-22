@@ -159,6 +159,9 @@ Any non-proof change after finalize is forbidden and requires restarting proof g
 **Rule E — One canonical proof log per item per PR**
 Iteration is allowed locally, but the PR must end with exactly **one canonical proof log** for the item.
 
+**Rule F — STUB_GATES_ACTIVE block (mandatory while stubs active)**
+If any gate listed in docs/truth/deferred_proofs.json remains active at the time of proof generation, the proof log must include a STUB_GATES_ACTIVE block immediately after the PR HEAD SHA line before proof:finalize is run. The block lists every active stub gate by name and conversion_trigger as recorded in deferred_proofs.json. Omitting this block when stubs are active is a proof authoring violation — restart proof generation. Authority: three-advisor review 2026-02-22.
+
 ---
 
 ### 4.2 Repair Protocol (If Proof/Manifest Is Broken)
