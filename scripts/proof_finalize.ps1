@@ -100,6 +100,25 @@ function Sha256HexOfFileBytes([string]$path){
   (Get-FileHash -Algorithm SHA256 $path).Hash.ToLower()
 }
 
+# --- secret scan (must run before normalize or manifest write) ---
+$secretPatternsPath = Join-Path $repo "docs\truth\secret_scan_patterns.json"
+if (-not (Test-Path $secretPatternsPath)) { Die "MISSING: docs/truth/secret_scan_patterns.json" }
+$secretPatterns = (Get-Content $secretPatternsPath -Raw | ConvertFrom-Json).patterns
+$rawContent = [IO.File]::ReadAllText($abs, $utf8NoBom)
+$rawLines = $rawContent -split "`n"
+$secretFail = $false
+foreach ($sp in $secretPatterns) {
+    for ($li = 0; $li -lt $rawLines.Count; $li++) {
+        if ($rawLines[$li] -match $sp.pattern) {
+            $line = $rawLines[$li]
+            $sanitized = if ($line.Length -gt 9) { $line.Substring(0,4) + ("*" * ($line.Length - 8)) + $line.Substring($line.Length - 4) } else { "****" }
+            Write-Host "SECRET_SCAN_FAIL: pattern=$($sp.name) line=$(($li+1)) excerpt=$sanitized"
+            $secretFail = $true
+        }
+    }
+}
+if ($secretFail) { Die "proof:finalize blocked — secret pattern matched. Redact proof log before finalizing." }
+Write-Host "SECRET_SCAN: PASS"
 # --- normalize proof file ---
 Normalize-Utf8NoBomLf $abs
 $body = Get-Content $abs -Raw

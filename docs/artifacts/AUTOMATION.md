@@ -315,3 +315,30 @@ Governance stack mechanically consistent
 - End marker: `END scripts hash authority`
 
 END scripts hash authority
+
+---
+
+## proof:finalize — Secret Scan
+
+`proof:finalize` runs a secret scan against the proof log file **before** normalizing encoding or writing to manifest. If any pattern matches, finalize exits non-zero and does not modify the manifest.
+
+### Behavior on match
+- Exits non-zero.
+- Prints the matched pattern `name` only — not the matched value.
+- Prints the line number of the match.
+- Prints a sanitized excerpt: matched line with characters between position 5 and last 4 replaced with `****`.
+- Does NOT write to manifest.
+- Does NOT normalize the file.
+
+### Pattern governance policy
+Secret scan patterns are defined in `docs/truth/secret_scan_patterns.json`.
+Adding new patterns requires:
+- A governance-change PR (file is in governance-guard scope).
+- A `false_positive_analysis` field for each new pattern documenting what legitimate content could match and why it is safe.
+- No entropy-based or generic long-string heuristics are permitted.
+- No general three-segment base64 matching (false-positives on migration hashes and proof content).
+
+### Initial pattern set (3.9.5)
+- `supabase-service-role-jwt` — static JWT header prefix for Supabase HS256 tokens
+- `postgres-connection-string` — structural match on postgresql:// or postgres:// scheme
+- `supabase-personal-access-token` — structural match on sbp_ prefix

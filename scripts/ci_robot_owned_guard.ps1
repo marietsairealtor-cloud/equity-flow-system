@@ -60,6 +60,7 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/3\.9\.2_governance_path_coverage_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.2 proof log" }
   if($pp -match "^docs/proofs/3\.9\.3_qa_scope_coverage_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.3 proof log" }
   if($pp -match "^docs/proofs/3\.9\.4_job_graph_ordering_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.4 proof log" }
+  if($pp -match "^docs/proofs/3\.9\.5_proof_secret_scan_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.5 proof log" }
   if($pp -match "^docs/truth/qa_claim\.json$"){ return "ALLOW:qa_claim.json" }
   if($pp -match "^docs/truth/qa_scope_map\.json$"){ return "ALLOW:qa_scope_map.json" }
   if($pp -match "^docs/proofs/3\.7_qa_verify_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.7 proof log" }
@@ -68,6 +69,7 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/3\.9\.2_governance_path_coverage_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.2 proof log" }
   if($pp -match "^docs/proofs/3\.9\.3_qa_scope_coverage_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.3 proof log" }
   if($pp -match "^docs/proofs/3\.9\.4_job_graph_ordering_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.4 proof log" }
+  if($pp -match "^docs/proofs/3\.9\.5_proof_secret_scan_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.9.5 proof log" }
   if($pp -match "^docs/proofs/qa_claim\.json$"){ return "ALLOW:qa_claim.json" }
   if($pp -match "^docs/truth/qa_scope_map\.json$"){ return "ALLOW:qa_scope_map.json" }
   if($pp -match "^docs/proofs/3\.5_qa_requirements_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.5 proof log" }

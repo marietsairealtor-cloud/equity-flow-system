@@ -189,6 +189,9 @@
     },
     "3.9.4": {
       "proof_pattern": "^docs/proofs/3\\.9\\.4_job_graph_ordering_"
+    },
+    "3.9.5": {
+      "proof_pattern": "^docs/proofs/3\\.9\\.5_proof_secret_scan_"
     }
   }
 }
