@@ -2610,3 +2610,33 @@ DoD
 
 Status: COMPLETE
 
+2026-02-22 — Build Route v2.4 — 3.9.5 Proof Secret Scan
+
+Objective
+Harden proof:finalize to reject proof logs containing secret patterns before they enter the append-only proof chain — preventing secrets from becoming permanently embedded in manifest.json.
+
+Changes
+- docs/truth/secret_scan_patterns.json — new hand-authored pattern registry (3 patterns)
+- scripts/proof_finalize.ps1 — hardened with pre-finalization secret scan
+- docs/artifacts/AUTOMATION.md — documented secret scan step and pattern governance policy
+- docs/artifacts/SOP_WORKFLOW.md — added Rule F documenting hardened proof:finalize behavior
+- docs/governance/GOVERNANCE_CHANGE_PR021.md — governance file
+- docs/truth/qa_claim.json — updated to 3.9.5
+- docs/truth/qa_scope_map.json — added 3.9.5 entry
+- docs/truth/completed_items.json — added 3.9.5
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 3.9.5 proof log
+
+Proof
+docs/proofs/3.9.5_proof_secret_scan_20260222T003447Z.log
+
+DoD
+1. secret_scan_patterns.json with 3 structural patterns only
+2. proof:finalize blocks on match — prints name, line number, sanitized excerpt only
+3. Deliberate-failure regression: all 3 patterns confirmed FAIL with correct output
+4. False-positive regression: SHA256 hashes, manifest hashes, UTC timestamps all PASS
+5. Pre-implementation check: all 3 patterns clean against existing proofs
+6. No separate CI job — downstream enforcement via proof-manifest
+7. CI green, QA approved, merged
+
+Status: COMPLETE
+
