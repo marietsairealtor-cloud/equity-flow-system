@@ -1,0 +1,32 @@
+PROOF_HEAD=ae8f36aa780f71db2738816e9261ad118828d9df
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 4.3 Cloud Baseline Inventory ===
+DATE: 20260222T173125Z
+
+STUB_GATES_ACTIVE
+- gate: db-heavy | conversion_trigger: 8.0
+- gate: database-tests.yml | conversion_trigger: 6.0/8.0
+
+LANES
+- Local assertions: toolchain.json extended (hand-authored, no DB required)
+- Cloud assertions: cloud-version-pin gate (live credentials required)
+
+VERSIONS CAPTURED (cloud-inventory lane)
+PostgREST version: 14.1 (source: /rest/v1/ OpenAPI info.version)
+Auth version: v2.186.0 (source: /auth/v1/health response body)
+
+VERSIONS PINNED IN toolchain.json
+postgrest_version.expect: 14.1
+supabase_auth_version.expect: v2.186.0
+
+GATE RESULT (cloud-version-pin, lane-only)
+PASS: PostgREST version=14.1
+PASS: Auth version=v2.186.0
+STATUS: PASS
+
+GATE RESULT (toolchain-contract-supabase, merge-blocking, local assertions only)
+Unchanged — local assertions not extended by this item.
+
+STATUS: PASS
