@@ -95,6 +95,7 @@
     "docs/proofs/3.9.1_deferred_proof_registry_20260221T213946Z.log": "1fe57ded8350f0d4af422b71f4c0dba900cf47a7bd7a8fe05ded9fd64dae43cb",
     "docs/proofs/3.9.2_governance_path_coverage_20260221T230558Z.log": "2de7db30d8fce16ab1712a24c952cd07fb7cdab26034e1472458005bfb0455c2",
     "docs/proofs/3.9.3_qa_scope_coverage_20260221T233126Z.log": "383859d0d0a9e86a4983cea32387a614553c2ece549323c30fd35f02f380e9b6",
-    "docs/proofs/3.9.4_job_graph_ordering_20260222T000218Z.log": "3294caae59dd8a32a1fc1acf92b506eaa11e42a7e7e640ed8f4b49a96b904250"
+    "docs/proofs/3.9.4_job_graph_ordering_20260222T000218Z.log": "3294caae59dd8a32a1fc1acf92b506eaa11e42a7e7e640ed8f4b49a96b904250",
+    "docs/proofs/3.9.5_proof_secret_scan_20260222T003447Z.log": "71315e412ad0d7dc15bd9f8cb6a96f30c10111559fb5f02ec825ebeef5491b1f"
   }
 }
