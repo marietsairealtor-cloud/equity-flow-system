@@ -116,6 +116,11 @@
       "required": true
     },
     {
+      "name": "CI / rls-strategy-consistent",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / robot-owned-guard",
       "type": "github_status",
       "required": true
