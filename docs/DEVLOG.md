@@ -3012,3 +3012,32 @@ DoD
 
 Status: COMPLETE
 
+2026-02-23 — Build Route v2.4 — 4.5 Tenancy Resolution Contract Enforcement
+
+Objective
+Mechanically detect forbidden tenant resolution patterns in migrations — closing the path where raw auth.uid() or inline JWT claim parsing for tenant ID bypasses the approved resolution helper per CONTRACTS.md §3.
+
+Changes
+- scripts/ci_rls_strategy_lint.ps1 — new merge-blocking gate (static analysis, migration lane)
+- .github/workflows/ci.yml — rls-strategy-consistent job added, wired into required:
+- docs/truth/required_checks.json — CI / rls-strategy-consistent added
+- docs/truth/qa_claim.json — updated to 4.5
+- docs/truth/qa_scope_map.json — added 4.5 entry
+- docs/truth/completed_items.json — added 4.5
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 4.5 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR026.md — governance file
+
+Proof
+docs/proofs/4.5_tenancy_resolution_enforcement_20260223T153240Z.log
+
+DoD
+1. Gate detects raw auth.uid() in RLS policy body — CONFIRMED
+2. Gate detects raw auth.jwt() in RLS policy body — CONFIRMED
+3. Gate detects inline JWT claim parsing for tenant ID — CONFIRMED
+4. Gate fails naming file, policy, line number, CONTRACTS.md §3
+5. Deliberate-failure regression confirmed
+6. 6 migrations scanned — zero violations
+7. CI green, QA approved, merged
+
+Status: COMPLETE
+
