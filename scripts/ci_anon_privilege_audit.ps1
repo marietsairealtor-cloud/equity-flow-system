@@ -12,7 +12,7 @@ $psql = "psql"
 if ($IsWindows) { $psql = "C:\Program Files\PostgreSQL\16\bin\psql.exe" }
 
 function Invoke-Psql([string]$sql) {
-    $result = & $psql $dbUrl -At -F "`t" -c $sql 2>&1
+    $result = & $psql -v ON_ERROR_STOP=1 -At -F "`t" -c $sql $dbUrl 2>&1
     if ($LASTEXITCODE -ne 0) { Write-Error "psql failed: $result"; exit 1 }
     return $result
 }
@@ -71,6 +71,32 @@ foreach ($row in $aclRows) {
     }
 }
 if ($aclClean) { Write-Host "PASS: operator-owned default ACL clean" }
+
+# --- B2: Sequences check ---
+Write-Host "B2: Sequence usage grants check..."
+$seqSql = "SELECT grantee, object_name, privilege_type FROM information_schema.role_usage_grants WHERE object_schema = 'public' AND grantee IN ('anon', 'authenticated');"
+$seqRows = Invoke-Psql $seqSql
+foreach ($row in $seqRows) {
+    if (-not $row.Trim()) { continue }
+    $parts = $row -split "`t"
+    if ($parts.Count -lt 3) { continue }
+    Write-Host "FAIL: $($parts[0]) has $($parts[2]) on sequence $($parts[1]) — CONTRACTS.md §12"
+    $fail = $true
+}
+if (-not $fail) { Write-Host "PASS: anon/authenticated have zero sequence grants" }
+
+# --- B3: Functions check ---
+Write-Host "B3: Routine grants check..."
+$fnSql = "SELECT grantee, routine_name, privilege_type FROM information_schema.role_routine_grants WHERE routine_schema = 'public' AND grantee IN ('anon', 'authenticated');"
+$fnRows = Invoke-Psql $fnSql
+foreach ($row in $fnRows) {
+    if (-not $row.Trim()) { continue }
+    $parts = $row -split "`t"
+    if ($parts.Count -lt 3) { continue }
+    Write-Host "FAIL: $($parts[0]) has $($parts[2]) on routine $($parts[1]) — CONTRACTS.md §12"
+    $fail = $true
+}
+if (-not $fail) { Write-Host "PASS: anon/authenticated have zero routine grants" }
 
 # --- C: Platform ACL visibility (logged, not enforced) ---
 Write-Host "C: Platform default ACL (supabase_% — logged only)..."
