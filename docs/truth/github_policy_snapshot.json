@@ -6,20 +6,23 @@
   },
   "branch": "main",
   "branch_protection": null,
-  "repo": "Equity-Flow-Systems/equity-flow-system",
+  "repo": "marietsairealtor-cloud/equity-flow-system",
   "required_checks": {
     "checks": [],
-    "contexts": [],
+    "contexts": [
+      "required"
+    ],
+    "source": "rulesets_or_none",
     "strict": null
   },
   "rulesets": [
     {
       "_links": {
         "html": {
-          "href": "https://github.com/Equity-Flow-Systems/equity-flow-system/rules/12578327"
+          "href": "https://github.com/marietsairealtor-cloud/equity-flow-system/rules/12578327"
         },
         "self": {
-          "href": "https://api.github.com/repos/Equity-Flow-Systems/equity-flow-system/rulesets/12578327"
+          "href": "https://api.github.com/repos/marietsairealtor-cloud/equity-flow-system/rulesets/12578327"
         }
       },
       "created_at": "2026-02-08T11:52:34.105-05:00",
@@ -27,10 +30,46 @@
       "id": 12578327,
       "name": "MAIN-BRANCH-RULES",
       "node_id": "RRS_lACqUmVwb3NpdG9yec5EsXH9zgC_7hc",
-      "source": "Equity-Flow-Systems/equity-flow-system",
+      "source": "marietsairealtor-cloud/equity-flow-system",
       "source_type": "Repository",
       "target": "branch",
       "updated_at": "2026-02-08T14:13:49.088-05:00"
+    }
+  ],
+  "rulesets_detailed": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/marietsairealtor-cloud/equity-flow-system/rules/12578327"
+        },
+        "self": {
+          "href": "https://api.github.com/repos/marietsairealtor-cloud/equity-flow-system/rulesets/12578327"
+        }
+      },
+      "enforcement": "active",
+      "id": 12578327,
+      "name": "MAIN-BRANCH-RULES",
+      "required_checks_extracted": {
+        "contexts": [
+          "required"
+        ],
+        "matching_rules": [
+          {
+            "parameters": {
+              "do_not_enforce_on_create": false,
+              "required_status_checks": [
+                {
+                  "context": "required",
+                  "integration_id": 15368
+                }
+              ],
+              "strict_required_status_checks_policy": false
+            },
+            "type": "required_status_checks"
+          }
+        ]
+      },
+      "target": "branch"
     }
   ]
 }
