@@ -98,6 +98,7 @@
     "docs/proofs/3.9.4_job_graph_ordering_20260222T000218Z.log": "3294caae59dd8a32a1fc1acf92b506eaa11e42a7e7e640ed8f4b49a96b904250",
     "docs/proofs/3.9.5_proof_secret_scan_20260222T003447Z.log": "71315e412ad0d7dc15bd9f8cb6a96f30c10111559fb5f02ec825ebeef5491b1f",
     "docs/proofs/4.3_cloud_baseline_inventory_20260222T173125Z.log": "c50c5461aaf28c55313202d3cbf4488f04b361a28327b0e6a7204c84e2a7171a",
-    "docs/proofs/4.4_anon_privilege_audit_20260223T032332Z.log": "ef86fafb38695b28f2cf4e323b7202ebae62f15210bf9f1b791ffdbe94ab26b5"
+    "docs/proofs/4.4_anon_privilege_audit_20260223T032332Z.log": "ef86fafb38695b28f2cf4e323b7202ebae62f15210bf9f1b791ffdbe94ab26b5",
+    "docs/proofs/4.5_tenancy_resolution_enforcement_20260223T153240Z.log": "5d1d11e93cc5c144f230b7fa09517a751de8d4c04c3cd67b899863c39d7f060d"
   }
 }
