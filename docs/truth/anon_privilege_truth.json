@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "generated": "2026-02-22",
+  "source": "live catalog queries against cloud project upnelewdvbicxvfgzojg",
+  "direct_grants": [
+    {
+      "grantee": "authenticated",
+      "table_name": "user_profiles",
+      "privilege_type": "SELECT",
+      "source": "direct grant"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "user_profiles",
+      "privilege_type": "UPDATE",
+      "source": "direct grant"
+    }
+  ],
+  "operator_default_acl": [
+    {
+      "rolname": "postgres",
+      "nspname": "public",
+      "defaclobjtype": "r",
+      "defaclacl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "anon_or_authenticated_present": false
+    },
+    {
+      "rolname": "postgres",
+      "nspname": "public",
+      "defaclobjtype": "S",
+      "defaclacl": "{postgres=rwU/postgres,service_role=rwU/postgres}",
+      "anon_or_authenticated_present": false
+    },
+    {
+      "rolname": "postgres",
+      "nspname": "public",
+      "defaclobjtype": "f",
+      "defaclacl": "{postgres=X/postgres,service_role=X/postgres}",
+      "anon_or_authenticated_present": false
+    }
+  ],
+  "platform_default_acl_note": "supabase_% roles excluded per GOVERNANCE_CHANGE_PR024.md — materialization check confirms zero object-level grants to anon or authenticated on repo-owned objects"
+}

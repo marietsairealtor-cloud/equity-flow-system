@@ -1,0 +1,44 @@
+PROOF_HEAD=77926e1811a3470702077e09709ce39556cde319
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 4.4 anon Privilege Audit ===
+DATE: 20260223T032332Z
+
+STUB_GATES_ACTIVE
+- gate: db-heavy | conversion_trigger: 8.0
+- gate: database-tests.yml | conversion_trigger: 6.0/8.0
+
+CONNECTION
+Supabase Session Pooler (IPv4): aws-0-us-west-2.pooler.supabase.com:5432
+User: postgres.upnelewdvbicxvfgzojg
+SSL: required
+
+A: DIRECT GRANT CHECK (information_schema.role_table_grants)
+anon: 0 rows — PASS
+authenticated on user_profiles: SELECT, UPDATE only — PASS (CONTRACTS.md §12 controlled exception)
+authenticated on all other tables: 0 rows — PASS
+
+B2: SEQUENCE USAGE GRANTS (information_schema.role_usage_grants)
+anon: 0 rows — PASS
+authenticated: 0 rows — PASS
+
+B3: ROUTINE GRANTS (information_schema.role_routine_grants)
+anon: 0 rows — PASS
+authenticated: 0 rows — PASS
+
+B: OPERATOR-OWNED DEFAULT ACL (pg_default_acl, supabase_% excluded)
+postgres/tables: {postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres} — anon/authenticated absent — PASS
+postgres/sequences: {postgres=rwU/postgres,service_role=rwU/postgres} — anon/authenticated absent — PASS
+postgres/functions: {postgres=X/postgres,service_role=X/postgres} — anon/authenticated absent — PASS
+
+C: PLATFORM DEFAULT ACL (supabase_% — logged, not enforced per GOVERNANCE_CHANGE_PR024.md)
+supabase_admin/tables: {postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,...} — excluded per carve-out
+supabase_admin/sequences: excluded per carve-out
+supabase_admin/functions: excluded per carve-out
+
+GATE RESULT (CI / anon-privilege-audit)
+STATUS: PASS
+
+CONTRACTS.md §12 privilege firewall: SATISFIED
+CONTRACTS.md §13 private-by-default (operator roles): SATISFIED

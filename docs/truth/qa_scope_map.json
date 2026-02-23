@@ -195,6 +195,9 @@
     },
     "4.3": {
       "proof_pattern": "^docs/proofs/4\\.3_cloud_baseline_inventory_"
+    },
+    "4.4": {
+      "proof_pattern": "^docs/proofs/4\\.4_anon_privilege_audit_"
     }
   }
 }
