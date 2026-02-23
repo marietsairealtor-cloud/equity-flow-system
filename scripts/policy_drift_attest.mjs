@@ -147,7 +147,7 @@ let protection = null;
 try {
   protection = await gh(`/repos/${owner}/${name}/branches/${encodeURIComponent(branch)}/protection`);
 } catch (e) {
-  if (e.status === 404) protection = null;
+  if (e.status === 404 || e.status === 403) protection = null;
   else die(`GitHub API FAIL ${e.status}: ${e.message}`);
 }
 
