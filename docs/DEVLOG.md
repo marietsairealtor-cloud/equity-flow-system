@@ -3041,3 +3041,26 @@ DoD
 
 Status: COMPLETE
 
+2026-02-23 — Build Route v2.4 — 2.16.1 Policy Drift Attestation Remediation
+
+Objective
+Restore policy-drift-attestation scheduled workflow to green after silent failure period beginning ~2026-02-10.
+
+Changes
+- PR027: scripts/policy_drift_attest.mjs — catch 403 on branch protection API (repo ownership change)
+- PR028: docs/truth/github_policy_snapshot.json — regenerated after ownership transfer
+- PR029: scripts/policy_drift_attest.mjs — added BRANCH= line to output (workflow requirement)
+- PR030: .github/workflows/policy-drift-attestation.yml — removed git push steps (attestation-only per QA ruling Option 3)
+- docs/governance/GOVERNANCE_CHANGE_PR027-030.md — governance files for each fix
+
+Root cause
+Repo ownership transfer ~2026-02-10 caused: (1) branch protection API returning 403 instead of 404, (2) snapshot divergence, (3) workflow attempting direct push to main which branch ruleset blocks. All three were silent failures — scheduled workflow failed without alerting.
+
+Resolution
+Four sequential PRs (PR027-PR030) resolved each failure. Workflow redesigned to attestation-only — no self-commit to main. First clean manual dispatch run confirmed GREEN 2026-02-23.
+
+QA ruling
+Option 3 approved — remove git push, attestation-only. Options 1 (bot bypass) and 2 (side branch) rejected as non-compliant.
+
+Status: COMPLETE
+
