@@ -1,0 +1,36 @@
+PROOF_HEAD=a4802c586e8422a908fbab16404c9a957657986c
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 4.5 Tenancy Resolution Contract Enforcement ===
+DATE: 20260223T153240Z
+
+STUB_GATES_ACTIVE
+- gate: db-heavy | conversion_trigger: 8.0
+- gate: database-tests.yml | conversion_trigger: 6.0/8.0
+
+GATE: rls-strategy-consistent (merge-blocking, migration lane)
+SCRIPT: scripts/ci_rls_strategy_lint.ps1
+AUTHORITY: CONTRACTS.md §3
+
+FORBIDDEN PATTERNS SCANNED
+1. Raw auth.uid() used directly in RLS policy body
+2. Raw auth.jwt() used directly in RLS policy body
+3. Inline JWT claim parsing for tenant ID within a policy body
+
+MIGRATIONS SCANNED: 6
+- 20260219000000_baseline_tenants.sql
+- 20260219000001_baseline_tenant_memberships.sql
+- 20260219000002_baseline_user_profiles.sql
+- 20260219000003_baseline_deals.sql
+- 20260219000004_default_acl_lockdown.sql
+- 20260219000005_privilege_remediation.sql
+
+RESULT: No forbidden tenant resolution patterns found.
+
+DELIBERATE-FAILURE REGRESSION
+Test: CREATE POLICY with auth.uid() in USING clause
+Result: FAIL — named file, policy, line number, CONTRACTS.md §3
+Restored: PASS confirmed
+
+STATUS: PASS

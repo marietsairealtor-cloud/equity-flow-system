@@ -198,6 +198,9 @@
     },
     "4.4": {
       "proof_pattern": "^docs/proofs/4\\.4_anon_privilege_audit_"
+    },
+    "4.5": {
+      "proof_pattern": "^docs/proofs/4\\.5_tenancy_resolution_enforcement_"
     }
   }
 }
