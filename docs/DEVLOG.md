@@ -3064,3 +3064,51 @@ Option 3 approved — remove git push, attestation-only. Options 1 (bot bypass) 
 
 Status: COMPLETE
 
+---
+
+## 2026-02-23 — Build Route v2.4 — Advisor Review: CI Execution Surface & Schema Drift Dependency Resolution
+
+**Objective** Record findings from three-advisor review regarding CI DB execution surfaces, IPv4 provisioning, and the structural resolution of the Section 6/8 schema-drift dependency trap, per SOP §14.
+
+**Changes** - No implementation changes. Findings and decisions only.
+
+**Proof** - Advisor review transcript (session record).
+
+* Artifact cross-check against Build Route v2.4, CONTRACTS.md, and AUTOMATION.md confirmed.
+
+**DoD** - Three-advisor input reconciled against locked prerequisite chains.
+
+* All decisions grounded against authoritative documents.
+* Build Route modifications identified and recorded in findings summary.
+
+**Findings Summary**
+
+**1. CI Execution Surface Contract (Two-Tier Model)**
+
+* **Finding:** Transaction-mode poolers silently drop session-level state, which breaks RLS fallbacks and session-dependent tests.
+* **Decision:** Formalize a Two-Tier CI Execution Contract (Tier 1: Pooler/Stateless, Tier 2: Direct/Sessionful). Tier 1 explicitly bans `SET`, `SET LOCAL`, temporary tables, advisory locks, and prepared statements/cursors. Existing gates (4.4 and 4.5) are explicitly grandfathered as Tier 1.
+* **Action:** Add Build Route Item 4.6.
+
+**2. Direct IPv4 Provisioning**
+
+* **Finding:** Direct database access is a hard prerequisite for the populated-data negative tests in Section 6.3, but is not strictly required for Section 6.1 entry.
+* **Decision:** Provision direct IPv4 access before Section 6 to unblock future Tier-2 session-state tests. Capture the direct host in `docs/truth/toolchain.json`.
+* **Action:** Add Build Route Item 5.2.
+
+**3. The `schema-drift` Circular Dependency Trap**
+
+* **Finding:** Pulling `schema-drift` (8.0.2) forward is structurally unexecutable because 8.0.2 explicitly requires `clean-room-replay` (8.0.1) on `main`, which requires a completed migration set.
+* **Decision:** Do not pull Section 8 forward. Instead, prevent schema drift during Section 6 migration authoring via two separate mechanisms:
+1. A static CI coupling gate ensuring `generated/schema.sql` is updated whenever migrations change (Guarantee A).
+2. A local ephemeral replay proof (operator script) demonstrating schema correctness against a live point-in-time database (Guarantee B).
+
+
+* **Action:** Add Build Route Item 5.3 (Static Migration-Schema Coupling). Harden Item 6.1 DoD to require the local ephemeral replay proof for all migration PRs.
+
+**4. `pgtap` Vacuous Pass & Workflow Compliance Gap**
+
+* **Finding:** `pgtap` (8.0.5) must remain locked until 6.3 and 6.4 are merged to prevent merging an empty test suite (a vacuous pass).
+* **Decision:** To close the `AUTOMATION.md §2` compliance gap atomically, 6.3 must explicitly create the `.github/workflows/database-tests.yml` file alongside the first real tests.
+* **Action:** Harden Item 6.3 DoD to explicitly require the creation of the workflow and the simultaneous update of the `deferred_proofs.json` triggers for both `database-tests.yml` and `pgtap` to `"6.3"`.
+
+**Status** RECORDED
