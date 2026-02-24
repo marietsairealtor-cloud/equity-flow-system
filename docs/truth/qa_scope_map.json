@@ -213,6 +213,9 @@
     },
     "5.1": {
       "proof_pattern": "^docs/proofs/5\\.1_migration_rls_colocation_"
+    },
+    "5.3": {
+      "proof_pattern": "^docs/proofs/5\\.3_migration_schema_coupling_"
     }
   }
 }

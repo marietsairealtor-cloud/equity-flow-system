@@ -1,0 +1,16 @@
+PROOF_HEAD=0fc5804cad424a9295f30477e03ef9eeedbbba08
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== migration-schema-coupling gate ===
+Changed files:
+  .github/workflows/ci.yml
+  docs/governance/GOVERNANCE_CHANGE_PR038.md
+  docs/truth/completed_items.json
+  docs/truth/qa_claim.json
+  docs/truth/qa_scope_map.json
+  docs/truth/required_checks.json
+  scripts/ci_migration_schema_coupling.ps1
+  scripts/ci_robot_owned_guard.ps1
+SKIP: no migration changes detected
+STATUS: PASS
