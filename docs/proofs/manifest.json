@@ -102,6 +102,7 @@
     "docs/proofs/4.5_tenancy_resolution_enforcement_20260223T153240Z.log": "5d1d11e93cc5c144f230b7fa09517a751de8d4c04c3cd67b899863c39d7f060d",
     "docs/proofs/4.6_two_tier_execution_contract_20260224T002145Z.log": "ec471516424b802d052c4f323a009a19b3de39d9582955e89181ef0d858dcd99",
     "docs/proofs/4.7_tier1_surface_normalization_20260224T014009Z.log": "8a387e2c90fea12af71390ea0e1c1f5aa8285e7e87eadcab6c589788a970bd48",
-    "docs/proofs/5.0_required_gates_inventory_20260224T021851Z.log": "549b2f1cb15644f8652761d5a23a52888b446b50d97f01eeab45c63210fa3542"
+    "docs/proofs/5.0_required_gates_inventory_20260224T021851Z.log": "549b2f1cb15644f8652761d5a23a52888b446b50d97f01eeab45c63210fa3542",
+    "docs/proofs/5.1_migration_rls_colocation_20260224T025517Z.log": "63858ace7381ed721517b006b03587edbc5640e53a8680082fe9d701e45491b7"
   }
 }
