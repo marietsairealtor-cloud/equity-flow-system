@@ -69,8 +69,10 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/4\.7_tier1_surface_normalization_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.7 proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }
+  if($pp -match "^docs/proofs/5\.3_migration_schema_coupling_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.3 proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }
+  if($pp -match "^docs/proofs/5\.3_migration_schema_coupling_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.3 proof log" }
   if($pp -match "^docs/truth/qa_claim\.json$"){ return "ALLOW:qa_claim.json" }
   if($pp -match "^docs/truth/qa_scope_map\.json$"){ return "ALLOW:qa_scope_map.json" }
   if($pp -match "^docs/proofs/3\.7_qa_verify_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.7 proof log" }
@@ -88,6 +90,7 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/4\.7_tier1_surface_normalization_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.7 proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }
+  if($pp -match "^docs/proofs/5\.3_migration_schema_coupling_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.3 proof log" }
   if($pp -match "^docs/proofs/qa_claim\.json$"){ return "ALLOW:qa_claim.json" }
   if($pp -match "^docs/truth/qa_scope_map\.json$"){ return "ALLOW:qa_scope_map.json" }
   if($pp -match "^docs/proofs/3\.5_qa_requirements_\d{8}T\d{6}Z\.log$"){ return "ALLOW:3.5 proof log" }
