@@ -3140,3 +3140,26 @@ DoD
 
 Status: COMPLETE
 
+2026-02-24 — Build Route v2.4 — 4.7
+
+Objective
+Introduce Tier-1 Gate Surface Normalization to eliminate embedded-only enforcement topology and ensure every Tier-1 CI gate declared in ci_execution_surface.json is represented as a top-level merge-blocking job explicitly wired into the required aggregator.
+
+Changes
+- Identified that certain Tier-1 gates (e.g., truth-bootstrap) executed as steps within broader jobs rather than standalone jobs.
+- Confirmed enforcement was technically correct but topology visibility was ambiguous.
+- Added Build Route item 4.7 to formalize normalization of Tier-1 gate surface.
+- Defined constraints: no logic changes, no enforcement semantic changes, no required-check renames.
+- Established deterministic DoD and proof requirements for CI topology clarity.
+
+Proof
+This DEVLOG entry records governance rationale only.
+Implementation and proof artifact for 4.7 will be produced in the objective PR for 4.7.
+
+DoD
+- 4.7 defined in Build Route with clear Deliverables, DoD, Proof, and Gate.
+- Governance rationale recorded prior to implementation.
+- No CI behavior modified at time of entry.
+
+Status
+Planned (Pre-Implementation Governance Hardening)

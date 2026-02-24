@@ -2126,6 +2126,88 @@ Gate: rls-strategy-consistent (merge-blocking, migration lane).
 
 ---
 
+### **4.7 — Tier-1 Gate Surface Normalization**
+
+## Objective
+
+Normalize the CI enforcement surface so that every Tier-1 gate declared in `docs/truth/ci_execution_surface.json` is:
+
+* Implemented as a top-level GitHub Actions job
+* Explicitly merge-blocking via inclusion in the `required:` job `needs:` list
+* Topology-deterministic and audit-visible
+
+No gate logic changes permitted.
+No enforcement semantic changes permitted.
+No renaming of existing required check contexts permitted.
+
+---
+
+## Deliverables
+
+1. Extract any Tier-1 gate currently implemented only as a step inside another job into its own top-level GitHub Actions job.
+
+2. Ensure every Tier-1 job ID is explicitly listed in the `required:` job `needs:` block.
+
+3. Remove embedded-only execution of Tier-1 gates (no gate may exist solely as a step inside another job).
+
+4. Verify that required check contexts remain string-exact stable (no branch protection drift).
+
+5. Ensure `truth:sync` (or equivalent required-check truth generator) produces no unintended diff after topology normalization.
+
+---
+
+## Definition of Done (DoD)
+
+All must be true:
+
+* CI run displays a distinct top-level job row for every Tier-1 gate.
+* `required` cannot pass unless all Tier-1 jobs pass.
+* No Tier-1 gate exists only as an embedded step.
+* Required check contexts remain valid and unchanged.
+* CI green twice with no edits between runs.
+
+---
+
+## Proof
+
+Proof artifact must include:
+
+* Printed `required.needs` block showing all Tier-1 job IDs.
+* CI run output showing each Tier-1 job as a separate row.
+* Confirmation that no Tier-1 gates remain embedded-only.
+* Output of `truth:sync` showing no unintended required-check drift.
+
+Proof must follow canonical proof discipline:
+
+* `<UTC>.log`
+* `proof:finalize`
+* No non-proof changes after PROOF_HEAD
+
+---
+
+## Gate
+
+Merge blocked unless:
+
+* All Tier-1 jobs pass.
+* `required` job passes.
+* Proof-commit-binding passes.
+* CI topology validation passes.
+
+---
+
+## Non-Goals
+
+This item does NOT:
+
+* Promote Tier-2 gates.
+* Modify DB-heavy execution logic.
+* Change enforcement semantics.
+* Rename existing required check contexts.
+* Refactor CI for aesthetics.
+
+---
+
 ## **5 — Governance Gates (CI required-now)**
 
 ### **5.0 — Required Gates Inventory [HARDENED]**
