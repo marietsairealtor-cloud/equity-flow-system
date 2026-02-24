@@ -207,6 +207,9 @@
     },
     "4.7": {
       "proof_pattern": "^docs/proofs/4\\.7_tier1_surface_normalization_"
+    },
+    "5.0": {
+      "proof_pattern": "^docs/proofs/5\\.0_required_gates_inventory_"
     }
   }
 }
