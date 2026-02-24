@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "description": "Two-Tier CI Execution Contract. Defines execution surface constraints for CI gates querying the live database. Authority: advisor review 2026-02-23, GOVERNANCE_CHANGE_PR031.md.",
+  "tiers": {
+    "tier1": {
+      "name": "Pooler/Stateless",
+      "connection": "Supabase Session Pooler (IPv4)",
+      "banned": [
+        "SET",
+        "SET LOCAL",
+        "temporary tables",
+        "temporary schemas",
+        "advisory locks",
+        "prepared statements",
+        "cursors"
+      ],
+      "rationale": "Transaction-mode poolers silently drop session-level state. Tier 1 gates must be stateless and safe for pooler execution.",
+      "gates": [
+        {
+          "gate": "anon-privilege-audit",
+          "item": "4.4",
+          "grandfathered": true
+        },
+        {
+          "gate": "rls-strategy-consistent",
+          "item": "4.5",
+          "grandfathered": true
+        }
+      ]
+    },
+    "tier2": {
+      "name": "Direct/Sessionful",
+      "connection": "Direct IPv4 DB host (requires Item 5.2 provisioning)",
+      "allowed": [
+        "SET",
+        "SET LOCAL",
+        "temporary tables",
+        "advisory locks",
+        "prepared statements",
+        "cursors",
+        "multi-statement transactions"
+      ],
+      "rationale": "Direct connection preserves session state. Required for RLS fallback tests, populated-data negative tests, and session-dependent assertions.",
+      "gates": []
+    }
+  }
+}

@@ -201,6 +201,9 @@
     },
     "4.5": {
       "proof_pattern": "^docs/proofs/4\\.5_tenancy_resolution_enforcement_"
+    },
+    "4.6": {
+      "proof_pattern": "^docs/proofs/4\\.6_two_tier_execution_contract_"
     }
   }
 }

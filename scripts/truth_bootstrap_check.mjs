@@ -14,6 +14,7 @@ const required = [
   "docs/truth/blocked_identifiers.json",
   "docs/truth/tenant_table_selector.json",
   "docs/truth/privilege_truth.json",
+  "docs/truth/ci_execution_surface.json",
   "docs/truth/qa_requirements.schema.json",
   "docs/truth/qa_scope_map.json",
   "docs/truth/qa_claim.json",
@@ -81,6 +82,9 @@ if (parsed.has("docs/truth/expected_surface.json")) {
 }
 if (parsed.has("docs/truth/privilege_truth.json")) {
   assertHas(parsed.get("docs/truth/privilege_truth.json"), ["version","roles","rules"], "privilege_truth.json");
+}
+if (parsed.has("docs/truth/ci_execution_surface.json")) {
+  assertHas(parsed.get("docs/truth/ci_execution_surface.json"), ["version","tiers"], "ci_execution_surface.json");
 }
 for (const schemaPath of [
   "docs/truth/qa_requirements.schema.json",
