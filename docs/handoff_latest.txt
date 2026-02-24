@@ -1,9 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 05968e7
+HEAD: 44581d6
 
 === git status --porcelain=v1 ===
-?? supabase/migrations/20260219000004_default_acl_lockdown.sql
-?? supabase/migrations/20260219000005_privilege_remediation.sql
+
 
 === supabase status (sanitized summary) ===
 {
@@ -21,10 +20,10 @@ HEAD: 05968e7
 }
 
 === last applied migration (DB) ===
- 20260219000005
+ 20260219000006
 
 === latest migration file in repo ===
-20260219000005_privilege_remediation.sql
+20260219000006_rls_colocation_corrective.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
