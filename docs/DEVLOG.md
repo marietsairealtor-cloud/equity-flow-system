@@ -3372,3 +3372,37 @@ Runtime contracts must exist before scale, but enforcement intensity must match 
 
 End of entry.
 
+2026-02-24 — Build Route v2.4 — 5.3 Static Migration-Schema Coupling Gate
+
+Objective
+Introduce merge-blocking gate ensuring generated/schema.sql is updated whenever migrations change — enforcing static coupling without requiring a live CI DB.
+
+Changes
+- scripts/ci_migration_schema_coupling.ps1 — new merge-blocking gate (static diff analysis)
+- .github/workflows/ci.yml — migration-schema-coupling job added, wired into required:
+- docs/truth/required_checks.json — CI / migration-schema-coupling added
+- docs/truth/qa_claim.json — updated to 5.3
+- docs/truth/qa_scope_map.json — added 5.3 entry
+- docs/truth/completed_items.json — added 5.3
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 5.3 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR038.md — governance file
+
+Gate behavior
+- Migrations changed + schema not updated: FAIL with handoff + handoff:commit remediation
+- Migrations changed + schema updated: PASS
+- No migration changes: SKIP (PASS)
+- Skip logic: file path match on supabase/migrations/** (not SQL diff)
+- Schema target: exact canonical path generated/schema.sql
+
+Proof
+docs/proofs/5.3_migration_schema_coupling_20260224T172411Z.log
+
+DoD
+1. Gate detects migrations changed without schema update — CONFIRMED
+2. Gate skips when no migration changes — CONFIRMED
+3. Remediation message includes handoff + handoff:commit — CONFIRMED
+4. Deliberate-failure regression confirmed — CONFIRMED
+5. CI green, QA approved, merged
+
+Status: COMPLETE
+
