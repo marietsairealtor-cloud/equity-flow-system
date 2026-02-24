@@ -3229,3 +3229,43 @@ DoD
 
 Status: COMPLETE
 
+2026-02-24 — Build Route v2.4 — 5.1 Migration RLS Co-location Lint
+
+Objective
+Introduce merge-blocking gate that fails if any migration creates a table without enabling RLS and revoking default privileges in the same file — closing the partial-migration exposure window.
+
+Changes
+- supabase/migrations/20260219000006_rls_colocation_corrective.sql — corrective migration per 5.1 pre-check
+- scripts/ci_migration_rls_lint.ps1 — new merge-blocking gate (migration lane, static analysis)
+- .github/workflows/ci.yml — migration-rls-colocation job added, wired into required:
+- docs/truth/required_checks.json — CI / migration-rls-colocation added
+- docs/truth/qa_claim.json — updated to 5.1
+- docs/truth/qa_scope_map.json — added 5.1 entry
+- docs/truth/completed_items.json — added 5.1
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 5.1 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR036.md — governance file
+- generated/schema.sql — regenerated via handoff
+
+Pre-check finding
+All 4 baseline tables (tenants, tenant_memberships, user_profiles, deals) failed co-location rule. RLS and REVOKEs applied in later migrations, not same-file as CREATE TABLE. Corrective migration 20260219000006 authored and merged before gate activation per Build Route 5.1 DoD.
+
+Gate design
+- Enforces same-file co-location for migrations >= 20260219000006 (baseline remediation boundary)
+- Pre-cutoff migrations skipped — documented exemption
+- Fails naming: migration file, table name, missing statement
+- Deliberate-failure regression confirmed
+
+Proof
+docs/proofs/5.1_migration_rls_colocation_20260224T025517Z.log
+
+DoD
+1. Gate detects missing RLS on CREATE TABLE — CONFIRMED
+2. Gate detects missing REVOKE anon — CONFIRMED
+3. Gate detects missing REVOKE authenticated — CONFIRMED
+4. Pre-cutoff migrations skipped — CONFIRMED
+5. Corrective migration merged before gate activation — CONFIRMED
+6. CONTRACTS.md §12 controlled exception preserved — CONFIRMED
+7. CI green, QA approved, merged
+
+Status: COMPLETE
+
