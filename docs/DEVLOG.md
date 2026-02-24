@@ -3194,3 +3194,38 @@ DoD
 
 Status: COMPLETE
 
+2026-02-24 — Build Route v2.4 — 5.0 Required Gates Inventory
+
+Objective
+Harden the required gates inventory DoD to establish rules for future gate registrations and confirm current registration state.
+
+Changes
+- docs/truth/qa_claim.json — updated to 5.0
+- docs/truth/qa_scope_map.json — added 5.0 entry
+- docs/truth/completed_items.json — added 5.0
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 5.0 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR035.md — governance file
+
+Finding
+- anon-privilege-audit: registered in 4.4 PR — CONFIRMED
+- rls-strategy-consistent: registered in 4.5 PR — CONFIRMED
+- migration-rls-colocation: not yet registered — CI job does not exist yet (5.1)
+- unregistered-table-access: not yet registered — CI job does not exist yet (6.3A)
+- calc-version-registry: not yet registered — CI job does not exist yet (7.6)
+
+Hardened DoD rules
+- Gates registered in required_checks.json only in the PR that creates the corresponding CI job
+- No gate registered before CI job exists string-exact in .github/workflows/**
+- Each registration PR triggers governance-change-guard + governance file
+- npm run truth:sync required in each registration PR
+
+Proof
+docs/proofs/5.0_required_gates_inventory_20260224T021851Z.log
+
+DoD
+1. Current registrations confirmed correct — CONFIRMED
+2. Future registration rules established — CONFIRMED
+3. CI green, QA approved, merged
+
+Status: COMPLETE
+
