@@ -58,6 +58,10 @@ ALTER TABLE ONLY "public"."user_profiles"
 
 ALTER TABLE "public"."deals" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "public"."tenant_memberships" ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
 
 GRANT SELECT,UPDATE ON TABLE "public"."user_profiles" TO "authenticated";
