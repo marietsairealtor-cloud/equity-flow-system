@@ -3406,3 +3406,65 @@ DoD
 
 Status: COMPLETE
 
+## 2026-02-24 — Section 5 Closure (Governance Gates)
+
+### QA Determination
+
+Section 5 — Governance Gates (CI required-now) is formally closed.
+
+The following items are complete and merge-blocking:
+
+* 5.0 — Required Gates Inventory (Hardened registration discipline)
+* 5.1 — Migration RLS Co-location Lint (merge-blocking)
+* 5.3 — Static Migration-Schema Coupling Gate (merge-blocking)
+
+All gates are:
+
+* Registered in `docs/truth/required_checks.json`
+* Wired into CI `required:` surface
+* Backed by canonical proof artifacts
+* Green on `main`
+
+---
+
+### Deferred Item
+
+* 5.2 — Direct IPv4 Provisioning
+
+Status: **Deferred**
+
+Rationale:
+Direct IPv4 provisioning is required only to activate Tier-2 session-state tests. Current project phase (UI build, pre-launch) does not require CI direct DB connectivity. Activation moved to:
+
+**11.0 — Activate Direct IPv4 Provisioning (Pre-Launch Hardening)**
+
+Architectural intent preserved.
+Execution timing staged.
+
+---
+
+### Integrity Check
+
+Section 5 now enforces:
+
+* No unregistered gate drift (5.0)
+* No partial RLS migrations (5.1)
+* No schema artifact desynchronization (5.3)
+
+This closes the migration and schema governance surface prior to UI construction.
+
+No advisor review required.
+No enforcement philosophy changed.
+No gate weakened or removed.
+
+---
+
+### Status
+
+Section 5 marked COMPLETE (with 5.2 deferred to 11.0).
+
+Proceeding to Section 6.
+
+---
+
+End of entry.
