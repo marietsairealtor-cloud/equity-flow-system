@@ -3304,6 +3304,63 @@ Gate: merge-blocking once billing is enabled
 
 ## **11 — Release \+ Handoff Discipline**
 
+### **11.0 — Activate Direct IPv4 Provisioning (Deferred 5.2 Completion)**
+
+## Deliverables
+
+1. Supabase IPv4 add-on provisioned for production project
+2. Direct IPv4 database host confirmed and reachable from GitHub Actions
+3. Direct IPv4 host pinned in `docs/truth/toolchain.json`
+4. CI secret updated to use IPv4 direct connection string (not pooler)
+5. Successful `psql` smoke test from GitHub Actions to direct host
+6. Tier-2 gates activated (remove `db-heavy` stub)
+7. `STUB_GATES_ACTIVE` updated to reflect removal
+8. Canonical proof artifact generated and committed
+
+---
+
+## Definition of Done (DoD)
+
+* CI runner can connect directly to Postgres over IPv4
+* Tier-2 session-state tests execute successfully in CI
+* No Tier-2 tests rely on pooler endpoints
+* `db-heavy` stub removed from truth surface
+* CI fully green on `main`
+* No regression in Tier-1 gates
+
+---
+
+## Proof
+
+* Smoke-test log demonstrating successful IPv4 direct DB connection
+* CI run URL showing Tier-2 tests executing and passing
+* Updated `docs/truth/toolchain.json` committed
+* Updated truth artifacts committed via `handoff`
+* Proof log under:
+
+```
+docs/proofs/11.0_direct_ipv4_activation_<UTC>.log
+```
+
+* Manifest updated via `proof:finalize`
+
+---
+
+## Gate
+
+* `tier2-direct-db-connectivity` — merge-blocking once activated
+* Tier-2 gates must fail if direct DB connectivity is unavailable
+
+---
+
+## Notes
+
+* This item completes the previously deferred requirement from 5.2.
+* Activation required prior to production launch.
+* Not required for UI build phase.
+
+---
+
 ### **11.1 Handoff artifacts updated**
 
 Deliverable: Handoff pointer is current.  
@@ -3392,6 +3449,186 @@ DoD:
 * Support playbook exists for "payment failed → access degraded" states.  
 Proof: docs/proofs/11.9\_entitlement\_cutover\_checklist\_.md  
 Gate: merge-blocking (release)
+
+---
+
+## **11.10 — Lean Runtime Operations Baseline**
+
+---
+
+### **11.10.1 — Structured Runtime Telemetry Contract**
+
+### Objective
+
+All production RPCs emit structured, machine-parseable telemetry.
+
+### Deliverables
+
+1. `docs/truth/runtime_telemetry_contract.json`
+2. Required field schema definition
+
+### Required Fields
+
+* request_id
+* actor_id
+* tenant_id
+* rpc_name
+* status_code
+* latency_ms
+* timestamp_utc
+* error_class (nullable)
+
+### Definition of Done
+
+* All RPCs emit required fields
+* Format consistent across environments
+* No wildcard logging (`SELECT *`)
+
+### Proof
+
+* Proof log capturing:
+
+  * One successful RPC invocation
+  * One failed RPC invocation
+  * Both contain required fields
+* Artifact:
+  `docs/proofs/11.10.1_runtime_telemetry_<UTC>.log`
+* Manifest updated via `proof:finalize`
+
+### Gate
+
+* File presence + schema validation
+* Alert-only
+
+---
+
+### **11.10.2 — Global Runtime SLO Definition**
+
+### Objective
+
+Define minimal measurable reliability targets.
+
+### Deliverables
+
+1. `docs/truth/runtime_slo.json`
+
+### Minimum Required
+
+* Global p95 latency target
+* Global 5xx error-rate threshold
+
+### Definition of Done
+
+* Values explicitly defined
+* Thresholds documented
+
+### Proof
+
+* Proof log showing SLO file validation
+* Artifact:
+  `docs/proofs/11.10.2_runtime_slo_<UTC>.log`
+
+### Gate
+
+* Presence + schema validation only
+
+---
+
+### **11.10.3 — Runtime Rate Limit Contract**
+
+### Objective
+
+Prevent basic resource abuse.
+
+### Deliverables
+
+1. `docs/truth/runtime_rate_limits.json`
+
+### Minimum Required
+
+* Per-tenant request cap
+* Hard pagination cap
+* Max payload size constraint
+
+### Definition of Done
+
+* No public RPC without explicit rate policy
+* Rate limit values defined
+
+### Proof
+
+* Simulated request exceeding threshold
+* Demonstrated throttled response logged
+* Artifact:
+  `docs/proofs/11.10.3_runtime_rate_limits_<UTC>.log`
+
+### Gate
+
+* Presence validation only
+
+---
+
+### **11.10.4 — Kill Switch Protocol**
+
+### Objective
+
+Define mechanical emergency disable capability.
+
+### Deliverables
+
+1. Documented procedure for:
+
+   * Disable single RPC
+   * Suspend tenant
+   * Global freeze
+
+### Definition of Done
+
+* Clear mechanical steps documented
+* No ambiguous emergency process
+
+### Proof
+
+* Demonstration log of disabling and restoring one RPC
+* Artifact:
+  `docs/proofs/11.10.4_kill_switch_<UTC>.log`
+
+### Gate
+
+* Documentation presence only
+
+---
+
+### **11.10.5 — Data Lifecycle & Retention Policy**
+
+### Objective
+
+Define data retention and deletion invariants.
+
+### Deliverables
+
+1. `docs/truth/runtime_retention_policy.json`
+
+### Minimum Required
+
+* Log retention window
+* Soft-delete vs hard-delete policy
+* Tenant offboarding deletion sequence
+
+### Definition of Done
+
+* Policy explicitly defined
+* No undefined lifecycle states
+
+### Proof
+
+* Example deletion workflow log
+* Artifact:
+  `docs/proofs/11.10.5_runtime_retention_<UTC>.log`
+
+### Gate
+
+* Presence + schema validation only
 
 ---
 

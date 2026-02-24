@@ -3269,3 +3269,106 @@ DoD
 
 Status: COMPLETE
 
+2026-02-24 — Build Route v2.4 — 5.2 Direct IPv4 Provisioning — DEFERRED
+
+Objective
+Establish direct DB connectivity to unblock future Tier-2 session-state tests.
+
+Finding
+GitHub Actions Ubuntu runner cannot reach direct DB host (db.upnelewdvbicxvfgzojg.supabase.co:5432) via IPv6 — Network is unreachable. Local machine also IPv6-only. Direct connectivity requires Supabase IPv4 add-on (paid).
+
+Deferral rationale
+- Business-stage sequencing — no current requirement for CI session-state enforcement
+- Tier-2 gates inactive/stubbed as documented in ci_execution_surface.json
+- IPv4 provisioning to be activated 30-60 days before launch
+
+Next milestone
+Revisit at Build Route Item 11.0 (launch hardening) before:
+- Activation of Tier-2 DB tests
+- Removal of db-heavy stub"
+
+Actions taken
+- IPv6 connectivity test confirmed FAIL from GitHub Actions
+- Temporary test workflow NOT merged to main
+- No CI jobs depend on direct-host connectivity
+- Foundation architecture unchanged
+
+Status: DEFERRED
+
+
+Here is a clean, governance-aligned DEVLOG entry:
+
+---
+
+## DEVLOG — Addition of Section 11.10 (Lean Runtime Operations Baseline)
+
+### Context
+
+After completing foundation hardening (Sections 1–9) and sequencing UI build (Section 10), it became clear that the Build Route lacked a minimal runtime operations baseline prior to launch.
+
+Earlier drafts leaned toward enterprise-grade operational governance. Given current stage (pre-launch, zero production tenants), that level of enforcement was misaligned with product maturity.
+
+Section 11.10 was introduced to establish:
+
+* Minimal runtime observability
+* Defined reliability targets
+* Basic abuse safeguards
+* Emergency containment capability
+* Explicit data lifecycle invariants
+
+Without introducing premature enterprise complexity.
+
+---
+
+### Intent
+
+11.10 formalizes runtime invariants without:
+
+* Introducing heavy merge-blocking telemetry gates
+* Requiring enterprise-grade incident bureaucracy
+* Creating operational theater before user scale
+
+It ensures:
+
+* Mechanical clarity
+* Explicit contracts
+* Upgrade path to stricter enforcement post-scale
+
+---
+
+### Architectural Principle
+
+Foundation governs build-time invariants.
+Section 11.10 governs runtime invariants.
+
+This separates:
+
+* Compile-time safety (RLS, migrations, CI gates)
+  from
+* Runtime safety (telemetry, SLOs, rate limits, kill switches)
+
+---
+
+### Scope Discipline
+
+All 11.10 gates are:
+
+* Presence + schema validation only
+* Alert-only (non-blocking)
+* Upgradable when production exposure increases
+
+This preserves launch velocity while preventing undefined runtime behavior.
+
+---
+
+### Strategic Rationale
+
+The system is designed as a reusable multi-product foundation.
+Runtime contracts must exist before scale, but enforcement intensity must match stage.
+
+11.10 establishes the floor, not the ceiling.
+
+---
+
+End of entry.
+
