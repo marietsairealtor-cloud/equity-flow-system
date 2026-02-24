@@ -210,6 +210,9 @@
     },
     "5.0": {
       "proof_pattern": "^docs/proofs/5\\.0_required_gates_inventory_"
+    },
+    "5.1": {
+      "proof_pattern": "^docs/proofs/5\\.1_migration_rls_colocation_"
     }
   }
 }
