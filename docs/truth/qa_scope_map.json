@@ -204,6 +204,9 @@
     },
     "4.6": {
       "proof_pattern": "^docs/proofs/4\\.6_two_tier_execution_contract_"
+    },
+    "4.7": {
+      "proof_pattern": "^docs/proofs/4\\.7_tier1_surface_normalization_"
     }
   }
 }
