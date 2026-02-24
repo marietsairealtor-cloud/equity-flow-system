@@ -3112,3 +3112,31 @@ Status: COMPLETE
 * **Action:** Harden Item 6.3 DoD to explicitly require the creation of the workflow and the simultaneous update of the `deferred_proofs.json` triggers for both `database-tests.yml` and `pgtap` to `"6.3"`.
 
 **Status** RECORDED
+
+2026-02-24 — Build Route v2.4 — 4.6 Two-Tier CI Execution Contract
+
+Objective
+Formalize machine-readable contract defining Tier 1 (Pooler/Stateless) and Tier 2 (Direct/Sessionful) CI execution constraints to prevent session-state tests from silently failing against the pooler.
+
+Changes
+- docs/truth/ci_execution_surface.json — new Two-Tier CI Execution Contract
+- scripts/truth_bootstrap_check.mjs — registered ci_execution_surface.json
+- scripts/ci_robot_owned_guard.ps1 — registered ci_execution_surface.json + 4.6 proof log allowlist
+- docs/truth/qa_claim.json — updated to 4.6
+- docs/truth/qa_scope_map.json — added 4.6 entry
+- docs/truth/completed_items.json — added 4.6
+- docs/governance/GOVERNANCE_CHANGE_PR032.md — governance file
+
+Proof
+docs/proofs/4.6_two_tier_execution_contract_20260224T002145Z.log
+
+DoD
+1. ci_execution_surface.json exists with version + tiers keys — CONFIRMED
+2. Tier 1 ban list defined: SET, SET LOCAL, temp tables, advisory locks, prepared statements, cursors
+3. Gates 4.4 and 4.5 grandfathered as Tier 1 — CONFIRMED
+4. Tier 2 defined — requires Item 5.2 IPv4 provisioning
+5. Triple Registration Rule satisfied
+6. CI green, QA approved, merged
+
+Status: COMPLETE
+
