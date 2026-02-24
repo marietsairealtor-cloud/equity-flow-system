@@ -3163,3 +3163,34 @@ DoD
 
 Status
 Planned (Pre-Implementation Governance Hardening)
+
+2026-02-24 — Build Route v2.4 — 4.7 Tier-1 Gate Surface Normalization
+
+Objective
+Verify that every Tier-1 CI gate declared in ci_execution_surface.json is implemented as a top-level merge-blocking job explicitly wired into the required aggregator.
+
+Changes
+- docs/truth/qa_claim.json — updated to 4.7
+- docs/truth/qa_scope_map.json — added 4.7 entry
+- docs/truth/completed_items.json — added 4.7
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 4.7 proof log
+- docs/governance/GOVERNANCE_CHANGE_PR034.md — governance file
+
+Finding
+All Tier-1 gates already normalized — no ci.yml changes required.
+- anon-privilege-audit: standalone top-level job, in required: needs
+- rls-strategy-consistent: standalone top-level job, in required: needs
+truth-bootstrap: out of scope — static truth validation, no DB access
+
+Proof
+docs/proofs/4.7_tier1_surface_normalization_20260224T014009Z.log
+
+DoD
+1. All declared Tier-1 gates are top-level jobs — CONFIRMED
+2. All declared Tier-1 gates are in required: needs — CONFIRMED
+3. No embedded-only Tier-1 DB gates found — CONFIRMED
+4. No ci.yml changes required — CONFIRMED
+5. CI green, QA approved, merged
+
+Status: COMPLETE
+
