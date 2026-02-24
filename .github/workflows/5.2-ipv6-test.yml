@@ -1,0 +1,18 @@
+name: 5.2-ipv6-connectivity-test
+on:
+  push:
+    branches:
+      - pr/5.2-direct-ipv4-provisioning
+jobs:
+  ipv6-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Test direct IPv6 connectivity
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          echo "Testing direct connection to db.upnelewdvbicxvfgzojg.supabase.co:5432"
+          psql -h db.upnelewdvbicxvfgzojg.supabase.co -p 5432 -U postgres -d postgres -c "SELECT 1 as direct_ipv6_test;" && echo "DIRECT_CONNECT: SUCCESS" || echo "DIRECT_CONNECT: FAIL"
