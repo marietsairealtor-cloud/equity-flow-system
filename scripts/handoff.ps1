@@ -21,6 +21,53 @@ function Redact-Text([string]$t) {
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $repoRoot
+# --- 6.1 REPLAY PROOF ENFORCEMENT ---
+# If migrations changed vs origin/main, a valid local replay proof must exist before truth artifacts are written.
+$migrationChanged = $false
+$oldEAP61 = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+$committedFiles = (git diff --name-only origin/main...HEAD 2>&1 | Where-Object { $_ -notmatch "^warning:" } | Out-String) -split "`n" | Where-Object { $_ -match "^supabase/migrations/" }
+$stagedFiles = (git diff --name-only --cached 2>&1 | Where-Object { $_ -notmatch "^warning:" } | Out-String) -split "`n" | Where-Object { $_ -match "^supabase/migrations/" }
+$worktreeFiles = (git diff --name-only 2>&1 | Where-Object { $_ -notmatch "^warning:" } | Out-String) -split "`n" | Where-Object { $_ -match "^supabase/migrations/" }
+$ErrorActionPreference = $oldEAP61
+if ($committedFiles.Count -gt 0 -or $stagedFiles.Count -gt 0 -or $worktreeFiles.Count -gt 0) { $migrationChanged = $true }
+
+if ($migrationChanged) {
+  $proofLogs = @()
+  try {
+    $proofLogs = Get-ChildItem -Path "docs/proofs" -Filter "6.1_greenfield_baseline_migrations_*.log" -ErrorAction SilentlyContinue
+  } catch {}
+
+  if ($proofLogs.Count -eq 0) {
+    Write-Host "6.1 REPLAY PROOF REQUIRED:"
+    Write-Host "Migrations changed but no valid local replay proof found."
+    Write-Host "Run migration replay and regenerate proof log."
+    exit 1
+  }
+
+  # Validate proof log contains required markers
+  $validProof = $false
+  foreach ($pl in $proofLogs) {
+    $plContent = Get-Content $pl.FullName -Raw
+    $hasEphemeral  = $plContent -match "(?i)(ephemeral|supabase start|supabase db reset)"
+    $hasReplay     = $plContent -match "(?i)(migration|supabase db push|migrate)"
+    $hasDump       = $plContent -match "(?i)(pg_dump|schema dump|dump)"
+    $hasDiff       = $plContent -match "(?i)(git diff)"
+    $hasZeroDiff   = $plContent -match "(?i)(zero diff|no diff|exit.code.0|RESULT=PASS)"
+    if ($hasEphemeral -and $hasReplay -and $hasDump -and $hasDiff -and $hasZeroDiff) {
+      $validProof = $true
+      break
+    }
+  }
+
+  if (-not $validProof) {
+    Write-Host "6.1 REPLAY PROOF REQUIRED:"
+    Write-Host "Migrations changed but no valid local replay proof found."
+    Write-Host "Run migration replay and regenerate proof log."
+    exit 1
+  }
+}
+# --- END 6.1 ENFORCEMENT ---
 
 # Regenerate robot-owned truth files (read-only)
 & (Join-Path $PSScriptRoot "gen_schema.ps1") | Out-String | Out-Null
@@ -170,3 +217,8 @@ $impl
 
 Write-Utf8NoBomLf "docs/handoff_latest.txt" $body
 Write-Host "Wrote docs/handoff_latest.txt"
+
+
+
+
+

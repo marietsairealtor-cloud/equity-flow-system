@@ -216,6 +216,10 @@
     },
     "5.3": {
       "proof_pattern": "^docs/proofs/5\\.3_migration_schema_coupling_"
+    },
+    "6.1": {
+      "proof_pattern": "^docs/proofs/6\\.1_greenfield_baseline_migrations_"
     }
   }
 }
+
