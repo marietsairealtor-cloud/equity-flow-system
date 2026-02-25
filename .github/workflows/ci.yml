@@ -417,9 +417,17 @@ jobs:
         run: ./scripts/ci_handoff_idempotency.ps1
   handoff-preconditions:
     name: handoff-preconditions
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: boot local supabase (deterministic)
+        shell: pwsh
+        run: ./scripts/ci_boot.ps1
       - name: handoff-preconditions
         shell: pwsh
         run: ./scripts/ci_handoff_preconditions.ps1
