@@ -3468,3 +3468,30 @@ Proceeding to Section 6.
 ---
 
 End of entry.
+
+## 2026-02-25 — Build Route v2.4 — 6.1 Greenfield Baseline Migrations
+
+Objective
+Prove baseline migrations are authored new (REBUILD MODE), enforce local ephemeral replay proof as a precondition of the handoff publisher, and establish mechanical enforcement so migration PRs cannot bypass proof requirement.
+
+Changes
+- scripts/handoff.ps1 — 6.1 enforcement block added: detects migration changes (committed, staged, worktree) and exits non-zero with "6.1 REPLAY PROOF REQUIRED" before writing any truth artifacts if no valid replay proof log exists
+- docs/truth/qa_claim.json — updated to 6.1
+- docs/truth/qa_scope_map.json — added 6.1 entry
+- docs/truth/completed_items.json — added 6.1
+- scripts/ci_robot_owned_guard.ps1 — allowlisted 6.1 proof log pattern
+- docs/governance/GOVERNANCE_CHANGE_PR039.md — governance file
+- docs/proofs/6.1_greenfield_baseline_migrations_20260225T012204Z.log — canonical proof log (proof repair PR closed stale log from original PR)
+
+Proof
+docs/proofs/6.1_greenfield_baseline_migrations_20260225T012204Z.log
+
+DoD
+1. Baseline migrations exist, authored new (no legacy import) — CONFIRMED (20260219000000–20260219000006)
+2. Local ephemeral replay: supabase db reset → migrations applied in order → handoff → git diff --exit-code = 0 — CONFIRMED
+3. Enforcement: handoff exits non-zero with exact message when migrations changed and no proof log present — CONFIRMED (exit code 1)
+4. PROOF_HEAD consistent across proof log header and body — CONFIRMED
+5. CI green, QA approved, merged
+
+Status
+PASS
