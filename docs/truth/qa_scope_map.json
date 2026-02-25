@@ -219,6 +219,9 @@
     },
     "6.1": {
       "proof_pattern": "^docs/proofs/6\\.1_greenfield_baseline_migrations_"
+    },
+    "6.1A": {
+      "proof_pattern": "^docs/proofs/6\\.1A_handoff_preconditions_"
     }
   }
 }
