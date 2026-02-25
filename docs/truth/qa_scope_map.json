@@ -222,7 +222,9 @@
     },
     "6.1A": {
       "proof_pattern": "^docs/proofs/6\\.1A_handoff_preconditions_"
+    },
+    "6.2": {
+      "proof_pattern": "^docs/proofs/6\\.2_definer_audit_"
     }
   }
 }
-
