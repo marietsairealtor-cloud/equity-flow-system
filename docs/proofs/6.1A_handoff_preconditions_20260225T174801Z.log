@@ -1,0 +1,57 @@
+PROOF_HEAD=75ad8c8ea5f63fbb7747dffa8cb27c5f0c02f99f
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+6.1A HANDOFF PRECONDITIONS — DB-STATE GATE PROOF
+PROOF_HEAD: 75ad8c8ea5f63fbb7747dffa8cb27c5f0c02f99f
+
+=== STEP 1: gate passes against live DB ===
+=== handoff-preconditions: DB-state validation ===
+DB container: supabase_db_equity-flow-system
+PASS: public.tenants exists
+PASS: public.tenant_memberships exists
+PASS: public.user_profiles exists
+PASS: public.deals exists
+PASS: public.deals.tenant_id type=uuid
+PASS: public.deals.tenant_id NOT NULL
+PASS: public.deals.row_version type=bigint
+PASS: public.deals.calc_version type=integer
+PASS: RLS enabled on public.tenants
+PASS: RLS enabled on public.deals
+
+STATUS: PASS
+Exit code: 0
+
+=== STEP 2: handoff runs preconditions before truth artifacts ===
+
+> equity-flow-system@0.0.0 handoff
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts\handoff.ps1
+
+=== handoff-preconditions: DB-state validation ===
+DB container: supabase_db_equity-flow-system
+PASS: public.tenants exists
+PASS: public.tenant_memberships exists
+PASS: public.user_profiles exists
+PASS: public.deals exists
+PASS: public.deals.tenant_id type=uuid
+PASS: public.deals.tenant_id NOT NULL
+PASS: public.deals.row_version type=bigint
+PASS: public.deals.calc_version type=integer
+PASS: RLS enabled on public.tenants
+PASS: RLS enabled on public.deals
+
+STATUS: PASS
+
+Dumping schemas from local database...
+Dumped schema to <redacted-local-path>/generated/schema.sql.
+Wrote generated/schema.sql (schemas: public)
+Wrote generated/contracts.snapshot.json (deterministic)
+CONTRACTS LINT OK
+MUST-CONTAIN OK
+Wrote docs/handoff_latest.txt
+
+=== STEP 3: git diff --exit-code generated/schema.sql ===
+
+git diff exit code: 0
+
+RESULT=PASS
