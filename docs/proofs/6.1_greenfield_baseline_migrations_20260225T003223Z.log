@@ -52,24 +52,6 @@ Zero diff result: PASS
 RESULT=PASS
 
 === ENFORCEMENT PROOF: handoff exits non-zero when migrations changed and no proof log exists ===
-New-Item supabase/migrations/99999999999999_test_enforcement.sql (dummy migration, staged only)
-git add supabase/migrations/99999999999999_test_enforcement.sql
-npm run handoff
-
-> equity-flow-system@0.0.0 handoff
-> powershell -NoProfile -ExecutionPolicy Bypass -File scripts\handoff.ps1
-
-Dumping schemas from local database...
-Dumped schema to <redacted-local-path>/generated/schema.sql.
-Wrote generated/schema.sql (schemas: public)
-Wrote generated/contracts.snapshot.json (deterministic)
-CONTRACTS LINT OK
-MUST-CONTAIN OK
-Wrote docs/handoff_latest.txt
-handoff exit code: 0
-Enforcement result: FAIL — handoff did not block
-
-=== ENFORCEMENT PROOF: handoff exits non-zero when migrations changed and no proof log exists ===
 Condition: dummy migration staged, proof log temporarily removed
 Command: npm run handoff
 
