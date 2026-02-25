@@ -3495,3 +3495,46 @@ DoD
 
 Status
 PASS
+
+
+## 2026-02-25 — Build Route v2.4 — 6.1A Handoff Preconditions Hardening
+
+Objective
+
+Establish DB-state precondition gate enforcing catalog invariants before truth artifact generation.
+
+Changes
+
+Added scripts/ci_handoff_preconditions.ps1 (live DB catalog validation).
+
+Wired preconditions into scripts/handoff.ps1 to execute before schema/contracts/handoff_latest writes.
+
+Added CI job handoff-preconditions (merge-blocking, docs-only skip).
+
+Updated truth artifacts (qa_claim.json, qa_scope_map.json, required_checks.json, completed_items.json).
+
+Added governance record GOVERNANCE_CHANGE_PR040.md.
+
+Proof
+
+PASS path: preconditions PASS before any truth artifact writes.
+
+FAIL path: invariant mismatch (public.deals.tenant_id nullable) blocks writes; before/after hashes identical.
+
+Canonical proof: docs/proofs/6.1A_handoff_preconditions_<UTC>.log.
+
+DoD
+
+DB-state gate exists and validates tables, columns, and RLS via live catalog.
+
+Preconditions execute before any truth artifact generation.
+
+Handoff exits non-zero and does not overwrite truth artifacts on failure.
+
+Failure output reports expected vs found state.
+
+CI job id handoff-preconditions exists and is merge-blocking.
+
+Status
+
+PASS
