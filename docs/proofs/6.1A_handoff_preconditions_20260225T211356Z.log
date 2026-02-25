@@ -1,0 +1,79 @@
+PROOF_HEAD=8b2831bc9887c9f246a36414a13bbb1ed739ca98
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+HEAD: 8b2831bc9887c9f246a36414a13bbb1ed739ca98
+UTC: 20260225T211226Z
+--- Proof A (PASS ordering) ---
+
+> equity-flow-system@0.0.0 handoff
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts\handoff.ps1
+
+=== handoff-preconditions: DB-state validation ===
+DB container: supabase_db_equity-flow-system
+PASS: public.tenants exists
+PASS: public.tenant_memberships exists
+PASS: public.user_profiles exists
+PASS: public.deals exists
+PASS: public.deals.tenant_id type=uuid
+PASS: public.deals.tenant_id NOT NULL
+PASS: public.deals.row_version type=bigint
+PASS: public.deals.calc_version type=integer
+PASS: RLS enabled on public.tenants
+PASS: RLS enabled on public.deals
+
+STATUS: PASS
+
+Dumping schemas from local database...
+Dumped schema to <USERPATH>\projects\equity-flow-system\generated\schema.sql.
+Wrote generated/schema.sql (schemas: public)
+Wrote generated/contracts.snapshot.json (deterministic)
+CONTRACTS LINT OK
+MUST-CONTAIN OK
+Wrote docs/handoff_latest.txt
+
+--- Proof B (FAIL via invariant mismatch; no overwrite) ---
+
+Algorithm       Hash                                                                   Path
+---------       ----                                                                   ----
+SHA256          34DC606F726FFAF26B096D54251C53FBBEC1A0FE6A220971733F1EA2AE1928B8       <USERPATH>\projects\equity-flow-system\generated\schema.sql
+SHA256          24618AFFC1EEA689307C5DA44C853ED910BC0E5FB47148E938C71F21B66939D1       <USERPATH>\projects\equity-flow-system\generated\contracts.snapshot.json
+SHA256          676FBCF4E1E26E8A5669C2BD003189062FE3D8D8021B44F426F334E5B3B50E82       <USERPATH>\projects\equity-flow-system\docs\handoff_latest.txt
+
+
+ALTER TABLE
+
+
+> equity-flow-system@0.0.0 handoff
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts\handoff.ps1
+
+=== handoff-preconditions: DB-state validation ===
+DB container: supabase_db_equity-flow-system
+PASS: public.tenants exists
+PASS: public.tenant_memberships exists
+PASS: public.user_profiles exists
+PASS: public.deals exists
+PASS: public.deals.tenant_id type=uuid
+PASS: public.deals.row_version type=bigint
+PASS: public.deals.calc_version type=integer
+PASS: RLS enabled on public.tenants
+PASS: RLS enabled on public.deals
+
+PRECONDITIONS FAILED:
+  - NOT NULL VIOLATION: public.deals.tenant_id (expected: NOT NULL, found: nullable)
+STATUS: FAIL
+
+HANDOFF PRECONDITIONS FAILED -- truth artifacts not written.
+
+handoff exit code: 1
+
+Algorithm       Hash                                                                   Path
+---------       ----                                                                   ----
+SHA256          34DC606F726FFAF26B096D54251C53FBBEC1A0FE6A220971733F1EA2AE1928B8       <USERPATH>\projects\equity-flow-system\generated\schema.sql
+SHA256          24618AFFC1EEA689307C5DA44C853ED910BC0E5FB47148E938C71F21B66939D1       <USERPATH>\projects\equity-flow-system\generated\contracts.snapshot.json
+SHA256          676FBCF4E1E26E8A5669C2BD003189062FE3D8D8021B44F426F334E5B3B50E82       <USERPATH>\projects\equity-flow-system\docs\handoff_latest.txt
+
+
+ALTER TABLE
+
+RESULT=PASS
