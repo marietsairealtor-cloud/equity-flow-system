@@ -1,9 +1,9 @@
-PROOF_HEAD=0f9c716f4b76f41ad66943b5c68c3a64839d968c
+PROOF_HEAD=8e918c8f688fa951aba071dcd8eb1b48bb842f0a
 PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
 PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
 PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
 6.1 GREENFIELD BASELINE MIGRATIONS — LOCAL EPHEMERAL REPLAY PROOF
-PROOF_HEAD: edcab4b3aff7649a8fc70fce1401b95654d74481
+PROOF_HEAD: 8e918c8f688fa951aba071dcd8eb1b48bb842f0a
 
 === STEP 1: ephemeral DB reset (supabase db reset) ===
 Resetting local database...
@@ -19,7 +19,7 @@ Applying migration 20260219000005_privilege_remediation.sql...
 Applying migration 20260219000006_rls_colocation_corrective.sql...
 WARN: no files matched pattern: supabase/seed.sql
 Restarting containers...
-Finished supabase db reset on branch pr/6.1-greenfield-baseline-migrations.
+Finished supabase db reset on branch pr/6.1-proof-repair.
 
 === STEP 2: migration replay confirmation ===
 DB container: supabase_db_equity-flow-system
@@ -49,13 +49,10 @@ Wrote docs/handoff_latest.txt
 git diff exit code: 0
 
 Zero diff result: PASS
-RESULT=PASS
 
 === ENFORCEMENT PROOF: handoff exits non-zero when migrations changed and no proof log exists ===
-Condition: dummy migration staged, proof log temporarily removed
+Condition: dummy migration staged, no 6.1 proof log present
 Command: npm run handoff
-
-Output:
 
 > equity-flow-system@0.0.0 handoff
 > powershell -NoProfile -ExecutionPolicy Bypass -File scripts\handoff.ps1
@@ -63,6 +60,7 @@ Output:
 6.1 REPLAY PROOF REQUIRED:
 Migrations changed but no valid local replay proof found.
 Run migration replay and regenerate proof log.
-
 handoff exit code: 1
-Enforcement result: PASS — handoff correctly blocked with exact message
+Enforcement result: PASS — handoff correctly blocked
+
+RESULT=PASS
