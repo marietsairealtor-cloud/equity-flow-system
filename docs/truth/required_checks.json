@@ -1,11 +1,6 @@
 {
   "checks": [
     {
-      "name": "CI / definer-safety-audit",
-      "type": "github_status",
-      "required": true
-    },
-    {
       "name": "CI / anon-privilege-audit",
       "type": "github_status",
       "required": true
@@ -42,6 +37,11 @@
     },
     {
       "name": "CI / deferred-proof-registry",
+      "type": "github_status",
+      "required": true
+    },
+    {
+      "name": "CI / definer-safety-audit",
       "type": "github_status",
       "required": true
     },
