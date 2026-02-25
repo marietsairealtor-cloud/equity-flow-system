@@ -24,10 +24,13 @@ Set-Location $repoRoot
 # --- 6.1 REPLAY PROOF ENFORCEMENT ---
 # If migrations changed vs origin/main, a valid local replay proof must exist before truth artifacts are written.
 $migrationChanged = $false
-try {
-  $changedFiles = (git diff --name-only origin/main...HEAD 2>&1 | Out-String) -split "`n" | Where-Object { $_ -match "^supabase/migrations/" }
-  if ($changedFiles.Count -gt 0) { $migrationChanged = $true }
-} catch {}
+$oldEAP61 = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+$committedFiles = (git diff --name-only origin/main...HEAD 2>&1 | Where-Object { $_ -notmatch "^warning:" } | Out-String) -split "`n" | Where-Object { $_ -match "^supabase/migrations/" }
+$stagedFiles = (git diff --name-only --cached 2>&1 | Where-Object { $_ -notmatch "^warning:" } | Out-String) -split "`n" | Where-Object { $_ -match "^supabase/migrations/" }
+$worktreeFiles = (git diff --name-only 2>&1 | Where-Object { $_ -notmatch "^warning:" } | Out-String) -split "`n" | Where-Object { $_ -match "^supabase/migrations/" }
+$ErrorActionPreference = $oldEAP61
+if ($committedFiles.Count -gt 0 -or $stagedFiles.Count -gt 0 -or $worktreeFiles.Count -gt 0) { $migrationChanged = $true }
 
 if ($migrationChanged) {
   $proofLogs = @()
@@ -214,4 +217,8 @@ $impl
 
 Write-Utf8NoBomLf "docs/handoff_latest.txt" $body
 Write-Host "Wrote docs/handoff_latest.txt"
+
+
+
+
 
