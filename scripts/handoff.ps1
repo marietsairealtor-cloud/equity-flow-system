@@ -69,6 +69,19 @@ if ($migrationChanged) {
 }
 # --- END 6.1 ENFORCEMENT ---
 
+# --- 6.1A HANDOFF PRECONDITIONS ---
+$oldEAP61A = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+$precondOut = (& (Join-Path $PSScriptRoot "ci_handoff_preconditions.ps1") 2>&1 | Out-String).TrimEnd()
+$precondExit = $LASTEXITCODE
+$ErrorActionPreference = $oldEAP61A
+Write-Host $precondOut
+if ($precondExit -ne 0) {
+  Write-Host "HANDOFF PRECONDITIONS FAILED -- truth artifacts not written."
+  exit 1
+}
+# --- END 6.1A PRECONDITIONS ---
+
 # Regenerate robot-owned truth files (read-only)
 & (Join-Path $PSScriptRoot "gen_schema.ps1") | Out-String | Out-Null
 & (Join-Path $PSScriptRoot "gen_contracts_snapshot.ps1") | Out-String | Out-Null

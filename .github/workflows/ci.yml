@@ -415,6 +415,15 @@ jobs:
       - name: handoff-idempotency
         shell: pwsh
         run: ./scripts/ci_handoff_idempotency.ps1
+  handoff-preconditions:
+    name: handoff-preconditions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: handoff-preconditions
+        shell: pwsh
+        run: ./scripts/ci_handoff_preconditions.ps1
+
   deferred-proof-registry:
     name: deferred-proof-registry
     runs-on: ubuntu-latest
@@ -486,7 +495,7 @@ jobs:
         shell: pwsh
         run: ./scripts/ci_migration_schema_coupling.ps1
   required:
-    needs: [migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
+    needs: [migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)

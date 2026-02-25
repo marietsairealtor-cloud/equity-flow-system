@@ -71,6 +71,7 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }
   if($pp -match "^docs/proofs/5\.3_migration_schema_coupling_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.3 proof log" }
   if($pp -match "^docs/proofs/6\.1_greenfield_baseline_migrations_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.1 proof log" }
+  if($pp -match "^docs/proofs/6\.1A_handoff_preconditions_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.1A proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }
   if($pp -match "^docs/proofs/5\.3_migration_schema_coupling_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.3 proof log" }

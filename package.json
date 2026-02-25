@@ -14,6 +14,7 @@
     "green:once": "node scripts/green_gate.mjs once",
     "green:twice": "node scripts/green_gate.mjs twice",
     "handoff": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\handoff.ps1",
+    "handoff:preconditions": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_handoff_preconditions.ps1",
     "handoff:commit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\handoff_commit.ps1",
     "lint:contracts": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\contracts_lint.ps1",
     "lint:migrations": "node scripts/lint_migrations.mjs",
