@@ -2380,21 +2380,22 @@ Must include:
 ### **6.2 — SECURITY DEFINER Safety [HARDENED]**
 
 Deliverable:
-SD functions are allowlisted, audited, negative-tested, and statically
-proven to have search_path set at the catalog level — not just in
-source text.
+SD functions are allowlisted, audited, negative-tested, and statically proven to have search_path set at the catalog level — not just in source text.
+
+DoD:
+
+Any SD function is allowlisted and audit passes.
+pgTAP negative proof exists for SD membership checks.
+
 DoD additions (appended to existing 6.2 DoD):
 
-definer-safety-audit gate is extended to assert, for every function
-on definer_allowlist.json, that pg_proc.proconfig contains a
-search_path entry.
-Note: pg_proc.proconfig is the correct catalog field for
-function-level SET search_path declarations. pg_proc.prosrc
-contains only the function body and is insufficient for this check.
+definer-safety-audit gate is extended to assert, for every function on definer_allowlist.json, that pg_proc.proconfig contains a search_path entry.
+Note: pg_proc.proconfig is the correct catalog field for function-level SET search_path declarations. pg_proc.prosrc contains only the function body and is insufficient for this check.
 Gate fails naming the function and the missing proconfig entry.
-Helper functions called by SD functions are explicitly enumerated in
-the proof. Each helper is confirmed to use only schema-qualified object
-references — no unqualified identifiers.
+Helper functions called by SD functions are explicitly enumerated in the proof. Each helper is confirmed to use only schema-qualified object references — no unqualified identifiers.
+
+Proof: docs/proofs/6.2\_definer\_audit\_\<UTC\>.log
+Gate: definer-safety-audit (merge-blocking)
 
 ---
 
