@@ -1,5 +1,5 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 30443e3
+HEAD: c7cef7e
 
 === git status --porcelain=v1 ===
 
@@ -9,7 +9,9 @@ HEAD: 30443e3
     "exitcode":  0,
     "stack_running":  false,
     "stopped_services":  [
-
+                             "supabase_imgproxy_equity-flow-system",
+                             "supabase_vector_equity-flow-system",
+                             "supabase_pooler_equity-flow-system"
                          ],
     "api_url":  null,
     "rest_url":  null,
@@ -21,7 +23,7 @@ HEAD: 30443e3
  20260219000010
 
 === latest migration file in repo ===
-20260219000010_deals_rpc_surface.sql
+20260219000011_deals_rpc_grants.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
