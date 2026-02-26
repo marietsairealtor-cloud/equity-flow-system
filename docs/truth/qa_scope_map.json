@@ -234,6 +234,9 @@
     },
     "6.4": {
       "proof_pattern": "^docs/proofs/6\\.4_rls_structural_audit_"
+    },
+    "6.5": {
+      "proof_pattern": "^docs/proofs/6\\.5_blocked_identifiers_"
     }
   }
 }
