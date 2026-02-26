@@ -1,0 +1,70 @@
+PROOF_HEAD=2724079198f1dc4db5b39c5866041df909a34c44
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.4 RLS Structural Audit — Proof Log ===
+Date: 2026-02-26T18:10:07.9269980-05:00
+Branch: 6.4-rls-structural-audit
+HEAD: 2724079198f1dc4db5b39c5866041df909a34c44
+
+STUB_GATES_ACTIVE:
+  - db-heavy (conversion_trigger: 8.0)
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Selector truth exists + RLS enabled on tenant-owned tables ===
+--- tenant_table_selector.json ---
+{
+  "version": 3,
+  "tenant_tables": [
+    "user_profiles"
+  ],
+  "tenant_owned_tables": [
+    "deals"
+  ],
+  "selector": {
+    "required": true,
+    "tenant_id_column": "tenant_id"
+  }
+}
+
+--- RLS enabled check ---
+deals|t
+tenant_memberships|t
+tenants|t
+user_profiles|t
+
+=== DoD 2: Full RLS policy expression enumeration (all tenant-owned tables) ===
+deals|deals_delete_own|PERMISSIVE|{authenticated}|DELETE|(tenant_id = current_tenant_id())|
+deals|deals_insert_own|PERMISSIVE|{authenticated}|INSERT||(tenant_id = current_tenant_id())
+deals|deals_select_own|PERMISSIVE|{authenticated}|SELECT|(tenant_id = current_tenant_id())|
+deals|deals_update_own|PERMISSIVE|{authenticated}|UPDATE|(tenant_id = current_tenant_id())|
+
+=== DoD 3: pgTAP rejects forbidden patterns ===
+--- Tests: USING(true), USING(1=1), no tenant_id, no current_tenant_id(), raw auth.uid() ---
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] ...... ok
+All tests successful.
+Files=2, Tests=21,  0 wallclock secs ( 0.01 usr  0.01 sys +  0.00 cusr  0.01 csys =  0.03 CPU)
+Result: PASS
+
+=== DoD 4: Policy enumeration summary ===
+deals_select_own: USING (tenant_id = current_tenant_id()) — COMPLIANT
+deals_insert_own: WITH CHECK (tenant_id = current_tenant_id()) — COMPLIANT
+deals_update_own: USING (tenant_id = current_tenant_id()) — COMPLIANT
+deals_delete_own: USING (tenant_id = current_tenant_id()) — COMPLIANT
+Forbidden patterns found: 0
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+rls-structural-audit: PASS
