@@ -1,0 +1,9 @@
+{
+  "_comment": "Hand-authored per Build Route 6.3. Lists every trigger, pg_cron job, or background function executing outside a request context.",
+  "_review_date": "2026-02-25",
+  "_reviewer": "human",
+  "triggers": [],
+  "pg_cron_jobs": [],
+  "background_functions": [],
+  "confirmation": "No triggers, cron jobs, or background functions exist in the public schema. All execution occurs within authenticated request context with JWT-based tenant binding."
+}

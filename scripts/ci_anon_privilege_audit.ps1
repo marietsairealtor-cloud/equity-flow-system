@@ -85,18 +85,30 @@ foreach ($row in $seqRows) {
 }
 if (-not $fail) { Write-Host "PASS: anon/authenticated have zero sequence grants" }
 
-# --- B3: Functions check ---
+# --- B3: Functions check (allowlist-aware) ---
 Write-Host "B3: Routine grants check..."
+$allowlistPath = "docs/truth/execute_allowlist.json"
+$allowedRoutines = @()
+if (Test-Path $allowlistPath) {
+    $al = Get-Content $allowlistPath -Raw | ConvertFrom-Json
+    $allowedRoutines = @($al.allow)
+}
 $fnSql = "SELECT grantee, routine_name, privilege_type FROM information_schema.role_routine_grants WHERE routine_schema = 'public' AND grantee IN ('anon', 'authenticated');"
 $fnRows = Invoke-Psql $fnSql
 foreach ($row in $fnRows) {
     if (-not $row.Trim()) { continue }
     $parts = $row -split "`t"
     if ($parts.Count -lt 3) { continue }
-    Write-Host "FAIL: $($parts[0]) has $($parts[2]) on routine $($parts[1]) — CONTRACTS.md §12"
-    $fail = $true
+    $rName = $parts[1].Trim()
+    if ($allowedRoutines -contains $rName) {
+        Write-Host "PASS: $($parts[0]) has $($parts[2]) on routine $rName — allowlisted"
+    } else {
+        Write-Host "FAIL: $($parts[0]) has $($parts[2]) on routine $rName — CONTRACTS.md §12"
+        $fail = $true
+    }
 }
-if (-not $fail) { Write-Host "PASS: anon/authenticated have zero routine grants" }
+if (-not $fail) { Write-Host "PASS: anon/authenticated routine grants clean (allowlist-checked)" }
+
 
 # --- C: Platform ACL visibility (logged, not enforced) ---
 Write-Host "C: Platform default ACL (supabase_% — logged only)..."

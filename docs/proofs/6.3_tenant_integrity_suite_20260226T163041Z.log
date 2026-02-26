@@ -1,0 +1,106 @@
+PROOF_HEAD=3be81102a055ce1ac7e4e332470a79c23594505d
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.3 Tenant Integrity Suite — Proof Log ===
+Date: 2026-02-26T11:28:46.8375574-05:00
+Branch: pr/6.3-tenant-integrity-suite
+HEAD: 3be81102a055ce1ac7e4e332470a79c23594505d
+
+STUB_GATES_ACTIVE:
+  - db-heavy (conversion_trigger: 8.0)
+
+=== Versions ===
+Node: v20.18.1
+Supabase CLI: 2.76.11
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: pgTAP — RPC-based tenant isolation (populated data, 2+ rows/tenant) ===
+Connecting to local database...
+[REDACTED] .. ok
+All tests successful.
+Files=1, Tests=13,  0 wallclock secs ( 0.02 usr  0.00 sys +  0.00 cusr  0.01 csys =  0.03 CPU)
+Result: PASS
+
+=== DoD 2: View-based negative test (pgTAP test 11: 0 views in public) ===
+(Included in pgTAP output above — test 11 asserts 0 views)
+
+=== DoD 3: PostgREST HTTP isolation tests (RPC surface, FK embedding) ===
+# PostgREST Tenant Isolation HTTP Tests (RPC surface)
+# Proves CONTRACTS.md S7/S12: RPC-only, no direct table access
+# API: http://127.0.0.1:54321
+
+# Seeded 4 rows (2 per tenant) via psql
+# PostgREST schema cache refreshed
+
+ok - Tenant A: list_deals_v1 returns 200
+ok - Tenant A: list_deals_v1 ok=true
+ok - Tenant A: list_deals_v1 returns >= 2 items
+ok - Tenant A: all items belong to Tenant A
+ok - Tenant B: list_deals_v1 returns 200
+ok - Tenant B: list_deals_v1 returns >= 2 items
+ok - Tenant B: all items belong to Tenant B
+ok - Tenant B: zero Tenant A rows leaked
+ok - Tenant A: create_deal_v1 ok=true
+ok - Tenant A: created deal bound to Tenant A
+ok - authenticated: direct /rest/v1/deals blocked (S12)
+ok - anon: list_deals_v1 denied
+
+# Results: 12 passed, 0 failed
+
+=== DoD 4: background-context-review gate ===
+background-context-review: using container 3b7e0da12c3c
+background-context-review: no triggers in public schema - PASS
+background-context-review: no pg_cron functions - PASS
+
+background-context-review: PASS
+
+=== DoD 5: background_context_review.json exists ===
+PRESENT
+{
+  "_comment": "Hand-authored per Build Route 6.3. Lists every trigger, pg_cron job, or background function executing outside a request context.",
+  "_review_date": "2026-02-25",
+  "_reviewer": "human",
+  "triggers": [],
+  "pg_cron_jobs": [],
+  "background_functions": [],
+  "confirmation": "No triggers, cron jobs, or background functions exist in the public schema. All execution occurs within authenticated request context with JWT-based tenant binding."
+}
+
+=== DoD 6: database-tests.yml exists ===
+PRESENT
+
+=== DoD 7: deferred_proofs.json conversion triggers ===
+[
+  {
+    "_proof_authoring_requirement": "While this registry is non-empty, every proof log finalized via proof:finalize must include a STUB_GATES_ACTIVE block immediately after the PR HEAD SHA line. List every active stub gate by name and conversion_trigger from this file. See SOP_WORKFLOW.md Phase 4 Rule G.",
+    "gate": "db-heavy",
+    "stub_reason": "No live Supabase DB available in CI runners; job echoes PASS unconditionally.",
+    "deferred_invariant": "This gate does not currently prove any DB-level correctness or security property.",
+    "conversion_trigger": "8.0"
+  }
+]
+
+=== DoD 8: anon-privilege-audit (S12 compliance) ===
+=== anon-privilege-audit gate ===
+A: Direct grant check...
+PASS: authenticated has exactly SELECT+UPDATE on user_profiles
+B: Operator-owned default ACL check...
+PASS: operator-owned default ACL clean
+B2: Sequence usage grants check...
+PASS: anon/authenticated have zero sequence grants
+B3: Routine grants check...
+PASS: authenticated has EXECUTE on routine list_deals_v1 - allowlisted
+PASS: authenticated has EXECUTE on routine create_deal_v1 - allowlisted
+PASS: anon/authenticated routine grants clean (allowlist-checked)
+C: Platform default ACL (supabase_% - logged only)...
+STATUS: PASS
+
+=== DoD 9: execute_allowlist.json ===
+{"version":1,"allow":["list_deals_v1","create_deal_v1"]}
+
+=== Phase 3 verification ===
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+CI — ALL GREEN
