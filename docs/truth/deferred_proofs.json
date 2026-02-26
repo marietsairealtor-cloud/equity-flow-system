@@ -5,17 +5,5 @@
     "stub_reason": "No live Supabase DB available in CI runners; job echoes PASS unconditionally.",
     "deferred_invariant": "This gate does not currently prove any DB-level correctness or security property.",
     "conversion_trigger": "8.0"
-  },
-  {
-    "gate": "database-tests.yml",
-    "stub_reason": "Workflow exists but runs as stub — no live DB in CI runners.",
-    "deferred_invariant": "pgTAP database tests are not run in CI; no DB-level invariants are asserted.",
-    "conversion_trigger": "6.3"
-  },
-  {
-    "gate": "pgtap",
-    "stub_reason": "pgTAP suite exists locally but CI job runs as stub — no live DB in CI runners.",
-    "deferred_invariant": "pgTAP negative isolation tests are not run in CI; DB-level isolation invariants not CI-enforced.",
-    "conversion_trigger": "6.3"
   }
 ]
