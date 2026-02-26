@@ -3538,3 +3538,33 @@ CI job id handoff-preconditions exists and is merge-blocking.
 Status
 
 PASS
+## 2026-02-26 — Build Route v2.4 — 6.2 SECURITY DEFINER Safety [HARDENED]
+
+Objective
+Prove every SECURITY DEFINER function is allowlisted, audited against catalog-level safety invariants (pg_proc.proconfig, not pg_proc.prosrc), and that gate scope is restricted to application schemas only (public, rpc).
+
+Changes
+- scripts/ci_definer_safety_audit.ps1 — rewritten: scope restricted to public/rpc, allowlist cross-reference added, pg_proc.proconfig catalog check added, CI stub added
+- .github/workflows/ci.yml — definer-safety-audit job added, wired into required
+- docs/truth/required_checks.json — CI / definer-safety-audit added (truth:sync ordering applied)
+- docs/truth/completed_items.json — 6.2 added
+- docs/truth/qa_claim.json — updated to 6.2
+- docs/truth/qa_scope_map.json — 6.2 entry added
+- scripts/ci_robot_owned_guard.ps1 — 6.2 proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_PR041.md — Build Route 6.2 update governance record
+- docs/governance/GOVERNANCE_CHANGE_PR042.md — 6.2 implementation governance record
+
+Proof
+docs/proofs/6.2_definer_audit_20260226T000338Z.log
+
+DoD
+- SD functions allowlisted and audit passes — CONFIRMED (zero application SD functions; allowlist correctly empty)
+- definer-safety-audit gate checks pg_proc.proconfig for search_path entry — CONFIRMED
+- Gate fails naming function and missing proconfig entry — CONFIRMED
+- Helper function enumeration in proof — CONFIRMED (none to enumerate at baseline)
+- Gate scoped to public/rpc only; system schemas excluded — CONFIRMED
+- CI stub registered in deferred_proofs.json (converts at 8.0.4) — CONFIRMED
+- CI green, QA approved, merged
+
+Status
+PASS
