@@ -13,6 +13,17 @@ SET row_security = off;
 
 CREATE SCHEMA IF NOT EXISTS "public";
 
+CREATE OR REPLACE FUNCTION "public"."current_tenant_id"() RETURNS "uuid"
+    LANGUAGE "sql" STABLE
+    AS $$
+  SELECT COALESCE(
+    nullif(current_setting('request.jwt.claim.tenant_id', true), '')::uuid,
+    (nullif(current_setting('request.jwt.claims', true), '')::json ->> 'tenant_id')::uuid
+  )
+$$;
+
+ALTER FUNCTION "public"."current_tenant_id"() OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -58,10 +69,20 @@ ALTER TABLE ONLY "public"."user_profiles"
 
 ALTER TABLE "public"."deals" ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "deals_delete_own" ON "public"."deals" FOR DELETE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deals_insert_own" ON "public"."deals" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deals_select_own" ON "public"."deals" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deals_update_own" ON "public"."deals" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
 ALTER TABLE "public"."tenant_memberships" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "public"."deals" TO "authenticated";
 
 GRANT SELECT,UPDATE ON TABLE "public"."user_profiles" TO "authenticated";
