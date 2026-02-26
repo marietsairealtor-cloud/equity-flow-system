@@ -524,6 +524,16 @@ jobs:
       - name: definer-safety-audit
         shell: pwsh
         run: ./scripts/ci_definer_safety_audit.ps1
+  blocked-identifiers:
+    name: blocked-identifiers
+    needs: [changes, lane-enforcement]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: blocked-identifiers
+        shell: pwsh
+        run: ./scripts/ci_blocked_identifiers.ps1
   unregistered-table-access:
     name: unregistered-table-access
     needs: [changes, lane-enforcement]
@@ -535,7 +545,7 @@ jobs:
         shell: pwsh
         run: ./scripts/ci_unregistered_table_access.ps1
   required:
-    needs: [background-context-review, definer-safety-audit, unregistered-table-access, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
+    needs: [background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)

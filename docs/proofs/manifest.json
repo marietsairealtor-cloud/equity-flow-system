@@ -110,6 +110,7 @@
     "docs/proofs/6.2_definer_audit_20260226T000338Z.log": "4046beffe346c05daa99f93d30cce4e2dc030b91bafe02a7be36ae29b5a6150a",
     "docs/proofs/6.3_tenant_integrity_suite_20260226T163041Z.log": "f94086b115eab7c955504d9d383d8313b6e57192310ade33fa4fd86739ba2280",
     "docs/proofs/6.3A_unregistered_table_access_20260226T175804Z.log": "f4ced3a1f9ac7c2fbf2acef7159e89962aa34c1aa10a35b5250b8cdbfa57ecd3",
-    "docs/proofs/6.4_rls_structural_audit_20260226T231049Z.log": "8cc4a0a4cb72e267d0d016b72f0a5d7c7d24a3211bf559fc546f875f9bd7f2f4"
+    "docs/proofs/6.4_rls_structural_audit_20260226T231049Z.log": "8cc4a0a4cb72e267d0d016b72f0a5d7c7d24a3211bf559fc546f875f9bd7f2f4",
+    "docs/proofs/6.5_blocked_identifiers_20260226T234237Z.log": "895acf4819b37d1f4558b4999d22557561508ea65d277faec179297ead794085"
   }
 }

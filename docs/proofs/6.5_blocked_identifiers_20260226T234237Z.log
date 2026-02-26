@@ -1,0 +1,65 @@
+PROOF_HEAD=28522aaf295dd252be127b74b3b60b63aa00031c
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.5 Blocked Identifiers Lint — Proof Log ===
+Date: 2026-02-26T18:41:18.4100266-05:00
+Branch: 6.5-blocked-identifiers
+HEAD: 28522aaf295dd252be127b74b3b60b63aa00031c
+
+STUB_GATES_ACTIVE:
+  - db-heavy (conversion_trigger: 8.0)
+
+=== DoD 1: blocked_identifiers.json exists ===
+{"version":1,"blocked":["service_role","bypassrls"]}
+
+=== DoD 2: Lint fails on references (deliberate-failure proof) ===
+--- Step A: Inject blocked identifier into temp migration ---
+Created supabase/migrations/99999999999999_test_blocked.sql with service_role reference
+
+--- Step B: Run gate — expect FAIL naming identifier + file ---
+=== blocked-identifiers gate ===
+blocked-identifiers: checking for [service_role, bypassrls]
+FAIL: blocked identifier 'service_role' found in 99999999999999_test_blocked.sql at line 2
+
+blocked-identifiers: FAIL
+Fix: remove or replace blocked identifiers. See docs/truth/blocked_identifiers.json.
+Exit code: 1
+
+--- Step C: Remove temp migration ---
+Removed supabase/migrations/99999999999999_test_blocked.sql
+
+--- Step D: Run gate — expect PASS ---
+=== blocked-identifiers gate ===
+blocked-identifiers: checking for [service_role, bypassrls]
+
+blocked-identifiers: PASS
+Exit code: 0
+
+=== DoD 3: CI wiring verification ===
+--- blocked-identifiers job definition ---
+  blocked-identifiers:
+    name: blocked-identifiers
+    needs: [changes, lane-enforcement]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: blocked-identifiers
+        shell: pwsh
+        run: ./scripts/ci_blocked_identifiers.ps1
+
+--- required.needs includes blocked-identifiers ---
+needs: [background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
+
+--- required_checks.json entry ---
+"name": "CI / blocked-identifiers",
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+blocked-identifiers: PASS
