@@ -1,6 +1,7 @@
 // scripts/test_postgrest_isolation.mjs
 // 6.3 — PostgREST FK embedding + cross-tenant HTTP isolation tests
 import { createRequire } from 'module';
+import { execSync } from 'child_process';
 const require = createRequire(import.meta.url);
 const jwt = require('jsonwebtoken');
 
@@ -17,41 +18,20 @@ function mintJwt(tenantId, role) {
   );
 }
 
-const serviceToken = jwt.sign(
-  { role: 'service_role', iss: 'supabase', aud: 'authenticated' },
-  JWT_SECRET,
-  { expiresIn: '1h' }
-);
-
 const anonToken = jwt.sign(
   { role: 'anon', iss: 'supabase', aud: 'authenticated' },
   JWT_SECRET,
   { expiresIn: '1h' }
 );
 
-async function seed() {
-  const rows = [
-    { id: 'a2000000-0000-0000-0000-000000000001', tenant_id: TENANT_A, row_version: 1, calc_version: 1 },
-    { id: 'a2000000-0000-0000-0000-000000000002', tenant_id: TENANT_A, row_version: 1, calc_version: 1 },
-    { id: 'b2000000-0000-0000-0000-000000000001', tenant_id: TENANT_B, row_version: 1, calc_version: 1 },
-    { id: 'b2000000-0000-0000-0000-000000000002', tenant_id: TENANT_B, row_version: 1, calc_version: 1 },
-  ];
-  const res = await fetch(`${API_URL}/rest/v1/deals`, {
-    method: 'POST',
-    headers: {
-      'apikey': serviceToken,
-      'Authorization': `Bearer ${serviceToken}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates',
-    },
-    body: JSON.stringify(rows),
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    console.error(`Seed failed: ${res.status} ${txt}`);
-    process.exit(1);
-  }
-  console.log('# Seeded 4 rows (2 per tenant)');
+function seed() {
+  const sql = `DELETE FROM public.deals WHERE id IN ('a2000000-0000-0000-0000-000000000001','a2000000-0000-0000-0000-000000000002','b2000000-0000-0000-0000-000000000001','b2000000-0000-0000-0000-000000000002'); INSERT INTO public.deals (id, tenant_id, row_version, calc_version) VALUES ('a2000000-0000-0000-0000-000000000001','${TENANT_A}',1,1),('a2000000-0000-0000-0000-000000000002','${TENANT_A}',1,1),('b2000000-0000-0000-0000-000000000001','${TENANT_B}',1,1),('b2000000-0000-0000-0000-000000000002','${TENANT_B}',1,1);`;
+  execSync(`docker exec supabase_db_equity-flow-system psql -U postgres -c "${sql}"`, { stdio: 'pipe' });
+  console.log('# Seeded 4 rows (2 per tenant) via psql');
+}
+
+function refreshSchemaCache() {
+  execSync('docker kill -s SIGUSR1 supabase_rest_equity-flow-system', { stdio: 'pipe' });
 }
 
 async function httpGet(path, token) {
@@ -82,7 +62,10 @@ async function run() {
   console.log(`# API: ${API_URL}`);
   console.log('');
 
-  await seed();
+  seed();
+  refreshSchemaCache();
+  await new Promise(r => setTimeout(r, 3000));
+  console.log('# PostgREST schema cache refreshed');
   console.log('');
 
   const tokenA = mintJwt(TENANT_A, 'authenticated');
