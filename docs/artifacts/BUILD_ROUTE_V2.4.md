@@ -2446,8 +2446,10 @@ Tenant-owned table definition is auditable, permissive policy patterns
 are rejected by name, and full policy expression enumeration is
 captured in the proof artifact.
 DoD additions (appended to existing 6.4 DoD):
-
+Selector truth exists and enumerator asserts RLS enabled on selected tables.  
+pgTAP rejects permissive policy patterns on selected tables.  
 pgTAP suite explicitly tests and rejects the following specific
+
 patterns on every tenant-owned table:
 
 USING (true)
@@ -2456,12 +2458,14 @@ Any policy with no tenant_id predicate.
 Any policy that does not include either auth.uid() or a call
 to the approved tenant resolution helper (current_tenant_id()
 or equivalent as defined in CONTRACTS.md §3).
-
-
 Gate enumerates all existing RLS policy expressions on tenant-owned
 tables and prints each policy name and expression text.
 Policy expression enumeration output is part of the proof artifact —
 not just a PASS/FAIL line.
+
+Proof: docs/proofs/6.4\_rls\_structural\_audit\_.log  
+Gate: pgtap (merge-blocking)
+
 
 ### **6.5 Blocked identifiers lint**
 
@@ -2478,24 +2482,23 @@ Deliverable:
 Core domain tables exist with calc_version binding, all write paths
 are registered, and concurrent row_version enforcement is proven by
 test.
-DoD additions (appended to existing 6.6 DoD):
-
-docs/truth/write_path_registry.json exists enumerating every write
-path to core tables (RPC names, trigger names, and any background
+DoD
+* Tables exist for: deals, deal\_inputs, deal\_outputs (or equivalent), calc\_versions.
+* Every persisted MAO/Deal row stores: calc\_version \+ assumptions snapshot reference.
+* No nullable “tenant\_id” on tenant-owned tables. 
+* docs/truth/write_path_registry.json exists enumerating every write path to core tables (RPC names, trigger names, and any background
 write paths).
-write_path_registry.json is machine-derived (generated from
-schema and RPC surface). §3.0.4c exemption does NOT apply. Triple
-Registration Rule §3.0.4 applies in full:
+* write_path_registry.json is machine-derived (generated from schema and RPC surface). §3.0.4c exemption does NOT apply. Triple
+* Registration Rule §3.0.4 applies in full:
 a. Registered in robot-owned guard.
 b. Included in truth-bootstrap validation gate.
 c. Included in handoff regeneration surface.
-For each registered write path: proof that it increments row_version
-and checks the expected value on update via WHERE row_version = $expected.
-A write path without this clause fails the proof.
-pgTAP test: two concurrent UPDATEs are issued against the same row
-using the same row_version value. Test asserts exactly one succeeds
-and the other returns a conflict response. A stale-version update must
-never silently overwrite.
+* For each registered write path: proof that it increments row_version and checks the expected value on update via WHERE row_version = $expected.
+* A write path without this clause fails the proof.
+* pgTAP test: two concurrent UPDATEs are issued against the same row using the same row_version value. Test asserts exactly one succeeds and the other returns a conflict response. A stale-version update must never silently overwrite.
+
+Proof: docs/proofs/6.6\_product\_core\_tables\_.md  
+Gate: merge-blocking (runtime)
 
 ---
 
@@ -2505,21 +2508,19 @@ Deliverable:
 Public share-link mechanism exists without breaking tenant isolation,
 with tenant-scoped token lookup proven at the query planner level —
 not just at the source level.
-DoD additions (appended to existing 6.7 DoD):
-
-The share token lookup RPC WHERE clause must include both
-token = $token AND tenant_id = $tenant_id. Token uniqueness alone
+DoD:
+* Share token table exists (random, non-guessable token; expiry optional).
+* Share link only exposes explicitly allowlisted fields (packet view).
+* Negative tests prove: token cannot reveal other tenant data.  
+* The share token lookup RPC WHERE clause must include both token = $token AND tenant_id = $tenant_id. Token uniqueness alone
 is not sufficient.
-Negative test: a valid token from Tenant A, looked up in a context
-that resolves to Tenant B's tenant ID, returns no result.
-Token expiry behavior is explicitly defined: expired tokens return a
-distinguishable code value per the RPC envelope contract
-(CONTRACTS.md §1).
-Query plan evidence required: Proof includes EXPLAIN output or
-equivalent confirming the planner uses the tenant_id predicate.
-A source-level assertion is not sufficient — index selection can cause
-the planner to skip a predicate that is syntactically present in the
-WHERE clause.
+* Negative test: a valid token from Tenant A, looked up in a context that resolves to Tenant B's tenant ID, returns no result.
+* Token expiry behavior is explicitly defined: expired tokens return a distinguishable code value per the RPC envelope contract (CONTRACTS.md §1).
+* Query plan evidence required: Proof includes EXPLAIN output or equivalent confirming the planner uses the tenant_id predicate.
+* A source-level assertion is not sufficient — index selection can cause the planner to skip a predicate that is syntactically present in the WHERE clause.
+
+Proof: docs/proofs/6.6\_product\_core\_tables\_.md  
+Gate: merge-blocking (runtime)
 
 ### **6.8 Seat \+ role model (per-seat billing-ready)**
 
