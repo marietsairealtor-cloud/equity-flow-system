@@ -2445,11 +2445,10 @@ Deliverable:
 Tenant-owned table definition is auditable, permissive policy patterns
 are rejected by name, and full policy expression enumeration is
 captured in the proof artifact.
-DoD additions (appended to existing 6.4 DoD):
+DoD 
 Selector truth exists and enumerator asserts RLS enabled on selected tables.  
 pgTAP rejects permissive policy patterns on selected tables.  
 pgTAP suite explicitly tests and rejects the following specific
-
 patterns on every tenant-owned table:
 
 USING (true)
