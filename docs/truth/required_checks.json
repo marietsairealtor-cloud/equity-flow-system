@@ -41,6 +41,11 @@
       "required": true
     },
     {
+      "name": "CI / definer-safety-audit",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / docs-push-contract",
       "type": "github_status",
       "required": true
