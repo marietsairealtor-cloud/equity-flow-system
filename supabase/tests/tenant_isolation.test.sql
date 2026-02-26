@@ -1,18 +1,16 @@
--- 6.3 Tenant Integrity Suite — Negative Isolation Tests
+-- 6.3 Tenant Integrity Suite — Negative Isolation Tests (RPC surface)
 -- GUARDRAILS: SQL-only, no DO blocks, no PL/pgSQL, no \cmds, named dollar tags only
+-- Tests use allowlisted RPCs per CONTRACTS.md S7/S12 (no direct table access).
 
 SELECT plan(13);
 
--- SEED CLEANUP (idempotency)
+-- Seed as superuser (privileged seeding, not assertion)
 DELETE FROM public.deals WHERE id IN (
   'a2000000-0000-0000-0000-000000000001'::uuid,
   'a2000000-0000-0000-0000-000000000002'::uuid,
-  'a2000000-0000-0000-0000-000000000003'::uuid,
   'b2000000-0000-0000-0000-000000000001'::uuid,
   'b2000000-0000-0000-0000-000000000002'::uuid
 );
-
--- Seed 2 tenants x 2 rows each
 INSERT INTO public.deals (id, tenant_id, row_version, calc_version) VALUES
   ('a2000000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid, 1, 1),
   ('a2000000-0000-0000-0000-000000000002'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid, 1, 1),
@@ -26,55 +24,46 @@ RESET ROLE;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'a0000000-0000-0000-0000-000000000001', false);
 
--- Diagnostic: confirm claim resolves
+-- Diagnostic: tenant resolves
 SELECT isnt(
   public.current_tenant_id(),
   NULL::uuid,
   'Diagnostic: current_tenant_id() resolves for Tenant A'
 );
 
--- Test 1: Tenant A sees own deals only
+-- Test 1: list_deals_v1 returns only Tenant A rows
 SELECT is(
-  (SELECT count(*)::int FROM public.deals),
+  (SELECT (public.list_deals_v1(100)::json -> 'data' -> 'items')::json ->> 0 IS NOT NULL)::boolean,
+  true,
+  'Tenant A: list_deals_v1 returns items'
+);
+
+-- Test 2: list_deals_v1 count = 2 (own rows only)
+SELECT is(
+  (SELECT json_array_length(public.list_deals_v1(100)::json -> 'data' -> 'items'))::int,
   2,
-  'Tenant A session: total visible deals = 2 (own only)'
+  'Tenant A: list_deals_v1 returns exactly 2 deals (own only)'
 );
 
--- Test 2: Tenant A cannot read Tenant B deals
+-- Test 3: all items belong to Tenant A
 SELECT is(
-  (SELECT count(*)::int FROM public.deals WHERE tenant_id = 'b0000000-0000-0000-0000-000000000001'::uuid),
+  (SELECT count(*)::int FROM json_array_elements(public.list_deals_v1(100)::json -> 'data' -> 'items') AS elem WHERE elem ->> 'tenant_id' != 'a0000000-0000-0000-0000-000000000001'),
   0,
-  'Tenant A session: cannot read Tenant B deals'
+  'Tenant A: all list_deals_v1 items belong to Tenant A'
 );
 
--- Test 3: Tenant A cannot insert into Tenant B (WITH CHECK violation)
-SELECT throws_ok(
-  $tap$INSERT INTO public.deals (id, tenant_id, row_version, calc_version)
-       VALUES ('b2000000-0000-0000-0000-000000000003'::uuid, 'b0000000-0000-0000-0000-000000000001'::uuid, 1, 1)$tap$,
-  'new row violates row-level security policy for table "deals"',
-  'Tenant A session: INSERT into Tenant B deals must fail'
-);
-
--- Test 4: Tenant A can insert into own tenant
-SELECT lives_ok(
-  $tap$INSERT INTO public.deals (id, tenant_id, row_version, calc_version)
-       VALUES ('a2000000-0000-0000-0000-000000000003'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid, 1, 1)$tap$,
-  'Tenant A session: INSERT into Tenant A deals must succeed'
-);
-
--- Test 5: Tenant A update on Tenant B affects 0 rows (RLS filters silently)
+-- Test 4: create_deal_v1 succeeds for own tenant
 SELECT is(
-  (SELECT count(*)::int FROM public.deals
-     WHERE id = 'b2000000-0000-0000-0000-000000000001'::uuid),
-  0,
-  'Tenant A session: Tenant B deal not visible for UPDATE'
+  (public.create_deal_v1('a2000000-0000-0000-0000-000000000099'::uuid)::json ->> 'ok')::boolean,
+  true,
+  'Tenant A: create_deal_v1 succeeds (own tenant)'
 );
 
--- Test 6: Tenant A can update own deal
-SELECT lives_ok(
-  $tap$UPDATE public.deals SET row_version = row_version + 1
-       WHERE id = 'a2000000-0000-0000-0000-000000000001'::uuid$tap$,
-  'Tenant A session: UPDATE on Tenant A deal must succeed'
+-- Test 5: created deal shows tenant A binding
+SELECT is(
+  (public.create_deal_v1('a2000000-0000-0000-0000-000000000098'::uuid)::json -> 'data' ->> 'tenant_id'),
+  'a0000000-0000-0000-0000-000000000001',
+  'Tenant A: create_deal_v1 binds to Tenant A'
 );
 
 -- ============================================================
@@ -84,33 +73,52 @@ RESET ROLE;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'b0000000-0000-0000-0000-000000000001', false);
 
--- Test 7: Tenant B sees own deals only
+-- Test 6: list_deals_v1 returns only Tenant B rows
 SELECT is(
-  (SELECT count(*)::int FROM public.deals),
+  (SELECT json_array_length(public.list_deals_v1(100)::json -> 'data' -> 'items'))::int,
   2,
-  'Tenant B session: total visible deals = 2 (own only)'
+  'Tenant B: list_deals_v1 returns exactly 2 deals (own only)'
 );
 
--- Test 8: Tenant B cannot read Tenant A deals
+-- Test 7: Tenant B cannot see Tenant A rows
 SELECT is(
-  (SELECT count(*)::int FROM public.deals WHERE tenant_id = 'a0000000-0000-0000-0000-000000000001'::uuid),
+  (SELECT count(*)::int FROM json_array_elements(public.list_deals_v1(100)::json -> 'data' -> 'items') AS elem WHERE elem ->> 'tenant_id' = 'a0000000-0000-0000-0000-000000000001'),
   0,
-  'Tenant B session: cannot read Tenant A deals'
+  'Tenant B: list_deals_v1 returns zero Tenant A rows'
 );
 
--- Test 9: Tenant B delete on Tenant A affects 0 rows (RLS filters silently)
+-- Test 8: Tenant B create binds to B
 SELECT is(
-  (SELECT count(*)::int FROM public.deals
-     WHERE id = 'a2000000-0000-0000-0000-000000000002'::uuid),
-  0,
-  'Tenant B session: Tenant A deal not visible for DELETE'
+  (public.create_deal_v1('b2000000-0000-0000-0000-000000000099'::uuid)::json -> 'data' ->> 'tenant_id'),
+  'b0000000-0000-0000-0000-000000000001',
+  'Tenant B: create_deal_v1 binds to Tenant B (not A)'
 );
 
--- Test 10: Tenant B can delete own deal
-SELECT lives_ok(
-  $tap$DELETE FROM public.deals WHERE id = 'b2000000-0000-0000-0000-000000000002'::uuid$tap$,
-  'Tenant B session: DELETE on Tenant B deal must succeed'
+-- ============================================================
+-- No-tenant session (NULL context)
+-- ============================================================
+RESET ROLE;
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.tenant_id', '', false);
+
+-- Test 9: no tenant = NOT_AUTHORIZED
+SELECT is(
+  (public.list_deals_v1()::json ->> 'code'),
+  'NOT_AUTHORIZED',
+  'No tenant context: list_deals_v1 returns NOT_AUTHORIZED'
 );
+
+-- Test 10: no tenant = create denied
+SELECT is(
+  (public.create_deal_v1('c2000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  'NOT_AUTHORIZED',
+  'No tenant context: create_deal_v1 returns NOT_AUTHORIZED'
+);
+
+-- ============================================================
+-- Structural checks
+-- ============================================================
+RESET ROLE;
 
 -- Test 11: No views in public schema
 SELECT is(

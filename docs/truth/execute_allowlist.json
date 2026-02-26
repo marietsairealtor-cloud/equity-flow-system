@@ -1,1 +1,1 @@
-{"version":1,"allow":[]}
+{"version":1,"allow":["list_deals_v1","create_deal_v1"]}

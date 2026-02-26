@@ -1,5 +1,6 @@
 // scripts/test_postgrest_isolation.mjs
-// 6.3 — PostgREST FK embedding + cross-tenant HTTP isolation tests
+// 6.3 — PostgREST HTTP isolation tests via RPC surface
+// Proves CONTRACTS.md S7/S12: no direct table access, tenant isolation via RPCs
 import { createRequire } from 'module';
 import { execSync } from 'child_process';
 const require = createRequire(import.meta.url);
@@ -31,7 +32,22 @@ function seed() {
 }
 
 function refreshSchemaCache() {
-  execSync('docker kill -s SIGUSR1 supabase_rest_equity-flow-system', { stdio: 'pipe' });
+  try {
+    execSync('docker kill -s SIGUSR1 supabase_rest_equity-flow-system', { stdio: 'pipe' });
+  } catch (_) { /* container may already be fresh */ }
+}
+
+async function rpcPost(rpcName, body, token) {
+  const res = await fetch(`${API_URL}/rest/v1/rpc/${rpcName}`, {
+    method: 'POST',
+    headers: {
+      'apikey': anonToken,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  return { status: res.status, body: await res.json().catch(() => null) };
 }
 
 async function httpGet(path, token) {
@@ -58,7 +74,8 @@ function assert(name, condition) {
 }
 
 async function run() {
-  console.log('# PostgREST Tenant Isolation HTTP Tests');
+  console.log('# PostgREST Tenant Isolation HTTP Tests (RPC surface)');
+  console.log('# Proves CONTRACTS.md S7/S12: RPC-only, no direct table access');
   console.log(`# API: ${API_URL}`);
   console.log('');
 
@@ -71,37 +88,39 @@ async function run() {
   const tokenA = mintJwt(TENANT_A, 'authenticated');
   const tokenB = mintJwt(TENANT_B, 'authenticated');
 
-  // Test 1: Tenant A reads deals — sees only own
-  const r1 = await httpGet('deals?select=*', tokenA);
-  assert('Tenant A: HTTP GET deals returns 200', r1.status === 200);
-  const allOwnA = Array.isArray(r1.body) && r1.body.every(r => r.tenant_id === TENANT_A);
-  assert('Tenant A: all returned deals belong to Tenant A', allOwnA);
-  assert('Tenant A: sees >= 2 own deals', Array.isArray(r1.body) && r1.body.length >= 2);
+  // Test 1: Tenant A list_deals_v1 returns ok + own rows only
+  const r1 = await rpcPost('list_deals_v1', { p_limit: 100 }, tokenA);
+  assert('Tenant A: list_deals_v1 returns 200', r1.status === 200);
+  assert('Tenant A: list_deals_v1 ok=true', r1.body?.ok === true);
+  const itemsA = r1.body?.data?.items || [];
+  assert('Tenant A: list_deals_v1 returns >= 2 items', itemsA.length >= 2);
+  const allOwnA = itemsA.every(i => i.tenant_id === TENANT_A);
+  assert('Tenant A: all items belong to Tenant A', allOwnA);
 
-  // Test 2: Tenant A cannot see Tenant B via filter
-  const r2 = await httpGet(`deals?select=*&tenant_id=eq.${TENANT_B}`, tokenA);
-  assert('Tenant A: filter by Tenant B returns empty', Array.isArray(r2.body) && r2.body.length === 0);
+  // Test 2: Tenant B list_deals_v1 returns only B rows
+  const r2 = await rpcPost('list_deals_v1', { p_limit: 100 }, tokenB);
+  assert('Tenant B: list_deals_v1 returns 200', r2.status === 200);
+  const itemsB = r2.body?.data?.items || [];
+  assert('Tenant B: list_deals_v1 returns >= 2 items', itemsB.length >= 2);
+  const allOwnB = itemsB.every(i => i.tenant_id === TENANT_B);
+  assert('Tenant B: all items belong to Tenant B', allOwnB);
+  const noLeakB = itemsB.every(i => i.tenant_id !== TENANT_A);
+  assert('Tenant B: zero Tenant A rows leaked', noLeakB);
 
-  // Test 3: Tenant B reads deals — sees only own
-  const r3 = await httpGet('deals?select=*', tokenB);
-  assert('Tenant B: HTTP GET deals returns 200', r3.status === 200);
-  const allOwnB = Array.isArray(r3.body) && r3.body.every(r => r.tenant_id === TENANT_B);
-  assert('Tenant B: all returned deals belong to Tenant B', allOwnB);
+  // Test 3: Tenant A create_deal_v1 binds to A
+  const r3 = await rpcPost('create_deal_v1', { p_id: 'a2000000-0000-0000-0000-000000000077' }, tokenA);
+  assert('Tenant A: create_deal_v1 ok=true', r3.body?.ok === true);
+  assert('Tenant A: created deal bound to Tenant A', r3.body?.data?.tenant_id === TENANT_A);
 
-  // Test 4: FK embedding — deals?select=*,tenants(*)
-  const r4 = await httpGet('deals?select=*,tenants(*)', tokenA);
-  assert('Tenant A: FK embedding does not return 500', r4.status !== 500);
-  if (r4.status === 200 && Array.isArray(r4.body)) {
-    const fkLeak = r4.body.some(r => r.tenant_id !== TENANT_A);
-    assert('Tenant A: FK embedding does not leak Tenant B rows', !fkLeak);
-  } else {
-    assert('Tenant A: FK embedding blocked or no relationship (safe)', r4.status === 400 || r4.status === 300);
-  }
+  // Test 4: direct table access blocked (S12)
+  const r4 = await httpGet('deals?select=*', tokenA);
+  const directBlocked = r4.status === 404 || r4.status === 403 || (r4.status === 200 && Array.isArray(r4.body) && r4.body.length === 0);
+  assert('authenticated: direct /rest/v1/deals blocked (S12)', directBlocked);
 
-  // Test 5: anon cannot access deals
-  const r5 = await httpGet('deals?select=*', anonToken);
-  const anonBlocked = r5.status === 401 || r5.status === 403 || (r5.status === 200 && Array.isArray(r5.body) && r5.body.length === 0);
-  assert('anon: cannot access deals data', anonBlocked);
+  // Test 5: anon cannot call RPCs
+  const r5 = await rpcPost('list_deals_v1', { p_limit: 100 }, anonToken);
+  const anonBlocked = r5.status === 401 || r5.status === 403 || (r5.body?.ok === false);
+  assert('anon: list_deals_v1 denied', anonBlocked);
 
   console.log('');
   console.log(`# Results: ${passed} passed, ${failed} failed`);
