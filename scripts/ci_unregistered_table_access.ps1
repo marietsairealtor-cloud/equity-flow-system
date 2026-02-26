@@ -37,8 +37,6 @@ if ($selectorRaw.PSObject.Properties.Name -contains "tables") {
 } elseif ($selectorRaw.PSObject.Properties.Name -contains "selector") {
     # Current format has no explicit table list — all tenant-scoped tables are implicit
     # We need to check if there is a separate table list property
-    Write-Host "unregistered-table-access: selector format detected but no explicit table list."
-    Write-Host "unregistered-table-access: checking for tables array..."
 }
 
 if ($selectorRaw.PSObject.Properties.Name -contains "tenant_tables") {
