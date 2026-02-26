@@ -1,10 +1,9 @@
 {
-  "_authoring": "hand-authored per Build Route 6.3 DoD. §3.0.4c exemption applies.",
-  "_review_date": "2026-02-26",
-  "_catalog_query": "SELECT trigger_name, event_object_table FROM information_schema.triggers WHERE trigger_schema = 'public'; SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='cron';",
+  "_comment": "Hand-authored per Build Route 6.3. Lists every trigger, pg_cron job, or background function executing outside a request context.",
+  "_review_date": "2026-02-25",
+  "_reviewer": "human",
   "triggers": [],
   "pg_cron_jobs": [],
-  "other_background_functions": [],
-  "finding": "No triggers, pg_cron jobs, or background functions exist in the public schema as of migration 20260219000006. No background context risk. All data access occurs within authenticated request context only.",
-  "tenant_binding_confirmed": true
+  "background_functions": [],
+  "confirmation": "No triggers, cron jobs, or background functions exist in the public schema. All execution occurs within authenticated request context with JWT-based tenant binding."
 }
