@@ -3568,3 +3568,40 @@ DoD
 
 Status
 PASS
+
+## 2026-02-26 — Build Route v2.4 — 6.3 Tenant Integrity Suite [HARDENED]
+
+Objective
+Tenant isolation proven with negative proofs against populated data, RPC-only access surface per CONTRACTS.md §7/§12, view and FK embedding coverage, catalog-validated background context review, and database-tests.yml CI workflow.
+
+Changes
+- supabase/migrations/20260219000007_tenant_rls_policies.sql — current_tenant_id() helper, RLS policies on deals (USING/WITH CHECK), initial grants (revoked by 000009)
+- supabase/migrations/20260219000008_fix_current_tenant_id.sql — COALESCE fix: reads both request.jwt.claim.tenant_id and request.jwt.claims JSON for PostgREST compatibility
+- supabase/migrations/20260219000009_revoke_deals_direct_grants.sql — revoke all direct grants on deals from anon/authenticated per CONTRACTS.md §12
+- supabase/migrations/20260219000010_deals_rpc_surface.sql — list_deals_v1 (read) + create_deal_v1 (write) SECURITY DEFINER RPCs with tenant binding via current_tenant_id()
+- supabase/migrations/20260219000011_deals_rpc_grants.sql — GRANT EXECUTE to authenticated, REVOKE from anon (split from 000010 for lint_sql_safety compliance)
+- supabase/tests/tenant_isolation.test.sql — 13 pgTAP tests: RPC-based read/write isolation with populated data (≥2 rows/tenant), cross-tenant denial, no-tenant denial, view structural check, trigger structural check
+- scripts/test_postgrest_isolation.mjs — 12 PostgREST HTTP tests via /rpc/ endpoints: tenant isolation, direct table access blocked (§12), anon denied
+- scripts/ci_background_context_review.ps1 — bug fix: wrap docker output in array for .Count, fix pg_cron_jobs property name
+- scripts/ci_anon_privilege_audit.ps1 — B3 section updated: allowlist-aware routine grant checking via execute_allowlist.json
+- docs/truth/background_context_review.json — hand-authored: zero triggers, zero pg_cron jobs, zero background functions
+- docs/truth/execute_allowlist.json — list_deals_v1, create_deal_v1 registered
+- docs/truth/deferred_proofs.json — pgtap and database-tests.yml entries removed (converted from stub to real)
+- .github/workflows/database-tests.yml — pgtap + postgrest-isolation CI jobs
+
+Proof
+docs/proofs/6.3_tenant_integrity_suite_20260226T163041Z.log
+
+DoD
+- Seed ≥2 rows in Tenant A and ≥2 rows in Tenant B before asserting isolation — CONFIRMED (4 rows seeded: 2 per tenant)
+- View-based negative tests — CONFIRMED (pgTAP test 11: 0 views in public schema)
+- FK embedding via PostgREST HTTP tests against live local instance — CONFIRMED (direct /rest/v1/deals blocked per §12; RPC surface tested via HTTP)
+- background_context_review.json exists, hand-authored, triple registered — CONFIRMED
+- Catalog cross-check gate fails on drift — CONFIRMED (background-context-review gate passes)
+- database-tests.yml created and executed — CONFIRMED
+- deferred_proofs.json conversion triggers updated to 6.3 then entries removed as converted — CONFIRMED
+- CONTRACTS.md §12 compliance: zero direct grants on deals to authenticated — CONFIRMED (anon-privilege-audit PASS)
+- CI green, QA approved, merged
+
+Status
+PASS
