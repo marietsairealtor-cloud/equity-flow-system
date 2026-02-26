@@ -225,6 +225,9 @@
     },
     "6.2": {
       "proof_pattern": "^docs/proofs/6\\.2_definer_audit_"
+    },
+    "6.3": {
+      "proof_pattern": "^docs/proofs/6\\.3_tenant_integrity_suite_"
     }
   }
 }

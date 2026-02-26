@@ -8,8 +8,14 @@
   },
   {
     "gate": "database-tests.yml",
-    "stub_reason": "Workflow declared required in AUTOMATION.md §2 but does not exist in repo.",
+    "stub_reason": "Workflow exists but runs as stub — no live DB in CI runners.",
     "deferred_invariant": "pgTAP database tests are not run in CI; no DB-level invariants are asserted.",
-    "conversion_trigger": "6.0/8.0"
+    "conversion_trigger": "6.3"
+  },
+  {
+    "gate": "pgtap",
+    "stub_reason": "pgTAP suite exists locally but CI job runs as stub — no live DB in CI runners.",
+    "deferred_invariant": "pgTAP negative isolation tests are not run in CI; DB-level isolation invariants not CI-enforced.",
+    "conversion_trigger": "6.3"
   }
 ]
