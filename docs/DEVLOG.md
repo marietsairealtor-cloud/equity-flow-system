@@ -3633,3 +3633,30 @@ DoD
 
 Status
 PASS
+
+## 2026-02-26 — Build Route v2.4 — 6.4 Tenant-Owned Table Selector [HARDENED]
+
+Objective
+RLS structural audit: tenant-owned table definition is auditable, permissive policy patterns are rejected by name, and full policy expression enumeration is captured in proof.
+
+Changes
+- supabase/tests/rls_structural_audit.test.sql — 8 pgTAP assertions: rejects USING(true), USING(1=1), missing tenant_id predicate, missing current_tenant_id(), raw auth.uid() on tenant-owned tables
+- docs/truth/tenant_table_selector.json — updated to v3 with tenant_owned_tables array (deals)
+- docs/truth/qa_claim.json — updated to 6.4
+- docs/truth/qa_scope_map.json — 6.4 entry added
+- docs/truth/completed_items.json — 6.4 added
+- scripts/ci_robot_owned_guard.ps1 — 6.4 proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_PR047.md — governance justification
+
+Proof
+docs/proofs/6.4_rls_structural_audit_20260226T231049Z.log
+
+DoD
+- Selector truth exists and enumerator asserts RLS enabled on tenant-owned tables — CONFIRMED (deals: RLS=t)
+- pgTAP rejects USING(true), USING(1=1), no tenant_id, no current_tenant_id(), raw auth.uid() — CONFIRMED (8 assertions PASS)
+- Gate enumerates all RLS policy expressions and prints each policy name and expression — CONFIRMED (4 policies on deals, all use current_tenant_id())
+- Policy expression enumeration in proof artifact — CONFIRMED
+- database-tests / pgtap green, CI 52/52 green, QA approved, merged
+
+Status
+PASS
