@@ -1,5 +1,5 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: e2ac9ee
+HEAD: 30443e3
 
 === git status --porcelain=v1 ===
 
@@ -9,8 +9,7 @@ HEAD: e2ac9ee
     "exitcode":  0,
     "stack_running":  false,
     "stopped_services":  [
-                             "supabase_imgproxy_equity-flow-system",
-                             "supabase_pooler_equity-flow-system"
+
                          ],
     "api_url":  null,
     "rest_url":  null,
@@ -19,14 +18,14 @@ HEAD: e2ac9ee
 }
 
 === last applied migration (DB) ===
- 20260219000008
+ 20260219000010
 
 === latest migration file in repo ===
-20260219000008_fix_current_tenant_id.sql
+20260219000010_deals_rpc_surface.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
 - CI workflow present: yes (.github/workflows/ci.yml)
 - pgTAP workflow present: yes (.github/workflows/database-tests.yml)
-- privilege firewall (REVOKE core tables) detected in schema.sql: no
-- SECURITY DEFINER detected in schema.sql: no
+- privilege firewall (REVOKE core tables) detected in schema.sql: yes
+- SECURITY DEFINER detected in schema.sql: yes
