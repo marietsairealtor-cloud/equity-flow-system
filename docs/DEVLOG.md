@@ -3660,3 +3660,30 @@ DoD
 
 Status
 PASS
+
+## 2026-02-26 — Build Route v2.4 — 6.5 Blocked Identifiers Lint
+
+Objective
+Mechanical denylist preventing ghost carrier identifiers from appearing in migrations.
+
+Changes
+- scripts/ci_blocked_identifiers.ps1 — new gate: scans supabase/migrations for identifiers listed in blocked_identifiers.json, fails naming file + line + identifier
+- .github/workflows/ci.yml — blocked-identifiers job added, wired into required.needs
+- docs/truth/required_checks.json — CI / blocked-identifiers added via truth:sync
+- docs/truth/qa_claim.json — updated to 6.5
+- docs/truth/qa_scope_map.json — 6.5 entry added
+- docs/truth/completed_items.json — 6.5 added
+- scripts/ci_robot_owned_guard.ps1 — 6.5 proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_PR048.md — governance justification
+
+Proof
+docs/proofs/6.5_blocked_identifiers_20260226T234237Z.log
+
+DoD
+- blocked_identifiers.json exists — CONFIRMED (service_role, bypassrls)
+- Lint fails on references naming identifier + file — CONFIRMED (deliberate-failure: injected service_role in temp migration, FAIL at line 2, removed, PASS)
+- Proof shows lint run and PASS condition — CONFIRMED
+- CI green, QA approved, merged
+
+Status
+PASS
