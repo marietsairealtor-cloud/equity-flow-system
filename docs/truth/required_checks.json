@@ -191,6 +191,11 @@
       "required": true
     },
     {
+      "name": "CI / unregistered-table-access",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / waiver-debt-enforcement",
       "type": "github_status",
       "required": true

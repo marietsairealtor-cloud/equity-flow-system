@@ -1,1 +1,10 @@
-{"version":1,"selector":{"tenant_id_column":"tenant_id","required":true}}
+{
+  "version": 2,
+  "selector": {
+    "tenant_id_column": "tenant_id",
+    "required": true
+  },
+  "tenant_tables": [
+    "user_profiles"
+  ]
+}

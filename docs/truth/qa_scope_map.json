@@ -228,6 +228,9 @@
     },
     "6.3": {
       "proof_pattern": "^docs/proofs/6\\.3_tenant_integrity_suite_"
+    },
+    "6.3A": {
+      "proof_pattern": "^docs/proofs/6\\.3A_unregistered_table_access_"
     }
   }
 }
