@@ -93,10 +93,5 @@ EXCEPTION WHEN unique_violation THEN
 END;
 $fn$;
 
--- Grant EXECUTE to authenticated only on these RPCs
-GRANT EXECUTE ON FUNCTION public.list_deals_v1(int) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.create_deal_v1(uuid, bigint, int) TO authenticated;
 
--- Revoke from anon
-REVOKE EXECUTE ON FUNCTION public.list_deals_v1(int) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.create_deal_v1(uuid, bigint, int) FROM anon;
+
