@@ -11,6 +11,11 @@
       "required": true
     },
     {
+      "name": "CI / background-context-review",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / ci-encoding-audit",
       "type": "github_status",
       "required": true
