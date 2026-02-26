@@ -109,6 +109,7 @@
     "docs/proofs/6.1A_handoff_preconditions_20260225T211356Z.log": "18669566583026361319f367cb9178a16046decf57f3e30aea4e92e203e14f71",
     "docs/proofs/6.2_definer_audit_20260226T000338Z.log": "4046beffe346c05daa99f93d30cce4e2dc030b91bafe02a7be36ae29b5a6150a",
     "docs/proofs/6.3_tenant_integrity_suite_20260226T163041Z.log": "f94086b115eab7c955504d9d383d8313b6e57192310ade33fa4fd86739ba2280",
-    "docs/proofs/6.3A_unregistered_table_access_20260226T175804Z.log": "f4ced3a1f9ac7c2fbf2acef7159e89962aa34c1aa10a35b5250b8cdbfa57ecd3"
+    "docs/proofs/6.3A_unregistered_table_access_20260226T175804Z.log": "f4ced3a1f9ac7c2fbf2acef7159e89962aa34c1aa10a35b5250b8cdbfa57ecd3",
+    "docs/proofs/6.4_rls_structural_audit_20260226T231049Z.log": "8cc4a0a4cb72e267d0d016b72f0a5d7c7d24a3211bf559fc546f875f9bd7f2f4"
   }
 }

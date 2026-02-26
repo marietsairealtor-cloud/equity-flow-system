@@ -231,6 +231,9 @@
     },
     "6.3A": {
       "proof_pattern": "^docs/proofs/6\\.3A_unregistered_table_access_"
+    },
+    "6.4": {
+      "proof_pattern": "^docs/proofs/6\\.4_rls_structural_audit_"
     }
   }
 }

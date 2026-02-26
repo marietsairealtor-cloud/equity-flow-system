@@ -1,10 +1,13 @@
 {
-  "version": 2,
-  "selector": {
-    "tenant_id_column": "tenant_id",
-    "required": true
-  },
+  "version": 3,
   "tenant_tables": [
     "user_profiles"
-  ]
+  ],
+  "tenant_owned_tables": [
+    "deals"
+  ],
+  "selector": {
+    "required": true,
+    "tenant_id_column": "tenant_id"
+  }
 }
