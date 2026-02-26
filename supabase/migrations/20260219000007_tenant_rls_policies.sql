@@ -1,6 +1,6 @@
 -- 20260219000007_tenant_rls_policies.sql
 -- Build Route 6.3 — Tenant isolation RLS policies
--- Forward-only plain SQL. No DO blocks. No dynamic SQL. No $$.
+-- Forward-only plain SQL. No DO blocks. No dynamic SQL. No double-dollar tags.
 -- Named dollar tags only where needed.
 
 -- Helper: current tenant id from JWT claim (request.jwt.claim.tenant_id)
