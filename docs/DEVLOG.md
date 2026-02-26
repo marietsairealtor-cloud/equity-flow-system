@@ -3605,3 +3605,31 @@ DoD
 
 Status
 PASS
+## 2026-02-26 — Build Route v2.4 — 6.3A Unregistered Table Access Gate
+
+Objective
+Merge-blocking gate failing if any table accessible to authenticated in public schema is absent from tenant_table_selector.json, closing the gap where a new table receives default privileges without revocation and escapes the selector.
+
+Changes
+- scripts/ci_unregistered_table_access.ps1 — new gate: enumerates authenticated privileges via information_schema.role_table_grants + pg_default_acl, cross-references tenant_table_selector.json
+- .github/workflows/ci.yml — unregistered-table-access job added, wired into required.needs
+- docs/truth/required_checks.json — CI / unregistered-table-access added via truth:sync
+- docs/truth/tenant_table_selector.json — updated to v2 with explicit tenant_tables array
+- docs/truth/qa_claim.json — updated to 6.3A
+- docs/truth/qa_scope_map.json — 6.3A entry added
+- docs/truth/completed_items.json — 6.3A added
+- scripts/ci_robot_owned_guard.ps1 — 6.3A proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_PR044.md — governance justification
+
+Proof
+docs/proofs/6.3A_unregistered_table_access_20260226T175804Z.log
+
+DoD
+- Script enumerates every table in public where authenticated has SELECT/INSERT/UPDATE/DELETE via direct grant or default ACL — CONFIRMED
+- Script cross-references against tenant_table_selector.json — CONFIRMED
+- Gate fails naming table and specific privilege on unregistered table — CONFIRMED (deliberate-failure: user_profiles removed, FAIL naming user_profiles + SELECT/UPDATE, restored, PASS)
+- CI wired, merge-blocking via required.needs — CONFIRMED
+- CI green, QA approved, merged
+
+Status
+PASS
