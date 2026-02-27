@@ -26,9 +26,10 @@ const anonToken = jwt.sign(
 );
 
 function seed() {
-  const sql = `DELETE FROM public.deals WHERE id IN ('a2000000-0000-0000-0000-000000000001','a2000000-0000-0000-0000-000000000002','b2000000-0000-0000-0000-000000000001','b2000000-0000-0000-0000-000000000002'); INSERT INTO public.deals (id, tenant_id, row_version, calc_version) VALUES ('a2000000-0000-0000-0000-000000000001','${TENANT_A}',1,1),('a2000000-0000-0000-0000-000000000002','${TENANT_A}',1,1),('b2000000-0000-0000-0000-000000000001','${TENANT_B}',1,1),('b2000000-0000-0000-0000-000000000002','${TENANT_B}',1,1);`;
-  execSync(`docker exec supabase_db_equity-flow-system psql -U postgres -c "${sql}"`, { stdio: 'pipe' });
-  console.log('# Seeded 4 rows (2 per tenant) via psql');
+  const { readFileSync } = require('fs');
+  const sql = readFileSync('scripts/postgrest_seed.sql', 'utf8');
+  execSync('docker exec -i supabase_db_equity-flow-system psql -U postgres', { input: sql, stdio: ['pipe','pipe','pipe'] });
+  console.log('# Seeded 4 deals + 4 deal_inputs (2 per tenant) via psql');
 }
 
 function refreshSchemaCache() {

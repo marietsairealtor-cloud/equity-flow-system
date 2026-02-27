@@ -31,7 +31,7 @@ $query = @"
 SELECT
     n.nspname || '.' || p.proname AS fname,
     coalesce(array_to_string(p.proconfig, ','), '') AS cfg,
-    pg_get_functiondef(p.oid) AS src
+    replace(replace(p.prosrc, chr(10), ' '), chr(13), ' ') AS src
 FROM pg_proc p
 JOIN pg_namespace n ON n.oid = p.pronamespace
 WHERE p.prosecdef = true
@@ -78,7 +78,7 @@ if ($rows -and $rows.Trim() -ne "") {
         }
 
         # DoD 2: Tenant membership check in prosrc
-        if ($src -notmatch 'current_tenant_id\(\)') {
+        if ($src -notmatch '(public\.)?current_tenant_id\(\)') {
             $bad += "FAIL [$fname]: no current_tenant_id() call found in prosrc — tenant membership not enforced"
             Write-Host "  tenant membership: FAIL"
         } else {

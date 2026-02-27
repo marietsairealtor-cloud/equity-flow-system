@@ -32,6 +32,7 @@ This is the complete step-by-step sequence from starting an objective to closing
 1. Create a PR branch from clean main.
 2. Complete all implementation changes:
    - Code, scripts, workflow changes
+   - If you introduce any NEW file under docs/truth/**, you must ‘triple-register’ it: wire it into (1) robot-owned guard, (2) truth-bootstrap validation, and (3) handoff regeneration.
    - Governance files (`docs/governance/GOVERNANCE_CHANGE_PR*.md`) if governance surface touched
    - Allowlist canonical proof log path in `scripts/ci_robot_owned_guard.ps1`
    - Update `docs/truth/qa_claim.json` and `docs/truth/qa_scope_map.json`  with the claimed Build Route item ID
@@ -162,6 +163,11 @@ Iteration is allowed locally, but the PR must end with exactly **one canonical p
 **Rule F — STUB_GATES_ACTIVE block (mandatory while stubs active)**
 If any gate listed in docs/truth/deferred_proofs.json remains active at the time of proof generation, the proof log must include a STUB_GATES_ACTIVE block immediately after the PR HEAD SHA line before proof:finalize is run. The block lists every active stub gate by name and conversion_trigger as recorded in deferred_proofs.json. Omitting this block when stubs are active is a proof authoring violation — restart proof generation. Authority: three-advisor review 2026-02-22.
 
+**Rule G — Triple Registration for new truth files (HARD STOP)**
+If a PR introduces any new file under docs/truth/**, it must be triple-registered once:
+added to scripts/ci_robot_owned_guard.ps1 protections
+included in the truth-bootstrap validation gate
+included in the handoff regeneration surface
 ---
 
 ### 4.2 Repair Protocol (If Proof/Manifest Is Broken)

@@ -85,6 +85,7 @@ if ($precondExit -ne 0) {
 # Regenerate robot-owned truth files (read-only)
 & (Join-Path $PSScriptRoot "gen_schema.ps1") | Out-String | Out-Null
 & (Join-Path $PSScriptRoot "gen_contracts_snapshot.ps1") | Out-String | Out-Null
+& (Join-Path $PSScriptRoot "gen_write_path_registry.ps1") | Out-String | Out-Null
 
 # Lints/guards
 & (Join-Path $PSScriptRoot "contracts_lint.ps1") | Out-String | Out-Null

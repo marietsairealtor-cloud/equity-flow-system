@@ -1,0 +1,234 @@
+PROOF_HEAD=4f8efa541082dd790a472ef72d6f13aaa1a172da
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.6 Product Core Tables [HARDENED] — Proof Log ===
+Date: 2026-02-27T13:32:26.1543095-05:00
+Branch: feature/6.6-product-core-tables
+HEAD: 4f8efa541082dd790a472ef72d6f13aaa1a172da
+
+STUB_GATES_ACTIVE:
+  - db-heavy (conversion_trigger: 8.0)
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Core tables + invariants ===
+--- Tables in public schema ---
+calc_versions|t
+deal_inputs|t
+deal_outputs|t
+deals|t
+tenant_memberships|t
+tenants|t
+user_profiles|t
+
+--- deals columns ---
+id|uuid|NO|
+tenant_id|uuid|NO|
+row_version|bigint|NO|1
+calc_version|integer|NO|1
+assumptions_snapshot_id|uuid|YES|
+
+--- Deferrable FK on deals.assumptions_snapshot_id ---
+deals_assumptions_snapshot_fk|t|t
+
+=== DoD 2: RPC surface ===
+public.create_deal_v1|t|search_path=public
+public.list_deals_v1|t|search_path=public
+public.update_deal_v1|t|search_path=public
+
+=== DoD 3: pgTAP tests ===
+Connecting to local database...
+[REDACTED] ..... ok
+[REDACTED] .. ok
+[REDACTED] ......... ok
+All tests successful.
+Files=3, Tests=29,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.02 cusr  0.01 csys =  0.06 CPU)
+Result: PASS
+
+=== DoD 4: row_version optimistic concurrency + CONFLICT envelope ===
+(Included in pgTAP output above — row_version_concurrency.test.sql tests 1-8)
+
+=== DoD 5: Write path registry ===
+{
+    "version":  1,
+    "generated":  "2026-02-27T18:26:09Z",
+    "write_paths":  [
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_deal_v1",
+                            "tables":  [
+                                           "deal_inputs",
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_deal_v1",
+                            "tables":  [
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  true,
+                            "optimistic_concurrency":  true
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "deal_inputs_tenant_match",
+                            "tables":  [
+                                           "deal_inputs"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "deal_outputs_tenant_match",
+                            "tables":  [
+                                           "deal_outputs"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "deals_snapshot_not_null",
+                            "tables":  [
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        }
+                    ]
+}
+
+=== DoD 6: Execute allowlist alignment ===
+{"version":1,"allow":["list_deals_v1","create_deal_v1","update_deal_v1"]}
+
+=== DoD 7: Definer safety audit ===
+definer-safety-audit: using container 31cb4b14350a
+definer-safety-audit: allowlist has 3 entries
+
+--- Checking: public.create_deal_v1 ---
+  allowlist: PASS
+  proconfig search_path: PASS (search_path=public)
+  dynamic SQL: PASS
+  tenant membership: PASS
+
+--- Checking: public.list_deals_v1 ---
+  allowlist: PASS
+  proconfig search_path: PASS (search_path=public)
+  dynamic SQL: PASS
+  tenant membership: PASS
+
+--- Checking: public.update_deal_v1 ---
+  allowlist: PASS
+  proconfig search_path: PASS (search_path=public)
+  dynamic SQL: PASS
+  tenant membership: PASS
+
+definer-safety-audit: PASS
+
+=== DoD 8: Anon privilege audit ===
+=== anon-privilege-audit gate ===
+A: Direct grant check...
+PASS: authenticated has exactly SELECT+UPDATE on user_profiles
+B: Operator-owned default ACL check...
+PASS: operator-owned default ACL clean
+B2: Sequence usage grants check...
+PASS: anon/authenticated have zero sequence grants
+B3: Routine grants check...
+PASS: authenticated has EXECUTE on routine list_deals_v1 - allowlisted
+PASS: authenticated has EXECUTE on routine update_deal_v1 - allowlisted
+PASS: authenticated has EXECUTE on routine create_deal_v1 - allowlisted
+PASS: anon/authenticated routine grants clean (allowlist-checked)
+C: Platform default ACL (supabase_% - logged only)...
+STATUS: PASS
+
+=== DoD 9: PostgREST isolation tests ===
+# PostgREST Tenant Isolation HTTP Tests (RPC surface)
+# Proves CONTRACTS.md S7/S12: RPC-only, no direct table access
+# API: http://127.0.0.1:54321
+
+# Seeded 4 deals + 4 deal_inputs (2 per tenant) via psql
+# PostgREST schema cache refreshed
+
+ok - Tenant A: list_deals_v1 returns 200
+ok - Tenant A: list_deals_v1 ok=true
+ok - Tenant A: list_deals_v1 returns >= 2 items
+ok - Tenant A: all items belong to Tenant A
+ok - Tenant B: list_deals_v1 returns 200
+ok - Tenant B: list_deals_v1 returns >= 2 items
+ok - Tenant B: all items belong to Tenant B
+ok - Tenant B: zero Tenant A rows leaked
+ok - Tenant A: create_deal_v1 ok=true
+ok - Tenant A: created deal bound to Tenant A
+ok - authenticated: direct /rest/v1/deals blocked (S12)
+ok - anon: list_deals_v1 denied
+
+# Results: 12 passed, 0 failed
+
+=== DoD 10: Background context review (triggers) ===
+background-context-review: using container 31cb4b14350a
+  PASS: trigger reviewed: deal_inputs_tenant_match
+  PASS: trigger reviewed: deal_inputs_tenant_match
+  PASS: trigger reviewed: deal_outputs_tenant_match
+  PASS: trigger reviewed: deal_outputs_tenant_match
+  PASS: trigger reviewed: deals_snapshot_not_null
+  PASS: trigger reviewed: deals_snapshot_not_null
+background-context-review: no pg_cron functions - PASS
+
+background-context-review: PASS
+
+=== DoD 11: Blocked identifiers ===
+=== blocked-identifiers gate ===
+blocked-identifiers: checking for [service_role, bypassrls]
+
+blocked-identifiers: PASS
+
+=== DoD 12: Unregistered table access ===
+=== unregistered-table-access gate ===
+unregistered-table-access: using container 31cb4b14350a
+unregistered-table-access: registered tables = [user_profiles]
+PASS: user_profiles is registered in tenant_table_selector.json (privilege: SELECT)
+
+--- Default ACL check (future table exposure) ---
+
+PASS: default ACL clean - no auto-grant to authenticated
+
+unregistered-table-access: PASS
+
+=== DoD 13: Tenant table selector ===
+{
+  "tenant_owned_tables": [
+    "deal_inputs",
+    "deal_outputs",
+    "deals"
+  ],
+  "version": 3,
+  "selector": {
+    "required": true,
+    "tenant_id_column": "tenant_id"
+  },
+  "tenant_tables": [
+    "user_profiles"
+  ]
+}
+
+=== Cross-item gate repairs ===
+ci_definer_safety_audit.ps1: prosrc multi-line parsing fix (replace/collapse newlines)
+test_postgrest_isolation.mjs: seed updated for deferrable snapshot constraint
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+6.6 Product Core Tables: PASS

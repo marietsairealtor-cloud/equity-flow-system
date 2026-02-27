@@ -13,43 +13,94 @@ SET row_security = off;
 
 CREATE SCHEMA IF NOT EXISTS "public";
 
-CREATE OR REPLACE FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_row_version" bigint DEFAULT 1, "p_calc_version" integer DEFAULT 1) RETURNS json
+CREATE OR REPLACE FUNCTION "public"."check_deal_snapshot_not_null"() RETURNS "trigger"
+    LANGUAGE "plpgsql" STABLE
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  IF NEW.assumptions_snapshot_id IS NULL THEN
+    RAISE EXCEPTION 'deal_snapshot_not_null: assumptions_snapshot_id must not be NULL on deal %', NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION "public"."check_deal_snapshot_not_null"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."check_deal_tenant_match"() RETURNS "trigger"
+    LANGUAGE "plpgsql" STABLE
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_deal_tenant uuid;
+BEGIN
+  SELECT tenant_id INTO v_deal_tenant
+  FROM public.deals
+  WHERE id = NEW.deal_id;
+
+  IF v_deal_tenant IS NULL THEN
+    RAISE EXCEPTION 'deal_tenant_match: parent deal % not found', NEW.deal_id;
+  END IF;
+
+  IF v_deal_tenant <> NEW.tenant_id THEN
+    RAISE EXCEPTION 'deal_tenant_match: tenant mismatch on deal_id %, expected % got %',
+      NEW.deal_id, v_deal_tenant, NEW.tenant_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION "public"."check_deal_tenant_match"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer DEFAULT 1, "p_assumptions" "jsonb" DEFAULT '{}'::"jsonb") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant uuid;
+  v_tenant      uuid;
+  v_snapshot_id uuid;
 BEGIN
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
     RETURN json_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', null,
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
       'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
     );
   END IF;
 
-  INSERT INTO public.deals (id, tenant_id, row_version, calc_version)
-  VALUES (p_id, v_tenant, p_row_version, p_calc_version);
+  -- Generate snapshot id
+  v_snapshot_id := gen_random_uuid();
+
+  -- Step 1: Insert deal with snapshot id up-front (FK is DEFERRABLE; deal_inputs row may be inserted later in txn)
+INSERT INTO public.deals (id, tenant_id, row_version, calc_version, assumptions_snapshot_id)
+VALUES (p_id, v_tenant, 1, p_calc_version, v_snapshot_id);
+  INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, row_version, assumptions)
+  VALUES (v_snapshot_id, v_tenant, p_id, p_calc_version, 1, p_assumptions);
 
   RETURN json_build_object(
-    'ok', true,
+    'ok',   true,
     'code', 'OK',
-    'data', json_build_object('id', p_id, 'tenant_id', v_tenant),
+    'data', json_build_object(
+      'id',                    p_id,
+      'tenant_id',             v_tenant,
+      'assumptions_snapshot_id', v_snapshot_id
+    ),
     'error', null
   );
 EXCEPTION WHEN unique_violation THEN
   RETURN json_build_object(
-    'ok', false,
-    'code', 'CONFLICT',
-    'data', null,
+    'ok',    false,
+    'code',  'CONFLICT',
+    'data',  null,
     'error', json_build_object('message', 'Deal already exists', 'fields', json_build_object())
   );
 END;
 $$;
 
-ALTER FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_row_version" bigint, "p_calc_version" integer) OWNER TO "postgres";
+ALTER FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer, "p_assumptions" "jsonb") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."current_tenant_id"() RETURNS "uuid"
     LANGUAGE "sql" STABLE
@@ -104,15 +155,97 @@ $$;
 
 ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer) OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer DEFAULT NULL::integer) RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant      uuid;
+  v_rows_updated int;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals
+  SET
+    row_version  = row_version + 1,
+    calc_version = COALESCE(p_calc_version, calc_version)
+  WHERE id         = p_id
+    AND tenant_id  = v_tenant
+    AND row_version = p_expected_row_version;
+
+  GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+
+  IF v_rows_updated = 0 THEN
+    -- Either row does not exist for this tenant, or row_version mismatch
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'CONFLICT',
+      'data',  null,
+      'error', json_build_object('message', 'Row version mismatch or deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('id', p_id, 'row_version', p_expected_row_version + 1),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer) OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
 
+CREATE TABLE IF NOT EXISTS "public"."calc_versions" (
+    "id" integer NOT NULL,
+    "label" "text" NOT NULL,
+    "released_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."calc_versions" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."deal_inputs" (
+    "id" "uuid" NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "calc_version" integer DEFAULT 1 NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    "assumptions" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."deal_inputs" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."deal_outputs" (
+    "id" "uuid" NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "calc_version" integer DEFAULT 1 NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    "outputs" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."deal_outputs" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."deals" (
     "id" "uuid" NOT NULL,
     "tenant_id" "uuid" NOT NULL,
-    "row_version" bigint,
-    "calc_version" integer
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    "calc_version" integer DEFAULT 1 NOT NULL,
+    "assumptions_snapshot_id" "uuid"
 );
 
 ALTER TABLE "public"."deals" OWNER TO "postgres";
@@ -135,6 +268,15 @@ CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."calc_versions"
+    ADD CONSTRAINT "calc_versions_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."deal_inputs"
+    ADD CONSTRAINT "deal_inputs_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."deal_outputs"
+    ADD CONSTRAINT "deal_outputs_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_pkey" PRIMARY KEY ("id");
 
@@ -146,6 +288,27 @@ ALTER TABLE ONLY "public"."tenants"
 
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id");
+
+CREATE OR REPLACE TRIGGER "deal_inputs_tenant_match" BEFORE INSERT OR UPDATE ON "public"."deal_inputs" FOR EACH ROW EXECUTE FUNCTION "public"."check_deal_tenant_match"();
+
+CREATE OR REPLACE TRIGGER "deal_outputs_tenant_match" BEFORE INSERT OR UPDATE ON "public"."deal_outputs" FOR EACH ROW EXECUTE FUNCTION "public"."check_deal_tenant_match"();
+
+CREATE CONSTRAINT TRIGGER "deals_snapshot_not_null" AFTER INSERT OR UPDATE ON "public"."deals" DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "public"."check_deal_snapshot_not_null"();
+
+ALTER TABLE ONLY "public"."deal_inputs"
+    ADD CONSTRAINT "deal_inputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
+
+ALTER TABLE ONLY "public"."deal_outputs"
+    ADD CONSTRAINT "deal_outputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
+
+ALTER TABLE ONLY "public"."deals"
+    ADD CONSTRAINT "deals_assumptions_snapshot_fk" FOREIGN KEY ("assumptions_snapshot_id") REFERENCES "public"."deal_inputs"("id") DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE "public"."calc_versions" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."deal_inputs" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."deal_outputs" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."deals" ENABLE ROW LEVEL SECURITY;
 
