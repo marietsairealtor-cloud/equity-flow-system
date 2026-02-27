@@ -1,10 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: fb9147f
+HEAD: b176676
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json
- M scripts/postgrest_seed.sql
- M scripts/test_postgrest_isolation.mjs
 
 === supabase status (sanitized summary) ===
 {
