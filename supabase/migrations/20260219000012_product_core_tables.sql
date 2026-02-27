@@ -45,3 +45,8 @@ CREATE TABLE public.deal_outputs (
 ALTER TABLE public.calc_versions  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deal_inputs    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deal_outputs   ENABLE ROW LEVEL SECURITY;
+
+-- Explicit REVOKE ALL per CONTRACTS.md S12 (migration-rls-colocation gate)
+REVOKE ALL ON TABLE public.calc_versions FROM anon, authenticated;
+REVOKE ALL ON TABLE public.deal_inputs FROM anon, authenticated;
+REVOKE ALL ON TABLE public.deal_outputs FROM anon, authenticated;
