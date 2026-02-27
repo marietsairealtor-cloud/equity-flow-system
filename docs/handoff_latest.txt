@@ -1,30 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 5a2c792
+HEAD: 878c7e9
 
 === git status --porcelain=v1 ===
-M  docs/artifacts/SOP_WORKFLOW.md
-A  docs/governance/GOVERNANCE_CHANGE_PR049.md
-M  docs/truth/background_context_review.json
-M  docs/truth/completed_items.json
-M  docs/truth/definer_allowlist.json
-M  docs/truth/execute_allowlist.json
-M  docs/truth/qa_claim.json
-M  docs/truth/qa_scope_map.json
-M  docs/truth/tenant_table_selector.json
-AM docs/truth/write_path_registry.json
-M  package.json
-M  scripts/ci_definer_safety_audit.ps1
-M  scripts/ci_robot_owned_guard.ps1
-A  scripts/gen_write_path_registry.ps1
-M  scripts/handoff.ps1
-M  scripts/truth_bootstrap_check.mjs
-A  supabase/migrations/20260219000012_product_core_tables.sql
-A  supabase/migrations/20260219000013_deals_update_rpc.sql
-A  supabase/migrations/20260219000014_deals_snapshot_reference.sql
-A  supabase/migrations/20260219000015_deals_create_rpc_v2.sql
-A  supabase/migrations/20260219000016_deals_snapshot_trigger_enforcement.sql
-A  supabase/tests/row_version_concurrency.test.sql
-M  supabase/tests/tenant_isolation.test.sql
+ M docs/truth/write_path_registry.json
 
 === supabase status (sanitized summary) ===
 {
