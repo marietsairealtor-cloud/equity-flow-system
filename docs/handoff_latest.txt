@@ -1,8 +1,9 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: a7cff11
+HEAD: 933d402
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json
+ D supabase/migrations/20260219000017_revoke_core_table_grants.sql
 
 === supabase status (sanitized summary) ===
 {
@@ -22,7 +23,7 @@ HEAD: a7cff11
  20260219000016
 
 === latest migration file in repo ===
-20260219000017_revoke_core_table_grants.sql
+20260219000016_deals_snapshot_trigger_enforcement.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
