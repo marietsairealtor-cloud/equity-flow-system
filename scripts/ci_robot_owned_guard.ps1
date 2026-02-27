@@ -64,6 +64,7 @@ if($pp -match "^docs/proofs/2\.17\.2_encoding_audit_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/4\.3_cloud_baseline_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.3 proof log" }
   if($pp -match "^docs/proofs/4\.4_anon_privilege_audit_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.4 proof log" }
   if($pp -eq "docs/truth/ci_execution_surface.json"){ return "ALLOW:4.6 ci_execution_surface.json machine-derived" }
+  if($pp -eq "docs/truth/write_path_registry.json"){ return "ALLOW:6.6 write_path_registry.json machine-derived" }
   if($pp -match "^docs/proofs/4\.5_tenancy_resolution_enforcement_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.5 proof log" }
   if($pp -match "^docs/proofs/4\.6_two_tier_execution_contract_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.6 proof log" }
   if($pp -match "^docs/proofs/4\.7_tier1_surface_normalization_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.7 proof log" }
@@ -77,6 +78,7 @@ if($pp -match "^docs/proofs/6\.3_tenant_integrity_suite_\d{8}T\d{6}Z\.log$"){ re
 if($pp -match "^docs/proofs/6\.3A_unregistered_table_access_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.3A proof log" }
 if($pp -match "^docs/proofs/6\.4_rls_structural_audit_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.4 proof log" }
 if($pp -match "^docs/proofs/6\.5_blocked_identifiers_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.5 proof log" }
+if($pp -match "^docs/proofs/6\.6_product_core_tables_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.6 proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }
   if($pp -match "^docs/proofs/5\.3_migration_schema_coupling_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.3 proof log" }
@@ -92,6 +94,7 @@ if($pp -match "^docs/proofs/6\.5_blocked_identifiers_\d{8}T\d{6}Z\.log$"){ retur
   if($pp -match "^docs/proofs/4\.3_cloud_baseline_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.3 proof log" }
   if($pp -match "^docs/proofs/4\.4_anon_privilege_audit_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.4 proof log" }
   if($pp -eq "docs/truth/ci_execution_surface.json"){ return "ALLOW:4.6 ci_execution_surface.json machine-derived" }
+  if($pp -eq "docs/truth/write_path_registry.json"){ return "ALLOW:6.6 write_path_registry.json machine-derived" }
   if($pp -match "^docs/proofs/4\.5_tenancy_resolution_enforcement_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.5 proof log" }
   if($pp -match "^docs/proofs/4\.6_two_tier_execution_contract_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.6 proof log" }
   if($pp -match "^docs/proofs/4\.7_tier1_surface_normalization_\d{8}T\d{6}Z\.log$"){ return "ALLOW:4.7 proof log" }

@@ -1,0 +1,52 @@
+{
+    "version":  1,
+    "generated":  "2026-02-27T16:05:04Z",
+    "write_paths":  [
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_deal_v1",
+                            "tables":  [
+                                           "deal_inputs",
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_deal_v1",
+                            "tables":  [
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  true,
+                            "optimistic_concurrency":  true
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "deal_inputs_tenant_match",
+                            "tables":  [
+                                           "deal_inputs"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "deal_outputs_tenant_match",
+                            "tables":  [
+                                           "deal_outputs"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "deals_snapshot_not_null",
+                            "tables":  [
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        }
+                    ]
+}

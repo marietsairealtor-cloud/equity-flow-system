@@ -1,9 +1,31 @@
 {
-  "_comment": "Hand-authored per Build Route 6.3. Lists every trigger, pg_cron job, or background function executing outside a request context.",
-  "_review_date": "2026-02-25",
-  "_reviewer": "human",
-  "triggers": [],
   "pg_cron_jobs": [],
-  "background_functions": [],
-  "confirmation": "No triggers, cron jobs, or background functions exist in the public schema. All execution occurs within authenticated request context with JWT-based tenant binding."
+  "_comment": "Hand-authored per Build Route 6.3/6.6. Lists every trigger, pg_cron job, or background function executing outside a request context.",
+  "_review_date": "2026-02-27",
+  "_reviewer": "human",
+  "triggers": [
+    {
+      "timing": "BEFORE INSERT OR UPDATE",
+      "name": "deal_inputs_tenant_match",
+      "purpose": "Cross-tenant guard: ensures deal_inputs.tenant_id matches parent deal",
+      "table": "deal_inputs",
+      "function": "check_deal_tenant_match"
+    },
+    {
+      "timing": "BEFORE INSERT OR UPDATE",
+      "name": "deal_outputs_tenant_match",
+      "purpose": "Cross-tenant guard: ensures deal_outputs.tenant_id matches parent deal",
+      "table": "deal_outputs",
+      "function": "check_deal_tenant_match"
+    },
+    {
+      "timing": "AFTER INSERT OR UPDATE (DEFERRABLE)",
+      "name": "deals_snapshot_not_null",
+      "purpose": "Deferred NOT NULL enforcement on assumptions_snapshot_id for circular FK seeding",
+      "table": "deals",
+      "function": "check_deal_snapshot_not_null"
+    }
+  ],
+  "confirmation": "Three triggers exist in public schema. All execute within authenticated request context. No pg_cron jobs or background functions.",
+  "background_functions": []
 }

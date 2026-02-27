@@ -1,7 +1,8 @@
 import fs from "node:fs";
 
 const required = [
-  "docs/truth/required_checks.json",
+  "docs/truth/write_path_registry.json",
+"docs/truth/required_checks.json",
   "docs/truth/lane_checks.json",
   "docs/truth/toolchain.json",
   "docs/truth/qa_requirements.json",
@@ -9,7 +10,8 @@ const required = [
   "docs/truth/execute_allowlist.json",
   "docs/truth/definer_allowlist.json",
   "docs/truth/pr_scope_rules.json",
-  "docs/truth/robot_owned_paths.json",
+"docs/truth/robot_owned_paths.json",
+  "docs/truth/write_path_registry.json",
   "docs/truth/rpc_budget.json",
   "docs/truth/blocked_identifiers.json",
   "docs/truth/tenant_table_selector.json",
