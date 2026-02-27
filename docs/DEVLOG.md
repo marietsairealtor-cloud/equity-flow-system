@@ -3687,3 +3687,49 @@ DoD
 
 Status
 PASS
+
+## 2026-02-27 — Build Route v2.4 — 6.6 Product Core Tables [HARDENED]
+
+Objective
+Core product tables with snapshot reference invariant, optimistic concurrency via row_version, machine-derived write path registry with triple registration, and pgTAP proofs.
+
+Changes
+- supabase/migrations/20260219000012_product_core_tables.sql — deal_inputs, deal_outputs, calc_versions tables; deals hardened (row_version/calc_version NOT NULL DEFAULT 1); RLS enabled, default deny, co-located REVOKE ALL
+- supabase/migrations/20260219000013_deals_update_rpc.sql — update_deal_v1 SECURITY DEFINER RPC with row_version optimistic concurrency, returns CONFLICT envelope on stale update
+- supabase/migrations/20260219000014_deals_snapshot_reference.sql — assumptions_snapshot_id deferrable FK, check_deal_tenant_match trigger on deal_inputs/deal_outputs
+- supabase/migrations/20260219000015_deals_create_rpc_v2.sql — create_deal_v1 v2 with circular FK handling (single transaction)
+- supabase/migrations/20260219000016_deals_snapshot_trigger_enforcement.sql — deferrable constraint trigger replacing NOT NULL column constraint on assumptions_snapshot_id
+- supabase/migrations/20260219000017_revoke_core_table_grants.sql — explicit REVOKE ALL on core tables
+- supabase/tests/row_version_concurrency.test.sql — 8 pgTAP tests: row_version concurrency + RPC CONFLICT envelope proof
+- scripts/gen_write_path_registry.ps1 — generates write_path_registry.json
+- docs/truth/write_path_registry.json — 2 RPC write paths, 3 trigger paths (triple-registered)
+- docs/truth/definer_allowlist.json — 3 SD functions registered
+- docs/truth/execute_allowlist.json — 3 RPCs (list, create, update)
+- docs/truth/tenant_table_selector.json — v3 with tenant_owned_tables (deal_inputs, deal_outputs, deals)
+- docs/truth/background_context_review.json — 3 triggers registered
+- scripts/handoff_commit.ps1 — wired write_path_registry.json into handoff:commit
+- scripts/ci_ship_guard.ps1 — exempted write_path_registry.json from dirty tree check
+- docs/artifacts/SOP_WORKFLOW.md — triple-registration rule added
+
+Cross-item gate repairs (required by 6.6 invariants)
+- scripts/ci_definer_safety_audit.ps1 — prosrc multi-line parsing fix (replace/collapse newlines, schema-qualified regex)
+- scripts/test_postgrest_isolation.mjs + scripts/postgrest_seed.sql — seed updated for deferrable snapshot constraint (insert with snapshot ID directly, deferred FK)
+
+Proof
+docs/proofs/6.6_product_core_tables_20260227T183349Z.log
+
+DoD
+- Core tables exist with RLS enabled, default deny, no direct grants — CONFIRMED
+- deals.assumptions_snapshot_id deferrable FK + constraint trigger — CONFIRMED
+- row_version optimistic concurrency: stale update matches 0 rows — CONFIRMED (pgTAP tests 1-6)
+- update_deal_v1 returns CONFLICT envelope on stale update — CONFIRMED (pgTAP tests 7-8)
+- Write path registry exists, machine-derived, triple-registered — CONFIRMED
+- Execute allowlist aligned with write registry — CONFIRMED
+- Definer safety audit PASS (3 functions) — CONFIRMED
+- Anon privilege audit PASS — CONFIRMED
+- PostgREST isolation tests 12/12 PASS — CONFIRMED
+- Background context review PASS (3 triggers) — CONFIRMED
+- CI green, QA approved, merged
+
+Status
+PASS
