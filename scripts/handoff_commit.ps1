@@ -16,7 +16,7 @@ if ($branch -eq "main") {
 # Regenerate truth artifacts (local)
 & npm run handoff
 # Stage only robot-owned truth artifacts
-& git add docs/handoff_latest.txt generated/schema.sql generated/contracts.snapshot.json
+& git add docs/handoff_latest.txt generated/schema.sql generated/contracts.snapshot.json docs/truth/write_path_registry.json
 $staged = (& git diff --cached --name-only) 2>$null
 if (-not $staged) {
   Write-Host "No truth artifact changes to commit."

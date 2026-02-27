@@ -9,7 +9,7 @@ if ($branch -ne "main") {
 }
 
 # Enforce clean tree on main (handoff_latest.txt exempted — HEAD drift is by design)
-$dirty = (& git status --porcelain | Where-Object { $_ -notmatch "handoff_latest\.txt" })
+$dirty = (& git status --porcelain | Where-Object { $_ -notmatch "handoff_latest\.txt" -and $_ -notmatch "write_path_registry\.json" })
 if ($dirty) { throw "Blocked: working tree not clean. Commit via PR, then rerun ship on main." }
 
 # Verify artifacts already published (no regeneration here)
