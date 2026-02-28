@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-02-28T17:03:45Z",
+    "generated":  "2026-02-28T17:09:29Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -8,6 +8,15 @@
                             "tables":  [
                                            "deal_inputs",
                                            "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "foundation_log_activity_v1",
+                            "tables":  [
+                                           "activity_log"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

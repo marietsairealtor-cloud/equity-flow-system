@@ -121,6 +121,47 @@ $$;
 
 ALTER FUNCTION "public"."current_tenant_id"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."foundation_log_activity_v1"("p_tenant_id" "uuid", "p_action" "text", "p_meta" "jsonb" DEFAULT '{}'::"jsonb", "p_actor_id" "uuid" DEFAULT NULL::"uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_id uuid;
+BEGIN
+  IF p_tenant_id IS NULL OR p_action IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  null,
+      'error', json_build_object('message', 'tenant_id and action are required', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF public.current_tenant_id() IS DISTINCT FROM p_tenant_id THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'Tenant context mismatch', 'fields', json_build_object())
+    );
+  END IF;
+
+  v_id := gen_random_uuid();
+
+  INSERT INTO public.activity_log (id, tenant_id, actor_id, action, meta)
+  VALUES (v_id, p_tenant_id, p_actor_id, p_action, p_meta);
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('id', v_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."foundation_log_activity_v1"("p_tenant_id" "uuid", "p_action" "text", "p_meta" "jsonb", "p_actor_id" "uuid") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25) RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -284,6 +325,17 @@ SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
 
+CREATE TABLE IF NOT EXISTS "public"."activity_log" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "actor_id" "uuid",
+    "action" "text" NOT NULL,
+    "meta" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."activity_log" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."calc_versions" (
     "id" integer NOT NULL,
     "label" "text" NOT NULL,
@@ -369,6 +421,9 @@ CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
 
+ALTER TABLE ONLY "public"."activity_log"
+    ADD CONSTRAINT "activity_log_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."calc_versions"
     ADD CONSTRAINT "calc_versions_pkey" PRIMARY KEY ("id");
 
@@ -405,6 +460,9 @@ CREATE OR REPLACE TRIGGER "deal_outputs_tenant_match" BEFORE INSERT OR UPDATE ON
 
 CREATE CONSTRAINT TRIGGER "deals_snapshot_not_null" AFTER INSERT OR UPDATE ON "public"."deals" DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "public"."check_deal_snapshot_not_null"();
 
+ALTER TABLE ONLY "public"."activity_log"
+    ADD CONSTRAINT "activity_log_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
+
 ALTER TABLE ONLY "public"."deal_inputs"
     ADD CONSTRAINT "deal_inputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
 
@@ -419,6 +477,12 @@ ALTER TABLE ONLY "public"."share_tokens"
 
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
+
+ALTER TABLE "public"."activity_log" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "activity_log_insert_own" ON "public"."activity_log" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "activity_log_select_own" ON "public"."activity_log" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."calc_versions" ENABLE ROW LEVEL SECURITY;
 

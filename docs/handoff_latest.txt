@@ -1,5 +1,5 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 415b3fb
+HEAD: 5f90c22
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json
@@ -19,7 +19,7 @@ HEAD: 415b3fb
 }
 
 === last applied migration (DB) ===
- 20260219000020
+ 20260219000021
 
 === latest migration file in repo ===
 20260219000021_6_9_activity_log.sql
