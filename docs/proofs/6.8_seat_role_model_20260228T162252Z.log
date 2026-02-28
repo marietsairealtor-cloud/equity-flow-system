@@ -1,0 +1,89 @@
+PROOF_HEAD=e15bf59d22a2ca6fe48449c6c28f6b8c6a6ddaf0
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.8 Seat + Role Model — Proof Log ===
+Date: 2026-02-28T11:22:52.6491263-05:00
+Branch: feat/6.8-seat-role-model
+HEAD: e15bf59d22a2ca6fe48449c6c28f6b8c6a6ddaf0
+Migration: supabase/migrations/20260219000020_6_8_tenant_role_model.sql
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL:
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: tenant_role enum exists (owner/admin/member) ===
+   typname   | enumlabel 
+-------------+-----------
+ tenant_role | owner
+ tenant_role | admin
+ tenant_role | member
+(3 rows)
+
+
+=== DoD 2: tenant_memberships columns ===
+ column_name |        data_type         | is_nullable 
+-------------+--------------------------+-------------
+ id          | uuid                     | NO
+ tenant_id   | uuid                     | NO
+ user_id     | uuid                     | NO
+ role        | USER-DEFINED             | NO
+ created_at  | timestamp with time zone | NO
+(5 rows)
+
+
+=== DoD 3: Unique constraint (tenant_id, user_id) ===
+                conname                | contype 
+---------------------------------------+---------
+ tenant_memberships_pkey               | p
+ tenant_memberships_tenant_id_fkey     | f
+ tenant_memberships_tenant_user_unique | u
+(3 rows)
+
+
+=== DoD 4: RLS enabled ===
+      relname       | relrowsecurity 
+--------------------+----------------
+ tenant_memberships | t
+(1 row)
+
+
+=== DoD 5: RLS policy definitions ===
+          policyname           |  cmd   |               qual                |            with_check             
+-------------------------------+--------+-----------------------------------+-----------------------------------
+ tenant_memberships_delete_own | DELETE | (tenant_id = current_tenant_id()) | 
+ tenant_memberships_insert_own | INSERT |                                   | (tenant_id = current_tenant_id())
+ tenant_memberships_select_own | SELECT | (tenant_id = current_tenant_id()) | 
+ tenant_memberships_update_own | UPDATE | (tenant_id = current_tenant_id()) | 
+(4 rows)
+
+INSERT uses WITH CHECK (tenant_id = current_tenant_id()) — this is the enforced predicate for INSERT.
+
+=== DoD 6: Privilege firewall (no grants to anon/authenticated) ===
+ grantee | privilege_type 
+---------+----------------
+(0 rows)
+
+
+=== pgTAP ===
+Connecting to local database...
+[REDACTED] ...... ok
+[REDACTED] ..... ok
+[REDACTED] .. ok
+[REDACTED] ..... ok
+[REDACTED] ......... ok
+All tests successful.
+Files=5, Tests=45,  0 wallclock secs ( 0.01 usr  0.02 sys +  0.02 cusr  0.01 csys =  0.06 CPU)
+Result: PASS
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+6.8 Seat + Role Model: PASS
