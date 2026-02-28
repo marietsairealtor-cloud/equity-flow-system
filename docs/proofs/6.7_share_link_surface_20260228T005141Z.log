@@ -1,0 +1,87 @@
+PROOF_HEAD=2dbd3ac5ec0a30fc54e05607df0039d42121846a
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.7 Share-Link Surface [HARDENED] — Proof Log ===
+Date: 2026-02-27T19:41:45.6016867-05:00
+Branch: 6.7-share-link-surface
+HEAD: 42129657927714a2704304a0ea85c2a74fcdb063
+
+STUB_GATES_ACTIVE:
+  - db-heavy (conversion_trigger: 8.0)
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Share token table exists ===
+id|uuid|NO|gen_random_uuid()
+tenant_id|uuid|NO|
+deal_id|uuid|NO|
+token|text|NO|encode(gen_random_bytes(32), 'hex'::text)
+expires_at|timestamp with time zone|YES|
+created_at|timestamp with time zone|NO|now()
+
+--- RLS enabled ---
+share_tokens|t
+
+--- Unique constraint (tenant_id, token) ---
+share_tokens_tenant_token_unique|u
+
+=== DoD 2: Packet view (allowlist-only fields) ===
+token
+deal_id
+expires_at
+calc_version
+
+=== DoD 3: Lookup RPC definition (two-predicate WHERE) ===
+ DECLARE   v_row record; BEGIN   -- Validate caller context matches requested tenant (satisfies definer-safety-audit)   IF p_tenant_id IS NULL OR p_token IS NULL THEN     RETURN json_build_object(       'ok',    false,       'code',  'VALIDATION_ERROR',       'data',  null,       'error', json_build_object('message', 'tenant_id and token are required', 'fields', json_build_object())     );   END IF;    -- Enforce: caller must have context for requested tenant   IF public.current_tenant_id() IS DISTINCT FROM p_tenant_id THEN     RETURN json_build_object(       'ok',    false,       'code',  'NOT_AUTHORIZED',       'data',  null,       'error', json_build_object('message', 'Tenant context mismatch', 'fields', json_build_object())     );   END IF;    SELECT st.token, st.deal_id, st.expires_at, d.calc_version   INTO v_row   FROM public.share_tokens st   JOIN public.deals d ON d.id = st.deal_id AND d.tenant_id = st.tenant_id   WHERE st.token = p_token     AND st.tenant_id = p_tenant_id;    IF NOT FOUND THEN     RETURN json_build_object(       'ok',    false,       'code',  'NOT_FOUND',       'data',  null,       'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())     );   END IF;    IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN     RETURN json_build_object(       'ok',    false,       'code',  'TOKEN_EXPIRED',       'data',  null,       'error', json_build_object('message', 'Share token has expired', 'fields', json_build_object())     );   END IF;    RETURN json_build_object(     'ok',   true,     'code', 'OK',     'data', json_build_object(       'token',        v_row.token,       'deal_id',      v_row.deal_id,       'calc_version', v_row.calc_version,       'expires_at',   v_row.expires_at     ),     'error', null   ); END; 
+
+=== DoD 4: pgTAP tests (cross-tenant negative, expiry, packet view) ===
+Connecting to local database...
+[REDACTED] ..... ok
+[REDACTED] .. ok
+[REDACTED] ..... ok
+[REDACTED] ......... ok
+All tests successful.
+Files=4, Tests=35,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.01 cusr  0.01 csys =  0.05 CPU)
+Result: PASS
+
+=== DoD 5: TOKEN_EXPIRED in CONTRACTS.md S1 ===
+"code": "OK" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_AUTHORIZED" | "NOT_FOUND" | "TOKEN_EXPIRED" | "INTERNAL",
+
+=== DoD 6: EXPLAIN — query planner uses tenant_id predicate ===
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.30..19.01 rows=1 width=60)
+   ->  Index Scan using share_tokens_tenant_token_unique on share_tokens st  (cost=0.15..8.17 rows=1 width=72)
+         Index Cond: ((tenant_id = 'a0000000-0000-0000-0000-000000000001'::uuid) AND (token = 'test'::text))
+   ->  Index Scan using deals_pkey on deals d  (cost=0.15..8.17 rows=1 width=36)
+         Index Cond: (id = st.deal_id)
+         Filter: (tenant_id = 'a0000000-0000-0000-0000-000000000001'::uuid)
+(6 rows)
+
+
+--- EXPLAIN analysis ---
+Index Scan using share_tokens_tenant_token_unique: Index Cond includes (tenant_id = ...) AND (token = ...)
+Planner uses tenant_id as part of index access path — not just syntactically present.
+Nested Loop join to deals also filters on tenant_id = ... (double enforcement).
+
+=== Gate verification ===
+definer-safety-audit: PASS (4 SD functions)
+anon-privilege-audit: PASS
+blocked-identifiers: PASS
+unregistered-table-access: PASS
+migration-rls-colocation: PASS
+pgTAP: PASS (35 tests)
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+6.7 Share-Link Surface: PASS
