@@ -3794,3 +3794,37 @@ DoD
 Status
 
 PASS
+
+## 2026-02-28 — Build Route v2.4 — 6.9 Foundation Surface Ready
+
+**Objective**
+Declare that the minimum Foundation database surface exists and is runnable in a clean-room, unblocking 2.16.5C Foundation Invariants Suite.
+
+**Changes**
+
+* Added migration: `20260219000021_6_9_activity_log.sql`
+* Created `activity_log` table (`id`, `tenant_id`, `actor_id`, `action`, `meta`, `created_at`)
+* Enabled RLS on `activity_log`
+* Added tenant-scoped RLS policies using `tenant_id = current_tenant_id()`
+* Added SECURITY DEFINER RPC `foundation_log_activity_v1`
+* Ensured no direct grants to `anon` / `authenticated` on `activity_log`
+* Generated proof log under `docs/proofs/6.9_foundation_surface_ready_<UTC>.log`
+
+**Proof**
+
+* Proof artifact: `docs/proofs/6.9_foundation_surface_ready_<UTC>.log`
+* `supabase db reset` successful (clean-room rebuild)
+* pgTAP PASS (all tests)
+* Required gates PASS
+* Phase 3 verification PASS
+
+**DoD**
+
+* Core Foundation tables exist.
+* Tenancy model baseline exists.
+* Roles/RLS baseline implemented.
+* Activity log write path exists.
+* Foundation schema is runnable in CI/local clean-room.
+
+**Status**
+PASS
