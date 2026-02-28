@@ -1,0 +1,153 @@
+PROOF_HEAD=d77ef84b9bde19eb8343328f87953871950d03e2
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.9 Foundation Surface Ready — Proof Log ===
+Date: 2026-02-28T12:17:00.3339673-05:00
+Branch: feat/6.9-foundation-surface-ready
+HEAD: d77ef84b9bde19eb8343328f87953871950d03e2
+Migration: supabase/migrations/20260219000021_6_9_activity_log.sql
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL:
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Core Foundation tables exist ===
+     tablename      
+--------------------
+ activity_log
+ calc_versions
+ deal_inputs
+ deal_outputs
+ deals
+ share_tokens
+ tenant_memberships
+ tenants
+ user_profiles
+(9 rows)
+
+
+=== DoD 2: Tenancy model baseline exists ===
+--- tenants ---
+ column_name | data_type 
+-------------+-----------
+ id          | uuid
+(1 row)
+
+--- tenant_memberships ---
+ column_name |        data_type         
+-------------+--------------------------
+ id          | uuid
+ tenant_id   | uuid
+ user_id     | uuid
+ role        | USER-DEFINED
+ created_at  | timestamp with time zone
+(5 rows)
+
+--- current_tenant_id() ---
+CREATE OR REPLACE FUNCTION public.current_tenant_id()
+ RETURNS uuid
+ LANGUAGE sql
+ STABLE
+AS $function$
+  SELECT COALESCE(
+    nullif(current_setting('request.jwt.claim.tenant_id', true), '')::uuid,
+    (nullif(current_setting('request.jwt.claims', true), '')::json ->> 'tenant_id')::uuid
+  )
+$function$
+
+
+=== DoD 3: Roles/RLS baseline implemented ===
+--- tenant_role enum ---
+   typname   | enumlabel 
+-------------+-----------
+ tenant_role | owner
+ tenant_role | admin
+ tenant_role | member
+(3 rows)
+
+--- RLS enabled on all tenant-owned tables ---
+      relname       | relrowsecurity 
+--------------------+----------------
+ activity_log       | t
+ calc_versions      | t
+ deal_inputs        | t
+ deal_outputs       | t
+ deals              | t
+ share_tokens       | t
+ tenant_memberships | t
+ tenants            | t
+ user_profiles      | t
+(9 rows)
+
+--- All RLS policies ---
+     tablename      |          policyname           |  cmd   |               qual                |            with_check             
+--------------------+-------------------------------+--------+-----------------------------------+-----------------------------------
+ activity_log       | activity_log_insert_own       | INSERT |                                   | (tenant_id = current_tenant_id())
+ activity_log       | activity_log_select_own       | SELECT | (tenant_id = current_tenant_id()) | 
+ deals              | deals_delete_own              | DELETE | (tenant_id = current_tenant_id()) | 
+ deals              | deals_insert_own              | INSERT |                                   | (tenant_id = current_tenant_id())
+ deals              | deals_select_own              | SELECT | (tenant_id = current_tenant_id()) | 
+ deals              | deals_update_own              | UPDATE | (tenant_id = current_tenant_id()) | 
+ tenant_memberships | tenant_memberships_delete_own | DELETE | (tenant_id = current_tenant_id()) | 
+ tenant_memberships | tenant_memberships_insert_own | INSERT |                                   | (tenant_id = current_tenant_id())
+ tenant_memberships | tenant_memberships_select_own | SELECT | (tenant_id = current_tenant_id()) | 
+ tenant_memberships | tenant_memberships_update_own | UPDATE | (tenant_id = current_tenant_id()) | 
+(10 rows)
+
+INSERT policies use WITH CHECK (tenant_id = current_tenant_id()) — this is the enforced predicate for INSERT.
+
+=== DoD 4: Activity log write path exists ===
+--- activity_log table ---
+ column_name |        data_type         | is_nullable 
+-------------+--------------------------+-------------
+ id          | uuid                     | NO
+ tenant_id   | uuid                     | NO
+ actor_id    | uuid                     | YES
+ action      | text                     | NO
+ meta        | jsonb                    | NO
+ created_at  | timestamp with time zone | NO
+(6 rows)
+
+--- activity_log RLS ---
+       policyname        |  cmd   |               qual                |            with_check             
+-------------------------+--------+-----------------------------------+-----------------------------------
+ activity_log_insert_own | INSERT |                                   | (tenant_id = current_tenant_id())
+ activity_log_select_own | SELECT | (tenant_id = current_tenant_id()) | 
+(2 rows)
+
+INSERT uses WITH CHECK (tenant_id = current_tenant_id()) — this is the enforced predicate for INSERT.
+--- foundation_log_activity_v1 RPC exists (SECURITY DEFINER) ---
+foundation_log_activity_v1|t
+--- Privilege firewall (no table grants to anon/authenticated) ---
+ grantee | privilege_type 
+---------+----------------
+(0 rows)
+
+
+=== DoD 5: Foundation schema runnable in CI/local clean-room ===
+--- supabase db reset ---
+Confirmed: supabase db reset completed on branch feat/6.9-foundation-surface-ready
+--- pgTAP ---
+Connecting to local database...
+[REDACTED] ...... ok
+[REDACTED] ... ok
+[REDACTED] ..... ok
+[REDACTED] .. ok
+[REDACTED] ..... ok
+[REDACTED] ......... ok
+All tests successful.
+Files=6, Tests=53,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.03 cusr  0.01 csys =  0.07 CPU)
+Result: PASS
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+6.9 Foundation Surface Ready: PASS
