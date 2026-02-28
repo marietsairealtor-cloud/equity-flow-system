@@ -3733,3 +3733,35 @@ DoD
 
 Status
 PASS
+
+## 2026-02-27 — Build Route v2.4 — 6.7 Share-Link Surface [HARDENED]
+
+Objective
+
+* Harden share-link access via tenant-scoped token lookup with allowlisted packet output, enforced by RLS + SD safety, and proven with pgTAP.
+
+Changes
+
+* Added `public.share_tokens` table (RLS enabled) with unique `(tenant_id, token)` constraint and expiry support.
+* Added packet view exposing allowlist-only fields: `token, deal_id, expires_at, calc_version`.
+* Added lookup RPC joining `share_tokens` ↔ `deals` with two-predicate WHERE (`tenant_id` + `token`), enforcing `current_tenant_id()` context match, and returning structured codes including `TOKEN_EXPIRED`.
+* Updated `CONTRACTS.md` S1 to include `TOKEN_EXPIRED`.
+* Added pgTAP coverage: cross-tenant negative, expiry behavior, and packet view allowlist.
+* Captured EXPLAIN evidence that planner uses `(tenant_id, token)` index condition.
+
+Proof
+
+* `docs/proofs/6.7_share_link_surface_20260228T005141Z.log` (RESULT=PASS; gates + pr:preflight PASS; EXPLAIN shows tenant_id predicate used).
+
+DoD
+
+* Share token table exists.
+* Packet view restricts to allowlisted fields.
+* Lookup RPC uses tenant_id + token predicates and enforces tenant context.
+* pgTAP tests: cross-tenant negative, expiry, packet view.
+* `TOKEN_EXPIRED` added to CONTRACTS.md S1.
+* EXPLAIN shows planner uses tenant_id predicate.
+
+Status
+
+* PASS
