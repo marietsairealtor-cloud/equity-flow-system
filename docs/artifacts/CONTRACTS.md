@@ -12,7 +12,7 @@ All RPCs return exactly:
 ```json
 {
   "ok": true|false,
-  "code": "OK" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_AUTHORIZED" | "NOT_FOUND" | "INTERNAL",
+  "code": "OK" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_AUTHORIZED" | "NOT_FOUND" | "TOKEN_EXPIRED" | "INTERNAL",
   "data": object|null,
   "error": { "message": string, "fields": { [field]: string } } | null
 }

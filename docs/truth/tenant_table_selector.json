@@ -2,13 +2,14 @@
   "tenant_owned_tables": [
     "deal_inputs",
     "deal_outputs",
-    "deals"
+    "deals",
+    "share_tokens"
   ],
-  "version": 3,
   "selector": {
     "required": true,
     "tenant_id_column": "tenant_id"
   },
+  "version": 3,
   "tenant_tables": [
     "user_profiles"
   ]
