@@ -1,5 +1,6 @@
 {
   "tenant_owned_tables": [
+    "activity_log",
     "deal_inputs",
     "deal_outputs",
     "deals",

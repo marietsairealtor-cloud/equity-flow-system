@@ -246,7 +246,11 @@
     },
     "6.8": {
       "proof_pattern": "^docs/proofs/6\\.8_seat_role_model_"
+    },
+    "6.9": {
+      "proof_pattern": "^docs/proofs/6\\.9_foundation_surface_ready_"
     }
   }
 }
+
 
