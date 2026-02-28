@@ -9,7 +9,7 @@ CREATE TABLE public.share_tokens (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id   uuid        NOT NULL,
   deal_id     uuid        NOT NULL REFERENCES public.deals(id),
-  token       text        NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
+  token       text        NOT NULL DEFAULT encode(extensions.gen_random_bytes(32), 'hex'),
   expires_at  timestamptz NULL,
   created_at  timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT share_tokens_tenant_token_unique UNIQUE (tenant_id, token)
