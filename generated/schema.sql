@@ -13,6 +13,14 @@ SET row_security = off;
 
 CREATE SCHEMA IF NOT EXISTS "public";
 
+CREATE TYPE "public"."tenant_role" AS ENUM (
+    'owner',
+    'admin',
+    'member'
+);
+
+ALTER TYPE "public"."tenant_role" OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."check_deal_snapshot_not_null"() RETURNS "trigger"
     LANGUAGE "plpgsql" STABLE
     SET "search_path" TO 'public'
@@ -340,7 +348,11 @@ CREATE OR REPLACE VIEW "public"."share_token_packet" AS
 ALTER VIEW "public"."share_token_packet" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."tenant_memberships" (
-    "id" "uuid" NOT NULL
+    "id" "uuid" NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "role" "public"."tenant_role" DEFAULT 'member'::"public"."tenant_role" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
 ALTER TABLE "public"."tenant_memberships" OWNER TO "postgres";
@@ -378,6 +390,9 @@ ALTER TABLE ONLY "public"."share_tokens"
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."tenant_memberships"
+    ADD CONSTRAINT "tenant_memberships_tenant_user_unique" UNIQUE ("tenant_id", "user_id");
+
 ALTER TABLE ONLY "public"."tenants"
     ADD CONSTRAINT "tenants_pkey" PRIMARY KEY ("id");
 
@@ -402,6 +417,9 @@ ALTER TABLE ONLY "public"."deals"
 ALTER TABLE ONLY "public"."share_tokens"
     ADD CONSTRAINT "share_tokens_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
 
+ALTER TABLE ONLY "public"."tenant_memberships"
+    ADD CONSTRAINT "tenant_memberships_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
+
 ALTER TABLE "public"."calc_versions" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."deal_inputs" ENABLE ROW LEVEL SECURITY;
@@ -421,6 +439,14 @@ CREATE POLICY "deals_update_own" ON "public"."deals" FOR UPDATE TO "authenticate
 ALTER TABLE "public"."share_tokens" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."tenant_memberships" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "tenant_memberships_delete_own" ON "public"."tenant_memberships" FOR DELETE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "tenant_memberships_insert_own" ON "public"."tenant_memberships" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "tenant_memberships_select_own" ON "public"."tenant_memberships" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "tenant_memberships_update_own" ON "public"."tenant_memberships" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 

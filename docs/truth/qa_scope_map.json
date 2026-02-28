@@ -243,6 +243,10 @@
     },
     "6.7": {
       "proof_pattern": "^docs/proofs/6\\.7_share_link_surface_"
+    },
+    "6.8": {
+      "proof_pattern": "^docs/proofs/6\\.8_seat_role_model_"
     }
   }
 }
+
