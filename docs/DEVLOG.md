@@ -3765,3 +3765,32 @@ DoD
 Status
 
 * PASS
+
+## 2026-02-28 — Build Route v2.4 — 6.8 Seat + Role Model (per-seat billing-ready)
+
+Objective
+
+Tenant membership + roles modeled cleanly for per-seat pricing. Structural alignment only — no permission matrix expansion.
+
+Changes
+
+- supabase/migrations/20260219000020_6_8_tenant_role_model.sql — tenant_role enum (owner, admin, member), expanded tenant_memberships stub with tenant_id, user_id, role, created_at, unique constraint (tenant_id, user_id), 4 RLS policies using current_tenant_id(), REVOKE ALL from anon and authenticated
+- supabase/tests/6_8_seat_role_model.test.sql — 10 pgTAP assertions: enum existence, enum values, column presence, unique constraint, RLS enabled, policy enumeration, privilege firewall (anon + authenticated)
+- docs/governance/GOVERNANCE_CHANGE_PR051.md — governance justification (RLS + privilege surface change)
+- docs/truth/qa_claim.json — updated to 6.8
+- docs/truth/qa_scope_map.json — 6.8 entry added
+- scripts/ci_robot_owned_guard.ps1 — 6.8 proof log pattern allowlisted
+
+Proof
+
+docs/proofs/6.8_seat_role_model_20260228T162142Z.log
+
+DoD
+
+- Tables exist for: tenants, memberships (user_id, tenant_id, role) — CONFIRMED
+- Roles are minimal: owner/admin/member (no fantasy roles) — CONFIRMED (tenant_role enum, 3 values)
+- RLS policies align with role model — CONFIRMED (4 policies on tenant_memberships, all use current_tenant_id())
+
+Status
+
+PASS
