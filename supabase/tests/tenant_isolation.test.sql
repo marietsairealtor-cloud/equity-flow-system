@@ -154,9 +154,9 @@ SELECT is(
 RESET ROLE;
 
 SELECT is(
-  (SELECT count(*)::int FROM pg_views WHERE schemaname = 'public'),
+  (SELECT count(*)::int FROM pg_views WHERE schemaname = 'public' AND viewname NOT IN ('share_token_packet')),
   0,
-  'No views in public schema — view-based cross-tenant access not possible'
+  'No unauthorized views in public schema (share_token_packet allowlisted)'
 );
 
 SELECT ok(

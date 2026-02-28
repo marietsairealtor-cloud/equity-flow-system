@@ -240,6 +240,9 @@
     },
     "6.6": {
       "proof_pattern": "^docs/proofs/6\\.6_product_core_tables_"
+    },
+    "6.7": {
+      "proof_pattern": "^docs/proofs/6\\.7_share_link_surface_"
     }
   }
 }

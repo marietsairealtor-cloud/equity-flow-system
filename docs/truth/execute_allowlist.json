@@ -1,1 +1,9 @@
-{"version":1,"allow":["list_deals_v1","create_deal_v1","update_deal_v1"]}
+{
+  "version": 1,
+  "allow": [
+    "list_deals_v1",
+    "create_deal_v1",
+    "update_deal_v1",
+    "lookup_share_token_v1"
+  ]
+}
