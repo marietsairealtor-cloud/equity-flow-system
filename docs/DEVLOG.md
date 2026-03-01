@@ -3828,3 +3828,31 @@ Declare that the minimum Foundation database surface exists and is runnable in a
 
 **Status**
 PASS
+## 2026-02-28 — Tooling Fix — lint:sql false positive (GRANT/REVOKE EXECUTE + comment match)
+
+Objective
+
+Unblock `ship` by fixing lint:sql false positives on legitimate GRANT/REVOKE EXECUTE ON FUNCTION statements and EXECUTE appearing in SQL comments.
+
+Changes
+
+- supabase/tests/row_version_concurrency.test.sql — replaced literal `$$` in comment with "No bare dollar-quoting."
+- supabase/tests/share_link_isolation.test.sql — replaced literal `$$` in comment with "No bare dollar-quoting."
+- scripts/lint_sql_safety.ps1 — strips SQL comments (line and block) before dynamic-SQL detection; replaces fragile lookbehind with explicit GRANT/REVOKE EXECUTE ON FUNCTION/PROCEDURE exemption
+- docs/governance/GOVERNANCE_CHANGE_PR055.md — governance justification
+
+Proof
+
+- npm run lint:sql — PASS (previously failing on 6 files, now 0)
+- pgTAP — PASS (53 tests, 6 files)
+- npm run ship — PASS on main (all gates green)
+
+DoD
+
+- lint:sql passes with zero false positives on GRANT/REVOKE EXECUTE
+- Dynamic SQL detection (bare EXECUTE, format()) still active
+- ship unblocked on main
+
+Status
+
+PASS
