@@ -2,7 +2,7 @@
 -- 6.7: Share-link surface tests.
 -- Cross-tenant negative test, expiry semantics, packet view validation.
 -- EXPLAIN planner proof captured in proof log (not pgTAP).
--- Plain SQL only. No DO blocks. No psql meta-commands. No $$ tags.
+-- Plain SQL only. No DO blocks. No psql meta-commands. No bare dollar-quoting.
 BEGIN;
 SELECT plan(6);
 
