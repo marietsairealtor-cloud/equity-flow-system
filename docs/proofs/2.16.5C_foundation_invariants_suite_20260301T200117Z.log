@@ -1,0 +1,100 @@
+PROOF_HEAD=e03c8cfc6f1493861e303e49efdee7be6278a66a
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 2.16.5C Foundation Invariants Suite — Proof Log ===
+Date: 2026-03-01T15:00:40.8394959-05:00
+Branch: feat/2.16.5C-foundation-invariants
+HEAD: e03c8cfc6f1493861e303e49efdee7be6278a66a
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL:
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Foundation invariants script (5/5 structural checks) ===
+
+> equity-flow-system@0.0.0 foundation:invariants
+> node scripts/foundation_invariants.mjs
+
+PASS: 1/5 Tenant isolation ΓÇö current_tenant_id() exists, RLS enabled on all tenant-owned tables
+PASS: 2/5 Role enforcement ΓÇö tenant_role enum and membership role column exist
+PASS: 3/5 Entitlement truth compiles ΓÇö GUARDRAILS ┬º17 declares entitlement source path
+PASS: 4/5 Activity log write path ΓÇö table and RPC exist
+PASS: 5/5 Cross-tenant negative ΓÇö no permissive policies, current_tenant_id() enforced
+
+FOUNDATION_INVARIANTS PASS (5/5)
+
+=== DoD 2: Negative cross-tenant evidence (pgTAP) ===
+Connecting to local database...
+[REDACTED] ...... ok
+[REDACTED] ... ok
+[REDACTED] ..... ok
+[REDACTED] .. ok
+[REDACTED] ..... ok
+[REDACTED] ......... ok
+All tests successful.
+Files=6, Tests=53,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.02 cusr  0.02 csys =  0.07 CPU)
+Result: PASS
+
+=== DoD 3: CI job wired as required check ===
+CI job: CI / foundation-invariants
+Registered in: docs/truth/required_checks.json
+"name": "CI / foundation-invariants",
+CI workflow: .github/workflows/ci.yml line 315 — runs npm run foundation:invariants
+Required job aggregate includes foundation-invariants
+
+=== DoD 4: Invariant detail — tenant isolation ===
+      relname       | relrowsecurity 
+--------------------+----------------
+ activity_log       | t
+ calc_versions      | t
+ deal_inputs        | t
+ deal_outputs       | t
+ deals              | t
+ share_tokens       | t
+ tenant_memberships | t
+ tenants            | t
+ user_profiles      | t
+(9 rows)
+
+
+=== DoD 5: Invariant detail — role enforcement ===
+   typname   | enumlabel 
+-------------+-----------
+ tenant_role | owner
+ tenant_role | admin
+ tenant_role | member
+(3 rows)
+
+
+=== DoD 6: Invariant detail — activity log write path ===
+foundation_log_activity_v1|t
+
+=== DoD 7: Invariant detail — cross-tenant negative (policy enumeration) ===
+     tablename      |          policyname           |  cmd   |               qual                |            with_check             
+--------------------+-------------------------------+--------+-----------------------------------+-----------------------------------
+ activity_log       | activity_log_insert_own       | INSERT |                                   | (tenant_id = current_tenant_id())
+ activity_log       | activity_log_select_own       | SELECT | (tenant_id = current_tenant_id()) | 
+ deals              | deals_delete_own              | DELETE | (tenant_id = current_tenant_id()) | 
+ deals              | deals_insert_own              | INSERT |                                   | (tenant_id = current_tenant_id())
+ deals              | deals_select_own              | SELECT | (tenant_id = current_tenant_id()) | 
+ deals              | deals_update_own              | UPDATE | (tenant_id = current_tenant_id()) | 
+ tenant_memberships | tenant_memberships_delete_own | DELETE | (tenant_id = current_tenant_id()) | 
+ tenant_memberships | tenant_memberships_insert_own | INSERT |                                   | (tenant_id = current_tenant_id())
+ tenant_memberships | tenant_memberships_select_own | SELECT | (tenant_id = current_tenant_id()) | 
+ tenant_memberships | tenant_memberships_update_own | UPDATE | (tenant_id = current_tenant_id()) | 
+(10 rows)
+
+INSERT policies use WITH CHECK (tenant_id = current_tenant_id()) — enforced predicate for INSERT.
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+2.16.5C Foundation Invariants Suite: PASS

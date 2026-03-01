@@ -249,8 +249,12 @@
     },
     "6.9": {
       "proof_pattern": "^docs/proofs/6\\.9_foundation_surface_ready_"
+    },
+    "2.16.5C": {
+      "proof_pattern": "^docs/proofs/2\\.16\\.5C_foundation_invariants_suite_"
     }
   }
 }
+
 
 
