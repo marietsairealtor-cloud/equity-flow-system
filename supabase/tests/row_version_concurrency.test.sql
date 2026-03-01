@@ -1,7 +1,7 @@
 -- supabase/tests/row_version_concurrency.test.sql
 -- 6.6: pgTAP concurrency + RPC conflict envelope tests.
 -- Proves: stale row_version update blocked, RPC returns CONFLICT envelope.
--- Plain SQL only. No DO blocks. No PL/pgSQL. No psql meta-commands. No $$ tags.
+-- Plain SQL only. No DO blocks. No PL/pgSQL. No psql meta-commands. No bare dollar-quoting.
 BEGIN;
 SELECT plan(8);
 
