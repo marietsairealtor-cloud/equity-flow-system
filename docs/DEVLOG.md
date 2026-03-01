@@ -3828,7 +3828,6 @@ Declare that the minimum Foundation database surface exists and is runnable in a
 
 **Status**
 PASS
-
 ## 2026-02-28 — Tooling Fix — lint:sql false positive (GRANT/REVOKE EXECUTE + comment match)
 
 Objective
