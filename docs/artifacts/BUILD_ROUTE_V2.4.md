@@ -2518,7 +2518,7 @@ is not sufficient.
 * Query plan evidence required: Proof includes EXPLAIN output or equivalent confirming the planner uses the tenant_id predicate.
 * A source-level assertion is not sufficient — index selection can cause the planner to skip a predicate that is syntactically present in the WHERE clause.
 
-Proof: docs/proofs/6.6\_product\_core\_tables\_.md  
+Proof: docs/proofs/6.7\_product\_core\_tables\_.md  
 Gate: merge-blocking (runtime)
 
 ### **6.8 Seat \+ role model (per-seat billing-ready)**
@@ -2559,6 +2559,58 @@ Declare that the minimum Foundation database surface exists so invariant testing
 
 **Gate:**
 merge-blocking (security)
+
+### **6.10 — Activity Log Append-Only (DB Physics) [HARDENED]**
+
+**Deliverable:**
+Activity log is **append-only** at the database level so history cannot be silently weakened later by policy/grant drift.
+
+**DoD:**
+
+* `public.activity_log` has **no UPDATE** policies.
+* `public.activity_log` has **no DELETE** policies.
+* `authenticated` has **no UPDATE** privilege on `public.activity_log`.
+* `authenticated` has **no DELETE** privilege on `public.activity_log`.
+* A DB-level mutation block exists:
+
+* Trigger (or rule) prevents UPDATE/DELETE on `public.activity_log` with a deterministic error message.
+* pgTAP negative tests prove:
+
+  * INSERT succeeds (under valid tenant context).
+  * UPDATE fails.
+  * DELETE fails.
+
+**Proof:**
+`docs/proofs/6.10_activity_log_append_only_<UTC>.log`
+
+**Gate:**
+`pgtap` (merge-blocking)
+
+---
+
+### **6.11 — Role Guard Helper (Internal, Non-Executable) [HARDENED]**
+
+**Deliverable:**
+A single internal helper exists to enforce `tenant_role` checks consistently in future SECURITY DEFINER RPCs, without exposing any new callable surface to app roles.
+
+**DoD:**
+
+* Function exists: `public.require_min_role_v1(p_min tenant_role)` (or exact equivalent name used consistently).
+* Function is **NOT** executable by `anon` or `authenticated`:
+
+  * `REVOKE EXECUTE` from `anon`, `authenticated`
+  * No default/public execute leakage.
+* Function uses **only** tenant context derived from `public.current_tenant_id()` and actor derived from `auth.uid()` (no caller-provided tenant_id/user_id inputs).
+* pgTAP tests prove:
+
+  * `authenticated` cannot EXECUTE the function directly.
+  * Function is present in catalog with expected signature.
+
+**Proof:**
+`docs/proofs/6.11_role_guard_helper_<UTC>.log`
+
+**Gate:**
+`pgtap` (merge-blocking)
 
 ---
 
@@ -2680,6 +2732,52 @@ governance-change-guard.
 Proof: docs/proofs/7.7_studio_mutation_guard_<UTC>.log
 Gate: Operator-run only. No CI job. Policy-governed.
 
+
+### **7.8 — Role Enforcement on Privileged RPCs [HARDENED]**
+
+Deliverable:
+All privileged SECURITY DEFINER RPCs that perform admin/owner-only actions enforce tenant role at the database layer via public.require_min_role_v1().
+
+DoD:
+Any RPC that mutates:
+tenant settings
+tenant membership
+role assignments
+seat counts
+billing-related state
+MUST call public.require_min_role_v1(p_min tenant_role) as the first executable statement.
+No privileged RPC relies on UI or client-side role checks.
+pgTAP tests prove:
+member cannot execute owner/admin-only RPC.
+admin can execute admin-level RPC.
+owner can execute owner-level RPC.
+Catalog audit query enumerates privileged RPCs and verifies presence of role guard call (text or structured enforcement).
+
+Proof:
+docs/proofs/7.8_role_enforcement_rpc_<UTC>.log
+
+Gate:
+pgtap (merge-blocking)
+
+### **7.9 — Tenant Context Integrity Invariant (JWT Contract) [HARDENED]**
+
+Deliverable:
+Invariant suite proves application behavior depends solely on validated JWT tenant claim and cannot operate without tenant context.
+
+DoD:
+public.current_tenant_id() returns NULL when no valid tenant claim exists.
+All tenant-bound RPCs:
+Return NOT_AUTHORIZED if current_tenant_id() is NULL.
+pgTAP negative tests prove:
+RPC fails when no tenant claim is set.
+Cross-tenant access fails under manipulated claim context.
+No RPC accepts tenant_id as caller input.
+
+Proof:
+docs/proofs/7.9_tenant_context_integrity_<UTC>.log
+
+Gate:
+pgtap (merge-blocking)
 ---
 
 ## **8 — Clean-Room Replay (Core)**
@@ -3194,6 +3292,47 @@ Guard proves cloud tip equals pinned tip and fails on mismatch.
 Proof: docs/proofs/8.3\_cloud\_migration\_parity\_.log  
 Gate: lane-only cloud-migration-parity
 
+### **8.4 — Share Token Hash-at-Rest [HARDENED]**
+
+Deliverable:
+Share tokens are stored as cryptographic hashes; raw tokens are never persisted.
+
+DoD:
+public.share_tokens stores token_hash, not raw token.
+Hash algorithm uses pgcrypto (e.g., digest(..., 'sha256')).
+Lookup RPC hashes input before comparison.
+Unique index exists on token_hash.
+pgTAP tests prove:
+Raw token cannot be reconstructed from table.
+Lookup succeeds with correct token.
+Lookup fails with altered token.
+
+Proof:
+docs/proofs/8.4_share_token_hash_at_rest_<UTC>.log
+
+Gate:
+pgtap (merge-blocking, security)
+
+### **8.5 — Share Surface Abuse Controls (Enumeration & Replay Guard) [HARDENED]**
+
+Deliverable:
+Share link surface includes deterministic anti-enumeration and replay controls.
+
+DoD:
+
+Lookup RPC does not leak existence via differentiated error messages.
+Expiry enforcement exists and is validated in RPC.
+Optional one-time or rotation mechanism documented and enforced (if enabled).
+pgTAP tests prove:
+Expired token fails deterministically.
+Invalid token returns same response shape as non-existent token.
+Cross-tenant token access fails.
+
+Proof:
+docs/proofs/8.5_share_surface_abuse_controls_<UTC>.log
+
+Gate:
+pgtap (merge-blocking, security)
 ---
 
 ## **9 — Surface Truth (PostgREST Exposure)**
