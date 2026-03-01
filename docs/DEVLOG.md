@@ -3856,3 +3856,34 @@ DoD
 Status
 
 PASS
+
+## 2026-03-01 — Build Route v2.4 — 2.16.5C Foundation Invariants Suite
+
+Objective
+
+Baseline invariant test suite protecting shared platform guarantees. Upgraded foundation-invariants CI gate from stub to real structural validator.
+
+Changes
+
+- scripts/foundation_invariants.mjs — replaced stub-existence checker with 5 structural invariant checks against generated/schema.sql: (1) tenant isolation — current_tenant_id() exists, RLS on all tenant-owned tables, (2) role enforcement — tenant_role enum with owner/admin/member, membership role column, (3) entitlement truth compiles — GUARDRAILS §17 declares entitlement source path, (4) activity log write path — table and RPC exist, (5) cross-tenant negative — no permissive USING(true) policies, current_tenant_id() enforced
+- scripts/ci_robot_owned_guard.ps1 — 2.16.5C proof log pattern allowlisted
+- docs/truth/qa_claim.json — updated to 2.16.5C
+- docs/truth/qa_scope_map.json — 2.16.5C entry added
+- docs/governance/GOVERNANCE_CHANGE_PR056.md — governance justification
+
+Proof
+
+docs/proofs/2.16.5C_foundation_invariants_suite_20260301T200119Z.log
+
+DoD
+
+- Tenant isolation — CONFIRMED (current_tenant_id() exists, RLS enabled on 9 tables)
+- Role enforcement — CONFIRMED (tenant_role enum owner/admin/member, tenant_memberships.role column)
+- Entitlement truth compiles — CONFIRMED (GUARDRAILS §17 declares get_user_entitlements_v1)
+- Activity log write path exists — CONFIRMED (activity_log table + foundation_log_activity_v1 SECURITY DEFINER RPC)
+- Negative tests prove cross-tenant access fails — CONFIRMED (pgTAP 53 tests PASS, 10 RLS policies all use current_tenant_id(), no permissive policies)
+- Suite runs as required CI check — CONFIRMED (CI / foundation-invariants registered in required_checks.json, runs npm run foundation:invariants)
+
+Status
+
+PASS
