@@ -3887,3 +3887,61 @@ DoD
 Status
 
 PASS
+
+
+2026-03-01 — Build Route v2.4 — Post Section 6 Advisor Review
+
+Objective
+Perform adversarial review of Section 6 security model and document findings before proceeding to Section 7.
+
+Changes
+Reviewed Section 6 implementation against:
+Tenancy isolation
+SECURITY DEFINER enforcement
+Privilege firewall
+Role model structure
+Share surface
+Activity log design
+Re-validated cloud project after full migration alignment.
+Re-ran catalog checks for:
+RLS policies
+Table grants
+SECURITY DEFINER search_path
+Tenant resolver presence
+
+Findings
+Tenant isolation confirmed intact.
+No direct table grants to authenticated except controlled user_profiles.
+All SECURITY DEFINER functions have fixed search_path.
+Activity log write path exists.
+No cross-tenant bypass identified.
+No active security regressions found.
+Actions
+Added future hardening items (7.8, 7.9, 8.4, 8.5) to Build Route.
+No emergency remediations required.
+
+Proof
+Advisor review transcript + cloud catalog verification outputs.
+
+Status
+PASS
+
+DEVLOG ENTRY — Specification Additions
+2026-03-01 — Build Route v2.4 — Section 7 & 8 Hardening Specification Extensions
+
+Objective
+Extend Build Route with forward-looking hardening items identified during post-Section-6 review.
+
+Changes
+Added the following items:
+7.8 — Role Enforcement on Privileged RPCs
+7.9 — Tenant Context Integrity Invariant
+8.4 — Share Token Hash-at-Rest
+8.5 — Share Surface Abuse Controls
+These are specification-only additions. No runtime changes.
+
+Proof
+Build Route updated to include new sections.
+
+Status
+PASS
