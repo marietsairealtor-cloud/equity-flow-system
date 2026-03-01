@@ -519,4 +519,3 @@ ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
 GRANT ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer) TO "authenticated";
 
 GRANT SELECT,UPDATE ON TABLE "public"."user_profiles" TO "authenticated";
-
