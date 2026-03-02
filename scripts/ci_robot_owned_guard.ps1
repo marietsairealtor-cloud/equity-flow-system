@@ -82,6 +82,7 @@ if($pp -match "^docs/proofs/6\.6_product_core_tables_\d{8}T\d{6}Z\.log$"){ retur
 if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.7 proof log" }
   if($pp -match "^docs/proofs/6\.8_seat_role_model_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.8 proof log" }
   if($pp -match "^docs/proofs/6\.9_foundation_surface_ready_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.9 proof log" }
+  if($pp -match "^docs/proofs/6\.10_activity_log_append_only_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.10 proof log" }
   if($pp -match "^docs/proofs/2\.16\.5C_foundation_invariants_suite_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.5C proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }
