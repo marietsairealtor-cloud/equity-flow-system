@@ -283,6 +283,40 @@ $$;
 
 ALTER FUNCTION "public"."lookup_share_token_v1"("p_tenant_id" "uuid", "p_token" "text") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."require_min_role_v1"("p_min" "public"."tenant_role") RETURNS "void"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant_id uuid;
+  v_user_id   uuid;
+  v_role      public.tenant_role;
+BEGIN
+  v_tenant_id := public.current_tenant_id();
+  v_user_id   := auth.uid();
+
+  IF v_tenant_id IS NULL OR v_user_id IS NULL THEN
+    RAISE EXCEPTION 'NOT_AUTHORIZED';
+  END IF;
+
+  SELECT role INTO v_role
+  FROM public.tenant_memberships
+  WHERE tenant_id = v_tenant_id
+    AND user_id   = v_user_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'NOT_AUTHORIZED';
+  END IF;
+
+  -- Enum ordering: owner > admin > member
+  IF v_role < p_min THEN
+    RAISE EXCEPTION 'NOT_AUTHORIZED';
+  END IF;
+END;
+$$;
+
+ALTER FUNCTION "public"."require_min_role_v1"("p_min" "public"."tenant_role") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
