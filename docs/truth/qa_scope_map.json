@@ -97,9 +97,6 @@
     "2.16.5B": {
       "proof_pattern": "^docs/proofs/2\\.16\\.5B_repo_layout_separation_"
     },
-    "2.16.5C": {
-      "proof_pattern": "^docs/proofs/2\\.16\\.5C_foundation_invariants_suite_"
-    },
     "2.16.5D": {
       "proof_pattern": "^docs/proofs/2\\.16\\.5D_lane_separation_enforcement_"
     },
@@ -252,9 +249,9 @@
     },
     "2.16.5C": {
       "proof_pattern": "^docs/proofs/2\\.16\\.5C_foundation_invariants_suite_"
+    },
+    "6.10": {
+      "proof_pattern": "^docs/proofs/6\\.10_activity_log_append_only_"
     }
   }
 }
-
-
-
