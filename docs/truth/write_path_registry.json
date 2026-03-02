@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-03-01T18:28:00Z",
+    "generated":  "2026-03-02T00:40:08Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -29,6 +29,24 @@
                                        ],
                             "row_version_enforced":  true,
                             "optimistic_concurrency":  true
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "activity_log_no_delete",
+                            "tables":  [
+                                           "activity_log"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "activity_log_no_update",
+                            "tables":  [
+                                           "activity_log"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
                         },
                         {
                             "path_type":  "trigger",

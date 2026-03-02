@@ -21,6 +21,17 @@ CREATE TYPE "public"."tenant_role" AS ENUM (
 
 ALTER TYPE "public"."tenant_role" OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."activity_log_append_only"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  RAISE EXCEPTION 'activity_log_append_only: mutations are not permitted on activity_log';
+END;
+$$;
+
+ALTER FUNCTION "public"."activity_log_append_only"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."check_deal_snapshot_not_null"() RETURNS "trigger"
     LANGUAGE "plpgsql" STABLE
     SET "search_path" TO 'public'
@@ -453,6 +464,10 @@ ALTER TABLE ONLY "public"."tenants"
 
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id");
+
+CREATE OR REPLACE TRIGGER "activity_log_no_delete" BEFORE DELETE ON "public"."activity_log" FOR EACH ROW EXECUTE FUNCTION "public"."activity_log_append_only"();
+
+CREATE OR REPLACE TRIGGER "activity_log_no_update" BEFORE UPDATE ON "public"."activity_log" FOR EACH ROW EXECUTE FUNCTION "public"."activity_log_append_only"();
 
 CREATE OR REPLACE TRIGGER "deal_inputs_tenant_match" BEFORE INSERT OR UPDATE ON "public"."deal_inputs" FOR EACH ROW EXECUTE FUNCTION "public"."check_deal_tenant_match"();
 
