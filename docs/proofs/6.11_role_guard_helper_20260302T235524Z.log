@@ -1,0 +1,76 @@
+PROOF_HEAD=29174d5119b6ef75b2415781e12fa09baa8d6a6b
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 6.11 Role Guard Helper — Proof Log ===
+Date: 2026-03-02T18:55:10.1517990-05:00
+Branch: feat/6.11-role-guard-helper
+HEAD: 29174d5119b6ef75b2415781e12fa09baa8d6a6b
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL:
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Function exists in catalog with expected signature ===
+       proname       |       args        | prosecdef 
+---------------------+-------------------+-----------
+ require_min_role_v1 | p_min tenant_role | f
+(1 row)
+
+
+=== DoD 2: REVOKE — authenticated cannot EXECUTE ===
+ has_function_privilege 
+------------------------
+ f
+(1 row)
+
+(expected: f)
+
+=== DoD 3: REVOKE — anon cannot EXECUTE ===
+ has_function_privilege 
+------------------------
+ f
+(1 row)
+
+(expected: f)
+
+=== DoD 4: REVOKE — PUBLIC cannot EXECUTE ===
+ has_function_privilege 
+------------------------
+ f
+(1 row)
+
+(expected: f)
+
+=== DoD 5: pgTAP tests pass ===
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=8, Tests=59,  0 wallclock secs ( 0.03 usr  0.01 sys +  0.03 cusr  0.03 csys =  0.10 CPU)
+Result: PASS
+
+=== DoD 6: Not in execute_allowlist (internal only) ===
+(expected: no match)
+
+=== DoD 7: Not in definer_allowlist (not SD) ===
+(expected: no match)
+
+=== STUB_GATES_ACTIVE ===
+clean-room-replay    conversion_trigger: 8.0.1
+schema-drift         conversion_trigger: 8.0.2
+handoff-idempotency  conversion_trigger: 8.0.3
+definer-safety-audit conversion_trigger: 8.0.4
+Authority: docs/truth/deferred_proofs.json
+
+=== RESULT ===
+6.11 Role Guard Helper: PASS
