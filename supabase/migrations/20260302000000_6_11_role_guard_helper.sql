@@ -38,6 +38,7 @@ END;
 $fn$;
 
 -- Privilege firewall: internal helper only.
--- Must NOT be executable by app roles.
+-- Revoke from PUBLIC first, then explicit app roles.
+REVOKE EXECUTE ON FUNCTION public.require_min_role_v1(public.tenant_role) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.require_min_role_v1(public.tenant_role) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.require_min_role_v1(public.tenant_role) FROM authenticated;
