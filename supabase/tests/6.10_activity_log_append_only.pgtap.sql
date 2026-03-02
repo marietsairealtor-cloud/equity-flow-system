@@ -3,7 +3,7 @@
 
 BEGIN;
 
-SELECT plan(3);
+SELECT plan(4);
 
 -- Seed: insert a tenant so FK constraint on activity_log.tenant_id is satisfied
 INSERT INTO public.tenants (id) VALUES ('00000000-0000-0000-0000-000000000001');
@@ -17,7 +17,18 @@ SELECT lives_ok(
   'INSERT into activity_log succeeds with valid tenant_id and action'
 );
 
--- Test 2: UPDATE is blocked by trigger
+-- Test 2: Seeded row exists (guards against vacuous UPDATE/DELETE trigger bypass)
+SELECT results_eq(
+  $tap$
+    SELECT COUNT(*)::integer FROM public.activity_log
+    WHERE tenant_id = '00000000-0000-0000-0000-000000000001'
+      AND action = 'test.insert'
+  $tap$,
+  ARRAY[1],
+  'Seeded row exists before UPDATE/DELETE attempts'
+);
+
+-- Test 3: UPDATE is blocked by trigger
 SELECT throws_ok(
   $tap$
     UPDATE public.activity_log
@@ -29,7 +40,7 @@ SELECT throws_ok(
   'UPDATE on activity_log raises exception'
 );
 
--- Test 3: DELETE is blocked by trigger
+-- Test 4: DELETE is blocked by trigger
 SELECT throws_ok(
   $tap$
     DELETE FROM public.activity_log
