@@ -3945,3 +3945,34 @@ Build Route updated to include new sections.
 
 Status
 PASS
+
+2026-03-02 — Build Route v2.4 — Item 6.10
+
+Objective
+Enforce append-only invariant on public.activity_log at DB physics level so
+history cannot be silently weakened by future policy or privilege drift.
+
+Changes
+- supabase/migrations/20260301000000_activity_log_append_only.sql:
+  REVOKE UPDATE/DELETE on activity_log from authenticated; trigger function
+  public.activity_log_append_only() + triggers activity_log_no_update and
+  activity_log_no_delete block all mutations with deterministic error message.
+- supabase/tests/6.10_activity_log_append_only.pgtap.sql:
+  4-test pgTAP suite: INSERT succeeds, row-existence assertion (anti-vacuous),
+  UPDATE blocked, DELETE blocked. Named dollar tags; SQL-only.
+- docs/truth/qa_claim.json: updated to 6.10
+- docs/truth/qa_scope_map.json: added 6.10 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 6.10 proof log path
+- docs/governance/GOVERNANCE_CHANGE_PR058.md: governance justification
+
+Proof
+docs/proofs/6.10_activity_log_append_only_20260302T004453Z.log
+
+DoD
+- No UPDATE/DELETE policies on activity_log: VERIFIED
+- authenticated has no UPDATE/DELETE privilege (f|f): VERIFIED
+- Trigger mutation block with deterministic error message: VERIFIED
+- pgTAP 4 tests green (57 total): VERIFIED
+- REVOKE in migration: VERIFIED
+
+Status: COMPLETE — merged to main
