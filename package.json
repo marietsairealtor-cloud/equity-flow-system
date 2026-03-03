@@ -23,6 +23,7 @@
     "ci_encoding_audit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_encoding_audit.ps1",
     "ship": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_ship_guard.ps1",
     "ship:inner": "node scripts/ship.mjs",
+    "lint": "node scripts/lint_bom_gate.mjs",
     "lint:sql": "node scripts/run_lint_sql.mjs",
     "db:push": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/db_push_guard.ps1",
     "lint:pgtap": "node scripts/lint_pgtap.mjs",
@@ -45,6 +46,8 @@
     "foundation:invariants": "node scripts/foundation_invariants.mjs",
     "proof:finalize": "node scripts/proof_finalize_wrapper.mjs",
     "pr:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1",
+    "test": "supabase test db",
+    "truth:check": "npm run truth-bootstrap && npm run required-checks-contract",
     "product:scaffold": "node scripts/product_scaffold.mjs",
     "scaffold:verify": "node scripts/verify_product_scaffold.mjs",
     "stop-the-line-xor": "node scripts/stop_the_line_xor_gate.mjs",
@@ -70,3 +73,4 @@
     "node": "20.18.1"
   }
 }
+
