@@ -4004,3 +4004,32 @@ DoD
 
 Status
 PASS
+
+## 2026-03-03 — Build Route v2.4 — 7.1 Schema Snapshot Generation
+
+Objective
+
+Schema truth reproducible. Deterministic generation of generated/schema.sql confirmed via byte-for-byte idempotent drift check.
+
+Changes
+
+- Attestation PR — no new scripts, CI jobs, or migrations
+- docs/truth/qa_claim.json — updated to 7.1
+- docs/truth/qa_scope_map.json — 7.1 entry added
+- scripts/ci_robot_owned_guard.ps1 — 7.1 proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_PR061.md — governance justification
+
+Proof
+
+docs/proofs/7.1_schema_snapshot_20260303T190138Z.log
+
+DoD
+
+- generated/schema.sql is generated deterministically — CONFIRMED (two consecutive gen:schema runs produce identical SHA256: 952F9C7D4634BF6D4AB80B8062AF864514A5A5297E3635032D1E30D1BFA2E519)
+- Drift check passes with no unexpected delta — CONFIRMED (git diff --exit-code PASS on both runs)
+- CI enforcement via migration-schema-coupling — CONFIRMED (registered in required_checks.json)
+- Note: schema-drift live CI job remains stubbed until 8.0.2 (db-heavy stub conversion)
+
+Status
+
+PASS
