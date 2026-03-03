@@ -4033,3 +4033,28 @@ DoD
 Status
 
 PASS
+
+2026-03-03 — Add 7.1A Preflight Hook Wiring
+
+Context
+During review of 7.1, it was discovered that npm run pr:preflight was reporting (skip: missing) for lint, test, and truth:check.
+Git history analysis showed:
+Commit f3e2249 introduced a duplicate "scripts" block in package.json, temporarily defining lint and test.
+Commit b9fc82f corrected the malformed structure, removing the duplicate block and thereby removing those scripts.
+
+As a result, pr:preflight resumed skipping those optional hooks.
+This behavior change was a regression in developer ergonomics but not a governance failure.
+
+Decision
+Add Build Route item 7.1A to correctly wire:
+lint
+test
+truth:check
+inside the canonical "scripts" object.
+This restores deterministic preflight behavior without reintroducing malformed JSON structure.
+
+Scope
+No new CI infrastructure.
+No change to required checks.
+No change to governance enforcement.
+Local developer surface hardening only.

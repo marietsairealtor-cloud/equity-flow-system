@@ -2625,6 +2625,34 @@ Drift check passes with no unexpected delta.
 Proof: docs/proofs/7.1\_schema\_snapshot\_.log  
 Gate: schema-drift (merge-blocking)
 
+### **7.1A — Preflight Hook Wiring (Remove Optional Skips)**
+
+Purpose:
+Ensure npm run pr:preflight executes lint, test, and truth:check without (skip: missing) placeholders.
+
+Rationale:
+A prior malformed package.json temporarily introduced lint and test scripts via a duplicate "scripts" block. When corrected, those scripts disappeared, causing pr:preflight to resume skipping optional hooks. This item restores those hooks correctly within the canonical "scripts" object.
+
+Deliverable:
+pr:preflight runs lint, test, and truth:check with no skipped hooks.
+
+DoD:
+package.json contains the following scripts inside the primary "scripts" object:
+"lint"
+"test"
+"truth:check"
+npm run pr:preflight executes all three (no (skip: missing) output).
+"test" aliases the project’s real test surface (pgTAP / Supabase test flow).
+"truth:check" aliases existing truth validation commands (does not introduce new infrastructure).
+No duplicate "scripts" blocks.
+ci-semantic-contract, ci-normalize-sweep, and ci-encoding-audit remain green.
+Green loop passes twice.
+
+Proof:
+docs/proofs/7.1A_preflight_hook_wiring_<UTC>.log
+
+Gate: none (developer ergonomics hardening; does not introduce new CI infra)
+
 ### **7.2 — Privilege Truth + Default Privileges Lockdown [HARDENED]**
 
 Deliverable:
