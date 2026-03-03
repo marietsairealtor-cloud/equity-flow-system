@@ -1,0 +1,241 @@
+PROOF_HEAD=4a23c7cd11788c321c5725c5eb50a8658dee9fa4
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.1A Preflight Hook Wiring — Proof Log ===
+Date: 2026-03-03T18:25:54.7591030-05:00
+Branch: feat/7.1A-preflight-hook-wiring
+HEAD: 4a23c7cd11788c321c5725c5eb50a8658dee9fa4
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: package.json contains lint, test, truth:check ===
+"lint": "node scripts/lint_bom_gate.mjs",
+"test": "supabase test db",
+"truth:check": "npm run truth-bootstrap && npm run required-checks-contract",
+
+=== DoD 2: No duplicate scripts blocks ===
+scripts block count: 1 (expected: 1)
+
+=== DoD 3: pr:preflight executes all three (no skip:missing) ===
+
+> equity-flow-system@0.0.0 pr:preflight
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1
+
+== preflight:encoding ==
+Encoding preflight OK.
+== lint ==
+== test ==
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=8, Tests=59,  0 wallclock secs ( 0.01 usr  0.02 sys +  0.03 cusr  0.03 csys =  0.09 CPU)
+Result: PASS
+== toolchain:contract ==
+=== toolchain-contract ===
+{
+  "runner": {
+    "RUNNER_OS": "unknown",
+    "ImageOS": "unknown",
+    "expected_runs_on": "ubuntu-24.04"
+  },
+  "node": {
+    "actual": "v20.18.1",
+    "expected": "v20.",
+    "match": "prefix"
+  },
+  "npm": {
+    "actual": "10.8.2",
+    "expected": "10.",
+    "match": "prefix"
+  }
+}
+TOOLCHAIN_CONTRACT_OK
+== truth:sync ==
+== truth:check ==
+=== truth-bootstrap: required paths (existence) ===
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/required_checks.json
+PASS EXISTS docs/truth/lane_checks.json
+PASS EXISTS docs/truth/toolchain.json
+PASS EXISTS docs/truth/qa_requirements.json
+PASS EXISTS docs/truth/expected_surface.json
+PASS EXISTS docs/truth/execute_allowlist.json
+PASS EXISTS docs/truth/definer_allowlist.json
+PASS EXISTS docs/truth/pr_scope_rules.json
+PASS EXISTS docs/truth/robot_owned_paths.json
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/rpc_budget.json
+PASS EXISTS docs/truth/blocked_identifiers.json
+PASS EXISTS docs/truth/tenant_table_selector.json
+PASS EXISTS docs/truth/privilege_truth.json
+PASS EXISTS docs/truth/ci_execution_surface.json
+PASS EXISTS docs/truth/qa_requirements.schema.json
+PASS EXISTS docs/truth/qa_scope_map.json
+PASS EXISTS docs/truth/qa_claim.json
+PASS EXISTS docs/truth/surface_truth.schema.json
+PASS EXISTS docs/truth/cloud_inventory.schema.json
+PASS EXISTS docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: JSON parse ===
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/required_checks.json
+PASS JSON docs/truth/lane_checks.json
+PASS JSON docs/truth/toolchain.json
+PASS JSON docs/truth/qa_requirements.json
+PASS JSON docs/truth/expected_surface.json
+PASS JSON docs/truth/execute_allowlist.json
+PASS JSON docs/truth/definer_allowlist.json
+PASS JSON docs/truth/pr_scope_rules.json
+PASS JSON docs/truth/robot_owned_paths.json
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/rpc_budget.json
+PASS JSON docs/truth/blocked_identifiers.json
+PASS JSON docs/truth/tenant_table_selector.json
+PASS JSON docs/truth/privilege_truth.json
+PASS JSON docs/truth/ci_execution_surface.json
+PASS JSON docs/truth/qa_requirements.schema.json
+PASS JSON docs/truth/qa_scope_map.json
+PASS JSON docs/truth/qa_claim.json
+PASS JSON docs/truth/surface_truth.schema.json
+PASS JSON docs/truth/cloud_inventory.schema.json
+PASS JSON docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: schema-lite checks (no Ajv) ===
+SCHEMA_LITE_PASS: qa_claim.json
+SCHEMA_LITE_PASS: qa_scope_map.json
+SCHEMA_LITE_PASS: qa_requirements.json
+SCHEMA_LITE_PASS: expected_surface.json
+SCHEMA_LITE_PASS: privilege_truth.json
+SCHEMA_LITE_PASS: ci_execution_surface.json
+SCHEMA_LITE_PASS: docs/truth/qa_requirements.schema.json
+SCHEMA_LITE_PASS: docs/truth/surface_truth.schema.json
+SCHEMA_LITE_PASS: docs/truth/cloud_inventory.schema.json
+SCHEMA_LITE_PASS: docs/truth/privilege_truth.schema.json
+STATUS: PASS (truth-bootstrap OK)
+=== required-checks-contract ===
+WORKFLOWS: 5
+DISCOVERED_CHECKS:
+ - CI / anon-privilege-audit
+ - CI / automation-contract
+ - CI / background-context-review
+ - CI / blocked-identifiers
+ - CI / changes
+ - CI / ci-encoding-audit
+ - CI / ci-normalize-sweep
+ - CI / ci-path-leak-audit
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / db-heavy
+ - CI / deferred-proof-registry
+ - CI / definer-safety-audit
+ - CI / docs-push-contract
+ - CI / env-sanity
+ - CI / foundation-invariants
+ - CI / governance-change-guard
+ - CI / governance-change-template-contract
+ - CI / governance-path-coverage
+ - CI / handoff-commit-safety
+ - CI / handoff-idempotency
+ - CI / handoff-preconditions
+ - CI / job-graph-ordering
+ - CI / lane-enforcement
+ - CI / lane-policy-contract
+ - CI / main-moved-guard
+ - CI / migration-rls-colocation
+ - CI / migration-schema-coupling
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / qa-requirements-contract
+ - CI / qa-scope-coverage
+ - CI / qa-verify
+ - CI / required
+ - CI / rls-strategy-consistent
+ - CI / robot-owned-guard
+ - CI / robot-owned-publish-guard
+ - CI / ship-guard
+ - CI / stop-the-line
+ - CI / stop-the-line-xor
+ - CI / test
+ - CI / toolchain-contract
+ - CI / toolchain-contract-supabase
+ - CI / truth-sync-enforced
+ - CI / unregistered-table-access
+ - CI / waiver-debt-enforcement
+ - CI / waiver-rate-limit
+ - database-tests / pgtap
+ - database-tests / postgrest-isolation
+ - placeholder / placeholder
+ - policy-drift-attestation / policy-drift-attestation
+ - secrets-scan / secrets-scan
+REQUIRED_CHECKS:
+ - CI / anon-privilege-audit
+ - CI / automation-contract
+ - CI / background-context-review
+ - CI / blocked-identifiers
+ - CI / ci-encoding-audit
+ - CI / ci-normalize-sweep
+ - CI / ci-path-leak-audit
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / deferred-proof-registry
+ - CI / definer-safety-audit
+ - CI / docs-push-contract
+ - CI / env-sanity
+ - CI / foundation-invariants
+ - CI / governance-change-guard
+ - CI / governance-path-coverage
+ - CI / handoff-commit-safety
+ - CI / handoff-idempotency
+ - CI / handoff-preconditions
+ - CI / job-graph-ordering
+ - CI / lane-enforcement
+ - CI / lane-policy-contract
+ - CI / migration-rls-colocation
+ - CI / migration-schema-coupling
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / qa-requirements-contract
+ - CI / qa-scope-coverage
+ - CI / qa-verify
+ - CI / rls-strategy-consistent
+ - CI / robot-owned-guard
+ - CI / robot-owned-publish-guard
+ - CI / ship-guard
+ - CI / stop-the-line
+ - CI / stop-the-line-xor
+ - CI / test
+ - CI / toolchain-contract
+ - CI / toolchain-contract-supabase
+ - CI / truth-sync-enforced
+ - CI / unregistered-table-access
+ - CI / waiver-debt-enforcement
+ - CI / waiver-rate-limit
+=== verify: no lane-only checks in required_checks.json ===
+PASS lane-only excluded
+=== verify: required_checks.json matches workflow job names (string-exact) ===
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+== proof:manifest ==
+PROOF_MANIFEST_OK
+== proof-commit-binding ==
+From https://github.com/marietsairealtor-cloud/equity-flow-system
+ * branch            main       -> FETCH_HEAD
+PROOF_COMMIT_BINDING_SKIP: no proof files changed in PR
+
+=== DoD 4: CI gates remain green ===
+ci-semantic-contract — PASS (Phase 3)
+ci-normalize-sweep — PASS (Phase 3)
+ci-encoding-audit — PASS (Phase 3)
+green:twice — PASS (Phase 3)
+
+=== RESULT ===
+7.1A Preflight Hook Wiring: PASS
