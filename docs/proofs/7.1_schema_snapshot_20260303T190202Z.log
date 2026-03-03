@@ -1,0 +1,61 @@
+PROOF_HEAD=3a89473a3fba08b11557ce169862466fbda59742
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.1 Schema Snapshot Generation — Proof Log ===
+Date: 2026-03-03T14:01:01.5949433-05:00
+Branch: feat/7.1-schema-snapshot
+HEAD: 3a89473a3fba08b11557ce169862466fbda59742
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL:
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Deterministic schema generation ===
+--- Running gen:schema against clean local DB ---
+
+> equity-flow-system@0.0.0 gen:schema
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts\gen_schema.ps1
+
+Dumping schemas from local database...
+Dumped schema to [REDACTED_PATH]
+Wrote generated/schema.sql (schemas: public)
+
+--- git diff --exit-code on generated/schema.sql ---
+DRIFT CHECK: PASS — no delta detected
+
+--- SHA256 of generated/schema.sql ---
+952F9C7D4634BF6D4AB80B8062AF864514A5A5297E3635032D1E30D1BFA2E519
+
+=== DoD 2: Deterministic regeneration (second run) ===
+--- Running gen:schema a second time ---
+
+> equity-flow-system@0.0.0 gen:schema
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts\gen_schema.ps1
+
+Dumping schemas from local database...
+Dumped schema to [REDACTED_PATH]
+Wrote generated/schema.sql (schemas: public)
+
+--- git diff --exit-code (second run) ---
+DRIFT CHECK (2nd run): PASS — idempotent, no delta
+
+--- SHA256 after second run ---
+952F9C7D4634BF6D4AB80B8062AF864514A5A5297E3635032D1E30D1BFA2E519
+
+=== CI enforcement ===
+CI / migration-schema-coupling: registered in docs/truth/required_checks.json
+"name": "CI / migration-schema-coupling",
+Schema-drift live CI job deferred to 8.0.2 (db-heavy stub conversion)
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.1 Schema Snapshot Generation: PASS

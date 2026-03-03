@@ -85,6 +85,8 @@
     "6.8": { "proof_pattern": "^docs/proofs/6\\.8_seat_role_model_" },
     "6.9": { "proof_pattern": "^docs/proofs/6\\.9_foundation_surface_ready_" },
     "6.10": { "proof_pattern": "^docs/proofs/6\\.10_activity_log_append_only_" },
-    "6.11": { "proof_pattern": "^docs/proofs/6\\.11_role_guard_helper_" }
+    "6.11": { "proof_pattern": "^docs/proofs/6\\.11_role_guard_helper_" },
+    "7.1": { "proof_pattern": "^docs/proofs/7\\.1_schema_snapshot_" }
   }
 }
+
