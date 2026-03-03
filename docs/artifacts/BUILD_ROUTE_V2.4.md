@@ -2659,17 +2659,17 @@ Deliverable:
 Privileges and default privileges are truth for all roles including
 anon, with contract-based enforcement preventing unauthorized GRANTs
 in migrations.
-DoD additions (appended to existing 7.2 DoD):
-
-privilege_truth.json explicitly includes anon role grants and
-default ACL entries alongside authenticated entries. Absence of
+DoD
+Privilege truth exists including default privileges state.  
+Drift check detects and fails privilege/default privilege regressions. 
+privilege_truth.json explicitly includes anon role grants and default ACL entries alongside authenticated entries. Absence of
 anon entries must be stated explicitly — it is not implied.
-A lint gate fails if any migration contains a GRANT to anon or
-authenticated that is not on the explicit allowlist defined in
-CONTRACTS.md §12 and privilege_truth.json. A documentation comment
-in the migration is not the control mechanism. The allowlist is the
-single authority — an undocumented GRANT fails the gate regardless of
-any comments present.
+A lint gate fails if any migration contains a GRANT to anon or authenticated that is not on the explicit allowlist defined in
+CONTRACTS.md §12 and privilege_truth.json. A documentation comment in the migration is not the control mechanism. The allowlist is the
+single authority — an undocumented GRANT fails the gate regardless of any comments present.
+ 
+Proof: docs/proofs/7.2\_privilege\_truth\_.log  
+Gate: schema-drift \+ pgtap (merge-blocking)
 
 ### **7.3 Contracts snapshot discipline**
 
