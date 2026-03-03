@@ -4058,3 +4058,34 @@ No new CI infrastructure.
 No change to required checks.
 No change to governance enforcement.
 Local developer surface hardening only.
+## 2026-03-03 — Build Route v2.4 — 7.1A Preflight Hook Wiring
+
+Objective
+
+Ensure npm run pr:preflight executes lint, test, and truth:check with no skip:missing placeholders.
+
+Changes
+
+- package.json — added "lint" (node scripts/lint_bom_gate.mjs), "test" (supabase test db), "truth:check" (npm run truth-bootstrap && npm run required-checks-contract)
+- scripts/ci_robot_owned_guard.ps1 — 7.1A proof log pattern allowlisted
+- docs/truth/qa_claim.json — updated to 7.1A
+- docs/truth/qa_scope_map.json — 7.1A entry added
+- docs/governance/GOVERNANCE_CHANGE_PR063.md — governance justification
+
+Proof
+
+docs/proofs/7.1A_preflight_hook_wiring_20260303T232555Z.log
+
+DoD
+
+- package.json contains lint, test, truth:check in primary scripts block — CONFIRMED
+- No duplicate scripts blocks — CONFIRMED (count: 1)
+- pr:preflight executes all three with no skip:missing — CONFIRMED
+- test aliases real surface (supabase test db, 8 files, 59 tests PASS) — CONFIRMED
+- truth:check aliases verify-only commands (truth-bootstrap + required-checks-contract) — CONFIRMED
+- ci-semantic-contract, ci-normalize-sweep, ci-encoding-audit remain green — CONFIRMED
+- green:twice PASS — CONFIRMED
+
+Status
+
+PASS
