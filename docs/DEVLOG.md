@@ -3976,3 +3976,31 @@ DoD
 - REVOKE in migration: VERIFIED
 
 Status: COMPLETE — merged to main
+
+## 2026-03-02 — Build Route v2.4 — 6.11 Role Guard Helper (Internal, Non-Executable) [HARDENED]
+
+Objective
+Establish a single internal helper to enforce tenant_role checks consistently in future SECURITY DEFINER RPCs, without exposing any new callable surface to app roles.
+
+Changes
+- supabase/migrations/20260302000000_6_11_role_guard_helper.sql — public.require_min_role_v1(p_min tenant_role): internal helper, REVOKE EXECUTE from PUBLIC/anon/authenticated co-located in same migration
+- supabase/tests/6_11_role_guard_helper.test.sql — 2 pgTAP assertions: function exists in catalog with expected signature; authenticated cannot EXECUTE directly (42501)
+- docs/truth/qa_claim.json — updated to 6.11
+- docs/truth/qa_scope_map.json — 6.11 entry added (proof_pattern corrected from array to object format)
+- docs/truth/completed_items.json — 6.11 added; malformed array structure repaired
+- scripts/ci_robot_owned_guard.ps1 — 6.11 proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_PR059.md — governance justification
+
+Proof
+docs/proofs/6.11_role_guard_helper_20260302T234033Z.log
+
+DoD
+- Function exists: public.require_min_role_v1(p_min tenant_role) — CONFIRMED
+- REVOKE EXECUTE from PUBLIC, anon, authenticated — CONFIRMED (has_function_privilege = f for all three)
+- Function uses only current_tenant_id() and auth.uid() — no caller-provided inputs — CONFIRMED
+- authenticated cannot EXECUTE directly (pgTAP test 2 PASS) — CONFIRMED
+- Function present in catalog with expected signature (pgTAP test 1 PASS) — CONFIRMED
+- 59 total pgTAP tests PASS
+
+Status
+PASS
