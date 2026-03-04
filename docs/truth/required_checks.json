@@ -66,12 +66,12 @@
       "required": true
     },
     {
-      "name": "CI / env-sanity",
+      "name": "CI / entitlement-policy-coupling",
       "type": "github_status",
       "required": true
     },
     {
-      "name": "CI / entitlement-policy-coupling",
+      "name": "CI / env-sanity",
       "type": "github_status",
       "required": true
     },
@@ -227,4 +227,3 @@
     }
   ]
 }
-

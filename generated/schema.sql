@@ -173,6 +173,52 @@ $$;
 
 ALTER FUNCTION "public"."foundation_log_activity_v1"("p_tenant_id" "uuid", "p_action" "text", "p_meta" "jsonb", "p_actor_id" "uuid") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."get_user_entitlements_v1"() RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant  uuid;
+  v_user    uuid;
+  v_role    public.tenant_role;
+  v_member  boolean;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  v_user := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT tm.role INTO v_role
+  FROM public.tenant_memberships tm
+  WHERE tm.tenant_id = v_tenant
+    AND tm.user_id = v_user;
+
+  v_member := FOUND;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object(
+      'tenant_id', v_tenant,
+      'user_id',   v_user,
+      'is_member', v_member,
+      'role',      v_role,
+      'entitled',  v_member
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."get_user_entitlements_v1"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25) RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -564,6 +610,8 @@ CREATE POLICY "tenant_memberships_update_own" ON "public"."tenant_memberships" F
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON FUNCTION "public"."get_user_entitlements_v1"() TO "authenticated";
 
 GRANT ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer) TO "authenticated";
 
