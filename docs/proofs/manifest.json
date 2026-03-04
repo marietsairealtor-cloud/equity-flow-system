@@ -123,6 +123,7 @@
     "docs/proofs/7.1A_preflight_hook_wiring_20260303T232555Z.log": "911cb459dc2d587b03809e79038ddcd8bf74de1c69c80ab2c85a7097616d6c5d",
     "docs/proofs/7.2_privilege_truth_20260304T010342Z.log": "8fa331f901722ad99dfb160db75574cb0fb2ff1384161a1691baf20fd0b92027",
     "docs/proofs/7.3_contracts_policy_20260304T022958Z.log": "6797ded88eb06e636776d63b3fd2dec9f0a91368ecbd11f175077d488fdb4d24",
-    "docs/proofs/7.4_entitlement_truth_20260304T173458Z.log": "ef07bd4f450b5d2d1d6aaba5f0686622a6bd351b02cc409a9c891374879649d7"
+    "docs/proofs/7.4_entitlement_truth_20260304T173458Z.log": "ef07bd4f450b5d2d1d6aaba5f0686622a6bd351b02cc409a9c891374879649d7",
+    "docs/proofs/7.5_product_rls_negative_suite_20260304T182151Z.log": "b505bcaa24f0d1f4df944425cfa9f99191203e5410dfdd82e0507c07efa95ac1"
   }
 }

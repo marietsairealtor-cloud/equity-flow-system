@@ -89,6 +89,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/7\.4_entitlement_truth_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.4 proof log" }
   if($pp -match "^docs/proofs/7\.2_privilege_truth_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.2 proof log" }
   if($pp -match "^docs/proofs/7\.3_contracts_policy_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.3 proof log" }
+  if($pp -match "^docs/proofs/7\.5_product_rls_negative_suite_\d{8}T\d{6}Z\.(log|md)$"){ return "ALLOW:7.5 proof log" }
   if($pp -match "^docs/proofs/2\.16\.5C_foundation_invariants_suite_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.5C proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }

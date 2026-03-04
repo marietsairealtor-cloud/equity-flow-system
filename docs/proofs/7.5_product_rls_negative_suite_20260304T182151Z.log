@@ -1,0 +1,50 @@
+PROOF_HEAD=e151fcefe4e63dd23c0942f79516dd1aa7103553
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.5 RLS Negative Suite for Product Tables — Proof Log ===
+Date: 2026-03-04T13:19:17.1834218-05:00
+Branch: feat/7.5-rls-negative-suite
+HEAD: e151fcefe4e63dd23c0942f79516dd1aa7103553
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD: pgTAP negative suite ===
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ........... ok
+[REDACTED] .......... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=10, Tests=77,  0 wallclock secs ( 0.01 usr  0.02 sys +  0.05 cusr  0.02 csys =  0.10 CPU)
+Result: PASS
+
+=== DoD: Test coverage summary ===
+Test 1:  deal_inputs direct SELECT blocked (privilege firewall)
+Test 2:  deal_outputs direct SELECT blocked (privilege firewall)
+Test 3:  activity_log direct SELECT blocked (privilege firewall)
+Test 4:  deal_inputs direct INSERT blocked (privilege firewall)
+Test 5:  deal_outputs direct INSERT blocked (privilege firewall)
+Test 6:  activity_log direct INSERT blocked (privilege firewall)
+Test 7:  deal_inputs cross-tenant SELECT blocked
+Test 8:  deal_outputs cross-tenant SELECT blocked
+Test 9:  activity_log cross-tenant SELECT blocked
+Test 10: activity_log RPC cross-tenant write returns NOT_AUTHORIZED
+Test 11: share-link cross-tenant token lookup returns NOT_AUTHORIZED
+Test 12: anon zero access to deals (privilege firewall)
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.5 RLS Negative Suite for Product Tables: PASS
