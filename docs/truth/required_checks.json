@@ -71,6 +71,11 @@
       "required": true
     },
     {
+      "name": "CI / entitlement-policy-coupling",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / foundation-invariants",
       "type": "github_status",
       "required": true
@@ -222,3 +227,4 @@
     }
   ]
 }
+

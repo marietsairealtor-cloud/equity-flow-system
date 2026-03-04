@@ -267,6 +267,9 @@
     },
     "7.3": {
       "proof_pattern": "^docs/proofs/7\\.3_contracts_policy_"
-    }
+    },
+    "7.4": { "proof_pattern": "^docs/proofs/7\\.4_entitlement_truth_" }
   }
 }
+
+

@@ -86,6 +86,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/6\.11_role_guard_helper_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.11 proof log" }
   if($pp -match "^docs/proofs/7\.1_schema_snapshot_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.1 proof log" }
   if($pp -match "^docs/proofs/7\.1A_preflight_hook_wiring_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.1A proof log" }
+  if($pp -match "^docs/proofs/7\.4_entitlement_truth_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.4 proof log" }
   if($pp -match "^docs/proofs/7\.2_privilege_truth_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.2 proof log" }
   if($pp -match "^docs/proofs/7\.3_contracts_policy_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.3 proof log" }
   if($pp -match "^docs/proofs/2\.16\.5C_foundation_invariants_suite_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.5C proof log" }
@@ -186,6 +187,7 @@ if($off.Count -gt 0){
 
 Write-Host "STATUS: PASS"
 exit 0
+
 
 
 
