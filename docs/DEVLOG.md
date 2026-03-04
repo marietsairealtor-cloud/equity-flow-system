@@ -4154,3 +4154,36 @@ DoD
 - robot-owned-publish-guard: PASS (handoff:commit as sole publisher)
 
 Status: COMPLETE — merged to main
+## 2026-03-04 — Build Route v2.4 — 7.4 Entitlement Truth
+
+Objective
+
+Server-side entitlement function derived from persisted tenant membership state. No magic UI gates.
+
+Changes
+
+- supabase/migrations/20260304000000_7_4_entitlement_truth.sql — created get_user_entitlements_v1() RPC (SECURITY DEFINER, STABLE). Returns tenant_id, user_id, is_member, role, entitled. Entitlement = active tenant_memberships row exists.
+- supabase/tests/7_4_entitlement_truth.test.sql — 6 pgTAP tests: member entitled, non-member not entitled, role correctness, no-context NOT_AUTHORIZED, RPC exists, SECURITY DEFINER
+- scripts/ci_entitlement_policy_coupling.ps1 — CI gate enforcing CONTRACTS.md must change when entitlement function changes
+- .github/workflows/ci.yml — wired CI / entitlement-policy-coupling as required check
+- docs/artifacts/CONTRACTS.md — added section 5A) Entitlement RPC Contract (LOCKED)
+- docs/truth/execute_allowlist.json — added get_user_entitlements_v1
+- docs/truth/definer_allowlist.json — added public.get_user_entitlements_v1
+- docs/truth/privilege_truth.json — added get_user_entitlements_v1 to migration_grant_allowlist and routine_grants
+- docs/truth/required_checks.json — added CI / entitlement-policy-coupling
+- docs/governance/GOVERNANCE_CHANGE_PR068.md — governance justification
+
+Proof
+
+docs/proofs/7.4_entitlement_truth_20260304T173458Z.log
+
+DoD
+
+- Single entitled function exists (server-side truth) — CONFIRMED (get_user_entitlements_v1, SECURITY DEFINER)
+- Entitlement derived from persisted state — CONFIRMED (reads tenant_memberships via current_tenant_id() + auth.uid())
+- Drift check exists — CONFIRMED (CI / entitlement-policy-coupling registered, merge-blocking, PASS-case verified)
+- pgTAP — 9 files, 65 tests PASS
+
+Status
+
+PASS
