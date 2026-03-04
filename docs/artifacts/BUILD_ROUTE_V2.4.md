@@ -2669,7 +2669,7 @@ CONTRACTS.md §12 and privilege_truth.json. A documentation comment in the migra
 single authority — an undocumented GRANT fails the gate regardless of any comments present.
  
 Proof: docs/proofs/7.2\_privilege\_truth\_.log  
-Gate: schema-drift \+ pgtap (merge-blocking)
+Gate: pgtap (merge-blocking) + db-heavy (schema-drift stub until 8.0.2)
 
 ### **7.3 Contracts snapshot discipline**
 
