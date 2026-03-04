@@ -4187,3 +4187,33 @@ DoD
 Status
 
 PASS
+
+2026-03-04 — Build Route v2.4 — Item 7.5
+
+Objective
+Prove product tables are tenant-isolated and negative-tested at the DB level.
+Cross-tenant read/write attempts fail; share-link cannot bypass tenant boundaries.
+
+Changes
+- supabase/tests/7_5_rls_negative_suite.test.sql: 12-test pgTAP suite covering
+  direct SELECT/INSERT blocked by privilege firewall on deal_inputs, deal_outputs,
+  activity_log; cross-tenant RPC write blocked on activity_log via
+  foundation_log_activity_v1; share-link cross-tenant bypass blocked via
+  lookup_share_token_v1; anon zero access to deals.
+- docs/truth/qa_claim.json: updated to 7.5
+- docs/truth/qa_scope_map.json: added 7.5 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 7.5 proof log path
+- docs/governance/GOVERNANCE_CHANGE_PR069.md: governance justification
+
+Proof
+docs/proofs/7.5_product_rls_negative_suite_20260304T182151Z.log
+
+DoD
+- pgTAP 12 tests green (77 total, 10 files): VERIFIED
+- Cross-tenant direct access blocked (privilege firewall): VERIFIED
+- Cross-tenant RPC write blocked (NOT_AUTHORIZED): VERIFIED
+- Share-link cannot bypass tenant boundaries (NOT_AUTHORIZED): VERIFIED
+- Anon zero access to product tables: VERIFIED
+- green:twice, pr:preflight: PASS
+
+Status: COMPLETE — merged to main
