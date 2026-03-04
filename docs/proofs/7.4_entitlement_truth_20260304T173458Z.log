@@ -1,0 +1,335 @@
+PROOF_HEAD=175a8b2c1d3cdd9ed64d3370b4159e62537cdc52
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.4 Entitlement Truth — Proof Log ===
+Date: 2026-03-04T12:34:03.2188830-05:00
+Branch: feat/7.4-entitlement-truth
+HEAD: 175a8b2c1d3cdd9ed64d3370b4159e62537cdc52
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+PostgreSQL:
+PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit
+
+=== DoD 1: Single entitled function exists (server-side truth) ===
+get_user_entitlements_v1|t
+Function exists: YES. SECURITY DEFINER: YES.
+
+=== DoD 2: Entitlement derived from persisted state (not client flags) ===
+--- Function definition excerpt (pg_get_functiondef) ---
+CREATE OR REPLACE FUNCTION public.get_user_entitlements_v1()
+ RETURNS json
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_tenant  uuid;
+  v_user    uuid;
+  v_role    public.tenant_role;
+  v_member  boolean;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  v_user := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT tm.role INTO v_role
+  FROM public.tenant_memberships tm
+  WHERE tm.tenant_id = v_tenant
+    AND tm.user_id = v_user;
+
+  v_member := FOUND;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object(
+      'tenant_id', v_tenant,
+      'user_id',   v_user,
+      'is_member', v_member,
+      'role',      v_role,
+      'entitled',  v_member
+    ),
+    'error', null
+  );
+END;
+$function$
+
+
+Evidence: function reads from public.tenant_memberships using current_tenant_id() and auth.uid().
+No client flags. No magic UI gates. Entitlement = membership row exists.
+
+=== DoD 3: Drift check — CI coupling gate ===
+--- Gate registration ---
+CI / entitlement-policy-coupling in required_checks.json:
+"name": "CI / entitlement-policy-coupling",
+Job exists in ci.yml:
+entitlement-policy-coupling:
+
+--- Coupling gate PASS-case ---
+BASE: origin/main
+HEAD: 175a8b2c1d3cdd9ed64d3370b4159e62537cdc52
+DIFF_FILES touching entitlement:
+docs/artifacts/CONTRACTS.md generated/contracts.snapshot.json generated/schema.sql scripts/ci_entitlement_policy_coupling.ps1 supabase/migrations/20260304000000_7_4_entitlement_truth.sql supabase/tests/7_4_entitlement_truth.test.sql
+
+Gate output:
+=== entitlement-policy-coupling gate ===
+ENTITLEMENT_CHANGED: generated/schema.sql
+ENTITLEMENT_POLICY_COUPLING: entitlement function changed AND CONTRACTS.md updated
+STATUS: PASS
+
+
+=== DoD 4: pgTAP evidence ===
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ........... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=9, Tests=65,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.05 cusr  0.01 csys =  0.09 CPU)
+Result: PASS
+
+
+=== DoD 5: pr:preflight ===
+
+> equity-flow-system@0.0.0 pr:preflight
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1
+
+== preflight:encoding ==
+Encoding preflight OK.
+== lint ==
+== test ==
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ........... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=9, Tests=65,  0 wallclock secs ( 0.03 usr  0.01 sys +  0.06 cusr  0.00 csys =  0.10 CPU)
+Result: PASS
+== toolchain:contract ==
+=== toolchain-contract ===
+{
+  "runner": {
+    "RUNNER_OS": "unknown",
+    "ImageOS": "unknown",
+    "expected_runs_on": "ubuntu-24.04"
+  },
+  "node": {
+    "actual": "v20.18.1",
+    "expected": "v20.",
+    "match": "prefix"
+  },
+  "npm": {
+    "actual": "10.8.2",
+    "expected": "10.",
+    "match": "prefix"
+  }
+}
+TOOLCHAIN_CONTRACT_OK
+== truth:sync ==
+== truth:check ==
+=== truth-bootstrap: required paths (existence) ===
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/required_checks.json
+PASS EXISTS docs/truth/lane_checks.json
+PASS EXISTS docs/truth/toolchain.json
+PASS EXISTS docs/truth/qa_requirements.json
+PASS EXISTS docs/truth/expected_surface.json
+PASS EXISTS docs/truth/execute_allowlist.json
+PASS EXISTS docs/truth/definer_allowlist.json
+PASS EXISTS docs/truth/pr_scope_rules.json
+PASS EXISTS docs/truth/robot_owned_paths.json
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/rpc_budget.json
+PASS EXISTS docs/truth/blocked_identifiers.json
+PASS EXISTS docs/truth/tenant_table_selector.json
+PASS EXISTS docs/truth/privilege_truth.json
+PASS EXISTS docs/truth/ci_execution_surface.json
+PASS EXISTS docs/truth/qa_requirements.schema.json
+PASS EXISTS docs/truth/qa_scope_map.json
+PASS EXISTS docs/truth/qa_claim.json
+PASS EXISTS docs/truth/surface_truth.schema.json
+PASS EXISTS docs/truth/cloud_inventory.schema.json
+PASS EXISTS docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: JSON parse ===
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/required_checks.json
+PASS JSON docs/truth/lane_checks.json
+PASS JSON docs/truth/toolchain.json
+PASS JSON docs/truth/qa_requirements.json
+PASS JSON docs/truth/expected_surface.json
+PASS JSON docs/truth/execute_allowlist.json
+PASS JSON docs/truth/definer_allowlist.json
+PASS JSON docs/truth/pr_scope_rules.json
+PASS JSON docs/truth/robot_owned_paths.json
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/rpc_budget.json
+PASS JSON docs/truth/blocked_identifiers.json
+PASS JSON docs/truth/tenant_table_selector.json
+PASS JSON docs/truth/privilege_truth.json
+PASS JSON docs/truth/ci_execution_surface.json
+PASS JSON docs/truth/qa_requirements.schema.json
+PASS JSON docs/truth/qa_scope_map.json
+PASS JSON docs/truth/qa_claim.json
+PASS JSON docs/truth/surface_truth.schema.json
+PASS JSON docs/truth/cloud_inventory.schema.json
+PASS JSON docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: schema-lite checks (no Ajv) ===
+SCHEMA_LITE_PASS: qa_claim.json
+SCHEMA_LITE_PASS: qa_scope_map.json
+SCHEMA_LITE_PASS: qa_requirements.json
+SCHEMA_LITE_PASS: expected_surface.json
+SCHEMA_LITE_PASS: privilege_truth.json
+SCHEMA_LITE_PASS: ci_execution_surface.json
+SCHEMA_LITE_PASS: docs/truth/qa_requirements.schema.json
+SCHEMA_LITE_PASS: docs/truth/surface_truth.schema.json
+SCHEMA_LITE_PASS: docs/truth/cloud_inventory.schema.json
+SCHEMA_LITE_PASS: docs/truth/privilege_truth.schema.json
+STATUS: PASS (truth-bootstrap OK)
+=== required-checks-contract ===
+WORKFLOWS: 5
+DISCOVERED_CHECKS:
+ - CI / CI / migration-grant-lint
+ - CI / anon-privilege-audit
+ - CI / automation-contract
+ - CI / background-context-review
+ - CI / blocked-identifiers
+ - CI / changes
+ - CI / ci-encoding-audit
+ - CI / ci-normalize-sweep
+ - CI / ci-path-leak-audit
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / db-heavy
+ - CI / deferred-proof-registry
+ - CI / definer-safety-audit
+ - CI / docs-push-contract
+ - CI / entitlement-policy-coupling
+ - CI / env-sanity
+ - CI / foundation-invariants
+ - CI / governance-change-guard
+ - CI / governance-change-template-contract
+ - CI / governance-path-coverage
+ - CI / handoff-commit-safety
+ - CI / handoff-idempotency
+ - CI / handoff-preconditions
+ - CI / job-graph-ordering
+ - CI / lane-enforcement
+ - CI / lane-policy-contract
+ - CI / main-moved-guard
+ - CI / migration-rls-colocation
+ - CI / migration-schema-coupling
+ - CI / policy-coupling
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / qa-requirements-contract
+ - CI / qa-scope-coverage
+ - CI / qa-verify
+ - CI / required
+ - CI / rls-strategy-consistent
+ - CI / robot-owned-guard
+ - CI / robot-owned-publish-guard
+ - CI / ship-guard
+ - CI / stop-the-line
+ - CI / stop-the-line-xor
+ - CI / test
+ - CI / toolchain-contract
+ - CI / toolchain-contract-supabase
+ - CI / truth-sync-enforced
+ - CI / unregistered-table-access
+ - CI / waiver-debt-enforcement
+ - CI / waiver-rate-limit
+ - database-tests / pgtap
+ - database-tests / postgrest-isolation
+ - placeholder / placeholder
+ - policy-drift-attestation / policy-drift-attestation
+ - secrets-scan / secrets-scan
+REQUIRED_CHECKS:
+ - CI / anon-privilege-audit
+ - CI / automation-contract
+ - CI / background-context-review
+ - CI / blocked-identifiers
+ - CI / CI / migration-grant-lint
+ - CI / ci-encoding-audit
+ - CI / ci-normalize-sweep
+ - CI / ci-path-leak-audit
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / deferred-proof-registry
+ - CI / definer-safety-audit
+ - CI / docs-push-contract
+ - CI / entitlement-policy-coupling
+ - CI / env-sanity
+ - CI / foundation-invariants
+ - CI / governance-change-guard
+ - CI / governance-path-coverage
+ - CI / handoff-commit-safety
+ - CI / handoff-idempotency
+ - CI / handoff-preconditions
+ - CI / job-graph-ordering
+ - CI / lane-enforcement
+ - CI / lane-policy-contract
+ - CI / migration-rls-colocation
+ - CI / migration-schema-coupling
+ - CI / policy-coupling
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / qa-requirements-contract
+ - CI / qa-scope-coverage
+ - CI / qa-verify
+ - CI / rls-strategy-consistent
+ - CI / robot-owned-guard
+ - CI / robot-owned-publish-guard
+ - CI / ship-guard
+ - CI / stop-the-line
+ - CI / stop-the-line-xor
+ - CI / test
+ - CI / toolchain-contract
+ - CI / toolchain-contract-supabase
+ - CI / truth-sync-enforced
+ - CI / unregistered-table-access
+ - CI / waiver-debt-enforcement
+ - CI / waiver-rate-limit
+=== verify: no lane-only checks in required_checks.json ===
+PASS lane-only excluded
+=== verify: required_checks.json matches workflow job names (string-exact) ===
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+== proof:manifest ==
+PROOF_MANIFEST_OK
+== proof-commit-binding ==
+From https://github.com/marietsairealtor-cloud/equity-flow-system
+ * branch            main       -> FETCH_HEAD
+PROOF_COMMIT_BINDING_SKIP: no proof files changed in PR
+
+
+=== Phase 3 verification ===
+semantic contract — PASS
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.4 Entitlement Truth: PASS
