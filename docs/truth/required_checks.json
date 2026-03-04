@@ -126,6 +126,11 @@
       "required": true
     },
     {
+      "name": "CI / policy-coupling",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / proof-commit-binding",
       "type": "github_status",
       "required": true

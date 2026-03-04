@@ -149,6 +149,7 @@ Any change to this file requires:
 
 Breaking changes require new RPC versions.
 Silent behavior changes are forbidden.
+Snapshot changes require accompanying CONTRACTS.md changes in the same PR (enforced by CI gate: policy-coupling).
 
 ---
 

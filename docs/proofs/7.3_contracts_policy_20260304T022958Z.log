@@ -1,0 +1,49 @@
+PROOF_HEAD=a4b104a4ff2e414b64e3b39be27e3654ee72530b
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.3 Contracts Policy Coupling — Proof Log ===
+Date: 2026-03-03T21:29:58.8609761-05:00
+Branch: feat/7.3-policy-coupling
+HEAD: a4b104a4ff2e414b64e3b39be27e3654ee72530b
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+
+=== Gate: policy-coupling (PASS case) ===
+BASE_SHA: e3fb8e2e15f6a99521b12b31220c04771973c7a3
+HEAD_SHA: a4b104a4ff2e414b64e3b39be27e3654ee72530b
+
+DIFF_FILES:
+  - .github/workflows/ci.yml
+  - docs/artifacts/CONTRACTS.md
+  - docs/governance/GOVERNANCE_CHANGE_PR067.md
+  - docs/handoff_latest.txt
+  - docs/truth/qa_claim.json
+  - docs/truth/qa_scope_map.json
+  - docs/truth/required_checks.json
+  - docs/truth/write_path_registry.json
+  - generated/contracts.snapshot.json
+  - scripts/ci_policy_coupling.ps1
+  - scripts/ci_robot_owned_guard.ps1
+
+snapshot_changed: True
+contracts_md_changed: True
+
+STATUS: PASS
+
+=== Gate script invocation ===
+
+=== DoD verification ===
+Gate script exists: True
+CI job policy-coupling in ci.yml: True
+CI / policy-coupling in required_checks.json: True
+CONTRACTS.md §11 updated: True
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.3 Contracts Policy Coupling: PASS
