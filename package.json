@@ -43,6 +43,7 @@
     "env:sanity": "node scripts/env_sanity.mjs",
     "stop-the-line": "node scripts/stop_the_line_gate.mjs",
     "proof:commit-binding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\ci_proof_commit_binding.ps1",
+    "entitlement:policy-coupling": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/ci_entitlement_policy_coupling.ps1",
     "foundation:invariants": "node scripts/foundation_invariants.mjs",
     "proof:finalize": "node scripts/proof_finalize_wrapper.mjs",
     "pr:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1",
@@ -74,4 +75,5 @@
     "node": "20.18.1"
   }
 }
+
 

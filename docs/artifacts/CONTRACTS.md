@@ -89,6 +89,20 @@ Return:
   }
 }
 ```
+---
+
+## 5A) Entitlement RPC Contract (LOCKED)
+
+### rpc.get_user_entitlements_v1
+
+Returns the current user entitlement state for the active tenant context.
+Entitlement is derived from tenant_memberships. Membership exists = entitled.
+
+Parameters: none (reads from JWT context: tenant_id, user_id).
+
+Security: SECURITY DEFINER, search_path = public.
+GRANT EXECUTE to authenticated only. REVOKE from anon.
+Source of truth per GUARDRAILS S17.
 
 ---
 
