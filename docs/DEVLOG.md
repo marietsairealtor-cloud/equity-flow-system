@@ -4120,3 +4120,37 @@ DoD
 - green:once, green:twice, pr:preflight: PASS
 
 Status: COMPLETE — merged to main
+
+2026-03-04 — Build Route v2.4 — Item 7.3
+
+Objective
+Add merge-blocking gate policy-coupling that enforces: if the contracts
+snapshot changes, CONTRACTS.md must change in the same PR. Prevents silent
+contract drift where generated snapshot moves without human contract update.
+
+Changes
+- scripts/ci_policy_coupling.ps1: gate script — detects snapshot + CONTRACTS.md
+  changes in PR diff, fails if snapshot changed without CONTRACTS.md change.
+- .github/workflows/ci.yml: added policy-coupling job (merge-blocking).
+- docs/truth/required_checks.json: added CI / policy-coupling as required check.
+- docs/artifacts/CONTRACTS.md §11: added explicit reference to policy-coupling
+  gate as enforcement mechanism for contract change policy.
+- generated/contracts.snapshot.json: regenerated via handoff:commit.
+- docs/truth/qa_claim.json: updated to 7.3.
+- docs/truth/qa_scope_map.json: added 7.3 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 7.3 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR067.md: governance justification.
+
+Proof
+docs/proofs/7.3_contracts_policy_20260304T022958Z.log
+
+DoD
+- Gate script ci_policy_coupling.ps1 exists and runs: VERIFIED
+- CI job policy-coupling wired and in required needs: VERIFIED
+- CI / policy-coupling in required_checks.json: VERIFIED
+- PASS case: snapshot_changed=true + contracts_md_changed=true: VERIFIED
+- CONTRACTS.md §11 updated with gate reference: VERIFIED
+- green:twice, pr:preflight: PASS
+- robot-owned-publish-guard: PASS (handoff:commit as sole publisher)
+
+Status: COMPLETE — merged to main
