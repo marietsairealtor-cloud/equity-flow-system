@@ -32,7 +32,10 @@
       },
       {
         "routine": "foundation_log_activity_v1",
-      "get_user_entitlements_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "get_user_entitlements_v1",
         "privilege": "EXECUTE"
       },
       {
@@ -139,3 +142,4 @@
     }
   ]
 }
+
