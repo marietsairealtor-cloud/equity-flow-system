@@ -87,7 +87,8 @@
     "6.10": { "proof_pattern": "^docs/proofs/6\\.10_activity_log_append_only_" },
     "6.11": { "proof_pattern": "^docs/proofs/6\\.11_role_guard_helper_" },
     "7.1": { "proof_pattern": "^docs/proofs/7\\.1_schema_snapshot_" },
-    "7.1A": { "proof_pattern": "^docs/proofs/7\\.1A_preflight_hook_wiring_" }
+    "7.1A": { "proof_pattern": "^docs/proofs/7\\.1A_preflight_hook_wiring_" },
+    "7.2": { "proof_pattern": "^docs/proofs/7\\.2_privilege_truth_" }
   }
 }
 

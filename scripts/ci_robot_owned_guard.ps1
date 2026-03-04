@@ -86,6 +86,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/6\.11_role_guard_helper_\d{8}T\d{6}Z\.log$"){ return "ALLOW:6.11 proof log" }
   if($pp -match "^docs/proofs/7\.1_schema_snapshot_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.1 proof log" }
   if($pp -match "^docs/proofs/7\.1A_preflight_hook_wiring_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.1A proof log" }
+  if($pp -match "^docs/proofs/7\.2_privilege_truth_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.2 proof log" }
   if($pp -match "^docs/proofs/2\.16\.5C_foundation_invariants_suite_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.5C proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
   if($pp -match "^docs/proofs/5\.1_migration_rls_colocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.1 proof log" }

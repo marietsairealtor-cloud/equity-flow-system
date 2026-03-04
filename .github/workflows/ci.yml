@@ -544,8 +544,22 @@ jobs:
       - name: unregistered-table-access
         shell: pwsh
         run: ./scripts/ci_unregistered_table_access.ps1
+
+  migration-grant-lint:
+    name: CI / migration-grant-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm ci
+      - name: Run migration grant lint
+        run: node scripts/lint_migration_grants.mjs
+
   required:
-    needs: [background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
+    needs: [background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
