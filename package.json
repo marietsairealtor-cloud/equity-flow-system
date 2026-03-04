@@ -52,6 +52,7 @@
     "scaffold:verify": "node scripts/verify_product_scaffold.mjs",
     "stop-the-line-xor": "node scripts/stop_the_line_xor_gate.mjs",
     "ci_path_leak_audit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_path_leak_audit.ps1",
+    "lint:migration-grants": "node scripts/lint_migration_grants.mjs",
     "gen:write-path-registry": "pwsh -File scripts/gen_write_path_registry.ps1"
   },
   "devDependencies": {

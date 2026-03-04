@@ -120,6 +120,7 @@
     "docs/proofs/6.10_activity_log_append_only_20260302T004453Z.log": "063f8e42e0151a7f2a26ffca992aa49feccb5669dfcb46a4375085c235e85203",
     "docs/proofs/6.11_role_guard_helper_20260302T235524Z.log": "c5eda6ac8088858e2ff63f16009d0dd087022d062076c282439211142caec753",
     "docs/proofs/7.1_schema_snapshot_20260303T190202Z.log": "1e431162c675f21812a3b8131c9c228c3b3ecdce77d6802fd067371536440830",
-    "docs/proofs/7.1A_preflight_hook_wiring_20260303T232555Z.log": "911cb459dc2d587b03809e79038ddcd8bf74de1c69c80ab2c85a7097616d6c5d"
+    "docs/proofs/7.1A_preflight_hook_wiring_20260303T232555Z.log": "911cb459dc2d587b03809e79038ddcd8bf74de1c69c80ab2c85a7097616d6c5d",
+    "docs/proofs/7.2_privilege_truth_20260304T010342Z.log": "8fa331f901722ad99dfb160db75574cb0fb2ff1384161a1691baf20fd0b92027"
   }
 }

@@ -1,1 +1,139 @@
-{"version":1,"roles":["anon","authenticated"],"rules":[]}
+{
+  "version": 2,
+  "authority": "CONTRACTS.md §12",
+  "comment": "Declarative expected end-state for anon and authenticated grants on schema public. Absence of anon entries is stated explicitly — it is not implied. All fields must be present; empty arrays mean zero grants expected.",
+  "roles": [
+    "anon",
+    "authenticated"
+  ],
+  "table_grants": {
+    "comment": "Direct object-level grants on public schema tables. Source: information_schema.role_table_grants.",
+    "anon": [],
+    "anon_explicit_none": "anon holds zero table grants on any public schema table. Any grant is a CONTRACTS.md §12 violation.",
+    "authenticated": [
+      {
+        "table": "user_profiles",
+        "privileges": [
+          "SELECT",
+          "UPDATE"
+        ],
+        "authority": "CONTRACTS.md §12 controlled exception"
+      }
+    ]
+  },
+  "routine_grants": {
+    "comment": "EXECUTE grants on public schema routines. Source: information_schema.role_routine_grants. Must match execute_allowlist.json exactly.",
+    "anon": [],
+    "anon_explicit_none": "anon holds zero routine grants. Any EXECUTE grant to anon is a CONTRACTS.md §12 violation.",
+    "authenticated": [
+      {
+        "routine": "create_deal_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "foundation_log_activity_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "list_deals_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "lookup_share_token_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "update_deal_v1",
+        "privilege": "EXECUTE"
+      }
+    ]
+  },
+  "sequence_grants": {
+    "comment": "USAGE grants on public schema sequences. Source: information_schema.role_usage_grants.",
+    "anon": [],
+    "anon_explicit_none": "anon holds zero sequence grants.",
+    "authenticated": [],
+    "authenticated_explicit_none": "authenticated holds zero sequence grants. All writes go through SECURITY DEFINER RPCs."
+  },
+  "default_acl": {
+    "comment": "Operator-owned default privileges in schema public. Source: pg_default_acl WHERE defaclrole NOT LIKE supabase_%. Empty means private-by-default is enforced — no default grants exist for any new objects.",
+    "operator_owned_entries": [],
+    "operator_owned_explicit_none": "pg_default_acl contains zero entries for operator-owned roles (postgres and any migration-owned role) granting privileges to anon or authenticated in schema public. This enforces private-by-default per CONTRACTS.md §13 and GUARDRAILS §11.",
+    "platform_roles_excluded": "Roles matching supabase_% are platform-managed and explicitly excluded from this truth file. They are logged by ci_anon_privilege_audit.ps1 but not enforced here."
+  },
+  "migration_grant_allowlist": {
+    "comment": "Authoritative allowlist for the migration-grant-lint gate. Any GRANT in supabase/migrations/**/*.sql to anon or authenticated not present here fails the gate. Comments in migration files are not a control mechanism.",
+    "anon": [],
+    "authenticated_tables": [
+      {
+        "table": "user_profiles",
+        "privileges": [
+          "SELECT",
+          "UPDATE"
+        ]
+      }
+    ],
+    "authenticated_routines": [
+      "create_deal_v1",
+      "foundation_log_activity_v1",
+      "list_deals_v1",
+      "lookup_share_token_v1",
+      "update_deal_v1"
+    ],
+    "alter_default_privileges": []
+  },
+  "superseded_grants": {
+    "comment": "Historical grants that exist in migration text but are explicitly revoked by a later migration. The lint skips these only if the superseding migration file exists on disk. This section does not legitimize the grants — it records known migration history. Adding an entry here requires the superseding migration to be present and unconditional.",
+    "entries": [
+      {
+        "migration": "supabase/migrations/20260219000007_tenant_rls_policies.sql",
+        "grants": [
+          {
+            "table": "deals",
+            "privileges": [
+              "SELECT",
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ],
+            "role": "authenticated"
+          }
+        ],
+        "superseded_by": "supabase/migrations/20260219000009_revoke_deals_direct_grants.sql",
+        "rationale": "Grant predates migration-grant-lint gate. Revoked unconditionally in 00009. End-state is CONTRACTS.md §12 compliant. Retro-editing 00007 is forbidden per migration discipline."
+      }
+    ]
+  },
+  "rules": [
+    {
+      "rule": "zero-anon-table-grants",
+      "description": "anon must have zero table grants on all public schema tables",
+      "authority": "CONTRACTS.md §12"
+    },
+    {
+      "rule": "authenticated-user-profiles-only",
+      "description": "authenticated may have SELECT and UPDATE on user_profiles only — no other table grants",
+      "authority": "CONTRACTS.md §12"
+    },
+    {
+      "rule": "zero-anon-routine-grants",
+      "description": "anon must have zero routine grants on all public schema routines",
+      "authority": "CONTRACTS.md §12"
+    },
+    {
+      "rule": "authenticated-routines-allowlisted-only",
+      "description": "authenticated routine grants must match execute_allowlist.json exactly",
+      "authority": "CONTRACTS.md §12"
+    },
+    {
+      "rule": "zero-sequence-grants",
+      "description": "anon and authenticated must have zero sequence grants",
+      "authority": "CONTRACTS.md §12"
+    },
+    {
+      "rule": "operator-default-acl-clean",
+      "description": "pg_default_acl for operator-owned roles must contain zero entries granting privileges to anon or authenticated in schema public",
+      "authority": "CONTRACTS.md §13, GUARDRAILS §11"
+    }
+  ]
+}
