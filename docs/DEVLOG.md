@@ -4089,3 +4089,34 @@ DoD
 Status
 
 PASS
+
+2026-03-04 — Build Route v2.4 — Item 7.2
+
+Objective
+Establish declarative privilege truth file and static migration grant lint gate
+so privilege drift is caught mechanically before it reaches the DB.
+
+Changes
+- docs/truth/privilege_truth.json: populated with explicit declarative truth —
+  table grants (anon: none, authenticated: user_profiles only), routine grants
+  (authenticated: 5 RPCs), sequence grants (none), default ACL (none),
+  migration_grant_allowlist, superseded_grants (1 entry for 00007).
+- scripts/ci_migration_grant_lint.ps1 (or equivalent): migration-grant-lint gate
+  scans all migrations, classifies grants as PASS/SUPERSEDED/VIOLATION against
+  allowlist. 0 violations confirmed across 26 migration files.
+- docs/truth/qa_claim.json: updated to 7.2
+- docs/truth/qa_scope_map.json: added 7.2 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 7.2 proof log path
+
+Proof
+docs/proofs/7.2_privilege_truth_20260304T010342Z.log
+
+DoD
+- privilege_truth.json populated with explicit declarative truth: VERIFIED
+- migration-grant-lint gate: 10 allowlisted, 4 superseded, 0 violations: VERIFIED
+- superseded_grants: historical 00007 grant recorded, revoke verified: VERIFIED
+- allowlist is single authority (no comment suppression): VERIFIED
+- pgTAP: 59 tests green (8 files): VERIFIED
+- green:once, green:twice, pr:preflight: PASS
+
+Status: COMPLETE — merged to main
