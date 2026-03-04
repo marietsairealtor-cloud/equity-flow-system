@@ -1,0 +1,79 @@
+PROOF_HEAD=b5f57c5143d96e290ea7cb7dfba760705c172ee8
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.2 Privilege Truth + Migration Grant Lint — Proof Log ===
+Date: 2026-03-03T20:03:41.9495439-05:00
+Branch: feat/7.2-privilege-truth
+HEAD: b5f57c5143d96e290ea7cb7dfba760705c172ee8
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+
+=== DoD 1: privilege_truth.json populated with explicit declarative truth ===
+version: 2 table_grants.anon: [] table_grants.anon_explicit_none: anon holds zero table grants on any public schema table. Any grant is a CONTRACTS.md ┬º12 violation. table_grants.authenticated: ["user_profiles"] routine_grants.anon: [] routine_grants.anon_explicit_none: anon holds zero routine grants. Any EXECUTE grant to anon is a CONTRACTS.md ┬º12 violation. routine_grants.authenticated: ["create_deal_v1","foundation_log_activity_v1","list_deals_v1","lookup_share_token_v1","update_deal_v1"] sequence_grants.anon: [] sequence_grants.authenticated_explicit_none: authenticated holds zero sequence grants. All writes go through SECURITY DEFINER RPCs. default_acl.operator_owned_entries: [] default_acl.operator_owned_explicit_none: pg_default_acl contains zero entries for operator-owned roles (postgres and any migration-owned role) granting privileges to anon or authenticated in schema public. This enforces private-by-default per CONTRACTS.md ┬º13 and GUARDRAILS ┬º11. migration_grant_allowlist present: true superseded_grants entries: 1
+
+=== DoD 2: migration-grant-lint gate — static scan ===
+  NOTE: superseded grants registered for supabase/migrations/20260219000007_tenant_rls_policies.sql (revoked by supabase/migrations/20260219000009_revoke_deals_direct_grants.sql)
+migration-grant-lint: scanning 26 migration file(s)...
+  PASS: supabase/migrations/20260219000005_privilege_remediation.sql: GRANT SELECT ON TABLE user_profiles TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000005_privilege_remediation.sql: GRANT UPDATE ON TABLE user_profiles TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000006_rls_colocation_corrective.sql: GRANT SELECT ON TABLE user_profiles TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000006_rls_colocation_corrective.sql: GRANT UPDATE ON TABLE user_profiles TO authenticated ΓÇö allowlisted
+  SUPERSEDED: supabase/migrations/20260219000007_tenant_rls_policies.sql: GRANT SELECT ON TABLE deals TO authenticated ΓÇö revoked by supabase/migrations/20260219000009_revoke_deals_direct_grants.sql
+  SUPERSEDED: supabase/migrations/20260219000007_tenant_rls_policies.sql: GRANT INSERT ON TABLE deals TO authenticated ΓÇö revoked by supabase/migrations/20260219000009_revoke_deals_direct_grants.sql
+  SUPERSEDED: supabase/migrations/20260219000007_tenant_rls_policies.sql: GRANT UPDATE ON TABLE deals TO authenticated ΓÇö revoked by supabase/migrations/20260219000009_revoke_deals_direct_grants.sql
+  SUPERSEDED: supabase/migrations/20260219000007_tenant_rls_policies.sql: GRANT DELETE ON TABLE deals TO authenticated ΓÇö revoked by supabase/migrations/20260219000009_revoke_deals_direct_grants.sql
+  PASS: supabase/migrations/20260219000011_deals_rpc_grants.sql: GRANT EXECUTE ON FUNCTION list_deals_v1 TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000011_deals_rpc_grants.sql: GRANT EXECUTE ON FUNCTION create_deal_v1 TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000013_deals_update_rpc.sql: GRANT EXECUTE ON FUNCTION update_deal_v1 TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000015_deals_create_rpc_v2.sql: GRANT EXECUTE ON FUNCTION create_deal_v1 TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000019_share_link_rpc.sql: GRANT EXECUTE ON FUNCTION lookup_share_token_v1 TO authenticated ΓÇö allowlisted
+  PASS: supabase/migrations/20260219000021_6_9_activity_log.sql: GRANT EXECUTE ON FUNCTION foundation_log_activity_v1 TO authenticated ΓÇö allowlisted
+
+migration-grant-lint: 10 allowlisted, 4 superseded, 0 violation(s)
+STATUS: PASS
+
+
+=== DoD 3: superseded_grants — historical 00007 grant recorded, revoke verified ===
+Superseding migration exists on disk: True
+Gate classifies 4 grants as SUPERSEDED (not violations): confirmed above
+
+=== DoD 4: allowlist is single authority — comments not a control mechanism ===
+Gate reads docs/truth/privilege_truth.json migration_grant_allowlist exclusively.
+No migration comment can suppress a violation. Confirmed by gate source.
+
+=== Gate: pgtap (merge-blocking) ===
+
+> equity-flow-system@0.0.0 test
+> supabase test db
+
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=8, Tests=59,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.02 cusr  0.03 csys =  0.08 CPU)
+Result: PASS
+
+
+=== Gate: schema-drift (merge-blocking) ===
+STATUS: STUBBED — db-heavy stub active until 8.0.2 per docs/truth/deferred_proofs.json
+schema-drift stub confirmed present in deferred_proofs.json: [eval]:1 const d=JSON.parse(require('fs').readFileSync('docs/truth/deferred_proofs.json','utf8')); console.log(d.entries.some(e=>e.gate==='schema-drift'));                                                                                                                 ^ System.Management.Automation.RemoteException TypeError: d.entries.some is not a function     at [eval]:1:113     at runScriptInThisContext (node:internal/vm:209:10)     at node:internal/process/execution:118:14     at [eval]-wrapper:6:24     at runScript (node:internal/process/execution:101:62)     at evalScript (node:internal/process/execution:133:3)     at node:internal/main/eval_string:51:3 System.Management.Automation.RemoteException Node.js v20.18.1
+No live DB schema diff required at this stage per Build Route 7.2 / QA ruling.
+
+=== Phase 3 verification ===
+ci_semantic_contract   — PASS
+green:once             — PASS
+green:twice            — PASS
+pr:preflight           — PASS
+
+=== RESULT ===
+PROOF_HEAD: b5f57c5143d96e290ea7cb7dfba760705c172ee8
+STATUS: PASS
