@@ -4333,3 +4333,46 @@ DoD
 - green:twice, pr:preflight: PASS
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-05 — Build Route v2.4 — Item 7.9
+
+Objective
+Prove application behavior depends solely on validated JWT tenant claim.
+No RPC may accept tenant_id as caller input. All tenant-bound RPCs return
+NOT_AUTHORIZED when tenant context is NULL.
+
+Changes
+- supabase/migrations/20260305000000_7_9_remove_tenant_id_params.sql:
+  Removed p_tenant_id from foundation_log_activity_v1 and lookup_share_token_v1.
+  Tenant ID now derived strictly from JWT via current_tenant_id(). Reapplied
+  grants for new signatures.
+- supabase/tests/7_9_tenant_context_integrity.test.sql: 12-test pgTAP suite.
+  current_tenant_id() returns NULL without claim; all tenant-bound RPCs return
+  NOT_AUTHORIZED when context is NULL; cross-tenant access fails under
+  manipulated claim; catalog audit proves zero RPCs accept tenant_id as input.
+- supabase/tests/6_9_foundation_surface.test.sql: updated has_function signature.
+- supabase/tests/7_5_rls_negative_suite.test.sql: updated call signatures.
+- supabase/tests/share_link_isolation.test.sql: updated call signatures + cross-
+  tenant test now uses JWT context switch instead of p_tenant_id mismatch.
+- docs/artifacts/CONTRACTS.md §7: added invariant — no RPC accepts tenant_id
+  as caller input (Build Route 7.9).
+- docs/truth/calc_version_registry.json: version bumped to satisfy
+  ci_calc_version_lint gate (migration incidentally contains calc_version token).
+- docs/truth/qa_claim.json: updated to 7.9
+- docs/truth/qa_scope_map.json: added 7.9 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 7.9 proof log path
+- docs/governance/GOVERNANCE_CHANGE_PR073.md: governance justification
+
+Proof
+docs/proofs/7.9_tenant_context_integrity_20260305T182527Z.log
+
+DoD
+- current_tenant_id() returns NULL without claim: VERIFIED
+- All tenant-bound RPCs return NOT_AUTHORIZED when context is NULL: VERIFIED
+- Cross-tenant access fails under manipulated claim: VERIFIED
+- Zero RPCs accept tenant_id as caller input (catalog audit): VERIFIED
+- pgTAP 12 tests green (107 total, 13 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Status: COMPLETE — merged to main
