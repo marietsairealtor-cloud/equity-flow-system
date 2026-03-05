@@ -120,13 +120,12 @@ SELECT throws_ok(
 -- Test 10: Tenant B cannot write to Tenant A activity log via RPC
 SELECT is(
   (public.foundation_log_activity_v1(
-    'c0000000-0000-0000-0000-000000000001'::uuid,
     'cross_tenant_attempt',
     '{}'::jsonb,
     null
   )::json ->> 'code'),
-  'NOT_AUTHORIZED',
-  'activity_log RPC: cross-tenant write returns NOT_AUTHORIZED'
+  'OK',
+  'activity_log RPC: Tenant B JWT writes to Tenant B only (isolated)'
 );
 
 -- ============================================================
@@ -148,12 +147,9 @@ SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'c0000000-0000-0000-0000-000000000002', true);
 
 SELECT is(
-  (public.lookup_share_token_v1(
-    'c0000000-0000-0000-0000-000000000001'::uuid,
-    'cross_tenant_token_75'
-  )::json ->> 'code'),
-  'NOT_AUTHORIZED',
-  'share-link: cross-tenant token lookup returns NOT_AUTHORIZED'
+  (public.lookup_share_token_v1('cross_tenant_token_75')::json ->> 'code'),
+  'NOT_FOUND',
+  'share-link: cross-tenant token lookup returns NOT_FOUND (tenant isolated)'
 );
 
 -- ============================================================
@@ -172,6 +168,8 @@ SELECT throws_ok(
 
 SELECT finish();
 ROLLBACK;
+
+
 
 
 
