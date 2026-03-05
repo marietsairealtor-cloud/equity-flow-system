@@ -273,6 +273,9 @@
     },
     "7.5": {
       "proof_pattern": "^docs/proofs/7\\.5_product_rls_negative_suite_"
+    },
+    "7.6": {
+      "proof_pattern": "^docs/proofs/7\\.6_calc_version_protocol_"
     }
   }
 }

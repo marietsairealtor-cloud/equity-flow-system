@@ -90,6 +90,12 @@ if ($precondExit -ne 0) {
 # Lints/guards
 & (Join-Path $PSScriptRoot "contracts_lint.ps1") | Out-String | Out-Null
 & (Join-Path $PSScriptRoot "must_contain.ps1") | Out-String | Out-Null
+# Triple-registration check: calc_version_registry.json must exist (7.6)
+if (-not (Test-Path "docs/truth/calc_version_registry.json")) {
+  Write-Error "HANDOFF FAIL: docs/truth/calc_version_registry.json is missing. Required by Build Route 7.6 triple-registration."
+  exit 1
+}
+Write-Host "PASS: docs/truth/calc_version_registry.json exists"
 
 # Git state -- exclude robot-owned handoff outputs to achieve idempotency
 # generated/schema.sql, generated/contracts.snapshot.json, docs/handoff_latest.txt
