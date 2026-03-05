@@ -282,6 +282,9 @@
     },
     "7.8": {
       "proof_pattern": "^docs/proofs/7\\.8_role_enforcement_rpc_"
+    },
+    "7.9": {
+      "proof_pattern": "^docs/proofs/7\\.9_tenant_context_integrity_"
     }
   }
 }
