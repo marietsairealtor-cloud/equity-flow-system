@@ -132,46 +132,39 @@ $$;
 
 ALTER FUNCTION "public"."current_tenant_id"() OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."foundation_log_activity_v1"("p_tenant_id" "uuid", "p_action" "text", "p_meta" "jsonb" DEFAULT '{}'::"jsonb", "p_actor_id" "uuid" DEFAULT NULL::"uuid") RETURNS json
+CREATE OR REPLACE FUNCTION "public"."foundation_log_activity_v1"("p_action" "text", "p_meta" "jsonb" DEFAULT '{}'::"jsonb", "p_actor_id" "uuid" DEFAULT NULL::"uuid") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_id uuid;
+  v_tenant_id uuid;
+  v_id        uuid;
 BEGIN
-  IF p_tenant_id IS NULL OR p_action IS NULL THEN
+  v_tenant_id := public.current_tenant_id();
+  IF v_tenant_id IS NULL THEN
     RETURN json_build_object(
-      'ok',    false,
-      'code',  'VALIDATION_ERROR',
-      'data',  null,
-      'error', json_build_object('message', 'tenant_id and action are required', 'fields', json_build_object())
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
     );
   END IF;
-
-  IF public.current_tenant_id() IS DISTINCT FROM p_tenant_id THEN
+  IF p_action IS NULL THEN
     RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'Tenant context mismatch', 'fields', json_build_object())
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'action is required', 'fields', json_build_object())
     );
   END IF;
-
   v_id := gen_random_uuid();
-
   INSERT INTO public.activity_log (id, tenant_id, actor_id, action, meta)
-  VALUES (v_id, p_tenant_id, p_actor_id, p_action, p_meta);
-
+  VALUES (v_id, v_tenant_id, p_actor_id, p_action, p_meta);
   RETURN json_build_object(
-    'ok',   true,
-    'code', 'OK',
+    'ok', true, 'code', 'OK',
     'data', json_build_object('id', v_id),
     'error', null
   );
 END;
 $$;
 
-ALTER FUNCTION "public"."foundation_log_activity_v1"("p_tenant_id" "uuid", "p_action" "text", "p_meta" "jsonb", "p_actor_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."foundation_log_activity_v1"("p_action" "text", "p_meta" "jsonb", "p_actor_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_user_entitlements_v1"() RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
@@ -261,61 +254,47 @@ $$;
 
 ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer) OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_tenant_id" "uuid", "p_token" "text") RETURNS json
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_token" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_row record;
+  v_tenant_id uuid;
+  v_row       record;
 BEGIN
-  -- Validate caller context matches requested tenant (satisfies definer-safety-audit)
-  IF p_tenant_id IS NULL OR p_token IS NULL THEN
+  v_tenant_id := public.current_tenant_id();
+  IF v_tenant_id IS NULL THEN
     RETURN json_build_object(
-      'ok',    false,
-      'code',  'VALIDATION_ERROR',
-      'data',  null,
-      'error', json_build_object('message', 'tenant_id and token are required', 'fields', json_build_object())
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
     );
   END IF;
-
-  -- Enforce: caller must have context for requested tenant
-  IF public.current_tenant_id() IS DISTINCT FROM p_tenant_id THEN
+  IF p_token IS NULL THEN
     RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'Tenant context mismatch', 'fields', json_build_object())
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'token is required', 'fields', json_build_object())
     );
   END IF;
-
   SELECT st.token, st.deal_id, st.expires_at, d.calc_version
   INTO v_row
   FROM public.share_tokens st
   JOIN public.deals d ON d.id = st.deal_id AND d.tenant_id = st.tenant_id
   WHERE st.token = p_token
-    AND st.tenant_id = p_tenant_id;
-
+    AND st.tenant_id = v_tenant_id;
   IF NOT FOUND THEN
     RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_FOUND',
-      'data',  null,
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
       'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
     );
   END IF;
-
   IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN
     RETURN json_build_object(
-      'ok',    false,
-      'code',  'TOKEN_EXPIRED',
-      'data',  null,
+      'ok', false, 'code', 'TOKEN_EXPIRED', 'data', null,
       'error', json_build_object('message', 'Share token has expired', 'fields', json_build_object())
     );
   END IF;
-
   RETURN json_build_object(
-    'ok',   true,
-    'code', 'OK',
+    'ok', true, 'code', 'OK',
     'data', json_build_object(
       'token',        v_row.token,
       'deal_id',      v_row.deal_id,
@@ -327,7 +306,7 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."lookup_share_token_v1"("p_tenant_id" "uuid", "p_token" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."lookup_share_token_v1"("p_token" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."require_min_role_v1"("p_min" "public"."tenant_role") RETURNS "void"
     LANGUAGE "plpgsql"
