@@ -285,6 +285,9 @@
     },
     "7.9": {
       "proof_pattern": "^docs/proofs/7\\.9_tenant_context_integrity_"
+    },
+    "7.10": {
+      "proof_pattern": "^docs/proofs/7\\.10_tenant_role_ordering_invariant_"
     }
   }
 }
