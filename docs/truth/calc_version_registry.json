@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "authority": "Build Route v2.4 Item 7.6",
+  "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
+  "calc_versions": [
+    {
+      "calc_version": 1,
+      "label": "baseline",
+      "description": "Initial calculation version. Deals store assumptions and outputs via deal_inputs and deal_outputs tables. No formula logic implemented server-side yet; calc_version tracks schema generation only.",
+      "introduced_pr": "baseline (6.1 greenfield migrations)",
+      "released_at": "2026-02-19"
+    }
+  ],
+  "watch_surface": {
+    "migration_tokens": [
+      "calc_version",
+      "calc_versions",
+      "calculate_",
+      "compute_",
+      "pricing_",
+      "commission_",
+      "fee_",
+      "rate_"
+    ],
+    "authority": "QA ruling 2026-03-04"
+  }
+}

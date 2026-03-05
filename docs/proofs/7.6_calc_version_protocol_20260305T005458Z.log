@@ -1,0 +1,155 @@
+PROOF_HEAD=0f0cd7459797050e3304b15febe8e156cd82802c
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.6 calc_version Change Protocol — Proof Log ===
+Date: 2026-03-04T19:54:37.7590666-05:00
+Branch: feat/7.6-calc-version-protocol
+HEAD: 0f0cd7459797050e3304b15febe8e156cd82802c
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: calc_version_registry.json exists and is valid ===
+{
+  "version": 2,
+  "authority": "Build Route v2.4 Item 7.6",
+  "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
+  "calc_versions": [
+    {
+      "calc_version": 1,
+      "label": "baseline",
+      "description": "Initial calculation version. Deals store assumptions and outputs via deal_inputs and deal_outputs tables. No formula logic implemented server-side yet; calc_version tracks schema generation only.",
+      "introduced_pr": "baseline (6.1 greenfield migrations)",
+      "released_at": "2026-02-19"
+    }
+  ],
+  "watch_surface": {
+    "migration_tokens": [
+      "calc_version",
+      "calc_versions",
+      "calculate_",
+      "compute_",
+      "pricing_",
+      "commission_",
+      "fee_",
+      "rate_"
+    ],
+    "authority": "QA ruling 2026-03-04"
+  }
+}
+
+=== DoD 2: Gate script — calc-version-registry (real PASS case) ===
+=== calc-version-registry: calc_version change protocol ===
+Base ref: origin/main
+  CALC-LOGIC: supabase/migrations/20260219000003_baseline_deals.sql (matched token: calc_version)
+
+Calc-logic files changed: 1
+calc_version_registry.json changed: True
+
+calc-version-registry: PASS
+
+=== DoD 3: Triple registration ===
+robot-owned guard (robot_owned_paths.json): True
+truth-bootstrap: True
+handoff.ps1: True
+
+=== DoD 3: truth-bootstrap validation ===
+
+> equity-flow-system@0.0.0 truth-bootstrap
+> node scripts/truth_bootstrap_check.mjs
+
+=== truth-bootstrap: required paths (existence) ===
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/required_checks.json
+PASS EXISTS docs/truth/lane_checks.json
+PASS EXISTS docs/truth/toolchain.json
+PASS EXISTS docs/truth/qa_requirements.json
+PASS EXISTS docs/truth/expected_surface.json
+PASS EXISTS docs/truth/execute_allowlist.json
+PASS EXISTS docs/truth/definer_allowlist.json
+PASS EXISTS docs/truth/pr_scope_rules.json
+PASS EXISTS docs/truth/robot_owned_paths.json
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/rpc_budget.json
+PASS EXISTS docs/truth/blocked_identifiers.json
+PASS EXISTS docs/truth/tenant_table_selector.json
+PASS EXISTS docs/truth/privilege_truth.json
+PASS EXISTS docs/truth/calc_version_registry.json
+PASS EXISTS docs/truth/ci_execution_surface.json
+PASS EXISTS docs/truth/qa_requirements.schema.json
+PASS EXISTS docs/truth/qa_scope_map.json
+PASS EXISTS docs/truth/qa_claim.json
+PASS EXISTS docs/truth/surface_truth.schema.json
+PASS EXISTS docs/truth/cloud_inventory.schema.json
+PASS EXISTS docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: JSON parse ===
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/required_checks.json
+PASS JSON docs/truth/lane_checks.json
+PASS JSON docs/truth/toolchain.json
+PASS JSON docs/truth/qa_requirements.json
+PASS JSON docs/truth/expected_surface.json
+PASS JSON docs/truth/execute_allowlist.json
+PASS JSON docs/truth/definer_allowlist.json
+PASS JSON docs/truth/pr_scope_rules.json
+PASS JSON docs/truth/robot_owned_paths.json
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/rpc_budget.json
+PASS JSON docs/truth/blocked_identifiers.json
+PASS JSON docs/truth/tenant_table_selector.json
+PASS JSON docs/truth/privilege_truth.json
+PASS JSON docs/truth/calc_version_registry.json
+PASS JSON docs/truth/ci_execution_surface.json
+PASS JSON docs/truth/qa_requirements.schema.json
+PASS JSON docs/truth/qa_scope_map.json
+PASS JSON docs/truth/qa_claim.json
+PASS JSON docs/truth/surface_truth.schema.json
+PASS JSON docs/truth/cloud_inventory.schema.json
+PASS JSON docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: schema-lite checks (no Ajv) ===
+SCHEMA_LITE_PASS: qa_claim.json
+SCHEMA_LITE_PASS: qa_scope_map.json
+SCHEMA_LITE_PASS: qa_requirements.json
+SCHEMA_LITE_PASS: expected_surface.json
+SCHEMA_LITE_PASS: calc_version_registry.json
+SCHEMA_LITE_PASS: privilege_truth.json
+SCHEMA_LITE_PASS: ci_execution_surface.json
+SCHEMA_LITE_PASS: docs/truth/qa_requirements.schema.json
+SCHEMA_LITE_PASS: docs/truth/surface_truth.schema.json
+SCHEMA_LITE_PASS: docs/truth/cloud_inventory.schema.json
+SCHEMA_LITE_PASS: docs/truth/privilege_truth.schema.json
+STATUS: PASS (truth-bootstrap OK)
+
+=== DoD 4: CI job wired ===
+name: calc-version-registry
+- name: calc-version-registry
+
+=== DoD 5: required_checks.json ===
+"name": "CI / calc-version-registry",
+
+=== DoD 6: pgTAP tests ===
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ........... ok
+[REDACTED] .......... ok
+[REDACTED] ...... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=11, Tests=83,  1 wallclock secs ( 0.03 usr  0.01 sys +  0.04 cusr  0.04 csys =  0.12 CPU)
+Result: PASS
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.6 calc_version Change Protocol: PASS
