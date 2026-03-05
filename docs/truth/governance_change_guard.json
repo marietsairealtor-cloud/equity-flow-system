@@ -1,5 +1,7 @@
 {
-  "exempt": ["docs/DEVLOG.md"],
+  "exempt": [
+    "docs/DEVLOG.md"
+  ],
   "paths": [
     "docs/truth/**",
     ".github/workflows/**",
@@ -12,7 +14,8 @@
     "docs/artifacts/FOUNDATION_BOUNDARY.md",
     "docs/artifacts/BUILD_ROUTE_V2.4.md",
     "docs/artifacts/RELEASES.md",
-    "docs/truth/governance_surface_definition.json"
+    "docs/truth/governance_surface_definition.json",
+    "docs/ops/STUDIO_MUTATION_POLICY.md"
   ],
   "justification_glob": "docs/governance/GOVERNANCE_CHANGE_PR*.md"
 }

@@ -1,0 +1,85 @@
+PROOF_HEAD=328c49706249eb5ab028440847a66c903b6ea3c8
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.7 Supabase Studio Direct-Mutation Guard — Proof Log ===
+Date: 2026-03-04T20:46:37.2850997-05:00
+Branch: feat/7.7-studio-mutation-guard
+HEAD: 328c49706249eb5ab028440847a66c903b6ea3c8
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+
+=== DoD 1: STUDIO_MUTATION_POLICY.md exists ===
+# Studio Mutation Policy
+
+**Authority:** Build Route v2.4 Item 7.7  
+**Status:** Enforced — operator acknowledgment required for any exception.
+
+## Rule
+
+All schema changes must go through migrations committed to the repository
+and merged via PR. No direct schema mutations via Supabase Studio cloud
+console are permitted without a compensating migration.
+
+## Emergency Exception Protocol
+
+If an emergency Studio write is made to the live cloud project:
+
+1. The mutation must be immediately followed by a compensating migration
+   that replicates the change in SQL form.
+2. The compensating migration must be merged via PR within 24 hours.
+3. A stop-the-line acknowledgment per AUTOMATION.md §6 is required before
+   any further deployments are made.
+4. No exceptions to this protocol are permitted without explicit stop-the-line
+   acknowledgment.
+
+## Drift Detection
+
+Operators must run `scripts/cloud_schema_drift_check.ps1` periodically and
+after any suspected out-of-band mutation. Output must be captured and
+finalized via `npm run proof:finalize`.
+
+This script is **never run in CI**. Cloud credentials must not be exposed
+in workflow logs. It is operator-run only.
+
+## Rationale
+
+Supabase Studio allows direct DDL execution against the live cloud database.
+Without this policy, schema drift can silently diverge from migration history,
+breaking the append-only migration invariant and undermining the audit trail.
+
+=== DoD 2: cloud_schema_drift_check.ps1 — execution proof ===
+Script exists: True
+No CI job referencing this script: True
+
+--- Operator drift check execution ---
+=== cloud_schema_drift_check: Studio mutation guard ===
+Date: 2026-03-04T20:46:37.3891788-05:00
+
+Local schema: generated/schema.sql
+Cloud DB: [REDACTED — connection string not logged]
+
+Dumping cloud schema...
+Initialising login role...
+Dumping schemas from remote database...
+Dumped schema to [REDACTED_PATH]
+Cloud schema dumped. Comparing against local...
+
+DRIFT_CHECK: NO DRIFT DETECTED
+Cloud schema matches generated/schema.sql exactly.
+STATUS: PASS
+
+=== DoD 3: STUDIO_MUTATION_POLICY.md in governance-change-guard ===
+"docs/ops/STUDIO_MUTATION_POLICY.md"
+
+=== DoD 3: STUDIO_MUTATION_POLICY.md in governance_surface_definition.json ===
+"pattern": "docs/ops/STUDIO_MUTATION_POLICY.md",
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.7 Supabase Studio Direct-Mutation Guard: PASS

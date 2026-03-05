@@ -75,6 +75,11 @@
       "pattern": "supabase/foundation/**",
       "rationale": "Foundation migrations define the immutable DB baseline.",
       "version": 1
+    },
+    {
+      "pattern": "docs/ops/STUDIO_MUTATION_POLICY.md",
+      "rationale": "Operator mutation policy — changes require governance justification per Build Route 7.7.",
+      "version": 1
     }
   ]
 }
