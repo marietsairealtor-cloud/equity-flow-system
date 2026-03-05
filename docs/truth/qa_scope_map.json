@@ -276,6 +276,9 @@
     },
     "7.6": {
       "proof_pattern": "^docs/proofs/7\\.6_calc_version_protocol_"
+    },
+    "7.7": {
+      "proof_pattern": "^docs/proofs/7\\.7_studio_mutation_guard_"
     }
   }
 }
