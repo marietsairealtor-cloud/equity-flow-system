@@ -32,48 +32,41 @@ RESET ROLE;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'a0000000-0000-0000-0000-000000000001', true);
 
--- Test 1: Valid token lookup with correct tenant returns OK
+-- Test 1: Valid token lookup returns OK
 SELECT is(
-  (public.lookup_share_token_v1(
-    'a0000000-0000-0000-0000-000000000001'::uuid, 'valid_token_abc123'
-  ))::json ->> 'code',
+  (public.lookup_share_token_v1('valid_token_abc123')::json ->> 'code'),
   'OK',
   'Valid token + correct tenant returns OK'
 );
 
 -- Test 2: Valid token returns correct deal_id in data
 SELECT is(
-  ((public.lookup_share_token_v1(
-    'a0000000-0000-0000-0000-000000000001'::uuid, 'valid_token_abc123'
-  ))::json -> 'data' ->> 'deal_id'),
+  (public.lookup_share_token_v1('valid_token_abc123')::json -> 'data' ->> 'deal_id'),
   'd7000000-0000-0000-0000-000000000001',
   'Valid token returns correct deal_id'
 );
 
--- Test 3: Cross-tenant negative test — Tenant A token looked up with Tenant B tenant_id
--- Caller context is Tenant A, but requesting Tenant B → NOT_AUTHORIZED (context mismatch)
+-- Test 3: Cross-tenant isolation — Tenant B JWT cannot see Tenant A token
+SELECT set_config('request.jwt.claim.tenant_id', 'b0000000-0000-0000-0000-000000000001', true);
 SELECT is(
-  (public.lookup_share_token_v1(
-    'b0000000-0000-0000-0000-000000000001'::uuid, 'valid_token_abc123'
-  ))::json ->> 'code',
-  'NOT_AUTHORIZED',
-  'Tenant A token looked up under Tenant B context returns NOT_AUTHORIZED'
+  (public.lookup_share_token_v1('valid_token_abc123')::json ->> 'code'),
+  'NOT_FOUND',
+  'Tenant A token under Tenant B JWT context returns NOT_FOUND (isolated)'
 );
+
+-- Restore Tenant A context
+SELECT set_config('request.jwt.claim.tenant_id', 'a0000000-0000-0000-0000-000000000001', true);
 
 -- Test 4: Expired token returns TOKEN_EXPIRED (distinct code per CONTRACTS S1)
 SELECT is(
-  (public.lookup_share_token_v1(
-    'a0000000-0000-0000-0000-000000000001'::uuid, 'expired_token_xyz789'
-  ))::json ->> 'code',
+  (public.lookup_share_token_v1('expired_token_xyz789')::json ->> 'code'),
   'TOKEN_EXPIRED',
   'Expired token returns TOKEN_EXPIRED (distinct from NOT_FOUND)'
 );
 
 -- Test 5: Nonexistent token returns NOT_FOUND
 SELECT is(
-  (public.lookup_share_token_v1(
-    'a0000000-0000-0000-0000-000000000001'::uuid, 'does_not_exist'
-  ))::json ->> 'code',
+  (public.lookup_share_token_v1('does_not_exist')::json ->> 'code'),
   'NOT_FOUND',
   'Nonexistent token returns NOT_FOUND'
 );
