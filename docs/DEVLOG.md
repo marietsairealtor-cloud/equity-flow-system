@@ -4217,3 +4217,45 @@ DoD
 - green:twice, pr:preflight: PASS
 
 Status: COMPLETE — merged to main
+---
+2026-03-05 — Build Route v2.4 — Item 7.6
+
+Objective
+Gate-enforce the calc_version change protocol: any PR touching calculation
+logic files must also update the authoritative calc_version registry.
+Prevents silent logic drift where DB calculator changes are untracked.
+
+Changes
+- docs/truth/calc_version_registry.json: new authoritative registry of all
+  calc_version values. Documents baseline calc_version=1 with logic description
+  and introducing PR. Includes watch_surface definition per QA ruling 2026-03-04.
+- scripts/ci_calc_version_lint.ps1: gate script — scans PR diff for calc-logic
+  migration files (token-based: calc_version, calc_versions, calculate_, compute_,
+  pricing_, commission_, fee_, rate_). Fails if calc-logic files changed without
+  registry update. Prints matched files and tokens.
+- .github/workflows/ci.yml: added calc-version-registry job (merge-blocking).
+- docs/truth/required_checks.json: added CI / calc-version-registry.
+- docs/truth/robot_owned_paths.json: added calc_version_registry.json.
+- scripts/ci_robot_owned_guard.ps1: allowlisted calc_version_registry.json
+  (PR-updated truth file) + 7.6 proof log path.
+- scripts/truth_bootstrap_check.mjs: added calc_version_registry.json to
+  required paths + schema-lite check (version, calc_versions, watch_surface).
+- scripts/handoff.ps1: added existence check for calc_version_registry.json.
+- supabase/tests/7_6_calc_version_protocol.pgtap.sql: 6-test pgTAP suite
+  proving deal seeded at calc_version=1 returns identical field-by-field inputs
+  after calc_version increments to 2.
+- docs/governance/GOVERNANCE_CHANGE_PR070.md: governance justification.
+
+Proof
+docs/proofs/7.6_calc_version_protocol_20260305T005458Z.log
+
+DoD
+- calc_version_registry.json exists with baseline entry: VERIFIED
+- Gate: Calc-logic files changed=1, registry changed=True, PASS: VERIFIED
+- Triple registration (robot-owned, truth-bootstrap, handoff): VERIFIED
+- CI / calc-version-registry in required_checks.json: VERIFIED
+- pgTAP 6 tests green (field-by-field assertion): VERIFIED
+- green:twice, pr:preflight: PASS
+- robot-owned-guard: PASS
+
+Status: COMPLETE — merged to main
