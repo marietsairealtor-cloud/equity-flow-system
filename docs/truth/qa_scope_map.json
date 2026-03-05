@@ -279,6 +279,9 @@
     },
     "7.7": {
       "proof_pattern": "^docs/proofs/7\\.7_studio_mutation_guard_"
+    },
+    "7.8": {
+      "proof_pattern": "^docs/proofs/7\\.8_role_enforcement_rpc_"
     }
   }
 }

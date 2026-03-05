@@ -141,6 +141,7 @@ Violation of any rule requires a new versioned RPC.
 ## 9) Helper Function Exposure (LOCKED)
 
 - Internal helpers must not be directly executable by app roles.
+- public.require_min_role_v1(p_min tenant_role) is the authoritative DB-layer role enforcement helper. Enum ordering: owner(0) < admin(1) < member(2). Authorization fails when v_role > p_min (caller is less privileged). Any privileged RPC must call this as its first executable statement (Build Route 7.8).
 - Helpers may be executed only by allowlisted SECURITY DEFINER RPCs.
 - Granting EXECUTE to helpers requires contract update.
 

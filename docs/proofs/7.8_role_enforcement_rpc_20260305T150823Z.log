@@ -1,0 +1,82 @@
+PROOF_HEAD=d6c4edb3c6c429e1fa2b4bd24e2925fb1581f365
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.8 Role Enforcement on Privileged RPCs — Proof Log ===
+Date: 2026-03-05T10:02:11.6754890-05:00
+Branch: feat/7.8-role-enforcement-rpc
+HEAD: d6c4edb3c6c429e1fa2b4bd24e2925fb1581f365
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD: Role guard fix — require_min_role_v1 corrected comparison ===
+
+DECLARE
+  v_tenant_id uuid;
+  v_user_id   uuid;
+  v_role      public.tenant_role;
+BEGIN
+  v_tenant_id := public.current_tenant_id();
+  v_user_id   := auth.uid();
+  IF v_tenant_id IS NULL OR v_user_id IS NULL THEN
+    RAISE EXCEPTION 'NOT_AUTHORIZED';
+  END IF;
+  SELECT role INTO v_role
+  FROM public.tenant_memberships
+  WHERE tenant_id = v_tenant_id
+    AND user_id   = v_user_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'NOT_AUTHORIZED';
+  END IF;
+  -- Enum ordering: owner(0) < admin(1) < member(2)
+  -- More privileged = smaller. Fail if caller is less privileged (larger).
+  IF v_role > p_min THEN
+    RAISE EXCEPTION 'NOT_AUTHORIZED';
+  END IF;
+END;
+
+
+=== DoD: Enum ordering ===
+t|t
+
+=== DoD: Catalog audit — privileged RPCs missing role guard ===
+create_deal_v1|t|f|f
+foundation_log_activity_v1|t|f|f
+get_user_entitlements_v1|t|f|f
+list_deals_v1|t|f|f
+lookup_share_token_v1|t|f|f
+update_deal_v1|t|f|f
+
+=== DoD: pgTAP tests ===
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ........... ok
+[REDACTED] .......... ok
+[REDACTED] ...... ok
+[REDACTED] ........ ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=12, Tests=95,  1 wallclock secs ( 0.03 usr  0.03 sys +  0.06 cusr  0.03 csys =  0.15 CPU)
+Result: PASS
+
+=== DoD: No privileged RPCs exist yet ===
+No existing SECURITY DEFINER RPC mutates tenant settings, membership,
+role assignments, seat counts, or billing state. Catalog audit above
+confirms zero privileged RPCs missing require_min_role_v1 guard.
+7.8 establishes enforcement mechanism + audit harness for future RPCs.
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.8 Role Enforcement on Privileged RPCs: PASS
