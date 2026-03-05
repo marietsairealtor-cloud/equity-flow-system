@@ -1,0 +1,58 @@
+PROOF_HEAD=15dff9ee140d23a676fef4ee419e573d82b7361f
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.9 Tenant Context Integrity Invariant — Proof Log ===
+Date: 2026-03-05T13:24:01.4257880-05:00
+Branch: feat/7.9-tenant-context-integrity
+HEAD: 15dff9ee140d23a676fef4ee419e573d82b7361f
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD: current_tenant_id() returns NULL without claim ===
+
+t
+
+=== DoD: No RPC accepts tenant_id as caller input ===
+          proname           |                               pg_get_function_arguments                                
+----------------------------+----------------------------------------------------------------------------------------
+ create_deal_v1             | p_id uuid, p_calc_version integer DEFAULT 1, p_assumptions jsonb DEFAULT '{}'::jsonb
+ foundation_log_activity_v1 | p_action text, p_meta jsonb DEFAULT '{}'::jsonb, p_actor_id uuid DEFAULT NULL::uuid
+ get_user_entitlements_v1   | 
+ list_deals_v1              | p_limit integer DEFAULT 25
+ lookup_share_token_v1      | p_token text
+ update_deal_v1             | p_id uuid, p_expected_row_version bigint, p_calc_version integer DEFAULT NULL::integer
+(6 rows)
+
+
+=== DoD: Catalog audit — zero RPCs accept tenant_id param ===
+0
+
+=== DoD: pgTAP tests ===
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] ........... ok
+[REDACTED] .......... ok
+[REDACTED] ...... ok
+[REDACTED] ........ ok
+[REDACTED] .... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=13, Tests=107,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.06 cusr  0.04 csys =  0.13 CPU)
+Result: PASS
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.9 Tenant Context Integrity Invariant: PASS
