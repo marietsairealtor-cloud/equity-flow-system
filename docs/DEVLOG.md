@@ -4259,3 +4259,41 @@ DoD
 - robot-owned-guard: PASS
 
 Status: COMPLETE — merged to main
+
+2026-03-05 — Build Route v2.4 — Item 7.7
+
+Objective
+Operational policy and operator-run drift detection preventing out-of-band
+DB mutations via Supabase Studio cloud console from silently diverging from
+migration history.
+
+Changes
+- docs/ops/STUDIO_MUTATION_POLICY.md: policy declaring all schema changes must
+  go through migrations. Emergency exception protocol requires compensating
+  migration within 24 hours + stop-the-line acknowledgment per AUTOMATION.md §6.
+- scripts/cloud_schema_drift_check.ps1: operator-run drift detection script.
+  Connects to live cloud DB, dumps schema, compares against generated/schema.sql
+  using line-set comparison with platform-managed grant filtering. Exits non-zero
+  with named diff on drift. Never run in CI.
+- docs/truth/governance_change_guard.json: added docs/ops/STUDIO_MUTATION_POLICY.md
+  to path scope.
+- docs/truth/governance_surface_definition.json: added STUDIO_MUTATION_POLICY.md
+  entry so future policy changes trigger governance-change-guard.
+- docs/truth/qa_claim.json: updated to 7.7
+- docs/truth/qa_scope_map.json: added 7.7 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 7.7 proof log path
+- docs/governance/GOVERNANCE_CHANGE_PR071.md: governance justification
+
+Proof
+docs/proofs/7.7_studio_mutation_guard_20260305T014727Z.log
+
+DoD
+- STUDIO_MUTATION_POLICY.md exists with full policy + emergency protocol: VERIFIED
+- Drift check script executes against cloud DB: VERIFIED
+- DRIFT_CHECK: NO DRIFT DETECTED (after pushing 3 pending migrations): VERIFIED
+- Script not referenced in CI: VERIFIED
+- governance-change-guard registration: VERIFIED
+- governance_surface_definition.json registration: VERIFIED
+- green:twice, pr:preflight: PASS
+
+Status: COMPLETE — merged to main
