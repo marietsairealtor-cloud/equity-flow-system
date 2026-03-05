@@ -142,6 +142,7 @@ Violation of any rule requires a new versioned RPC.
 
 - Internal helpers must not be directly executable by app roles.
 - public.require_min_role_v1(p_min tenant_role) is the authoritative DB-layer role enforcement helper. Enum ordering: owner(0) < admin(1) < member(2). Authorization fails when v_role > p_min (caller is less privileged). Any privileged RPC must call this as its first executable statement (Build Route 7.8).
+- No RPC may accept tenant_id as caller input. Tenant ID must be derived strictly from JWT via current_tenant_id(). RPCs that previously accepted p_tenant_id (foundation_log_activity_v1, lookup_share_token_v1) have had that parameter removed (Build Route 7.9).
 - Helpers may be executed only by allowlisted SECURITY DEFINER RPCs.
 - Granting EXECUTE to helpers requires contract update.
 
