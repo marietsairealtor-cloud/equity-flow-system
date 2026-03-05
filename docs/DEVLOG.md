@@ -4297,3 +4297,39 @@ DoD
 - green:twice, pr:preflight: PASS
 
 Status: COMPLETE — merged to main
+---
+2026-03-05 — Build Route v2.4 — Item 7.8
+
+Objective
+Enforce tenant role at DB layer for privileged RPCs via
+public.require_min_role_v1(). Fix inverted comparison bug in the guard
+function and prove role hierarchy enforcement via pgTAP truth table.
+
+Changes
+- supabase/migrations/20260304000001_7_8_fix_role_guard_comparison.sql:
+  Fixed inverted comparison in require_min_role_v1. Original used v_role < p_min
+  (wrong — was rejecting owners). Corrected to v_role > p_min. PostgreSQL enum
+  order is owner(0) < admin(1) < member(2); more privileged = smaller.
+- supabase/tests/7_8_role_enforcement_rpc.test.sql: 12-test pgTAP suite.
+  Enum ordering invariants (owner < admin < member). Truth table: member blocked
+  for admin/owner, admin passes for admin/member blocked for owner, owner passes
+  all. Catalog audit: zero privileged RPCs missing require_min_role_v1 guard.
+- docs/artifacts/CONTRACTS.md §7: added require_min_role_v1 authority note —
+  enum ordering, comparison semantics, mandate for future privileged RPCs.
+- docs/truth/qa_claim.json: updated to 7.8
+- docs/truth/qa_scope_map.json: added 7.8 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 7.8 proof log path
+- docs/governance/GOVERNANCE_CHANGE_PR072.md: governance justification
+
+Proof
+docs/proofs/7.8_role_enforcement_rpc_20260305T150823Z.log
+
+DoD
+- require_min_role_v1 comparison corrected (v_role > p_min): VERIFIED
+- Enum ordering invariants (owner < admin < member): VERIFIED
+- pgTAP truth table: member/admin/owner all correct: VERIFIED
+- Catalog audit: zero privileged RPCs missing guard: VERIFIED
+- No privileged RPCs exist yet — enforcement harness established: VERIFIED
+- green:twice, pr:preflight: PASS
+
+Status: COMPLETE — merged to main
