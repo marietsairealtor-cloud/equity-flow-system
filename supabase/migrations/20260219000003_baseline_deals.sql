@@ -7,3 +7,4 @@ create table public.deals (
 
 alter table public.tenants enable row level security;
 alter table public.deals enable row level security;
+-- 7.6: calc_version change protocol audit marker
