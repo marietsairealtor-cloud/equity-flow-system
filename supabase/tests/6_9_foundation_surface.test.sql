@@ -29,9 +29,10 @@ SELECT is_empty(
 
 -- 5) RPC exists and is executable
 SELECT has_function('public', 'foundation_log_activity_v1',
-  ARRAY['uuid', 'text', 'jsonb', 'uuid'],
+  ARRAY['text', 'jsonb', 'uuid'],
   'foundation_log_activity_v1 RPC exists'
 );
 
 SELECT finish();
 ROLLBACK;
+
