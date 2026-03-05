@@ -37,6 +37,8 @@ This is the complete step-by-step sequence from starting an objective to closing
    - Allowlist canonical proof log path in `scripts/ci_robot_owned_guard.ps1`
    - Update `docs/truth/qa_claim.json` and `docs/truth/qa_scope_map.json`  with the claimed Build Route item ID
    - All of the above are implementation changes. Commit them here, not in the proof tail.
+   - **Gate pre-check (migrations only):** If the PR adds a migration, scan it for calc-logic tokens (`calc_version`, `calculate_`, `compute_`, etc.). If any match, pre-emptively update `docs/truth/calc_version_registry.json` in the same commit. Do not wait for `ci_calc_version_lint` to fail in CI.
+   - **Gate pre-check (schema/contracts):** If the PR adds a migration that changes the schema, pre-emptively add a substantive note to `docs/artifacts/CONTRACTS.md` documenting the behavioral change. Do not wait for `ci_entitlement_policy_coupling` to fail in CI.
 
 ### Phase 2 — Truth Artifacts (only if PR touches DB/contracts/schema)
 
@@ -538,6 +540,53 @@ Section close is recorded as a DEVLOG entry with format:
     Changes
     Verification evidence
     Status
+---
+
+## 18) Known Gate Behaviors (Reference)
+
+These gates are known to fire on conditions broader than their name implies.
+When they fire unexpectedly, follow the prescribed fix — do not suppress or bypass.
+
+### 18.1 ci_calc_version_lint (calc-version-registry gate)
+
+**Trigger:** Any migration in the PR diff whose content contains a calc-logic token
+(`calc_version`, `calc_versions`, `calculate_`, `compute_`, `pricing_`, `commission_`,
+`fee_`, `rate_`) — even if the migration does not change calculation logic.
+
+**Why it over-triggers:** The gate scans file content, not diffs of specific functions.
+A migration that adds a column default of `calc_version = 1` or references a calc-adjacent
+function will trigger the gate even if no calc logic changed.
+
+**Prescribed fix:**
+1. Bump the `version` field in `docs/truth/calc_version_registry.json`.
+2. Add a `notes` entry explaining the migration touched calc-adjacent code without
+   changing calc logic (e.g. "7.9: migration removed p_tenant_id from RPCs; incidentally
+   contains calc_version column reference — no calc logic changed").
+3. Commit alongside the migration in Phase 1.
+
+**Do not:** leave the gate failing and fix in a separate commit after proof generation.
+
+---
+
+### 18.2 ci_entitlement_policy_coupling (entitlement-policy-coupling gate)
+
+**Trigger:** Any PR where `generated/schema.sql` changes AND the file contains
+`get_user_entitlements_v1` — which it always does, since the function is permanent.
+Effectively fires on every PR that adds a migration (because every migration causes
+`generated/schema.sql` to regenerate).
+
+**Why it over-triggers:** The gate checks for presence of the entitlement function string
+in the changed schema file, not whether the function body actually changed.
+
+**Prescribed fix:**
+1. Add a substantive note to `docs/artifacts/CONTRACTS.md` documenting what the PR
+   changes at the behavioral/contract level (e.g. "no RPC accepts tenant_id as caller input").
+2. The note must be real and accurate — not a placeholder to satisfy the gate.
+3. Commit alongside the migration in Phase 1.
+
+**Do not:** add a fake or empty CONTRACTS.md change purely to satisfy the gate.
+The note must document something true about the PR's behavioral impact.
+
 ---
 
 STATUS:
