@@ -4376,3 +4376,143 @@ DoD
 - green:twice, pr:preflight: PASS
 
 Status: COMPLETE — merged to main
+
+---
+
+## **2026-03-05 — Advisor Meeting Outcome: Section 7 Closure & Section 8 Prep**
+
+**Context**
+
+Section 7 (Calculation Version Protocol, Studio Mutation Guard, Role Enforcement, and Tenant Context Integrity) was declared complete.
+Advisor review was requested before beginning Section 8 implementation.
+
+The objective of the meeting was to confirm architectural invariants and identify any required hardening prior to the CI database conversion work defined in Section 8.
+
+---
+
+## **Advisor Confirmations**
+
+### **1. tenant_role enum ordering must be mechanically enforced**
+
+The authorization model relies on enum ordering:
+
+```
+owner < admin < member
+```
+
+The advisor confirmed this ordering is **load-bearing** and must not be allowed to drift.
+
+**Action**
+
+A pgTAP invariant will be added asserting:
+
+* exact enum ordering
+* correct `require_min_role_v1()` privilege semantics
+
+This becomes a permanent regression guard.
+
+---
+
+### **2. Studio drift detection cadence clarified**
+
+Original question: run drift check after deploys + console edits.
+
+Advisor clarification:
+
+Console edits cannot be reliably detected in Supabase.
+
+**Operational rule adopted**
+
+```
+Run drift check after every deploy.
+Run drift check in CI for schema PRs.
+Suspected console edits trigger incident procedure.
+```
+
+Weekly drift checks may be used as a secondary safety measure.
+
+---
+
+### **3. Calculation engine location confirmed**
+
+Advisor confirmed that **calculation logic must reside in Postgres**, not the application layer.
+
+Rationale:
+
+* Historical deal reproducibility requirement
+* `calc_version` protocol depends on versioned DB logic
+* UI must remain presentation-only
+
+**Architectural decision**
+
+```
+Postgres = calculation engine
+Application/UI = display layer only
+```
+
+All authoritative financial math will live in versioned DB functions.
+
+---
+
+### **4. RPC surface governance for Section 8**
+
+Section 8 will introduce additional RPCs.
+
+Advisor confirmed that **public RPCs must be traceable to a Build Route item**.
+
+Internal helper functions do not require mapping.
+
+**Adopted rule**
+
+Each public RPC entry in `CONTRACTS.md` must include:
+
+* RPC name + version
+* Build Route item ID
+* purpose (one line)
+* security class
+* tenancy rule (tenant derived from `current_tenant_id()`)
+
+This ensures RPC growth remains auditable.
+
+---
+
+## **Section 8 Direction Confirmed**
+
+Section 8 will focus on converting CI stub gates to live execution:
+
+```
+8.0  CI DB infrastructure
+8.0.1 clean-room replay conversion
+8.0.2 schema drift conversion
+8.0.3 handoff idempotency conversion
+8.0.4 definer safety audit conversion
+8.0.5 pgTAP + database-tests.yml conversion
+```
+
+The staged conversion order was reviewed and accepted.
+
+No structural changes to the Section 8 plan were required.
+
+---
+
+## **Architectural Status**
+
+After Section 7 completion and advisor review, the system now guarantees:
+
+* deterministic calculation versioning
+* tenant context integrity via JWT
+* database-level role enforcement
+* schema mutation discipline
+* CI migration replay determinism (Section 8 beginning)
+
+This establishes the database as the **primary enforcement layer** rather than relying on application-layer controls.
+
+---
+
+## **Outcome**
+
+Section 7 remains closed.
+
+Section 8 implementation may proceed beginning with **8.0 — CI Database Infrastructure**.
+
+---

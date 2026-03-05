@@ -2806,9 +2806,54 @@ docs/proofs/7.9_tenant_context_integrity_<UTC>.log
 
 Gate:
 pgtap (merge-blocking)
+
+### **7.10 — Freeze tenant_role ordering + role-guard semantics (pgTAP invariant) [HARDENED]**
+
+Deliverable: Enum ordering can’t silently flip authorization ever again.
+
+DoD:
+pgTAP asserts enum labels are in this exact order: owner < admin < member.
+pgTAP asserts public.require_min_role_v1() semantics match contract:
+owner satisfies admin requirement (PASS)
+admin satisfies admin requirement (PASS)
+member fails admin requirement (NOT_AUTHORIZED)
+
+Proof: docs/proofs/7.10_tenant_role_ordering_invariant_<UTC>.log
+Gate: pgtap (merge-blocking)
+
+### **7.11 — Studio drift check SLA + release checklist binding (Operator-run) [HARDENED]**
+
+Deliverable: Console edits can’t linger unnoticed; drift checks become an operational invariant.
+
+DoD:
+docs/ops/STUDIO_MUTATION_POLICY.md updated to require drift check after every deploy (release-triggered), plus “incident-trigger” if console edits are suspected.
+docs/ops/RELEASE_CHECKLIST.md (or equivalent ops doc) includes a mandatory checkbox: run scripts/cloud_schema_drift_check.ps1 and finalize proof.
+Proof log shows a PASS run captured + finalized (operator-run).
+
+Proof: docs/proofs/7.11_studio_drift_sla_<UTC>.log
+Gate: Operator-run only (no CI job)
+
+### **7.12 — Public RPC ↔ Build Route mapping rule in CONTRACTS.md (Growth throttle for Section 8) [HARDENED]**
+
+Deliverable: Public RPC surface stays auditable as it grows in Section 8.
+
+DoD:
+docs/artifacts/CONTRACTS.md requires each public/app-callable RPC entry to include:
+RPC name + version
+Build Route item ID
+1-line purpose
+Security class (SECURITY DEFINER? min role?)
+Tenancy rule (must derive via current_tenant_id(), no tenant_id param)
+Gate fails if a PR adds/changes public RPC entries without the mapping fields.
+
+Proof: docs/proofs/7.12_rpc_mapping_contract_<UTC>.log
+Gate: policy-coupling-style CI job (merge-blocking)
+
 ---
 
 ## **8 — Clean-Room Replay (Core)**
+Rule: Calculation logic is database source-of-truth (versioned); UI performs no authoritative math.
+Rule: No public RPC accepts tenant_id input; tenant context is derived only from current_tenant_id().
 
 ## Governance prerequisite
 
@@ -2817,12 +2862,9 @@ governance PR must be merged that:
 
 1. Replaces the current 8.0 DoD with the revised DoD below.
 2. Adds items 8.0.1–8.0.5 to the Build Route.
-3. Updates docs/truth/deferred_proofs.json conversion_trigger
-   fields from the current value "8.0" to the specific item
-   for each stub (see table at end of this document).
+3. Updates docs/truth/deferred_proofs.json conversion_trigger fields from the current value "8.0" to the specific item for each stub (see table at end of this document).
 
-That PR requires docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md
-because it modifies the Build Route (a governance-surface file).
+That PR requires docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md because it modifies the Build Route (a governance-surface file).
 
 ---
 
@@ -2833,44 +2875,32 @@ Prove that CI runners can start Supabase and reach a live database.
 This is infrastructure-only. No stub gates are converted in this PR.
 
 **Deliverable**
-A CI job that starts Supabase in a GitHub Actions runner and confirms
-DB connectivity via a smoke query. The job passes before any
-stub conversion work begins.
+A CI job that starts Supabase in a GitHub Actions runner and confirms DB connectivity via a smoke query. The job passes before any stub conversion work begins.
 
 **DoD (all must be true)**
 
 1. `.github/workflows/ci.yml` (or a new `database-tests.yml`)
-   includes a job that runs `supabase start` in the runner
-   environment and succeeds without error.
+   includes a job that runs `supabase start` in the runner environment and succeeds without error.
 
 2. A smoke query confirms the DB is reachable:
-   `psql -c "SELECT 1"` (or equivalent) returns successfully
-   in the CI runner context.
+   `psql -c "SELECT 1"` (or equivalent) returns successfully in the CI runner context.
 
-3. Proof captures: supabase CLI startup output, DB connection
-   confirmation, runner OS, Node version, Supabase CLI version
-   (must match `docs/truth/toolchain.json`).
+3. Proof captures: supabase CLI startup output, DB connection confirmation, runner OS, Node version, Supabase CLI version (must match `docs/truth/toolchain.json`).
 
 4. **No stub gates are converted in this PR.**
    `docs/truth/deferred_proofs.json` entries are not touched.
-   `deferred-proof-registry` gate must still pass — all six
-   stub entries remain present.
+   `deferred-proof-registry` gate must still pass — all six stub entries remain present.
 
 5. `docs/truth/completed_items.json` updated with 8.0.
    `docs/truth/qa_claim.json` updated to 8.0.
    `docs/truth/qa_scope_map.json` updated with 8.0 entry.
-   `scripts/ci_robot_owned_guard.ps1` updated with 8.0 proof
-   log pattern.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0 proof log pattern.
 
 6. Section 3.0 constraints apply: one enforcement surface per PR.
    The only new enforcement surface is the CI DB smoke job.
 
 **Pre-implementation check**
-Confirm the runner has sufficient memory to start Supabase. The
-Supabase local dev stack requires approximately 4GB RAM. GitHub
-Actions `ubuntu-latest` runners provide 7GB. Verify this before
-writing the workflow step. If memory is insufficient, document
-the limitation in the proof log and in `deferred_proofs.json`
+Confirm the runner has sufficient memory to start Supabase. The Supabase local dev stack requires approximately 4GB RAM. GitHub Actions `ubuntu-latest` runners provide 7GB. Verify this before writing the workflow step. If memory is insufficient, document the limitation in the proof log and in deferred_proofs.json`
 as a new entry before opening the PR.
 
 **Proof:** `docs/proofs/8.0_ci_db_infrastructure_<UTC>.log`
@@ -2884,52 +2914,36 @@ as a new entry before opening the PR.
 ### **8.0.1 — clean-room-replay Stub Conversion**
 
 **Objective**
-Convert the `clean-room-replay` merge-blocking gate from a
-db-heavy stub to live execution against the CI database.
+Convert the `clean-room-replay` merge-blocking gate from a db-heavy stub to live execution against the CI database.
 
 **Context from DEVLOG**
-3.9.1 catalogued `clean-room-replay` in `deferred_proofs.json`
-with `conversion_trigger: "8.0"` (updated to "8.0.1" in the
-amendment PR). This is the foundational DB gate — every other
-stub conversion depends on CI being able to replay migrations.
+3.9.1 catalogued `clean-room-replay` in `deferred_proofs.json` with `conversion_trigger: "8.0"` (updated to "8.0.1" in the
+amendment PR). This is the foundational DB gate — every other stub conversion depends on CI being able to replay migrations.
 
 **Deliverable**
-`clean-room-replay` gate runs full migration replay on an empty
-CI DB and passes.
+`clean-room-replay` gate runs full migration replay on an empty CI DB and passes.
 
 **DoD (all must be true)**
 
-1. On CI (live DB via 8.0 infrastructure), `supabase db reset`
-   replays all migrations in `supabase/migrations/**` in order
-   on an empty database without error.
+1. On CI (live DB via 8.0 infrastructure), `supabase db reset` replays all migrations in `supabase/migrations/**` in order on an empty database without error.
 
-2. The `clean-room-replay` CI job is updated to run actual
-   replay instead of the db-heavy stub pass-through. The stub
-   pattern is removed from this job only.
+2. The `clean-room-replay` CI job is updated to run actual replay instead of the db-heavy stub pass-through. The stub pattern is removed from this job only.
 
-3. Gate fails if any migration errors during replay. Proof
-   captures the full migration list and replay output.
+3. Gate fails if any migration errors during replay. Proof captures the full migration list and replay output.
 
-4. **Deliberate-failure proof required:** Introduce a syntax
-   error into a migration file locally, run the gate, confirm
-   FAIL with migration name in output, restore the file, confirm
-   PASS. Full sequence captured in proof log.
+4. **Deliberate-failure proof required:** Introduce a syntax error into a migration file locally, run the gate, confirm
+   FAIL with migration name in output, restore the file, confirm PASS. Full sequence captured in proof log.
 
-5. `docs/truth/deferred_proofs.json` entry for `clean-room-replay`
-   is removed in this PR. `deferred-proof-registry` gate must
-   pass after removal — the gate fails if a converted gate still
-   has a registry entry (DEVLOG 3.9.1 DoD item 4).
+5. `docs/truth/deferred_proofs.json` entry for `clean-room-replay` is removed in this PR. `deferred-proof-registry` gate must
+   pass after removal — the gate fails if a converted gate still has a registry entry (DEVLOG 3.9.1 DoD item 4).
 
 6. `docs/truth/completed_items.json` updated with 8.0.1.
    `docs/truth/qa_claim.json` updated to 8.0.1.
    `docs/truth/qa_scope_map.json` updated with 8.0.1 entry.
-   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.1 proof
-   log pattern.
+   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.1 proof log pattern.
 
-7. `STUB_GATES_ACTIVE` block in this proof log reflects the
-   remaining active stubs after this conversion:
-   schema-drift, definer-safety-audit, handoff-idempotency,
-   pgtap, database-tests.yml.
+7. `STUB_GATES_ACTIVE` block in this proof log reflects the remaining active stubs after this conversion:
+   schema-drift, definer-safety-audit, handoff-idempotency, pgtap, database-tests.yml.
 
 **Prerequisite:** 8.0 merged and main clean.
 
@@ -2942,109 +2956,84 @@ CI DB and passes.
 ---
 
 ### **8.0.2 — schema-drift Stub Conversion**
+Objective
+Convert the schema-drift merge-blocking gate from a db-heavy stub to live execution in CI — dumping the schema from the live CI DB (post replay) and diffing it against generated/schema.sql.
 
-**Objective**
-Convert the `schema-drift` merge-blocking gate from a db-heavy
-stub to live execution — comparing a schema dump from the live
-CI DB against `generated/schema.sql`.
-
-**Context from DEVLOG**
-3.9.1 catalogued `schema-drift` in `deferred_proofs.json` with
-`conversion_trigger: "8.0"` (updated to "8.0.2" in amendment PR).
-Currently the gate performs a text-match check on the static
-`generated/schema.sql` file without a live DB comparison. After
-conversion it will dump the schema from the live post-replay DB
-and diff it against the committed artifact.
+Context from DEVLOG
+schema-drift is currently stubbed (db-heavy pass-through) and registered in deferred_proofs.json with conversion trigger 8.0 (amended to 8.0.2). After conversion, it must become a real schema diff check.
 
 **Deliverable**
-`schema-drift` gate compares a live CI DB schema dump against
-`generated/schema.sql` and fails on any delta.
+A merge-blocking schema-drift gate that runs in CI against a live DB and fails on any schema delta versus generated/schema.sql.
 
 **DoD (all must be true)**
 
-1. After `clean-room-replay` runs in CI, `schema-drift` dumps
-   the schema from the live DB (`pg_dump --schema-only` or
-   `supabase db dump` equivalent) and diffs against
-   `generated/schema.sql`.
+Live DB dump + diff: After clean-room-replay runs in CI, schema-drift dumps schema from the CI DB (pg_dump --schema-only or supabase db dump equivalent) and diffs it against generated/schema.sql.
 
-2. Gate fails if any drift is detected, printing the exact diff.
-   Gate passes if schema matches byte-for-byte after encoding
-   normalization (LF, UTF-8 no BOM per GUARDRAILS §29–31).
+Deterministic comparison: Gate passes only if schemas match byte-for-byte after normalization (LF, UTF-8 no BOM per GUARDRAILS §29–31).
 
-3. The db-heavy stub pass-through is removed from the
-   `schema-drift` CI job.
+Stub removed: The db-heavy stub pass-through is removed from the schema-drift CI job.
 
-4. **Deliberate-failure proof required:** Introduce a column
-   addition to a migration locally without regenerating
-   `generated/schema.sql`, run the gate, confirm FAIL with
-   diff output showing the added column, restore and re-run
-   handoff to regenerate schema, confirm PASS.
+Deliberate-failure proof:
 
-5. `docs/truth/deferred_proofs.json` entry for `schema-drift`
-   removed. `deferred-proof-registry` gate must pass after removal.
+Introduce a migration change locally (e.g., add a column) without regenerating generated/schema.sql.
 
-6. `docs/truth/completed_items.json` updated with 8.0.2.
-   `docs/truth/qa_claim.json` updated to 8.0.2.
-   `docs/truth/qa_scope_map.json` updated with 8.0.2 entry.
-   `scripts/ci_robot_owned_guard.ps1` updated with 8.0.2 proof
-   log pattern.
+Run the gate → confirm FAIL with diff showing the change.
 
-7. `STUB_GATES_ACTIVE` block reflects remaining active stubs:
-   definer-safety-audit, handoff-idempotency, pgtap,
-   database-tests.yml.
+Run handoff/regeneration to update generated/schema.sql.
 
-**Prerequisite:** 8.0.1 merged and main clean.
+Re-run → confirm PASS.
+Full sequence captured in proof log.
 
-**Proof:** `docs/proofs/8.0.2_schema_drift_conversion_<UTC>.log`
+Required check context is real (string-exact):
 
-**Gate:** `schema-drift` (merge-blocking, now live)
+docs/truth/required_checks.json contains exactly "CI / schema-drift" as a required check, and
 
-**Section 3.0 constraints apply.**
+the workflow job produces that exact check context (job exists and is named so GitHub reports CI / schema-drift).
+If the check context differs by even 1 character, DoD fails.
+
+Registry update: Remove the schema-drift entry from docs/truth/deferred_proofs.json. deferred-proof-registry must pass after removal.
+
+Truth bookkeeping:
+docs/truth/completed_items.json updated with 8.0.2
+docs/truth/qa_claim.json updated to 8.0.2
+docs/truth/qa_scope_map.json updated with 8.0.2 entry
+scripts/ci_robot_owned_guard.ps1 updated with 8.0.2 proof log pattern
+STUB_GATES_ACTIVE reflects remaining stubs: definer-safety-audit, handoff-idempotency, pgtap, database-tests.yml.
+
+Prerequisite: 8.0.1 merged and main clean.
+
+**Proof**: docs/proofs/8.0.2_schema_drift_conversion_<UTC>.log
+
+**Gate**: schema-drift (merge-blocking, now live)
+
+Section 3.0 constraints apply.
 
 ---
 
 ### **8.0.3 — handoff-idempotency Stub Conversion**
 
 **Objective**
-Convert the `handoff-idempotency` merge-blocking gate from a
-db-heavy stub to live execution against the CI database.
+Convert the `handoff-idempotency` merge-blocking gate from a db-heavy stub to live execution against the CI database.
 
 **Context from DEVLOG**
-3.8 confirmed the gate was introduced as a CI-stub: "CI stub
-passes (db-heavy pattern)" (DEVLOG 3.8 DoD item 3). The local
-proof demonstrates zero diffs on a live local DB. The CI gate
-currently passes the stub without running the actual handoff
-cycle. After conversion it will run `npm run handoff` against
-the CI DB and assert zero diffs in the working tree.
+3.8 confirmed the gate was introduced as a CI-stub: "CI stub passes (db-heavy pattern)" (DEVLOG 3.8 DoD item 3). The local proof demonstrates zero diffs on a live local DB. The CI gate currently passes the stub without running the actual handoff cycle. After conversion it will run `npm run handoff` against the CI DB and assert zero diffs in the working tree.
 
 **Deliverable**
-`handoff-idempotency` gate runs the full handoff cycle in CI
-against a live DB and asserts zero diffs.
+`handoff-idempotency` gate runs the full handoff cycle in CI against a live DB and asserts zero diffs.
 
 **DoD (all must be true)**
 
-1. In CI, after clean-room-replay has run, `npm run handoff`
-   is executed. `git status --porcelain` must be empty
-   (zero diffs) on a tree where truth artifacts are already
-   committed.
+1. In CI, after clean-room-replay has run, `npm run handoff` is executed. `git status --porcelain` must be empty (zero diffs) on a tree where truth artifacts are already committed.
 
-2. A second consecutive `npm run handoff` run also produces
-   zero diffs. Both runs are captured in the proof log.
+2. A second consecutive `npm run handoff` run also produces zero diffs. Both runs are captured in the proof log.
 
-3. The db-heavy stub pass-through is removed from the
-   `handoff-idempotency` CI job.
+3. The db-heavy stub pass-through is removed from the `handoff-idempotency` CI job.
 
-4. Gate fails if first or second run produces any diff,
-   printing the diff output.
+4. Gate fails if first or second run produces any diff, printing the diff output.
 
-5. **Deliberate-failure proof required:** Introduce a
-   determinism bug locally (e.g. inject a timestamp into
-   schema output), run the gate, confirm FAIL with diff shown,
-   restore, confirm PASS.
+5. **Deliberate-failure proof required:** Introduce a determinism bug locally (e.g. inject a timestamp into schema output), run the gate, confirm FAIL with diff shown, restore, confirm PASS.
 
-6. `docs/truth/deferred_proofs.json` entry for
-   `handoff-idempotency` removed. `deferred-proof-registry`
-   gate must pass after removal.
+6. `docs/truth/deferred_proofs.json` entry for `handoff-idempotency` removed. `deferred-proof-registry` gate must pass after removal.
 
 7. `docs/truth/completed_items.json` updated with 8.0.3.
    `docs/truth/qa_claim.json` updated to 8.0.3.
