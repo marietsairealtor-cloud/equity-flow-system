@@ -92,6 +92,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/7\.5_product_rls_negative_suite_\d{8}T\d{6}Z\.(log|md)$"){ return "ALLOW:7.5 proof log" }
   if($pp -match "^docs/proofs/7\.6_calc_version_protocol_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.6 proof log" }
   if($pp -match "^docs/proofs/7\.7_studio_mutation_guard_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.7 proof log" }
+  if($pp -match "^docs/proofs/7\.8_role_enforcement_rpc_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.8 proof log" }
   if($pp -match "^docs/truth/calc_version_registry\.json$"){ return "ALLOW:calc_version_registry.json (PR-updated truth file)" }
   if($pp -match "^docs/proofs/2\.16\.5C_foundation_invariants_suite_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.5C proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
