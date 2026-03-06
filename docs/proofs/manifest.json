@@ -131,6 +131,7 @@
     "docs/proofs/7.9_tenant_context_integrity_20260305T182527Z.log": "571fe7b58d3eb7aadb7b9dd2f69aa48a114b641c149a847abf24a3b28881040b",
     "docs/proofs/7.10_tenant_role_ordering_invariant_20260305T235758Z.log": "3ed7b07d786d4e1d30da3d40a813d69443879721de41b14cb85d05c00a8031ee",
     "docs/proofs/7.11_studio_drift_sla_20260306T002506Z.log": "47803f42ff68a1367b6e11c91284803f7e904c3b23712bf20f3ed21ee5934178",
-    "docs/proofs/7.11A_cloud_schema_drift_gate_20260306T015653Z.log": "736dee0e49b18c5e61232082c913fa84cb9838ee020161ec337a1a9514c50d41"
+    "docs/proofs/7.11A_cloud_schema_drift_gate_20260306T015653Z.log": "736dee0e49b18c5e61232082c913fa84cb9838ee020161ec337a1a9514c50d41",
+    "docs/proofs/7.12_rpc_mapping_contract_20260306T152919Z.log": "1d9c4a10d0a099d84b8c54d0e943cbb4b1396f20574f192dfe5f1c366124c771"
   }
 }

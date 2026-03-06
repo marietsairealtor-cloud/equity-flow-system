@@ -241,3 +241,28 @@ No silent fallback.
 
 - Product layer (`products/**`) MUST NOT modify Foundation (`supabase/foundation/**`).
 - Foundation changes ONLY via approved upgrade protocol (governance PR with proof).
+
+---
+
+## 17) Public RPC ↔ Build Route Mapping (ENFORCED)
+
+Every public/app-callable RPC must be registered below with all five required fields.
+Gate fails if any public RPC in the schema is missing from this table or lacks any field.
+Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
+
+### Registered RPCs
+
+| RPC name | Build Route item | Purpose | Security class | Tenancy rule |
+|---|---|---|---|---|
+| create_deal_v1 | 6.6 | Create a new deal with calc_version and assumptions | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| lookup_share_token_v1 | 6.7 | Look up share token and return packet if valid | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+
+### Mapping Rules
+
+- Any PR that adds or modifies a public RPC must update this table in the same PR.
+- Internal helpers are excluded from this table but must be listed in docs/truth/definer_allowlist.json if SECURITY DEFINER.
+- Gate: rpc-mapping-contract (merge-blocking, policy-coupling style).

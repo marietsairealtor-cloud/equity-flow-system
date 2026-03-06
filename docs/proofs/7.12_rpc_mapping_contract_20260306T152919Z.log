@@ -1,0 +1,61 @@
+PROOF_HEAD=7aa852a1e3f0740315704efb9808310f79c122dd
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.12 Public RPC Mapping Contract — Proof Log ===
+Date: 2026-03-06T10:28:40.4125876-05:00
+Branch: 7.12-rpc-mapping-contract
+HEAD: 7aa852a1e3f0740315704efb9808310f79c122dd
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+
+=== DoD: CONTRACTS.md §17 requires mapping fields for each public RPC ===
+247: ## 17) Public RPC ↔ Build Route Mapping (ENFORCED)
+
+=== DoD: All public RPCs have mapping entries ===
+257: | create_deal_v1 | 6.6 | Create a new deal with calc_version and assumptions | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+258: | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+259: | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+260: | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+261: | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+262: | lookup_share_token_v1 | 6.7 | Look up share token and return packet if valid | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+
+=== DoD: Gate script exists ===
+True
+
+=== DoD: Gate runs locally (no migrations changed = PASS) ===
+=== rpc-mapping-contract: Public RPC mapping enforcement ===
+Base ref: origin/main
+Changed files:
+  .github/workflows/ci.yml
+  docs/artifacts/CONTRACTS.md
+  docs/governance/GOVERNANCE_CHANGE_PR082.md
+  docs/handoff_latest.txt
+  docs/truth/qa_claim.json
+  docs/truth/qa_scope_map.json
+  docs/truth/required_checks.json
+  docs/truth/write_path_registry.json
+  generated/contracts.snapshot.json
+  scripts/ci_robot_owned_guard.ps1
+  scripts/ci_rpc_mapping_contract.ps1
+
+No migration changes detected. Skipping RPC mapping check.
+rpc-mapping-contract: PASS
+
+=== DoD: rpc-mapping-contract registered in required_checks.json ===
+189: "name": "CI / rpc-mapping-contract",
+
+=== DoD: rpc-mapping-contract in required.needs ===
+631: needs: [calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract]
+
+=== DoD: ci-semantic-contract PASS ===
+RESULT=PASS
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.12 Public RPC Mapping Contract: PASS
