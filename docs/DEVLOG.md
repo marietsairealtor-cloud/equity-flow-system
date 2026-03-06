@@ -4600,3 +4600,31 @@ DoD
 
 Status
 PASS
+
+---
+
+## 2026-03-06 — Build Route v2.4 — **7.12 Public RPC ↔ Build Route mapping contract**
+
+Objective
+- Public RPC surface stays auditable as it grows in Section 8.
+
+Changes
+- Added §17 Public RPC ↔ Build Route Mapping to docs/artifacts/CONTRACTS.md
+- Registered all 6 public RPCs with required fields: name, Build Route item, purpose, security class, tenancy rule
+- Created scripts/ci_rpc_mapping_contract.ps1 gate script
+- Gate triggers when migrations contain RPC definitions, fails if CONTRACTS.md lacks mapping entry
+- Added CI job rpc-mapping-contract to .github/workflows/ci.yml
+- Registered rpc-mapping-contract in required_checks.json via truth:sync
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Added docs/governance/GOVERNANCE_CHANGE_PR082.md
+
+Proof
+- docs/proofs/7.12_rpc_mapping_contract_20260306T152919Z.log
+
+DoD
+- CONTRACTS.md requires each public RPC entry to include: RPC name + version, Build Route item ID, 1-line purpose, security class, tenancy rule
+- Gate fails if PR adds/changes public RPC entries without mapping fields
+- Gate: rpc-mapping-contract (merge-blocking)
+
+Status
+PASS
