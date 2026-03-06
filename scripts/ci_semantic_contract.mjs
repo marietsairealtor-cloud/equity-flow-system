@@ -127,6 +127,7 @@ function hasAllowlistedGate(cmd){
   const s = cmd.replace(/\r/g,"");
   const allow = [
     /\.?[/\\]scripts[/\\]ci_[A-Za-z0-9_.-]+\.ps1\b/,
+    /\.?[/\\]scripts[/\\]cloud_schema_drift_check\.ps1\b/,
     /\bnode\s+scripts[/\\][A-Za-z0-9_.-]+\.mjs\b/,
     /\bnpm\s+run\s+(truth-bootstrap|env:sanity|stop-the-line|stop-the-line-xor|toolchain:contract|main-moved-guard|truth:sync|entitlement:policy-coupling|foundation:invariants)\b/,
     /\bdocker\s+run\b.*\bgitleaks\b.*\bdetect\b/

@@ -595,8 +595,27 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: ./scripts/ci_calc_version_lint.ps1
+  cloud-schema-drift:
+    name: cloud-schema-drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+      - name: cloud-schema-drift
+        shell: pwsh
+        env:
+          SUPABASE_DB_URL: ${{ secrets.DATABASE_URL }}
+          PATH: /usr/lib/postgresql/17/bin:${{ env.PATH }}
+        run: |
+          pg_dump --version
+          ./scripts/cloud_schema_drift_check.ps1
   required:
-    needs: [calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit]
+    needs: [calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
@@ -605,7 +624,6 @@ jobs:
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
  
-
 
 
 
