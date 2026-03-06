@@ -129,6 +129,7 @@
     "docs/proofs/7.7_studio_mutation_guard_20260305T014727Z.log": "4beed0a8dbaabb194860c3d875e0c9e6de7591177f9e06eaa75adbd48d61ef28",
     "docs/proofs/7.8_role_enforcement_rpc_20260305T150823Z.log": "f21172688393a2c44aabc278a94ffa99025520bd01a8202c7ee075654d1df656",
     "docs/proofs/7.9_tenant_context_integrity_20260305T182527Z.log": "571fe7b58d3eb7aadb7b9dd2f69aa48a114b641c149a847abf24a3b28881040b",
-    "docs/proofs/7.10_tenant_role_ordering_invariant_20260305T235758Z.log": "3ed7b07d786d4e1d30da3d40a813d69443879721de41b14cb85d05c00a8031ee"
+    "docs/proofs/7.10_tenant_role_ordering_invariant_20260305T235758Z.log": "3ed7b07d786d4e1d30da3d40a813d69443879721de41b14cb85d05c00a8031ee",
+    "docs/proofs/7.11_studio_drift_sla_20260306T002506Z.log": "47803f42ff68a1367b6e11c91284803f7e904c3b23712bf20f3ed21ee5934178"
   }
 }
