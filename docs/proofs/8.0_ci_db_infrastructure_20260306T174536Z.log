@@ -1,0 +1,65 @@
+PROOF_HEAD=b90cef85bc433d69d004ee16c9665c689dae24e8
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.0 CI Database Infrastructure — Proof Log ===
+Date: 2026-03-06T12:44:53.6577852-05:00
+Branch: feat/8.0-ci-db-infrastructure
+PR HEAD SHA: b90cef85bc433d69d004ee16c9665c689dae24e8
+
+=== STUB_GATES_ACTIVE ===
+  - gate: db-heavy | conversion_trigger: 8.0
+NOTE: deferred_proofs.json currently records a single umbrella stub entry (db-heavy, conversion_trigger 8.0). Per SOP Rule F, STUB_GATES_ACTIVE reflects repo truth as recorded. Granular conversion-trigger cleanup is out of scope for 8.0.
+
+=== Pre-implementation check ===
+RUNNER_MEMORY: ubuntu-24.04 provides 7GB RAM; Supabase requires ~4GB. Sufficient.
+TOOLCHAIN_PIN: supabase_cli expect=2.76. (prefix match per docs/truth/toolchain.json)
+
+=== DoD 1: ci-db-smoke job exists in ci.yml with supabase start ===
+630: ci-db-smoke:
+650: supabase start
+
+=== DoD 2: Smoke query psql SELECT 1 in job steps ===
+657: PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "SELECT 1 AS db_reachable;"
+668: Write-Host ("PSQL_CHECK=SELECT 1 returned successfully")
+
+=== DoD 3: Version capture step exists ===
+659: - name: Capture versions for proof
+667: Write-Host ("SUPABASE_CLI_VERSION=" + $supaV)
+
+=== DoD 4: deferred_proofs.json NOT touched ===
+Confirmed: deferred_proofs.json not in PR diff.
+
+=== DoD 5: Truth files updated ===
+qa_claim.json:
+{"item":"8.0"}
+
+qa_scope_map.json 8.0 entry:
+301: "8.0": {
+ci_robot_owned_guard.ps1 8.0 pattern:
+if($pp -match "^docs/proofs/8\.0_ci_db_infrastructure_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0 proof log" }
+
+=== DoD 6a: ci-db-smoke in required.needs ===
+Confirmed: ci-db-smoke is in required.needs (line 672)
+
+=== DoD 6b: ci-db-smoke registered in required_checks.json ===
+34: "name": "CI / ci-db-smoke",
+
+=== DoD 6c: Section 3.0 — one enforcement surface ===
+Only new enforcement surface: ci-db-smoke CI job.
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR083.md
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/required_checks.json
+scripts/ci_robot_owned_guard.ps1
+scripts/ci_semantic_contract.mjs
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.0 CI Database Infrastructure: LOCAL PRE-PROOF PASS. Final proof requires CI green on ci-db-smoke job.

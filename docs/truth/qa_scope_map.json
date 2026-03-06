@@ -297,6 +297,9 @@
     },
     "7.12": {
       "proof_pattern": "^docs/proofs/7\\.12_rpc_mapping_contract_"
+    },
+    "8.0": {
+      "proof_pattern": "^docs/proofs/8\\.0_ci_db_infrastructure_"
     }
   }
 }
