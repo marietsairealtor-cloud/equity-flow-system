@@ -4628,3 +4628,29 @@ DoD
 
 Status
 PASS
+
+2026-03-06 — Build Route v2.4 — 8.0 CI Database Infrastructure
+
+Objective
+Prove CI runners can start Supabase and reach a live database. Infrastructure-only. No stub gates converted.
+
+Changes
+- Added ci-db-smoke job to .github/workflows/ci.yml (supabase start + psql SELECT 1 smoke query)
+- Added ci-db-smoke to required.needs (merge-blocking)
+- Added supabase/psql patterns to ci_semantic_contract.mjs allowlist
+- Registered CI / ci-db-smoke in required_checks.json via truth:sync
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Created docs/governance/GOVERNANCE_CHANGE_PR083.md (CI workflow is governance surface)
+
+Proof
+docs/proofs/8.0_ci_db_infrastructure_20260306T173039Z.log
+
+DoD
+1. ci-db-smoke job runs supabase start in CI runner: PASS
+2. psql -c "SELECT 1" smoke query in job steps: PASS
+3. Version capture (runner OS, Node, Supabase CLI) in job steps: PASS
+4. deferred_proofs.json not touched: PASS
+5. qa_claim, qa_scope_map, robot-owned guard updated: PASS
+6. Section 3.0 — one enforcement surface (ci-db-smoke only): PASS
+
+Status: COMPLETE
