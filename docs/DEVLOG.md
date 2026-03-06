@@ -4543,3 +4543,29 @@ Status
 PASS
 
 ---
+---
+
+## 2026-03-05 — Build Route v2.4 — **7.11 Studio drift check SLA + release checklist binding**
+
+Objective
+- Console edits cannot linger unnoticed; drift checks become an operational invariant.
+
+Changes
+- Updated docs/ops/STUDIO_MUTATION_POLICY.md with deploy-triggered drift check SLA and incident-trigger section
+- Created docs/ops/RELEASE_CHECKLIST.md with mandatory drift check checkbox
+- Updated docs/truth/qa_claim.json to 7.11
+- Updated docs/truth/qa_scope_map.json with 7.11 entry
+- Updated scripts/ci_robot_owned_guard.ps1 with 7.11 proof allowlist
+- Added docs/governance/GOVERNANCE_CHANGE_PR077.md
+
+Proof
+- docs/proofs/7.11_studio_drift_sla_20260306T002506Z.log
+
+DoD
+- STUDIO_MUTATION_POLICY.md requires drift check after every deploy (release-triggered) plus incident-trigger if console edits suspected
+- RELEASE_CHECKLIST.md includes mandatory checkbox: run scripts/cloud_schema_drift_check.ps1 and finalize proof
+- Proof log shows PASS run captured and finalized (operator-run)
+- Gate: Operator-run only (no CI job)
+
+Status
+PASS
