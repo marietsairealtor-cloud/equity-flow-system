@@ -1,0 +1,51 @@
+PROOF_HEAD=a4409a9b803153d27dc83522d924bd1236061426
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.10 Tenant Role Ordering Invariant — Proof Log ===
+Date: 2026-03-05T18:57:15.5289723-05:00
+Branch: 7.10-tenant-role-ordering-invariant
+HEAD: a4409a9b803153d27dc83522d924bd1236061426
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD: Enum label ordering — owner < admin < member ===
+{owner,admin,member}
+
+=== DoD: require_min_role_v1() exists with expected signature ===
+require_min_role_v1|p_min tenant_role
+
+=== DoD: Enum ordering numeric proof ===
+owner|1
+admin|2
+member|3
+
+=== DoD: pgTAP tests (all 8 assertions) ===
+Connecting to local database...
+[REDACTED] .. ok
+[REDACTED] .......... ok
+[REDACTED] ............. ok
+[REDACTED] .......... ok
+[REDACTED] .. ok
+[REDACTED] ........... ok
+[REDACTED] .......... ok
+[REDACTED] ...... ok
+[REDACTED] ........ ok
+[REDACTED] .... ok
+[REDACTED] ............ ok
+[REDACTED] ......... ok
+[REDACTED] ............ ok
+[REDACTED] ................ ok
+All tests successful.
+Files=14, Tests=115,  1 wallclock secs ( 0.03 usr  0.02 sys +  0.07 cusr  0.04 csys =  0.16 CPU)
+Result: PASS
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.10 Tenant Role Ordering Invariant: PASS
