@@ -288,6 +288,9 @@
     },
     "7.10": {
       "proof_pattern": "^docs/proofs/7\\.10_tenant_role_ordering_invariant_"
+    },
+    "7.11": {
+      "proof_pattern": "^docs/proofs/7\\.11_studio_drift_sla_"
     }
   }
 }
