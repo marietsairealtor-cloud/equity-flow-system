@@ -4516,3 +4516,30 @@ Section 7 remains closed.
 Section 8 implementation may proceed beginning with **8.0 — CI Database Infrastructure**.
 
 ---
+
+## 2026-03-05 — Build Route v2.4 — **7.10 Freeze tenant_role ordering + role-guard semantics**
+
+Objective
+- Enum ordering cannot silently flip authorization ever again.
+
+Changes
+- Added pgTAP test: supabase/tests/7_10_tenant_role_ordering_invariant.sql (8 assertions)
+- Section 1: Enum exists, exactly 3 labels, exact order owner < admin < member, numeric sort order confirmed
+- Section 2: require_min_role_v1() exists, owner satisfies admin (PASS), admin satisfies admin (PASS), member fails admin (NOT_AUTHORIZED)
+- Updated docs/truth/qa_claim.json to 7.10
+- Updated docs/truth/qa_scope_map.json with 7.10 entry
+- Updated scripts/ci_robot_owned_guard.ps1 with 7.10 proof allowlist
+- Added docs/governance/GOVERNANCE_CHANGE_PR076.md
+
+Proof
+- docs/proofs/7.10_tenant_role_ordering_invariant_20260305T235758Z.log
+
+DoD
+- pgTAP asserts enum labels in exact order: owner < admin < member
+- pgTAP asserts require_min_role_v1() semantics: owner satisfies admin (PASS), admin satisfies admin (PASS), member fails admin (NOT_AUTHORIZED)
+- Gate: pgtap (merge-blocking)
+
+Status
+PASS
+
+---
