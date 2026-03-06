@@ -2833,6 +2833,36 @@ Proof log shows a PASS run captured + finalized (operator-run).
 Proof: docs/proofs/7.11_studio_drift_sla_<UTC>.log
 Gate: Operator-run only (no CI job)
 
+
+### **7.11A — Cloud Schema Drift CI Gate**
+
+**Intent**
+Convert the 7.11 Studio mutation drift check into a mechanically enforced CI invariant.
+Operator-run checks are error-prone; this item installs an automated CI job verifying that the live Supabase cloud schema matches the repository truth artifacts.
+
+**Deliverables**
+
+* Add CI workflow job **cloud-schema-drift** in `.github/workflows/`.
+* Job connects to the Supabase cloud project, extracts the live schema, and compares it against `generated/schema.sql`.
+* Register **cloud-schema-drift** in `docs/truth/required_checks.json`.
+
+**Definition of Done**
+
+* CI workflow `cloud-schema-drift` exists.
+* Job extracts live schema from the cloud project and compares it to `generated/schema.sql`.
+* Any schema drift causes the job to fail.
+* Required check **cloud-schema-drift** appears in GitHub branch protection.
+* CI passes when no drift exists.
+
+**Gate**
+
+* `cloud-schema-drift` (merge-blocking)
+
+**Proof**
+
+`docs/proofs/7.11A_cloud_schema_drift_gate_<UTC>.log` showing schema extraction, comparison execution, and PASS result.
+
+
 ### **7.12 — Public RPC ↔ Build Route mapping rule in CONTRACTS.md (Growth throttle for Section 8) [HARDENED]**
 
 Deliverable: Public RPC surface stays auditable as it grows in Section 8.
