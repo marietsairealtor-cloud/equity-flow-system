@@ -1,6 +1,6 @@
 # Studio Mutation Policy
 
-**Authority:** Build Route v2.4 Item 7.7  
+**Authority:** Build Route v2.4 Items 7.7, 7.11
 **Status:** Enforced — operator acknowledgment required for any exception.
 
 ## Rule
@@ -29,6 +29,28 @@ finalized via `npm run proof:finalize`.
 
 This script is **never run in CI**. Cloud credentials must not be exposed
 in workflow logs. It is operator-run only.
+
+## Deploy-Triggered Drift Check SLA (7.11)
+
+A drift check is **mandatory** after every deploy to the cloud project.
+This is a release-triggered obligation, not optional.
+
+Sequence after every deploy:
+
+1. Run `scripts/cloud_schema_drift_check.ps1` against the live cloud project.
+2. Capture output to a proof log: `docs/proofs/drift_check_<UTC>.log`.
+3. Finalize via `npm run proof:finalize docs/proofs/drift_check_<UTC>.log`.
+4. If drift is detected: stop-the-line immediately. No further deploys until resolved.
+
+## Incident Trigger
+
+If console edits are suspected (e.g., schema objects exist that are not
+present in `generated/schema.sql`, or a team member reports a Studio edit):
+
+1. Run `scripts/cloud_schema_drift_check.ps1` immediately.
+2. If drift is confirmed: open an INCIDENT entry in `docs/threats/INCIDENTS.md`.
+3. Author a compensating migration within 24 hours.
+4. No deploys until the incident is resolved and drift check passes clean.
 
 ## Rationale
 
