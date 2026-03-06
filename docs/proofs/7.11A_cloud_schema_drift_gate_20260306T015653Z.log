@@ -1,0 +1,46 @@
+PROOF_HEAD=2bdd3087085a7c98be5b510926a08782be0fc533
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 7.11A Cloud Schema Drift CI Gate — Proof Log ===
+Date: 2026-03-05T20:56:34.6619759-05:00
+Branch: 7.11A-cloud-schema-drift-gate
+HEAD: 2bdd3087085a7c98be5b510926a08782be0fc533
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+
+=== DoD: CI workflow cloud-schema-drift exists ===
+598: cloud-schema-drift:
+
+=== DoD: Job extracts live schema and compares to generated/schema.sql ===
+616: ./scripts/cloud_schema_drift_check.ps1
+
+=== DoD: cloud-schema-drift registered in required_checks.json ===
+59: "name": "CI / cloud-schema-drift",
+
+=== DoD: cloud-schema-drift in required.needs ===
+618: needs: [calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift]
+
+=== DoD: ci-semantic-contract PASS for cloud-schema-drift ===
+ - CI / cloud-schema-drift
+CHECK CI / cloud-schema-drift
+  JOB_ID: cloud-schema-drift
+
+=== DoD: truth:sync produces no diff ===
+
+> equity-flow-system@0.0.0 truth:sync
+> node scripts/truth_sync_required_checks.mjs
+
+No diff — truth:sync clean
+
+=== DoD: CI passes when no drift exists ===
+CI cloud-schema-drift job: PASS (confirmed via GitHub Actions run)
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+7.11A Cloud Schema Drift CI Gate: PASS

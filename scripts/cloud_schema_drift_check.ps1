@@ -61,6 +61,12 @@ $platformPatterns = @(
   "^REVOKE ALL ON FUNCTION .* FROM PUBLIC",
   "^REVOKE ALL ON TABLE .* FROM PUBLIC",
   "^ALTER DEFAULT PRIVILEGES FOR ROLE",
+  "^ALTER FUNCTION .* OWNER TO",
+  "^\\restrict",
+  "^\\unrestrict",
+  "^SET transaction_timeout",
+  "^ALTER TABLE .* OWNER TO",
+  "^ALTER SEQUENCE .* OWNER TO",
   "^GRANT ALL ON FUNCTION .* TO .*(authenticated|anon)"
 )
 function Remove-PlatformLines([string]$text) {
@@ -78,17 +84,29 @@ Remove-Item $tempSchema -ErrorAction SilentlyContinue
 # Normalize pg_dump version differences (v16 vs v17 quoting/formatting)
 function Normalize-SchemaLine([string]$line) {
   $l = $line.Trim()
+  # Skip pure comment lines (pg_dump version differences in comment placement)
+  if ($l -match '^--') { return $null }
+  # Strip inline trailing comments
+  $l = $l -replace '\s*--[^'']*$', ''
   # Strip unnecessary double-quoting of identifiers (pg_dump v16 quotes, v17 does not)
-  # Matches "identifier" but not string literals inside single quotes
   $l = [regex]::Replace($l, '"([a-zA-Z_][a-zA-Z0-9_]*)"', '$1')
+  # Normalize CREATE OR REPLACE to CREATE (v16 vs v17 differences)
+  $l = $l -replace 'CREATE OR REPLACE FUNCTION', 'CREATE FUNCTION'
+  $l = $l -replace 'CREATE OR REPLACE TRIGGER', 'CREATE TRIGGER'
+  $l = $l -replace 'CREATE OR REPLACE VIEW', 'CREATE VIEW'
+  # Normalize IF NOT EXISTS (local pg_dump may include, cloud may not)
+  $l = $l -replace 'CREATE TABLE IF NOT EXISTS', 'CREATE TABLE'
+  $l = $l -replace 'CREATE SCHEMA IF NOT EXISTS', 'CREATE SCHEMA'
   # Collapse multiple spaces to single space
   $l = [regex]::Replace($l, '\s+', ' ')
+  $l = $l.Trim()
+  if ($l -eq '') { return $null }
   return $l
 }
 
 # Compare as sorted line sets to handle ordering differences
-$localSet = ($local -split "`n" | Where-Object { $_.Trim() -ne "" } | ForEach-Object { Normalize-SchemaLine $_ } | Sort-Object)
-$cloudSet = ($cloud -split "`n" | Where-Object { $_.Trim() -ne "" } | ForEach-Object { Normalize-SchemaLine $_ } | Sort-Object)
+$localSet = ($local -split "`n" | Where-Object { $_.Trim() -ne "" } | ForEach-Object { Normalize-SchemaLine $_ } | Where-Object { $_ -ne $null } | Sort-Object)
+$cloudSet = ($cloud -split "`n" | Where-Object { $_.Trim() -ne "" } | ForEach-Object { Normalize-SchemaLine $_ } | Where-Object { $_ -ne $null } | Sort-Object)
 $localOnly  = $localSet | Where-Object { $cloudSet -notcontains $_ } | Select-Object -First 20
 $cloudOnly  = $cloudSet | Where-Object { $localSet -notcontains $_ } | Select-Object -First 20
 
