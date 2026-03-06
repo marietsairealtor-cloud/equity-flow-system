@@ -75,9 +75,20 @@ $local = Remove-PlatformLines((Get-Content $localSchema -Raw) -replace "`r`n","`
 $cloud = Remove-PlatformLines((Get-Content $tempSchema -Raw) -replace "`r`n","`n" -replace "\s+$","")
 Remove-Item $tempSchema -ErrorAction SilentlyContinue
 
+# Normalize pg_dump version differences (v16 vs v17 quoting/formatting)
+function Normalize-SchemaLine([string]$line) {
+  $l = $line.Trim()
+  # Strip unnecessary double-quoting of identifiers (pg_dump v16 quotes, v17 does not)
+  # Matches "identifier" but not string literals inside single quotes
+  $l = [regex]::Replace($l, '"([a-zA-Z_][a-zA-Z0-9_]*)"', '$1')
+  # Collapse multiple spaces to single space
+  $l = [regex]::Replace($l, '\s+', ' ')
+  return $l
+}
+
 # Compare as sorted line sets to handle ordering differences
-$localSet = ($local -split "`n" | Where-Object { $_.Trim() -ne "" } | Sort-Object)
-$cloudSet = ($cloud -split "`n" | Where-Object { $_.Trim() -ne "" } | Sort-Object)
+$localSet = ($local -split "`n" | Where-Object { $_.Trim() -ne "" } | ForEach-Object { Normalize-SchemaLine $_ } | Sort-Object)
+$cloudSet = ($cloud -split "`n" | Where-Object { $_.Trim() -ne "" } | ForEach-Object { Normalize-SchemaLine $_ } | Sort-Object)
 $localOnly  = $localSet | Where-Object { $cloudSet -notcontains $_ } | Select-Object -First 20
 $cloudOnly  = $cloudSet | Where-Object { $localSet -notcontains $_ } | Select-Object -First 20
 
