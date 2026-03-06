@@ -595,6 +595,19 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: ./scripts/ci_calc_version_lint.ps1
+  rpc-mapping-contract:
+    name: rpc-mapping-contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: rpc-mapping-contract
+        shell: pwsh
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: ./scripts/ci_rpc_mapping_contract.ps1
+
   cloud-schema-drift:
     name: cloud-schema-drift
     runs-on: ubuntu-latest
@@ -615,7 +628,7 @@ jobs:
           pg_dump --version
           ./scripts/cloud_schema_drift_check.ps1
   required:
-    needs: [calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift]
+    needs: [calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)

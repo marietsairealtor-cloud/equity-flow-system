@@ -294,6 +294,9 @@
     },
     "7.11A": {
       "proof_pattern": "^docs/proofs/7\\.11A_cloud_schema_drift_gate_"
+    },
+    "7.12": {
+      "proof_pattern": "^docs/proofs/7\\.12_rpc_mapping_contract_"
     }
   }
 }
