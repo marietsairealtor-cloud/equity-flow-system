@@ -4569,3 +4569,34 @@ DoD
 
 Status
 PASS
+
+---
+
+## 2026-03-05 — Build Route v2.4 — **7.11A Cloud Schema Drift CI Gate**
+
+Objective
+- Convert operator-run studio drift check into a mechanically enforced merge-blocking CI gate.
+
+Changes
+- Added CI job cloud-schema-drift to .github/workflows/ci.yml
+- Job installs PostgreSQL 17 client, runs scripts/cloud_schema_drift_check.ps1 against live cloud DB
+- Registered cloud-schema-drift in docs/truth/required_checks.json and required.needs
+- Added cloud_schema_drift_check.ps1 to ci_semantic_contract.mjs gate allowlist
+- Hardened drift check normalization for pg_dump v16/v17 compatibility: identifier quoting, CREATE OR REPLACE vs CREATE, IF NOT EXISTS, comment stripping, platform line filtering (\restrict, \unrestrict, SET transaction_timeout, OWNER TO)
+- Prerequisite: pushed pending migrations to cloud to resolve real drift (p_tenant_id removal from 7.9)
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Added docs/governance/GOVERNANCE_CHANGE_PR080.md
+
+Proof
+- docs/proofs/7.11A_cloud_schema_drift_gate_20260306T015653Z.log
+
+DoD
+- CI workflow cloud-schema-drift exists
+- Job extracts live schema from cloud project and compares to generated/schema.sql
+- Any schema drift causes job to fail
+- Required check cloud-schema-drift in required_checks.json
+- CI passes when no drift exists
+- Gate: cloud-schema-drift (merge-blocking)
+
+Status
+PASS
