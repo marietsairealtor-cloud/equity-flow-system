@@ -135,6 +135,7 @@
     "docs/proofs/7.12_rpc_mapping_contract_20260306T152919Z.log": "1d9c4a10d0a099d84b8c54d0e943cbb4b1396f20574f192dfe5f1c366124c771",
     "docs/proofs/8.0_ci_db_infrastructure_20260306T174536Z.log": "f5ff78d87abb4e59ca44988bb26fc07484c15dcbc07db05aa978996d11d1ff06",
     "docs/proofs/8.0.1_clean_room_replay_conversion_20260307T001755Z.log": "c6de14be9f41b5250cb594749ac8aa0a948d22d5988ea4bb2ce03689b0d9a313",
-    "docs/proofs/8.0.2_schema_drift_conversion_20260307T013523Z.log": "3cc594313122114788b2cb21ae27b21630f51ea77350a09dea912a9bd70ff3e2"
+    "docs/proofs/8.0.2_schema_drift_conversion_20260307T013523Z.log": "3cc594313122114788b2cb21ae27b21630f51ea77350a09dea912a9bd70ff3e2",
+    "docs/proofs/8.0.3_handoff_idempotency_conversion_20260307T150403Z.log": "8dae2be58241aca1f069a91a922eff68a9cf66d29c7b36e100317ec65153e5c9"
   }
 }
