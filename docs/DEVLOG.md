@@ -4654,3 +4654,33 @@ DoD
 6. Section 3.0 — one enforcement surface (ci-db-smoke only): PASS
 
 Status: COMPLETE
+
+---
+
+## 2026-03-06 — Build Route v2.4 — **8.0.1 Clean-Room Replay Stub Conversion**
+
+Objective
+- Convert clean-room-replay from db-heavy stub to live CI execution against CI database.
+
+Changes
+- Created CI job clean-room-replay running supabase db reset on live CI DB (ubuntu-24.04)
+- Registered clean-room-replay in required_checks.json and required.needs
+- Split deferred_proofs.json umbrella db-heavy entry: removed clean-room-replay, retained umbrella for remaining stubs (schema-drift, handoff-idempotency, definer-safety-audit, pgtap) + database-tests.yml
+- Deliberate-failure proof: syntax error injected → FAIL with migration name in output → restored → PASS
+- CI evidence: clean-room-replay PASS (3m), deferred-proof-registry PASS (7s)
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Added docs/governance/GOVERNANCE_CHANGE_PR084.md
+
+Proof
+- docs/proofs/8.0.1_clean_room_replay_conversion_20260307T001755Z.log
+
+DoD
+- supabase db reset replays all 28 migrations on empty CI DB without error
+- db-heavy stub pattern removed from clean-room-replay job
+- Deliberate-failure proof captured (syntax error → FAIL → restore → PASS)
+- deferred_proofs.json entry removed, deferred-proof-registry PASS
+- STUB_GATES_ACTIVE: db-heavy (8.0.2-8.0.5), database-tests.yml (8.0.5)
+- Gate: clean-room-replay (merge-blocking, now live)
+
+Status
+PASS
