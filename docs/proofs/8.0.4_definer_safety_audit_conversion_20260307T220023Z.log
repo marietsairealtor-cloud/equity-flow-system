@@ -1,0 +1,87 @@
+PROOF_HEAD=875680a5db551964c57756d0ed5c7703d13a8c2b
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.0.4 Definer-Safety-Audit Stub Conversion — Proof Log ===
+Date: 2026-03-07T16:57:54.4960999-05:00
+Branch: feat/8.0.4-definer-safety-audit-conversion
+PR HEAD SHA: 875680a5db551964c57756d0ed5c7703d13a8c2b
+
+=== STUB_GATES_ACTIVE ===
+  - gate: db-heavy | conversion_trigger: 8.0.5
+  - gate: database-tests.yml | conversion_trigger: 8.0.5
+
+=== Prerequisite: 6.2 hardening merged ===
+Build Route 6.2 (SECURITY DEFINER Safety hardened) is merged to main. Confirmed by QA before 8.0.4 opened.
+
+=== DoD 1: Gate queries pg_proc.proconfig on live CI DB ===
+definer-safety-audit job boots Supabase, replays migrations, runs full catalog audit.
+Checks proconfig for search_path, prosrc for dynamic SQL and current_tenant_id().
+  Job definition at line 545: definer-safety-audit:
+
+=== DoD 2: CONTRACTS.md 8 assertions ===
+Gate asserts for every allowlisted SD function:
+  - search_path in pg_proc.proconfig (not prosrc)
+  - no dynamic SQL (EXECUTE / EXECUTE format)
+  - current_tenant_id() call present (tenant membership enforcement)
+
+=== DoD 3: Gate fails naming function and missing requirement ===
+Failure output includes function name and specific check that failed.
+
+=== DoD 4: Helper functions enumerated ===
+Local audit output confirms all SD functions checked with schema-qualified references.
+
+=== DoD 5: Stub removed ===
+  10: # CI stub removed — 8.0.4 conversion. Live DB required.
+
+=== DoD 6: Deliberate-failure proof (full sequence) ===
+Step 1: Temporarily added public.deliberate_fail_definer to definer_allowlist.json
+Step 2: Created temp migration 99990000000000_deliberate_fail_definer.sql
+  Content: CREATE FUNCTION public.deliberate_fail_definer() SECURITY DEFINER — no SET search_path
+Step 3: supabase db reset — applied all migrations including temp
+Step 4: Ran scripts/ci_definer_safety_audit.ps1
+  Result: FAIL [public.deliberate_fail_definer]: pg_proc.proconfig missing search_path entry (found: '')
+Step 5: Removed temp migration
+Step 6: Restored definer_allowlist.json from HEAD
+Step 7: supabase db reset — replayed without temp migration
+Step 8: Ran scripts/ci_definer_safety_audit.ps1 again
+  Result: definer-safety-audit: PASS
+
+=== DoD 7: Registry update ===
+deferred_proofs.json entries after update:
+  - gate: db-heavy | conversion_trigger: 8.0.5
+  - gate: database-tests.yml | conversion_trigger: 8.0.5
+definer-safety-audit removed from umbrella. deferred-proof-registry: PASS.
+
+=== DoD 8: Truth bookkeeping ===
+qa_claim.json:
+{"item":"8.0.4"}
+
+qa_scope_map.json 8.0.4 entry:
+  313: "8.0.4": {
+ci_robot_owned_guard.ps1 8.0.4 pattern:
+if($pp -match "^docs/proofs/8\.0\.4_definer_safety_audit_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.4 proof log" }
+
+=== DoD 9: STUB_GATES_ACTIVE reflects remaining stubs ===
+Remaining: db-heavy (pgtap 8.0.5), database-tests.yml (8.0.5)
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR088.md
+docs/truth/deferred_proofs.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+scripts/ci_definer_safety_audit.ps1
+scripts/ci_robot_owned_guard.ps1
+
+=== CI Evidence ===
+CI / definer-safety-audit = PASS
+CI / deferred-proof-registry = PASS
+CI / required = PASS
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.0.4 Definer-Safety-Audit Stub Conversion: PASS
