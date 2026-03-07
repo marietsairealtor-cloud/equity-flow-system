@@ -15,7 +15,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $env:PGPASSWORD = "postgres"
-if ($IsLinux) {
+if ($env:OS -ne "Windows_NT") {
   $psql = (Get-Command psql -ErrorAction SilentlyContinue).Source
   if (-not $psql) { $psql = "/usr/bin/psql" }
 } else {
