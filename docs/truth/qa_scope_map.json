@@ -309,6 +309,9 @@
     },
     "8.0.3": {
       "proof_pattern": "^docs/proofs/8\\.0\\.3_handoff_idempotency_conversion_"
+    },
+    "8.0.4": {
+      "proof_pattern": "^docs/proofs/8\\.0\\.4_definer_safety_audit_conversion_"
     }
   }
 }

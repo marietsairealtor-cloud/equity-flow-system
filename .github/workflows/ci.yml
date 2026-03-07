@@ -546,9 +546,22 @@ jobs:
     name: definer-safety-audit
     needs: [changes, lane-enforcement]
     if: needs.changes.outputs.docs_only != 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start Supabase and replay migrations
+        shell: bash
+        run: |
+          supabase start
+          supabase db reset
       - name: definer-safety-audit
         shell: pwsh
         run: ./scripts/ci_definer_safety_audit.ps1
