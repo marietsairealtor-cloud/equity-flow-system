@@ -303,6 +303,9 @@
     },
     "8.0.1": {
       "proof_pattern": "^docs/proofs/8\\.0\\.1_clean_room_replay_conversion_"
+    },
+    "8.0.2": {
+      "proof_pattern": "^docs/proofs/8\\.0\\.2_schema_drift_conversion_"
     }
   }
 }

@@ -100,6 +100,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/7\.12_rpc_mapping_contract_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.12 proof log" }
   if($pp -match "^docs/proofs/8\.0_ci_db_infrastructure_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0 proof log" }
   if($pp -match "^docs/proofs/8\.0\.1_clean_room_replay_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.1 proof log" }
+  if($pp -match "^docs/proofs/8\.0\.2_schema_drift_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.2 proof log" }
   if($pp -match "^docs/truth/calc_version_registry\.json$"){ return "ALLOW:calc_version_registry.json (PR-updated truth file)" }
   if($pp -match "^docs/proofs/2\.16\.5C_foundation_invariants_suite_\d{8}T\d{6}Z\.log$"){ return "ALLOW:2.16.5C proof log" }
   if($pp -match "^docs/proofs/5\.0_required_gates_inventory_\d{8}T\d{6}Z\.log$"){ return "ALLOW:5.0 proof log" }
