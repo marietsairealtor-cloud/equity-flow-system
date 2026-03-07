@@ -719,10 +719,16 @@ jobs:
         run: |
           supabase start
           supabase db reset
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
       - name: Dump schema from CI DB
         shell: bash
         run: |
-          PGPASSWORD=postgres pg_dump --schema-only -h 127.0.0.1 -p 54322 -U postgres -d postgres > /tmp/ci_schema.sql
+          /usr/lib/postgresql/17/bin/pg_dump --schema-only -h 127.0.0.1 -p 54322 -U postgres -d postgres > /tmp/ci_schema.sql
       - name: Normalize and diff against generated/schema.sql
         shell: pwsh
         run: |
