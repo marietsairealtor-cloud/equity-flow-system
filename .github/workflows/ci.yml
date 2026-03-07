@@ -668,8 +668,39 @@ jobs:
           Write-Host ("PSQL_CHECK=SELECT 1 returned successfully")
           Write-Host "STATUS: PASS"
 
+  clean-room-replay:
+    name: clean-room-replay
+    needs: [changes, lane-enforcement]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        shell: bash
+        run: supabase start
+
+      - name: Clean-room replay — reset and replay all migrations
+        shell: bash
+        run: |
+          echo "=== clean-room-replay ==="
+          echo "Resetting database and replaying all migrations..."
+          supabase db reset
+          echo "=== Migration list ==="
+          ls -1 supabase/migrations/
+          echo "clean-room-replay completed successfully"
+
   required:
-    needs: [ci-db-smoke, calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract]
+    needs: [ci-db-smoke, clean-room-replay, calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)

@@ -2,8 +2,14 @@
   {
     "_proof_authoring_requirement": "While this registry is non-empty, every proof log finalized via proof:finalize must include a STUB_GATES_ACTIVE block immediately after the PR HEAD SHA line. List every active stub gate by name and conversion_trigger from this file. See SOP_WORKFLOW.md Phase 4 Rule G.",
     "gate": "db-heavy",
-    "stub_reason": "No live Supabase DB available in CI runners; job echoes PASS unconditionally.",
-    "deferred_invariant": "This gate does not currently prove any DB-level correctness or security property.",
-    "conversion_trigger": "8.0"
+    "stub_reason": "Umbrella stub for remaining DB-heavy gates: schema-drift (8.0.2), handoff-idempotency (8.0.3), definer-safety-audit (8.0.4), pgtap + database-tests.yml (8.0.5).",
+    "deferred_invariant": "Schema drift, handoff idempotency, DEFINER safety, and pgTAP tests are not proven in CI.",
+    "conversion_trigger": "8.0.2–8.0.5"
+  },
+  {
+    "gate": "database-tests.yml",
+    "stub_reason": "Workflow does not exist. AUTOMATION.md §2 compliance gap.",
+    "deferred_invariant": "Full DB test suite has never run in CI.",
+    "conversion_trigger": "8.0.5"
   }
 ]
