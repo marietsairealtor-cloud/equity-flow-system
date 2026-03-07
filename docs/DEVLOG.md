@@ -4712,3 +4712,31 @@ DoD
 7. Truth bookkeeping (qa_claim, qa_scope_map, robot-owned guard, required.needs): PASS
 
 Status: COMPLETE
+
+2026-03-07 — Build Route v2.4 — 8.0.3 Handoff-Idempotency Stub Conversion
+
+Objective
+Convert the handoff-idempotency merge-blocking gate from a db-heavy stub to live execution against the CI database.
+
+Changes
+- Removed CI stub block from scripts/ci_handoff_idempotency.ps1
+- Updated handoff-idempotency CI job to boot Supabase, replay migrations, then run the idempotency script
+- Fixed scripts/gen_write_path_registry.ps1 cross-platform psql path (required for handoff to run in Linux CI)
+- Updated deferred_proofs.json: removed handoff-idempotency from db-heavy umbrella (now covers 8.0.4-8.0.5 only)
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Created docs/governance/GOVERNANCE_CHANGE_PR086.md
+
+Proof
+docs/proofs/8.0.3_handoff_idempotency_conversion_20260307T150403Z.log
+
+DoD
+1. npm run handoff in CI with zero diffs: PASS
+2. Second consecutive handoff run zero diffs: PASS
+3. Stub removed from ci_handoff_idempotency.ps1: PASS
+4. Gate fails on diff (script asserts byte-for-byte equality): PASS
+5. Deliberate-failure proof: timestamp injected into gen_schema.ps1, FAIL confirmed, restored, PASS confirmed: PASS
+6. deferred_proofs.json updated, deferred-proof-registry: PASS
+7. Truth bookkeeping: PASS
+8. STUB_GATES_ACTIVE: db-heavy (definer-safety-audit 8.0.4, pgtap 8.0.5), database-tests.yml (8.0.5)
+
+Status: COMPLETE
