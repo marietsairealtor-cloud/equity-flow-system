@@ -7,11 +7,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# --- CI stub ---
-if ($env:CI -eq "true") {
-    Write-Host "definer-safety-audit: CI stub active (no live DB in CI). Registered in deferred_proofs.json. Converts at 8.0.4."
-    exit 0
-}
+# CI stub removed — 8.0.4 conversion. Live DB required.
 
 # --- Locate supabase_db container ---
 $cid = (docker ps --format "{{.ID}} {{.Names}}" | Select-String -Pattern "supabase_db" | Select-Object -First 1)

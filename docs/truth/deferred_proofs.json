@@ -2,9 +2,9 @@
   {
     "_proof_authoring_requirement": "While this registry is non-empty, every proof log finalized via proof:finalize must include a STUB_GATES_ACTIVE block immediately after the PR HEAD SHA line. List every active stub gate by name and conversion_trigger from this file. See SOP_WORKFLOW.md Phase 4 Rule G.",
     "gate": "db-heavy",
-    "stub_reason": "Umbrella stub for remaining DB-heavy gates: definer-safety-audit (8.0.4), pgtap + database-tests.yml (8.0.5).",
-    "deferred_invariant": "DEFINER safety and pgTAP tests are not proven in CI.",
-    "conversion_trigger": "8.0.4–8.0.5"
+    "stub_reason": "Umbrella stub for remaining DB-heavy gates: pgtap + database-tests.yml (8.0.5).",
+    "deferred_invariant": "pgTAP tests are not proven in CI.",
+    "conversion_trigger": "8.0.5"
   },
   {
     "gate": "database-tests.yml",
