@@ -133,6 +133,7 @@
     "docs/proofs/7.11_studio_drift_sla_20260306T002506Z.log": "47803f42ff68a1367b6e11c91284803f7e904c3b23712bf20f3ed21ee5934178",
     "docs/proofs/7.11A_cloud_schema_drift_gate_20260306T015653Z.log": "736dee0e49b18c5e61232082c913fa84cb9838ee020161ec337a1a9514c50d41",
     "docs/proofs/7.12_rpc_mapping_contract_20260306T152919Z.log": "1d9c4a10d0a099d84b8c54d0e943cbb4b1396f20574f192dfe5f1c366124c771",
-    "docs/proofs/8.0_ci_db_infrastructure_20260306T174536Z.log": "f5ff78d87abb4e59ca44988bb26fc07484c15dcbc07db05aa978996d11d1ff06"
+    "docs/proofs/8.0_ci_db_infrastructure_20260306T174536Z.log": "f5ff78d87abb4e59ca44988bb26fc07484c15dcbc07db05aa978996d11d1ff06",
+    "docs/proofs/8.0.1_clean_room_replay_conversion_20260307T001755Z.log": "c6de14be9f41b5250cb594749ac8aa0a948d22d5988ea4bb2ce03689b0d9a313"
   }
 }
