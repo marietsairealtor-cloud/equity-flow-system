@@ -4684,3 +4684,31 @@ DoD
 
 Status
 PASS
+
+2026-03-07 — Build Route v2.4 — 8.0.2 Schema-Drift Stub Conversion
+
+Objective
+Convert the schema-drift merge-blocking gate from a db-heavy stub to live execution against the CI database.
+
+Changes
+- Added schema-drift job to .github/workflows/ci.yml (supabase start, db reset, gen_schema.ps1 dump, byte-for-byte diff against generated/schema.sql)
+- Added schema-drift to required.needs (merge-blocking)
+- Installed PostgreSQL 17 client in clean-room-replay and schema-drift jobs to match Supabase Postgres 17
+- Updated deferred_proofs.json: removed schema-drift from db-heavy umbrella (now covers 8.0.3-8.0.5 only)
+- Registered CI / schema-drift in required_checks.json via truth:sync
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Created docs/governance/GOVERNANCE_CHANGE_PR085.md
+
+Proof
+docs/proofs/8.0.2_schema_drift_conversion_20260307T013523Z.log
+
+DoD
+1. Live DB dump + diff via gen_schema.ps1: PASS (CI green)
+2. Deterministic comparison (LF, UTF-8 no BOM normalization): PASS
+3. Stub removed — schema-drift is live, no echo-stub: PASS
+4. Deliberate-failure proof: FAIL on added column without regen, PASS after restore: PASS
+5. Required check context CI / schema-drift string-exact: PASS
+6. deferred_proofs.json updated, deferred-proof-registry: PASS
+7. Truth bookkeeping (qa_claim, qa_scope_map, robot-owned guard, required.needs): PASS
+
+Status: COMPLETE
