@@ -2,11 +2,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "=== handoff-idempotency gate ==="
 
-if ($env:CI -eq "true") {
-    Write-Host "CI environment detected — gate is local-only (requires live DB). Skipping."
-    Write-Host "STATUS: PASS (stub)"
-    exit 0
-}
+# CI stub removed — 8.0.3 conversion. Live DB required.
 
 # Capture run 1 outputs
 Write-Host "--- Run 1: pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/handoff.ps1 ---"

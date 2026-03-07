@@ -1,0 +1,85 @@
+PROOF_HEAD=b4e725dfbf19ca7d62caed58e89bb7cd14aef576
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.0.3 Handoff-Idempotency Stub Conversion — Proof Log ===
+Date: 2026-03-07T10:00:27.9949586-05:00
+Branch: feat/8.0.3-handoff-idempotency-conversion
+PR HEAD SHA: b4e725dfbf19ca7d62caed58e89bb7cd14aef576
+
+=== STUB_GATES_ACTIVE ===
+  - gate: db-heavy | conversion_trigger: 8.0.4–8.0.5
+  - gate: database-tests.yml | conversion_trigger: 8.0.5
+
+=== DoD 1: npm run handoff in CI with zero diffs ===
+handoff-idempotency job boots Supabase, replays migrations, runs handoff twice.
+  Job definition at line 423: handoff-idempotency:
+CI / handoff-idempotency = PASS (CI green)
+
+=== DoD 2: Second consecutive handoff run produces zero diffs ===
+Script runs handoff twice, compares run 1 vs run 2 outputs.
+CI / handoff-idempotency = PASS (both runs matched)
+
+=== DoD 3: Stub removed ===
+CI stub block removed from scripts/ci_handoff_idempotency.ps1.
+  5: # CI stub removed — 8.0.3 conversion. Live DB required.
+
+=== DoD 4: Gate fails on diff ===
+Script compares run 1 vs run 2 for handoff_latest.txt, schema.sql, contracts.snapshot.json.
+Any mismatch prints DIFF and exits non-zero.
+
+=== DoD 5: Deliberate-failure proof (full sequence) ===
+Step 1: Injected timestamp bug into scripts/gen_schema.ps1
+  Injected: $raw2 = "-- DELIBERATE_BUG timestamp=" + (Get-Date -Format o) + "`n" + $raw2
+  This causes each handoff run to produce a different schema.sql.
+Step 2: Ran scripts/ci_handoff_idempotency.ps1
+  Result: DIFF: generated/schema.sql changed between run 1 and run 2
+  Result: STATUS: FAIL - handoff is not idempotent
+Step 3: Restored gen_schema.ps1 from HEAD
+  git checkout HEAD -- scripts/gen_schema.ps1
+Step 4: Ran scripts/ci_handoff_idempotency.ps1 again
+  Result: STATUS: PASS - handoff is idempotent (second run produced zero diffs)
+
+=== DoD 6: Registry update ===
+deferred_proofs.json entries after update:
+  - gate: db-heavy | conversion_trigger: 8.0.4–8.0.5
+  - gate: database-tests.yml | conversion_trigger: 8.0.5
+handoff-idempotency removed from umbrella. deferred-proof-registry: PASS (CI green).
+
+=== DoD 7: Truth bookkeeping ===
+qa_claim.json:
+{"item":"8.0.3"}
+
+qa_scope_map.json 8.0.3 entry:
+  310: "8.0.3": {
+ci_robot_owned_guard.ps1 8.0.3 pattern:
+if($pp -match "^docs/proofs/8\.0\.3_handoff_idempotency_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.3 proof log" }
+
+=== DoD 8: STUB_GATES_ACTIVE reflects remaining stubs ===
+Remaining: db-heavy (definer-safety-audit 8.0.4, pgtap 8.0.5), database-tests.yml (8.0.5)
+
+=== Additional: cross-platform psql fix (required for gate) ===
+scripts/gen_write_path_registry.ps1 updated to resolve psql cross-platform.
+Without this fix, handoff fails in CI (Linux) due to hardcoded Windows psql path.
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR086.md
+docs/truth/deferred_proofs.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+scripts/ci_handoff_idempotency.ps1
+scripts/ci_robot_owned_guard.ps1
+scripts/gen_write_path_registry.ps1
+
+=== CI Evidence ===
+CI / handoff-idempotency = PASS
+CI / deferred-proof-registry = PASS
+CI / required = PASS
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.0.3 Handoff-Idempotency Stub Conversion: PASS

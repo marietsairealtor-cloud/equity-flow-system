@@ -306,6 +306,9 @@
     },
     "8.0.2": {
       "proof_pattern": "^docs/proofs/8\\.0\\.2_schema_drift_conversion_"
+    },
+    "8.0.3": {
+      "proof_pattern": "^docs/proofs/8\\.0\\.3_handoff_idempotency_conversion_"
     }
   }
 }
