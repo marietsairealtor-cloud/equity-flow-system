@@ -1,0 +1,86 @@
+PROOF_HEAD=58f9f1c5d0d69766bacdcf2239c78d2a8c6f8370
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.0.2 Schema-Drift Stub Conversion — Proof Log ===
+Date: 2026-03-06T20:33:07.0648572-05:00
+Branch: feat/8.0.2-schema-drift-conversion
+PR HEAD SHA: 58f9f1c5d0d69766bacdcf2239c78d2a8c6f8370
+
+=== STUB_GATES_ACTIVE ===
+  - gate: db-heavy | conversion_trigger: 8.0.3–8.0.5
+  - gate: database-tests.yml | conversion_trigger: 8.0.5
+
+=== DoD 1: Live DB dump + diff ===
+schema-drift job runs gen_schema.ps1 against live CI DB post supabase db reset,
+then diffs generated/schema_ci.sql against committed generated/schema.sql byte-for-byte.
+  Job definition at line 702: schema-drift:
+  Schema gen at line 725: pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/gen_schema.ps1 -OutPath generated/schema_ci.sql
+
+=== DoD 2: Deterministic comparison ===
+Uses gen_schema.ps1 normalization (LF, UTF-8 no BOM, strip owner/grants/privileges).
+Byte-for-byte equality check in pwsh. PASS confirmed by CI green.
+
+=== DoD 3: Stub removed ===
+schema-drift is a new live job. No echo-stub. db-heavy umbrella updated to exclude schema-drift.
+
+=== DoD 4: Deliberate-failure proof (full sequence) ===
+Step 1: Created temp migration 99990000000000_deliberate_fail_test.sql
+  Content: ALTER TABLE public.deals ADD COLUMN deliberate_fail_test TEXT;
+Step 2: supabase db reset — applied all migrations including temp
+Step 3: Ran gen_schema.ps1 to regenerate schema from live DB
+Step 4: Diffed against committed generated/schema.sql
+  Result: schema-drift: FAIL — schemas differ (EXPECTED)
+  Diff excerpt: CI line contained: deliberate_fail_test text
+Step 5: Removed temp migration
+Step 6: supabase db reset — replayed without temp migration
+Step 7: Ran gen_schema.ps1, diffed again
+  Result: schema-drift: PASS — schemas match byte-for-byte (EXPECTED)
+
+=== DoD 5: Required check context string-exact ===
+  204: "name": "CI / schema-drift",
+CI job name attribute:
+  703: name: schema-drift
+
+=== DoD 6: Registry update ===
+deferred_proofs.json entries after update:
+  - gate: db-heavy | conversion_trigger: 8.0.3–8.0.5
+  - gate: database-tests.yml | conversion_trigger: 8.0.5
+schema-drift removed from umbrella. deferred-proof-registry: PASS (CI green).
+
+=== DoD 7: Truth bookkeeping ===
+qa_claim.json:
+{"item":"8.0.2"}
+
+qa_scope_map.json 8.0.2 entry:
+  307: "8.0.2": {
+ci_robot_owned_guard.ps1 8.0.2 pattern:
+if($pp -match "^docs/proofs/8\.0\.2_schema_drift_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.2 proof log" }
+schema-drift in required.needs:
+  Confirmed at line 744
+
+=== DoD 7: STUB_GATES_ACTIVE reflects remaining stubs ===
+Remaining: db-heavy (handoff-idempotency 8.0.3, definer-safety-audit 8.0.4, pgtap 8.0.5), database-tests.yml (8.0.5)
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR085.md
+docs/handoff_latest.txt
+docs/truth/deferred_proofs.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/required_checks.json
+docs/truth/write_path_registry.json
+scripts/ci_robot_owned_guard.ps1
+
+=== CI Evidence ===
+CI / schema-drift = PASS
+CI / deferred-proof-registry = PASS
+CI / required = PASS
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.0.2 Schema-Drift Stub Conversion: PASS
