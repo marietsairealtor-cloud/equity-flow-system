@@ -15,7 +15,12 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $env:PGPASSWORD = "postgres"
-$psql = "C:\Program Files\PostgreSQL\16\bin\psql.exe"
+if ($IsLinux) {
+  $psql = (Get-Command psql -ErrorAction SilentlyContinue).Source
+  if (-not $psql) { $psql = "/usr/bin/psql" }
+} else {
+  $psql = "C:\Program Files\PostgreSQL\16\bin\psql.exe"
+}
 
 function Invoke-Query {
   param([string]$Sql)
