@@ -719,31 +719,25 @@ jobs:
         run: |
           supabase start
           supabase db reset
-      - name: Install PostgreSQL 17 client
-        run: |
-          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-17
-      - name: Dump schema from CI DB
-        shell: bash
-        run: |
-          /usr/lib/postgresql/17/bin/pg_dump --schema-only -h 127.0.0.1 -p 54322 -U postgres -d postgres > /tmp/ci_schema.sql
-      - name: Normalize and diff against generated/schema.sql
+      - name: Regenerate schema from live CI DB
         shell: pwsh
         run: |
-          $ci = [System.IO.File]::ReadAllText("/tmp/ci_schema.sql")
-          $ci = $ci.Replace("`r`n", "`n")
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/gen_schema.ps1 -OutPath generated/schema_ci.sql
+      - name: Diff CI schema against committed schema
+        shell: pwsh
+        run: |
+          $ci = [System.IO.File]::ReadAllText("generated/schema_ci.sql")
           $repo = [System.IO.File]::ReadAllText("generated/schema.sql")
-          $repo = $repo.Replace("`r`n", "`n")
           if($ci -eq $repo) {
-            Write-Host "schema-drift: PASS — schemas match"
+            Write-Host "schema-drift: PASS — schemas match byte-for-byte"
             exit 0
           } else {
             Write-Host "schema-drift: FAIL — schemas differ"
-            Set-Content -Path /tmp/ci_schema_normalized.sql -Value $ci -NoNewline
-            Set-Content -Path /tmp/repo_schema_normalized.sql -Value $repo -NoNewline
-            & diff /tmp/ci_schema_normalized.sql /tmp/repo_schema_normalized.sql | Select-Object -First 50
+            Write-Host "--- diff (first 80 lines) ---"
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            [System.IO.File]::WriteAllText("/tmp/ci.sql", $ci, $utf8NoBom)
+            [System.IO.File]::WriteAllText("/tmp/repo.sql", $repo, $utf8NoBom)
+            & diff /tmp/ci.sql /tmp/repo.sql | Select-Object -First 80
             exit 1
           }
   required:
