@@ -1,5 +1,5 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 0c363bb
+HEAD: 5a76502
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json

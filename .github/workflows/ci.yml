@@ -699,8 +699,49 @@ jobs:
           ls -1 supabase/migrations/
           echo "clean-room-replay completed successfully"
 
+  schema-drift:
+    name: schema-drift
+    needs: [changes, lane-enforcement]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start Supabase and replay migrations
+        shell: bash
+        run: |
+          supabase start
+          supabase db reset
+      - name: Regenerate schema from live CI DB
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/gen_schema.ps1 -OutPath generated/schema_ci.sql
+      - name: Diff CI schema against committed schema
+        shell: pwsh
+        run: |
+          $ci = [System.IO.File]::ReadAllText("generated/schema_ci.sql")
+          $repo = [System.IO.File]::ReadAllText("generated/schema.sql")
+          if($ci -eq $repo) {
+            Write-Host "schema-drift: PASS — schemas match byte-for-byte"
+            exit 0
+          } else {
+            Write-Host "schema-drift: FAIL — schemas differ"
+            Write-Host "--- diff (first 80 lines) ---"
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            [System.IO.File]::WriteAllText("/tmp/ci.sql", $ci, $utf8NoBom)
+            [System.IO.File]::WriteAllText("/tmp/repo.sql", $repo, $utf8NoBom)
+            & diff /tmp/ci.sql /tmp/repo.sql | Select-Object -First 80
+            exit 1
+          }
   required:
-    needs: [ci-db-smoke, clean-room-replay, calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract]
+    needs: [ci-db-smoke, clean-room-replay, schema-drift, calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
