@@ -4740,3 +4740,34 @@ DoD
 8. STUB_GATES_ACTIVE: db-heavy (definer-safety-audit 8.0.4, pgtap 8.0.5), database-tests.yml (8.0.5)
 
 Status: COMPLETE
+
+2026-03-07 — Build Route v2.4 — 8.0.4 Definer-Safety-Audit Stub Conversion
+
+Objective
+Convert the definer-safety-audit merge-blocking gate from a db-heavy stub to live catalog queries against the CI database, implementing the full 6.2 hardening spec.
+
+Changes
+- Removed CI stub block from scripts/ci_definer_safety_audit.ps1
+- Updated definer-safety-audit CI job to boot Supabase, replay migrations, then run full catalog audit
+- Gate queries pg_proc.proconfig for search_path, prosrc for dynamic SQL and current_tenant_id()
+- Updated deferred_proofs.json: removed definer-safety-audit from db-heavy umbrella (now covers pgtap 8.0.5 only)
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Created docs/governance/GOVERNANCE_CHANGE_PR088.md
+
+Proof
+docs/proofs/8.0.4_definer_safety_audit_conversion_20260307T220023Z.log
+
+DoD
+1. Gate queries pg_proc.proconfig on live CI DB: PASS
+2. CONTRACTS.md §8 assertions (search_path, no dynamic SQL, tenant membership): PASS
+3. Gate fails naming function and missing requirement: PASS
+4. Helper functions enumerated: PASS
+5. Stub removed: PASS
+6. Deliberate-failure proof: SD function without SET search_path, FAIL on proconfig missing search_path, restored, PASS: PASS
+7. deferred_proofs.json updated, deferred-proof-registry: PASS
+8. Truth bookkeeping: PASS
+9. STUB_GATES_ACTIVE: db-heavy (pgtap 8.0.5), database-tests.yml (8.0.5)
+
+Prerequisite: 6.2 hardening merged to main — confirmed.
+
+Status: COMPLETE
