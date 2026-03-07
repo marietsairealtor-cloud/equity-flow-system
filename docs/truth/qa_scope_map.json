@@ -300,6 +300,9 @@
     },
     "8.0": {
       "proof_pattern": "^docs/proofs/8\\.0_ci_db_infrastructure_"
+    },
+    "8.0.1": {
+      "proof_pattern": "^docs/proofs/8\\.0\\.1_clean_room_replay_conversion_"
     }
   }
 }

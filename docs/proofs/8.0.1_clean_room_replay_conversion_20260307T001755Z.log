@@ -1,0 +1,96 @@
+PROOF_HEAD=8d391cfbb2d6b679debf82277bae772ccbbc0b1d
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.0.1 Clean-Room Replay Stub Conversion — Proof Log ===
+Date: 2026-03-06T19:17:44.2774581-05:00
+Branch: 8.0.1-clean-room-replay-conversion
+HEAD: 8d391cfbb2d6b679debf82277bae772ccbbc0b1d
+
+=== STUB_GATES_ACTIVE ===
+  - gate: db-heavy | conversion_trigger: 8.0.2-8.0.5
+    (covers: schema-drift, handoff-idempotency, definer-safety-audit, pgtap)
+  - gate: database-tests.yml | conversion_trigger: 8.0.5
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: clean-room-replay CI job runs supabase db reset ===
+671: clean-room-replay:
+697: supabase db reset
+
+=== DoD 2: stub pattern removed from clean-room-replay ===
+clean-room-replay is a new live job running supabase db reset. No echo-stub pattern.
+
+=== DoD 3: Migration list ===
+20260218000001_ensure_pgcrypto.sql
+20260219000000_baseline_tenants.sql
+20260219000001_baseline_tenant_memberships.sql
+20260219000002_baseline_user_profiles.sql
+20260219000003_baseline_deals.sql
+20260219000004_default_acl_lockdown.sql
+20260219000005_privilege_remediation.sql
+20260219000006_rls_colocation_corrective.sql
+20260219000007_tenant_rls_policies.sql
+20260219000008_fix_current_tenant_id.sql
+20260219000009_revoke_deals_direct_grants.sql
+20260219000010_deals_rpc_surface.sql
+20260219000011_deals_rpc_grants.sql
+20260219000012_product_core_tables.sql
+20260219000013_deals_update_rpc.sql
+20260219000014_deals_snapshot_reference.sql
+20260219000015_deals_create_rpc_v2.sql
+20260219000016_deals_snapshot_trigger_enforcement.sql
+20260219000017_revoke_core_table_grants.sql
+20260219000018_share_tokens.sql
+20260219000019_share_link_rpc.sql
+20260219000020_6_8_tenant_role_model.sql
+20260219000021_6_9_activity_log.sql
+20260219000022_share_tokens_fix_gen_random_bytes.sql
+20260301000000_activity_log_append_only.sql
+20260302000000_6_11_role_guard_helper.sql
+20260304000000_7_4_entitlement_truth.sql
+20260304000001_7_8_fix_role_guard_comparison.sql
+20260305000000_7_9_remove_tenant_id_params.sql
+
+=== DoD 3: Local replay proof ===
+(Full local replay captured in prior WORKING.log iteration — all 28 migrations applied successfully)
+
+=== DoD 4: Deliberate-failure proof ===
+(Captured in prior iteration — syntax error injected into 20260305000000_7_9_remove_tenant_id_params.sql)
+  FAIL: ERROR: syntax error at or near SYNTAX (SQLSTATE 42601) — migration name in output
+  Restored → PASS: all migrations applied successfully
+
+=== DoD 5: deferred_proofs.json updated ===
+clean-room-replay entry: REMOVED (umbrella db-heavy retained for remaining stubs)
+Remaining entries:
+"gate": "db-heavy",
+"gate": "database-tests.yml",
+
+=== DoD 6: Truth files updated ===
+qa_claim.json:
+{"item":"8.0.1"}
+qa_scope_map.json 8.0.1 entry:
+"8.0.1": {
+ci_robot_owned_guard.ps1 8.0.1 pattern:
+if($pp -match "^docs/proofs/8\.0\.1_clean_room_replay_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.1 proof log" }
+clean-room-replay in required_checks.json:
+"name": "CI / clean-room-replay",
+clean-room-replay in required.needs:
+703: found
+
+=== DoD 7: STUB_GATES_ACTIVE reflects remaining stubs ===
+Remaining: db-heavy (schema-drift, handoff-idempotency, definer-safety-audit, pgtap), database-tests.yml
+
+=== CI Evidence ===
+CI / clean-room-replay = PASS (Successful in 3m)
+CI / deferred-proof-registry = PASS (Successful in 7s)
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.0.1 Clean-Room Replay Stub Conversion: PASS
