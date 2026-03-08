@@ -318,6 +318,9 @@
     },
     "8.1": {
       "proof_pattern": "^docs/proofs/8\\.1_clean_room_replay_"
+    },
+    "8.2": {
+      "proof_pattern": "^docs/proofs/8\\.2_clean_room_tests_"
     }
   }
 }
