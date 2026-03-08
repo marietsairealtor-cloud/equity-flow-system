@@ -4822,3 +4822,37 @@ Notes
 - DoD was not adjusted downward — script was extended instead.
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-07 — Build Route v2.4 — Item 8.1
+
+Objective
+Prove local clean-room replay is deterministic. Empty local DB replays
+all migrations in order and succeeds.
+
+Changes
+- docs/truth/qa_claim.json: updated to 8.1.
+- docs/truth/qa_scope_map.json: added 8.1 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.1 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR090.md: governance justification.
+
+Proof
+docs/proofs/8.1_clean_room_replay_20260308T015636Z.log
+
+DoD
+- Empty local DB replays all 29 migrations in order: VERIFIED
+- All 29 migrations confirmed in schema_migrations table via direct
+  DB query after supabase db reset: VERIFIED
+- Replay is deterministic: VERIFIED
+- Gate: clean-room-replay (merge-blocking, live from 8.0.1): PASS
+
+Notes
+- supabase db reset exits with 502 on Windows/Docker due to storage
+  container restart timing after migration replay. This is not a
+  migration failure — all CommandComplete acknowledgements received
+  before restart attempt. DB state is ReadyForQuery after last migration.
+- Primary proof evidence is direct DB-level query of
+  supabase_migrations.schema_migrations (29 rows confirmed).
+- QA approved with this evidence.
+
+Status: COMPLETE — merged to main
