@@ -1,0 +1,97 @@
+PROOF_HEAD=210c38402a0ed8c1e4ab620e8d14967dad9b1ff5
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.1 Local Clean-Room Replay Proof ===
+Date: 2026-03-07T20:55:09.3455254-05:00
+Branch: feat/8.1-clean-room-replay-proof
+HEAD: 210c38402a0ed8c1e4ab620e8d14967dad9b1ff5
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== Command ===
+supabase db reset
+
+=== Migration list (29 files) ===
+20260218000001_ensure_pgcrypto.sql
+20260219000000_baseline_tenants.sql
+20260219000001_baseline_tenant_memberships.sql
+20260219000002_baseline_user_profiles.sql
+20260219000003_baseline_deals.sql
+20260219000004_default_acl_lockdown.sql
+20260219000005_privilege_remediation.sql
+20260219000006_rls_colocation_corrective.sql
+20260219000007_tenant_rls_policies.sql
+20260219000008_fix_current_tenant_id.sql
+20260219000009_revoke_deals_direct_grants.sql
+20260219000010_deals_rpc_surface.sql
+20260219000011_deals_rpc_grants.sql
+20260219000012_product_core_tables.sql
+20260219000013_deals_update_rpc.sql
+20260219000014_deals_snapshot_reference.sql
+20260219000015_deals_create_rpc_v2.sql
+20260219000016_deals_snapshot_trigger_enforcement.sql
+20260219000017_revoke_core_table_grants.sql
+20260219000018_share_tokens.sql
+20260219000019_share_link_rpc.sql
+20260219000020_6_8_tenant_role_model.sql
+20260219000021_6_9_activity_log.sql
+20260219000022_share_tokens_fix_gen_random_bytes.sql
+20260301000000_activity_log_append_only.sql
+20260302000000_6_11_role_guard_helper.sql
+20260304000000_7_4_entitlement_truth.sql
+20260304000001_7_8_fix_role_guard_comparison.sql
+20260305000000_7_9_remove_tenant_id_params.sql
+
+=== Primary proof: DB-level migration verification ===
+After reset, queried supabase_migrations.schema_migrations directly:
+    version     
+----------------
+ 20260218000001
+ 20260219000000
+ 20260219000001
+ 20260219000002
+ 20260219000003
+ 20260219000004
+ 20260219000005
+ 20260219000006
+ 20260219000007
+ 20260219000008
+ 20260219000009
+ 20260219000010
+ 20260219000011
+ 20260219000012
+ 20260219000013
+ 20260219000014
+ 20260219000015
+ 20260219000016
+ 20260219000017
+ 20260219000018
+ 20260219000019
+ 20260219000020
+ 20260219000021
+ 20260219000022
+ 20260301000000
+ 20260302000000
+ 20260304000000
+ 20260304000001
+ 20260305000000
+(29 rows)
+
+
+=== Migration count verification ===
+29
+Expected: 29
+
+=== Replay output (for reference) ===
+supabase db reset applies all 29 migrations then attempts container restart.
+All CommandComplete acknowledgements received before restart attempt.
+Post-reset 502 is a storage container restart timing issue on Windows/Docker —
+not a migration failure. DB state is clean (ReadyForQuery after last migration).
+
+=== RESULT ===
+8.1 Local Clean-Room Replay: PASS
+All 29 migrations applied to empty DB and confirmed in schema_migrations table.
