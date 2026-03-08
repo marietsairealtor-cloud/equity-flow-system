@@ -4878,3 +4878,28 @@ DoD
 - Gate: pgtap (merge-blocking, live from 8.0.5): PASS
 
 Status: COMPLETE
+
+2026-03-08 — Build Route v2.4 — 8.3 Cloud Migration Parity Guard
+
+Objective
+Pin cloud project ref and migration tip in truth files. Guard proves cloud tip equals pinned tip and fails on mismatch.
+
+Changes
+- Created docs/truth/cloud_migration_parity.json pinning cloud project ref (upnelewdvbicxvfgzojg), migration tip (20260305000000), and count (29)
+- Created scripts/cloud_migration_parity_check.ps1 — queries cloud DB for applied migrations, compares against pinned truth
+- Added cloud-migration-parity lane-only CI job to ci.yml (not in required.needs)
+- Registered in docs/truth/lane_checks.json under cloud lane
+- Triple registration for cloud_migration_parity.json: (a) robot-owned guard, (b) truth-bootstrap, (c) handoff — EXEMPT (hand-authored, section 3.0.4c)
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Created docs/governance/GOVERNANCE_CHANGE_PR092.md
+
+Proof
+docs/proofs/8.3_cloud_migration_parity_20260308T150955Z.log
+
+DoD
+- Cloud project ref + migration tip pinned in truth file: PASS
+- Guard proves cloud tip equals pinned tip: PASS
+- Guard fails on mismatch (exits non-zero with specific diff): PASS
+- Gate: lane-only cloud-migration-parity: PASS
+
+Status: COMPLETE
