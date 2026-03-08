@@ -4856,3 +4856,25 @@ Notes
 - QA approved with this evidence.
 
 Status: COMPLETE — merged to main
+
+2026-03-08 — Build Route v2.4 — 8.2 Local DB Tests Proof (pgTAP)
+
+Objective
+Prove pgTAP tests pass after clean-room replay on local DB.
+
+Changes
+- docs/truth/qa_claim.json: updated to 8.2
+- docs/truth/qa_scope_map.json: added 8.2 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.2 proof log pattern
+- docs/governance/GOVERNANCE_CHANGE_PR091.md: governance justification
+
+Proof
+docs/proofs/8.2_clean_room_tests_20260308T125535Z.log
+
+DoD
+- npx supabase test db passes after clean-room replay: PASS
+- Files=14, Tests=115, Result: PASS
+- Proof contains test output and versions: PASS
+- Gate: pgtap (merge-blocking, live from 8.0.5): PASS
+
+Status: COMPLETE
