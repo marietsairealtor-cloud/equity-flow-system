@@ -4771,3 +4771,54 @@ DoD
 Prerequisite: 6.2 hardening merged to main — confirmed.
 
 Status: COMPLETE
+
+---
+2026-03-07 — Build Route v2.4 — Item 8.0.5
+
+Objective
+Convert the db-heavy stub gate to live pgTAP execution. Create
+database-tests.yml CI workflow to close the AUTOMATION.md §2 compliance
+gap. Remove both deferred_proofs.json entries. No stubs remain after
+this item.
+
+Changes
+- .github/workflows/ci.yml: replaced db-heavy stub echo with live
+  supabase test db execution. Added db-heavy to required.needs so
+  truth_sync derives it as a required check.
+- .github/workflows/database-tests.yml: already existed with correct
+  structure (supabase start + supabase test db). No changes needed.
+- scripts/truth_sync_required_checks.mjs: extended to also read
+  database-tests.yml and derive required checks from all jobs with
+  steps. Enables "database-tests / pgtap" to appear in
+  required_checks.json as a machine-derived entry.
+- docs/truth/required_checks.json: now includes "database-tests / pgtap"
+  (derived by extended truth_sync script).
+- docs/truth/deferred_proofs.json: cleared — both entries removed
+  (db-heavy, database-tests.yml). Registry is now empty.
+- docs/truth/qa_claim.json: updated to 8.0.5.
+- docs/truth/qa_scope_map.json: added 8.0.5 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.0.5 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR089.md: governance justification.
+
+Proof
+docs/proofs/8.0.5_pgtap_conversion_20260308T003031Z.log
+
+DoD
+- database-tests.yml exists with correct trigger + steps: VERIFIED
+- GUARDRAILS §25-28 audit — all 14 pgTAP files: PASS, no violations
+- Full pgTAP suite passes (Files=14, Tests=115): VERIFIED
+- db-heavy stub removed (no "skipped on docs-only" in ci.yml): VERIFIED
+- required_checks.json includes "database-tests / pgtap": VERIFIED
+- Deliberate-failure proof: FAIL confirmed, restore confirmed PASS
+- deferred_proofs.json cleared — both entries removed: VERIFIED
+- STUB_GATES_ACTIVE block no longer required in future proof logs
+- completed_items.json: file removed, completion tracked via DEVLOG
+- green:twice, pr:preflight: PASS
+
+Notes
+- truth_sync_required_checks.mjs extension was required because the
+  script previously only read ci.yml. database-tests / pgtap lives in
+  a separate workflow and cannot be derived from ci.yml alone.
+- DoD was not adjusted downward — script was extended instead.
+
+Status: COMPLETE — merged to main
