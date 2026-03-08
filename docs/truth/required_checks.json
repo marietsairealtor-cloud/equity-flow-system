@@ -254,6 +254,11 @@
       "name": "CI / waiver-rate-limit",
       "type": "github_status",
       "required": true
+    },
+    {
+      "name": "database-tests / pgtap",
+      "type": "github_status",
+      "required": true
     }
   ]
 }
