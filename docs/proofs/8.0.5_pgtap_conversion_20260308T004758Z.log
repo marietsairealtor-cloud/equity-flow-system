@@ -1,0 +1,121 @@
+PROOF_HEAD=64dcd762209e74ef4f0691e40300a6ab2b6b0ca4
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.0.5 pgTAP + database-tests.yml Stub Conversion — Proof Log ===
+Date: 2026-03-07T19:47:49.7503325-05:00
+Branch: feat/8.0.5-pgtap-conversion
+HEAD: 64dcd762209e74ef4f0691e40300a6ab2b6b0ca4
+
+=== STUB_GATES_ACTIVE ===
+NONE — deferred_proofs.json cleared in this PR. No stubs remain.
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: database-tests.yml exists with correct structure ===
+name: database-tests
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  pgtap:
+    name: pgtap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local
+        run: supabase start
+
+      - name: Run pgTAP tests
+        run: supabase test db
+
+  postgrest-isolation:
+    name: postgrest-isolation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local
+        run: supabase start
+
+      - name: Run PostgREST isolation tests
+        run: node scripts/test_postgrest_isolation.mjs
+
+=== DoD 2: GUARDRAILS §25-28 audit — all pgTAP files ===
+DO blocks found:
+Backslash lines found:
+Missing plan():
+Missing finish():
+GUARDRAILS audit: PASS — no violations found
+
+=== DoD 3: Full pgTAP suite passes ===
+Connecting to local database...
+  6.10_activity_log_append_only.pgtap.sql .. ok
+  6_11_role_guard_helper.test.sql .......... ok
+  6_8_seat_role_model.test.sql ............. ok
+  6_9_foundation_surface.test.sql .......... ok
+  7_10_tenant_role_ordering_invariant.sql .. ok
+  7_4_entitlement_truth.test.sql ........... ok
+  7_5_rls_negative_suite.test.sql .......... ok
+  7_6_calc_version_protocol.pgtap.sql ...... ok
+  7_8_role_enforcement_rpc.test.sql ........ ok
+  7_9_tenant_context_integrity.test.sql .... ok
+  rls_structural_audit.test.sql ............ ok
+  row_version_concurrency.test.sql ......... ok
+  share_link_isolation.test.sql ............ ok
+  tenant_isolation.test.sql ................ ok
+All tests successful.
+Files=14, Tests=115,  0 wallclock secs ( 0.03 usr  0.02 sys +  0.05 cusr  0.06 csys =  0.16 CPU)
+Result: PASS
+
+=== DoD 4: db-heavy stub removed ===
+grep result: no matches found for "skipped on docs-only" in ci.yml — stub removed (CONFIRMED)
+db-heavy job now runs live supabase test db:
+113: run: supabase test db
+
+=== DoD 5: required_checks.json updated ===
+"name": "database-tests / pgtap",
+
+=== DoD 6: Deliberate-failure proof ===
+Added: SELECT ok(false, 'deliberate fail 8.0.5') to tenant_isolation.test.sql
+Result: FAIL — Failed test 14: deliberate fail 8.0.5 (CONFIRMED)
+Restored: line removed
+Result: PASS — Files=14, Tests=115 (CONFIRMED)
+
+=== DoD 7: deferred_proofs.json cleared ===
+[]
+
+=== DoD 8: STUB_GATES_ACTIVE removed from future proof logs ===
+deferred_proofs.json is now empty. No stubs remain. STUB_GATES_ACTIVE
+block is no longer required in proof logs after this item merges.
+
+=== DoD 9: completed_items.json ===
+File removed — item completion tracked via DEVLOG per current practice.
+
+=== Phase 3 verification ===
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.0.5 pgTAP + database-tests.yml Stub Conversion: PASS

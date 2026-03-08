@@ -94,6 +94,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/7\.7_studio_mutation_guard_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.7 proof log" }
   if($pp -match "^docs/proofs/7\.8_role_enforcement_rpc_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.8 proof log" }
   if($pp -match "^docs/proofs/7\.9_tenant_context_integrity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.9 proof log" }
+  if($pp -match "^docs/proofs/8\.0\.5_pgtap_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.5 proof log" }
   if($pp -match "^docs/proofs/7\.10_tenant_role_ordering_invariant_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.10 proof log" }
   if($pp -match "^docs/proofs/7\.11_studio_drift_sla_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.11 proof log" }
   if($pp -match "^docs/proofs/7\.11A_cloud_schema_drift_gate_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.11A proof log" }

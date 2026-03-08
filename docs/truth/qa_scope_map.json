@@ -312,6 +312,9 @@
     },
     "8.0.4": {
       "proof_pattern": "^docs/proofs/8\\.0\\.4_definer_safety_audit_conversion_"
+    },
+    "8.0.5": {
+      "proof_pattern": "^docs/proofs/8\\.0\\.5_pgtap_conversion_"
     }
   }
 }
