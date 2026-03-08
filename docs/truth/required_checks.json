@@ -71,6 +71,11 @@
       "required": true
     },
     {
+      "name": "CI / db-heavy",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / deferred-proof-registry",
       "type": "github_status",
       "required": true
