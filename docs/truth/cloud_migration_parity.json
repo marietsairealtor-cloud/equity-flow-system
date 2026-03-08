@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "cloud_project_ref": "upnelewdvbicxvfgzojg",
+  "migration_tip": "20260305000000",
+  "migration_tip_file": "20260305000000_7_9_remove_tenant_id_params.sql",
+  "migration_count": 29,
+  "pinned_at": "2026-03-08"
+}

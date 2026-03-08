@@ -18,6 +18,7 @@ const required = [
   "docs/truth/privilege_truth.json",
   "docs/truth/calc_version_registry.json",
   "docs/truth/ci_execution_surface.json",
+  "docs/truth/cloud_migration_parity.json",
   "docs/truth/qa_requirements.schema.json",
   "docs/truth/qa_scope_map.json",
   "docs/truth/qa_claim.json",

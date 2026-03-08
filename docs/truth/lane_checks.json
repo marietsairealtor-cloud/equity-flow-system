@@ -1,1 +1,12 @@
-{"lanes":[{"lane":"handoff","checks":[]}]}
+{
+  "lanes": [
+    {
+      "lane": "handoff",
+      "checks": []
+    },
+    {
+      "lane": "cloud",
+      "checks": ["CI / cloud-migration-parity"]
+    }
+  ]
+}

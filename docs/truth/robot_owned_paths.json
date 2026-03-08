@@ -1,1 +1,10 @@
-{"version":1,"paths":["docs/handoff_latest.txt","generated/**","docs/proofs/**","docs/truth/calc_version_registry.json"]}
+{
+  "version": 1,
+  "paths": [
+    "docs/handoff_latest.txt",
+    "generated/**",
+    "docs/proofs/**",
+    "docs/truth/calc_version_registry.json",
+    "docs/truth/cloud_migration_parity.json"
+  ]
+}
