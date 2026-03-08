@@ -321,6 +321,9 @@
     },
     "8.2": {
       "proof_pattern": "^docs/proofs/8\\.2_clean_room_tests_"
+    },
+    "8.3": {
+      "proof_pattern": "^docs/proofs/8\\.3_cloud_migration_parity_"
     }
   }
 }

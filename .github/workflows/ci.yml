@@ -643,6 +643,18 @@ jobs:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: ./scripts/ci_rpc_mapping_contract.ps1
 
+  cloud-migration-parity:
+    name: cloud-migration-parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL 16 client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: cloud-migration-parity
+        shell: pwsh
+        env:
+          SUPABASE_DB_URL: ${{ secrets.DATABASE_URL }}
+        run: ./scripts/cloud_migration_parity_check.ps1
   cloud-schema-drift:
     name: cloud-schema-drift
     runs-on: ubuntu-latest

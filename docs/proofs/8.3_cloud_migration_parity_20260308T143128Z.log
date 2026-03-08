@@ -1,0 +1,83 @@
+PROOF_HEAD=87685eb721c52d4f3ed497868587ca84d5b60097
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.3 Cloud Migration Parity Guard — Proof Log ===
+Date: 2026-03-08T10:27:50.6618737-04:00
+Branch: feat/8.3-cloud-migration-parity
+PR HEAD SHA: 87685eb721c52d4f3ed497868587ca84d5b60097
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD: Cloud project ref + migration tip pinned ===
+{
+  "schema_version": 1,
+  "cloud_project_ref": "upnelewdvbicxvfgzojg",
+  "migration_tip": "20260305000000",
+  "migration_tip_file": "20260305000000_7_9_remove_tenant_id_params.sql",
+  "migration_count": 29,
+  "pinned_at": "2026-03-08"
+}
+=== DoD: Guard proves cloud tip equals pinned tip ===
+=== cloud-migration-parity ===
+Pinned migration tip: 20260305000000
+Pinned migration count: 29
+Cloud project ref: upnelewdvbicxvfgzojg
+Querying cloud DB for applied migrations...
+Cloud migration tip: 20260305000000
+Cloud migration count: 29
+Cloud tip matches pinned tip: PASS
+Cloud count matches pinned count: PASS
+All repo migrations present in cloud: PASS
+cloud-migration-parity: PASS
+
+=== DoD: Lane-only CI job ===
+cloud-migration-parity job added to ci.yml (not in required.needs).
+Registered in docs/truth/lane_checks.json under cloud lane.
+
+=== Triple Registration: docs/truth/cloud_migration_parity.json ===
+cloud_migration_parity.json is hand-authored, not machine-derived.
+Section 3.0.4c exemption applies.
+Registrations required and completed:
+(a) robot-owned guard:
+  if($pp -eq "docs/truth/cloud_migration_parity.json"){ return "ALLOW:8.3 cloud_migration_parity.json (hand-authored truth)" }
+
+(b) truth-bootstrap:
+  "docs/truth/cloud_migration_parity.json",
+(c) handoff regeneration — EXEMPT (hand-authored, not machine-derived, per section 3.0.4c)
+
+=== Phase 3: semantic contract ===
+RESULT=PASS
+
+=== Truth bookkeeping ===
+qa_claim.json:
+{"item":"8.3"}
+
+qa_scope_map.json 8.3 entry:
+  325: "8.3": {
+
+ci_robot_owned_guard.ps1 8.3 pattern: 
+if($pp -match "^docs/proofs/8\.3_cloud_migration_parity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.3 proof log" }
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR092.md
+docs/truth/cloud_migration_parity.json
+docs/truth/lane_checks.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/robot_owned_paths.json
+scripts/ci_robot_owned_guard.ps1
+scripts/cloud_migration_parity_check.ps1
+scripts/truth_bootstrap_check.mjs
+
+=== Phase 3 verification ===
+green:once   — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.3 Cloud Migration Parity Guard: PASS
