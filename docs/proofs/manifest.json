@@ -138,6 +138,7 @@
     "docs/proofs/8.0.2_schema_drift_conversion_20260307T013523Z.log": "3cc594313122114788b2cb21ae27b21630f51ea77350a09dea912a9bd70ff3e2",
     "docs/proofs/8.0.3_handoff_idempotency_conversion_20260307T150403Z.log": "8dae2be58241aca1f069a91a922eff68a9cf66d29c7b36e100317ec65153e5c9",
     "docs/proofs/8.0.4_definer_safety_audit_conversion_20260307T220023Z.log": "cde85e10bb399cca8f369ac3772b38092ce102bb3b80792fe8384471deb9977c",
-    "docs/proofs/8.0.5_pgtap_conversion_20260308T004758Z.log": "835da6ca5692d2bf47d595bc081e4a5775ee7f2f56d137a33dca30523ad6b809"
+    "docs/proofs/8.0.5_pgtap_conversion_20260308T004758Z.log": "835da6ca5692d2bf47d595bc081e4a5775ee7f2f56d137a33dca30523ad6b809",
+    "docs/proofs/8.1_clean_room_replay_20260308T015636Z.log": "4c0e9647de0fe8ecb92a1260ba7b29af18de93c734ff1e966cca1736f9e770d9"
   }
 }
