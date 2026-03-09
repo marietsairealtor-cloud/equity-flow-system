@@ -3380,6 +3380,380 @@ docs/proofs/8.5_share_surface_abuse_controls_<UTC>.log
 
 Gate:
 pgtap (merge-blocking, security)
+
+Below are **Build Route–style entries** for **8.6–8.10**, matching the structure used elsewhere in your route: **Deliverable → DoD → Proof → Gate**.
+They are written so they can drop directly into the Build Route without editorial work.
+
+---
+
+### **8.6 — Share Token Revocation**
+
+## Deliverable
+
+Share tokens can be revoked immediately without deleting the row.
+
+Schema change:
+
+```
+revoked_at TIMESTAMPTZ NULL
+```
+
+Lookup RPC must enforce revocation.
+
+Revocation precedence rule:
+
+```
+revoked_at IS NULL
+AND expires_at > now()
+```
+
+Revocation **overrides expiration**.
+
+Revoking an already revoked token must succeed silently (idempotent operation).
+
+---
+
+## Definition of Done (DoD)
+
+* `revoked_at` column exists on share token table.
+* Lookup RPC refuses tokens where `revoked_at IS NOT NULL`.
+* Revoked tokens return the same response shape as invalid tokens.
+* Revocation is idempotent.
+* No existence leak between revoked vs nonexistent tokens.
+
+---
+
+## Proof
+
+pgTAP tests demonstrate:
+
+```
+revoked token lookup returns NOT_FOUND shape
+revoked token response identical to nonexistent token
+revocation operation can run twice without error
+revoked token cannot be used even if expires_at in future
+```
+
+Proof log records:
+
+```
+test results
+token lifecycle scenario
+revocation precedence behavior
+```
+
+---
+
+## Gate
+
+```
+pgtap
+merge-blocking
+```
+
+---
+
+### **8.7 — Share Token Usage Logging**
+
+## Deliverable
+
+Share token lookup attempts are recorded in the append-only activity log.
+
+Logging uses:
+
+```
+foundation_log_activity_v1
+```
+
+Logged fields:
+
+```
+tenant_id
+token_hash
+timestamp
+success
+failure_category
+```
+
+Allowed failure categories:
+
+```
+not_found
+revoked
+expired
+tenant_mismatch
+scope_mismatch
+```
+
+Logging is **best effort**.
+
+Lookup RPC must not fail if logging fails.
+
+---
+
+## Definition of Done (DoD)
+
+* Successful token resolution creates activity log entry.
+* Failed token resolution creates activity log entry.
+* Log entries store only token hash (never raw token).
+* Logging failure does not interrupt lookup RPC execution.
+
+---
+
+## Proof
+
+pgTAP tests demonstrate:
+
+```
+successful lookup creates activity log row
+failed lookup creates activity log row
+activity log never contains raw token
+lookup RPC still succeeds when logging fails
+```
+
+Proof log records:
+
+```
+lookup event
+log entry verification
+hash-only storage confirmation
+```
+
+---
+
+## Gate
+
+```
+pgtap
+merge-blocking
+```
+
+---
+
+### **8.8 — Share Token Secure Generation Contract**
+
+## Deliverable
+
+Share tokens must be generated using cryptographically secure randomness.
+
+Allowed generation sources:
+
+```
+gen_random_bytes()
+gen_random_uuid()
+```
+
+Minimum strength:
+
+```
+>=128 bits entropy
+```
+
+Token format:
+
+```
+prefix: shr_
+minimum length enforced
+```
+
+Full token including prefix is hashed before storage.
+
+---
+
+## Definition of Done (DoD)
+
+* Token generation uses approved secure randomness source.
+* Tokens contain required prefix.
+* Token length meets minimum strength requirement.
+* Token hash-at-rest includes prefix.
+
+---
+
+## Proof
+
+pgTAP tests demonstrate:
+
+```
+token prefix present
+token length meets minimum requirement
+token stored only as hash
+generation function uses approved secure source
+```
+
+Proof log records:
+
+```
+token generation example
+hash verification
+prefix verification
+```
+
+---
+
+## Gate
+
+```
+pgtap
+merge-blocking
+```
+
+---
+
+### **8.9 — Share Token Expiration Invariant**
+
+## Deliverable
+
+All share tokens must include expiration.
+
+Schema field:
+
+```
+expires_at TIMESTAMPTZ NOT NULL
+```
+
+Lookup RPC must enforce:
+
+```
+expires_at > now()
+```
+
+Expiration must not reveal token existence.
+
+Expired tokens return the same response shape as invalid tokens.
+
+Revocation precedence rule still applies.
+
+---
+
+## Definition of Done (DoD)
+
+* `expires_at` column exists and is required.
+* Lookup RPC refuses expired tokens.
+* Expired tokens produce identical response shape as invalid tokens.
+* Expiration check occurs after revocation check.
+
+---
+
+## Proof
+
+pgTAP tests demonstrate:
+
+```
+expired token fails deterministically
+expired token response identical to nonexistent token
+valid token before expiry resolves successfully
+revoked token still fails even if expiration future
+```
+
+Proof log records:
+
+```
+expiry test scenario
+revocation precedence scenario
+response shape comparison
+```
+
+---
+
+## Gate
+
+```
+pgtap
+merge-blocking
+```
+
+---
+
+### **8.10 — Share Token Scope Enforcement**
+
+## Deliverable
+
+Share tokens must be scoped to a specific resource.
+
+Initial implementation scope:
+
+```
+deal_id UUID NOT NULL
+```
+
+Lookup RPC must confirm:
+
+```
+token.deal_id matches requested resource
+```
+
+Optional resource enum (future):
+
+```
+share_resource_type
+```
+
+But initial implementation may remain deal-scoped.
+
+Tokens must never grant tenant-wide access.
+
+---
+
+## Definition of Done (DoD)
+
+* Share token table contains resource scope field (`deal_id`).
+* Lookup RPC verifies token resource matches requested resource.
+* Cross-resource token usage fails deterministically.
+* Cross-resource failures return identical response shape as invalid tokens.
+
+---
+
+## Proof
+
+pgTAP tests demonstrate:
+
+```
+token resolves only for its scoped resource
+token fails for different resource
+cross-resource failure response shape identical to invalid token
+tenant isolation maintained
+```
+
+Proof log records:
+
+```
+correct resource resolution
+cross-resource rejection
+response shape comparison
+```
+
+---
+
+## Gate
+
+```
+pgtap
+merge-blocking
+```
+
+---
+
+# Result
+
+These five items complete the **capability-token lifecycle invariants**:
+
+```
+8.6 revocation
+8.7 audit trail
+8.8 secure generation
+8.9 expiration
+8.10 scope enforcement
+```
+
+Which means Section 8 now fully governs:
+
+```
+token lifecycle
+capability safety
+auditability
+abuse resistance
+```
+
 ---
 
 ## **9 — Surface Truth (PostgREST Exposure)**
@@ -3413,6 +3787,51 @@ Cloud harness includes reload evidence; local harness does not claim reload.
 Proof: docs/proofs/9.3\_reload\_contract\_.md  
 Gate: enforced in deploy lane \+ release lane
 
+### **9.4 — RPC Token Format Validation**
+
+Deliverable:
+Malformed share tokens cannot reach the hashing or lookup stage.
+
+DoD:
+Lookup RPC validates token format before hashing.
+Validation rules:
+Token prefix required (shr_).
+Token length must meet minimum length requirement.
+Token charset restricted to expected alphabet (e.g. base64url or hex).
+Invalid tokens fail immediately before DB lookup.
+pgTAP tests prove:
+malformed tokens fail deterministically
+malformed tokens return identical response shape as invalid tokens
+valid token format proceeds to lookup stage
+
+Proof:
+docs/proofs/9.4_token_format_validation_<UTC>.log
+
+Gate:
+pgtap (merge-blocking)
+
+### **9.5 — Share Token Cardinality Guard**
+
+Deliverable:
+Resources cannot generate unbounded numbers of share tokens.
+
+DoD:
+System enforces a maximum number of active tokens per resource.
+Example constraint:
+MAX_ACTIVE_TOKENS_PER_RESOURCE = 50
+Rules enforced by RPC:
+creation fails when active token count exceeds limit
+revoked or expired tokens do not count toward limit
+pgTAP tests prove:
+token creation succeeds under limit
+token creation fails over limit
+revoked tokens free capacity
+
+Proof:
+docs/proofs/9.5_token_cardinality_guard_<UTC>.log
+
+Gate:
+pgtap (merge-blocking)
 ---
 
 ## **10 — WeWeb Integration (Scope-controlled)**
@@ -3487,6 +3906,43 @@ DoD:
 Proof: docs/proofs/10.6\_seat\_enforcement\_consistency\_.md  
 Gate: merge-blocking once billing is enabled
 
+### **10.7 — Frontend RPC Contract Guard**
+
+Deliverable:
+Frontend cannot call RPC endpoints outside the approved contract surface.
+
+DoD:
+RPC calls originate only from allowlisted endpoints.
+Requests outside the allowed RPC list fail CI verification.
+Contract surface defined by:
+docs/truth/execute_allowlist.json
+Verification harness scans frontend API usage.
+
+Proof:
+docs/proofs/10.7_frontend_rpc_contract_guard_<UTC>.log
+
+Gate:
+lane-only frontend-contract-guard
+
+### **10.8 — Frontend Surface Enumeration Guard**
+
+Deliverable:
+Frontend cannot discover or access hidden endpoints.
+
+DoD:
+automated probe enumerates /rest/v1/ and /rpc/
+only allowlisted endpoints are reachable
+hidden RPCs remain inaccessible
+Negative probes confirm:
+direct table access fails
+non-allowlisted RPC fails
+authentication bypass fails
+
+Proof:
+docs/proofs/10.8_frontend_surface_enumeration_<UTC>.log
+
+Gate:
+lane-only surface-enumeration
 ---
 
 ## **11 — Release \+ Handoff Discipline**
@@ -3869,3 +4325,65 @@ Mechanical enforcement that open INCIDENT entries do not accumulate beyond a def
 
 **Gate:**
 `incident-resolution-deadline` (merge-blocking)
+
+### **13.3 — Backup Restore Verification**
+
+Deliverable:
+Database backups are proven restorable.
+
+DoD:
+latest backup restored to clean environment
+migrations replay successfully
+pgTAP test suite passes on restored DB
+Verification confirms:
+schema integrity
+data integrity
+RPC functionality
+
+Proof:
+docs/proofs/13.3_backup_restore_verification_<UTC>.log
+
+Gate:
+lane-only backup-restore-verification
+
+### **13.4 — Rollback Drill Verification**
+
+Deliverable:
+System can safely rollback to previous release.
+
+DoD:
+Rollback procedure executed in staging:
+deploy previous tag
+run health checks
+verify RPC responses
+Verification confirms:
+migrations remain compatible
+API surface remains stable
+core flows function
+
+Proof:
+docs/proofs/13.4_rollback_drill_<UTC>.log
+
+Gate:
+lane-only rollback-drill
+
+### **13.5 — Incident Response Resolution Guard**
+
+(This complements your 13.2 addition referenced in DEVLOG)
+
+Deliverable:
+Security incidents cannot remain unresolved indefinitely.
+
+DoD:
+INCIDENT entries require resolution marker
+unresolved incidents older than policy window fail CI
+Truth file:
+docs/truth/incident_policy.json
+Policy defines:
+max_open_incident_days
+
+Proof:
+docs/proofs/13.5_incident_resolution_guard_<UTC>.log
+
+Gate:
+incident-resolution-deadline (merge-blocking)

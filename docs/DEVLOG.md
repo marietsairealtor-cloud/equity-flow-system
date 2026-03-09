@@ -4955,3 +4955,76 @@ DoD
 - Full suite: Files=16, Tests=126, Result: PASS
 
 Status: COMPLETE
+
+---
+
+# 2026-03-09 — Advisor Review: Section 8 Completion + Section 9/10/13 Additions
+
+## Objective
+
+Review post-8.5 hardening candidates, confirm correct section placement, and record the approved Build Route additions before moving forward.
+
+## Decisions
+
+Advisor review confirmed the remaining **Share Token lifecycle controls** belong in **Section 8** as database-level security invariants:
+
+* **8.6 — Share Token Revocation**
+* **8.7 — Share Token Usage Logging**
+* **8.8 — Share Token Secure Generation**
+* **8.9 — Share Token Expiration Invariant**
+* **8.10 — Share Token Scope Enforcement**
+
+These complete the capability-token lifecycle:
+
+```text
+generation → scope → lifetime → revocation → observability
+```
+
+## Section 8 design decisions
+
+* **Revocation overrides expiration.**
+  Lookup logic must refuse revoked tokens even if `expires_at` is still in the future.
+* **Usage logging is best-effort only.**
+  Logging failure must not block share lookup RPC execution.
+* **Secure generation is enforced by allowed generation source and token format, not by pretending CI proves entropy.**
+  Approved generators: `gen_random_bytes()` / `gen_random_uuid()`.
+* **Scope enforcement must prevent tenant-wide capability expansion.**
+  Initial implementation may remain concrete/resource-specific rather than introducing a generic authorization model too early.
+
+## Placement clarifications
+
+Advisor review confirmed the correct Build Route layering:
+
+* **Section 8** → database security invariants
+* **Section 9** → API / PostgREST surface truth
+* **Section 10** → frontend / WeWeb contract safety
+* **Section 11.10** → runtime operations
+* **Section 13** → recovery / rollback
+
+## Additions approved
+
+### Section 9
+
+* **9.4 — RPC Token Format Validation**
+* **9.5 — Share Token Cardinality Guard**
+
+### Section 10
+
+* **10.7 — Frontend RPC Contract Guard**
+* **10.8 — Frontend Surface Enumeration Guard**
+
+### Section 13
+
+* **13.3 — Backup Restore Verification**
+* **13.4 — Rollback Drill Verification**
+* **13.5 — Incident Resolution Guard**
+
+## Outcome
+
+Advisor review concluded that no major database-level security gap remains once **8.6–8.10** are added.
+
+Section 8 is now defined as the full **capability-token security layer**, while the approved additions to Sections 9, 10, and 13 cover API exposure hardening, frontend drift protection, and operational recovery discipline.
+
+## Status
+
+RECORDED — decisions only, no implementation changes in this entry.
