@@ -143,6 +143,7 @@
     "docs/proofs/8.2_clean_room_tests_20260308T125535Z.log": "21cdd52d0288e1cb3b9a0e28ea7ce2411263bc0af410ef7407ea66f897b0f08d",
     "docs/proofs/8.3_cloud_migration_parity_20260308T143128Z.log": "bf03f662cc7f94534419deb66150cc7d61b180ecbef2ae4e393098161dd17e4d",
     "docs/proofs/8.4_share_token_hash_at_rest_20260309T013057Z.log": "ea359e50475ec5062d7a8d9cb1f62fb7e70c34238e51300ab8ca56f356ed871f",
-    "docs/proofs/8.5_share_surface_abuse_controls_20260309T153520Z.log": "8f0936470dd474a6ea9d7199f5085f340da7cc331e18d557cbb456b7ceb3fd9a"
+    "docs/proofs/8.5_share_surface_abuse_controls_20260309T153520Z.log": "8f0936470dd474a6ea9d7199f5085f340da7cc331e18d557cbb456b7ceb3fd9a",
+    "docs/proofs/8.6_share_token_revocation_20260309T232410Z.log": "c457c65d0aacd9d70118963437d087b4dc9d867a36a369b14cc4ddb2ba08087f"
   }
 }

@@ -330,6 +330,9 @@
     },
     "8.5": {
       "proof_pattern": "^docs/proofs/8\\.5_share_surface_abuse_controls_"
+    },
+    "8.6": {
+      "proof_pattern": "^docs/proofs/8\\.6_share_token_revocation_"
     }
   }
 }

@@ -83,7 +83,8 @@
       "get_user_entitlements_v1",
       "list_deals_v1",
       "lookup_share_token_v1",
-      "update_deal_v1"
+      "update_deal_v1",
+      "revoke_share_token_v1"
     ],
     "alter_default_privileges": []
   },
@@ -142,4 +143,3 @@
     }
   ]
 }
-

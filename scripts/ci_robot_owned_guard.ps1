@@ -96,6 +96,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/7\.9_tenant_context_integrity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.9 proof log" }
   if($pp -match "^docs/proofs/8\.0\.5_pgtap_conversion_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.0.5 proof log" }
   if($pp -match "^docs/proofs/8\.1_clean_room_replay_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.1 proof log" }
+  if($pp -match "^docs/proofs/8\.6_share_token_revocation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.6 proof log" }
   if($pp -match "^docs/proofs/8\.2_clean_room_tests_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.2 proof log" }
   if($pp -match "^docs/proofs/8\.3_cloud_migration_parity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.3 proof log" }
   if($pp -eq "docs/truth/cloud_migration_parity.json"){ return "ALLOW:8.3 cloud_migration_parity.json (hand-authored truth)" }
