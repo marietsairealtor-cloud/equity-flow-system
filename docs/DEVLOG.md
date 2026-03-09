@@ -4903,3 +4903,32 @@ DoD
 - Gate: lane-only cloud-migration-parity: PASS
 
 Status: COMPLETE
+
+2026-03-09 — Build Route v2.4 — 8.4 Share Token Hash-at-Rest
+
+Objective
+Store share tokens as cryptographic hashes; raw tokens never persisted.
+
+Changes
+- Migration 20260308000000: added token_hash (bytea) column, populated via digest(token, 'sha256'), dropped raw token column, added unique index on token_hash
+- Migration 20260308000001: replaced lookup_share_token_v1 to hash input before comparison, updated share_token_packet view (no longer exposes raw token)
+- Updated supabase/tests/share_link_isolation.test.sql and 7_5_rls_negative_suite.test.sql for hash-at-rest schema
+- Created supabase/tests/8_4_share_token_hash_at_rest.test.sql (5 new pgTAP tests)
+- Updated docs/artifacts/CONTRACTS.md §18 documenting behavioral change
+- Bumped docs/truth/calc_version_registry.json to version 4 (calc-adjacent token, no logic change)
+- Updated docs/truth/cloud_migration_parity.json: tip=20260308000001, count=31
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Created docs/governance/GOVERNANCE_CHANGE_PR093.md
+
+Proof
+docs/proofs/8.4_share_token_hash_at_rest_20260309T013057Z.log
+
+DoD
+- share_tokens stores token_hash (bytea), not raw token: PASS
+- Hash algorithm uses pgcrypto digest SHA-256: PASS
+- Lookup RPC hashes input before comparison: PASS
+- Unique index on token_hash: PASS
+- pgTAP: raw token column absent, lookup succeeds with correct hash, fails with altered hash: PASS
+- Full suite: Files=15, Tests=120, Result: PASS
+
+Status: COMPLETE
