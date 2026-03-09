@@ -3381,9 +3381,6 @@ docs/proofs/8.5_share_surface_abuse_controls_<UTC>.log
 Gate:
 pgtap (merge-blocking, security)
 
-Below are **Build Route–style entries** for **8.6–8.10**, matching the structure used elsewhere in your route: **Deliverable → DoD → Proof → Gate**.
-They are written so they can drop directly into the Build Route without editorial work.
-
 ---
 
 ### **8.6 — Share Token Revocation**
