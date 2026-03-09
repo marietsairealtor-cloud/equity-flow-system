@@ -100,6 +100,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/8\.3_cloud_migration_parity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.3 proof log" }
   if($pp -eq "docs/truth/cloud_migration_parity.json"){ return "ALLOW:8.3 cloud_migration_parity.json (hand-authored truth)" }
   if($pp -match "^docs/proofs/8\.4_share_token_hash_at_rest_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.4 proof log" }
+  if($pp -match "^docs/proofs/8\.5_share_surface_abuse_controls_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.5 proof log" }
   if($pp -match "^docs/proofs/7\.10_tenant_role_ordering_invariant_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.10 proof log" }
   if($pp -match "^docs/proofs/7\.11_studio_drift_sla_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.11 proof log" }
   if($pp -match "^docs/proofs/7\.11A_cloud_schema_drift_gate_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.11A proof log" }

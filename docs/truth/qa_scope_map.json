@@ -327,6 +327,9 @@
     },
     "8.4": {
       "proof_pattern": "^docs/proofs/8\\.4_share_token_hash_at_rest_"
+    },
+    "8.5": {
+      "proof_pattern": "^docs/proofs/8\\.5_share_surface_abuse_controls_"
     }
   }
 }
