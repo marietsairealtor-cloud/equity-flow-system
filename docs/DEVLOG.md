@@ -5028,3 +5028,46 @@ Section 8 is now defined as the full **capability-token security layer**, while 
 ## Status
 
 RECORDED — decisions only, no implementation changes in this entry.
+
+---
+2026-03-09 — Build Route v2.4 — Item 8.6
+
+Objective
+Add share token revocation. Tokens can be revoked immediately without
+deleting the row. Revocation overrides expiration. No existence leak
+between revoked and nonexistent tokens.
+
+Changes
+- supabase/migrations/20260309000000_8_6_share_token_revocation.sql:
+  Added revoked_at timestamptz NULL to share_tokens. Updated
+  lookup_share_token_v1 to check revoked_at IS NOT NULL before
+  expires_at (revocation overrides expiration). Added
+  revoke_share_token_v1(text) RPC — idempotent, authenticated-only,
+  tenant-scoped via current_tenant_id().
+- supabase/tests/8_6_share_token_revocation.test.sql: 10 pgTAP tests.
+- docs/artifacts/CONTRACTS.md: added revocation invariant note + table
+  row for revoke_share_token_v1.
+- docs/truth/privilege_truth.json: added revoke_share_token_v1.
+- docs/truth/definer_allowlist.json: added public.revoke_share_token_v1.
+- docs/truth/execute_allowlist.json: added revoke_share_token_v1.
+- docs/truth/calc_version_registry.json: version bumped (incidental token).
+- docs/truth/cloud_migration_parity.json: tip 20260309000000, count 32.
+- docs/truth/qa_claim.json: updated to 8.6.
+- docs/truth/qa_scope_map.json: added 8.6 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.6 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR096.md: governance justification.
+
+Proof
+docs/proofs/8.6_share_token_revocation_20260309T232410Z.log
+
+DoD
+- revoked_at column exists on share_tokens: VERIFIED
+- lookup_share_token_v1 refuses revoked tokens (NOT_FOUND): VERIFIED
+- Revoked token response identical to nonexistent token: VERIFIED
+- Revocation is idempotent: VERIFIED
+- No existence leak between revoked vs nonexistent tokens: VERIFIED
+- Revocation overrides expiration (future expires_at still refused): VERIFIED
+- pgTAP 10 tests green: VERIFIED
+- green:twice, pr:preflight: PASS
+
+Status: COMPLETE — merged to main
