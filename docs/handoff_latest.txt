@@ -1,5 +1,5 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: d548599
+HEAD: 664896a
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json
@@ -20,10 +20,10 @@ HEAD: d548599
 }
 
 === last applied migration (DB) ===
- 20260305000000
+ 20260308000001
 
 === latest migration file in repo ===
-20260305000000_7_9_remove_tenant_id_params.sql
+20260308000001_8_4_share_token_lookup_hash.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes

@@ -1,0 +1,93 @@
+PROOF_HEAD=c033c8a8330793aaf489de2f79e5642d8eff1ba9
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.4 Share Token Hash-at-Rest — Proof Log ===
+Date: 2026-03-08T21:25:34.2672083-04:00
+Branch: feat/8.4-share-token-hash-at-rest
+PR HEAD SHA: c033c8a8330793aaf489de2f79e5642d8eff1ba9
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD: share_tokens stores token_hash, not raw token ===
+ id          | uuid
+ tenant_id   | uuid
+ deal_id     | uuid
+ expires_at  | timestamp with time zone
+ created_at  | timestamp with time zone
+ token_hash  | bytea
+
+
+=== DoD: Hash algorithm uses pgcrypto digest SHA-256 ===
+Migration 20260308000000 uses extensions.digest(token, 'sha256') to populate token_hash.
+Lookup RPC 20260308000001 uses extensions.digest(p_token, 'sha256') before comparison.
+
+=== DoD: Unique index exists on token_hash ===
+ share_tokens_token_hash_unique | CREATE UNIQUE INDEX share_tokens_token_hash_unique ON public.share_tokens USING btree (token_hash)
+
+
+=== DoD: pgTAP tests — full suite ===
+Connecting to local database...
+supabase/tests/6.10_activity_log_append_only.pgtap.sql .. ok
+supabase/tests/6_11_role_guard_helper.test.sql .......... ok
+supabase/tests/6_8_seat_role_model.test.sql ............. ok
+supabase/tests/6_9_foundation_surface.test.sql .......... ok
+supabase/tests/7_10_tenant_role_ordering_invariant.sql .. ok
+supabase/tests/7_4_entitlement_truth.test.sql ........... ok
+supabase/tests/7_5_rls_negative_suite.test.sql .......... ok
+supabase/tests/7_6_calc_version_protocol.pgtap.sql ...... ok
+supabase/tests/7_8_role_enforcement_rpc.test.sql ........ ok
+supabase/tests/7_9_tenant_context_integrity.test.sql .... ok
+supabase/tests/8_4_share_token_hash_at_rest.test.sql .... ok
+supabase/tests/rls_structural_audit.test.sql ............ ok
+supabase/tests/row_version_concurrency.test.sql ......... ok
+supabase/tests/share_link_isolation.test.sql ............ ok
+supabase/tests/tenant_isolation.test.sql ................ ok
+All tests successful.
+Files=15, Tests=120,  1 wallclock secs ( 0.02 usr  0.02 sys +  0.08 cusr  0.04 csys =  0.16 CPU)
+Result: PASS
+
+=== DoD: Updated existing tests for hash-at-rest ===
+share_link_isolation.test.sql: INSERT uses token_hash + digest(), column count assertion updated to 3.
+7_5_rls_negative_suite.test.sql: INSERT uses token_hash + digest().
+
+=== Gate pre-checks ===
+calc_version_registry.json bumped to version 4 (migration references calc_version — no logic change).
+CONTRACTS.md updated with section 18 documenting hash-at-rest behavioral change.
+
+=== Truth bookkeeping ===
+qa_claim.json:
+{"item":"8.4"}
+
+qa_scope_map.json 8.4 entry:
+  328: "8.4": {
+cloud_migration_parity.json updated: tip=20260308000001, count=31.
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR093.md
+docs/handoff_latest.txt
+docs/truth/calc_version_registry.json
+docs/truth/cloud_migration_parity.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260308000000_8_4_share_token_hash_at_rest.sql
+supabase/migrations/20260308000001_8_4_share_token_lookup_hash.sql
+supabase/tests/7_5_rls_negative_suite.test.sql
+supabase/tests/8_4_share_token_hash_at_rest.test.sql
+supabase/tests/share_link_isolation.test.sql
+
+=== Phase 3 verification ===
+green:once   — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.4 Share Token Hash-at-Rest: PASS
