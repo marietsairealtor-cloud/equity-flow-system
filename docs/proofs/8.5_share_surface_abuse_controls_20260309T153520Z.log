@@ -1,0 +1,78 @@
+PROOF_HEAD=50f878e89a591eb6e8a32903cb71789b1366bb22
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.5 Share Surface Abuse Controls — Proof Log ===
+Date: 2026-03-09T11:31:43.6370672-04:00
+Branch: feat/8.5-share-surface-abuse-controls
+PR HEAD SHA: 50f878e89a591eb6e8a32903cb71789b1366bb22
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD: Lookup RPC does not leak existence via differentiated error messages ===
+Tests 2-4 prove: nonexistent token, invalid token, and cross-tenant token all return
+identical NOT_FOUND response shape with identical error message. No existence leak.
+
+=== DoD: Expiry enforcement validated in RPC ===
+Test 1 proves: expired token returns TOKEN_EXPIRED deterministically (distinct from NOT_FOUND).
+
+=== DoD: One-time/rotation mechanism ===
+Not currently enabled. Share tokens are persistent until expiry. Rotation mechanism
+is documented as optional per Build Route 8.5 DoD. No enforcement required when disabled.
+
+=== DoD: pgTAP tests ===
+Connecting to local database...
+supabase/tests/6.10_activity_log_append_only.pgtap.sql .... ok
+supabase/tests/6_11_role_guard_helper.test.sql ............ ok
+supabase/tests/6_8_seat_role_model.test.sql ............... ok
+supabase/tests/6_9_foundation_surface.test.sql ............ ok
+supabase/tests/7_10_tenant_role_ordering_invariant.sql .... ok
+supabase/tests/7_4_entitlement_truth.test.sql ............. ok
+supabase/tests/7_5_rls_negative_suite.test.sql ............ ok
+supabase/tests/7_6_calc_version_protocol.pgtap.sql ........ ok
+supabase/tests/7_8_role_enforcement_rpc.test.sql .......... ok
+supabase/tests/7_9_tenant_context_integrity.test.sql ...... ok
+supabase/tests/8_4_share_token_hash_at_rest.test.sql ...... ok
+supabase/tests/8_5_share_surface_abuse_controls.test.sql .. ok
+supabase/tests/rls_structural_audit.test.sql .............. ok
+supabase/tests/row_version_concurrency.test.sql ........... ok
+supabase/tests/share_link_isolation.test.sql .............. ok
+supabase/tests/tenant_isolation.test.sql .................. ok
+All tests successful.
+Files=16, Tests=126,  1 wallclock secs ( 0.03 usr  0.02 sys +  0.08 cusr  0.04 csys =  0.17 CPU)
+Result: PASS
+
+=== Test summary ===
+Test 1: Expired token returns TOKEN_EXPIRED deterministically
+Test 2: Nonexistent token returns NOT_FOUND
+Test 3: Invalid token returns NOT_FOUND — same shape as nonexistent (anti-enumeration)
+Test 4: Nonexistent and invalid tokens produce identical error shape (no existence leak)
+Test 5: Cross-tenant token returns NOT_FOUND (isolated)
+Test 6: Cross-tenant NOT_FOUND shape matches regular NOT_FOUND (no tenant leak)
+
+=== Truth bookkeeping ===
+qa_claim.json:
+{"item":"8.5"}
+
+qa_scope_map.json 8.5 entry:
+  331: "8.5": {
+
+=== Files changed in PR ===
+docs/governance/GOVERNANCE_CHANGE_PR094.md
+docs/handoff_latest.txt
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+scripts/ci_robot_owned_guard.ps1
+supabase/tests/8_5_share_surface_abuse_controls.test.sql
+
+=== Phase 3 verification ===
+green:once   — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.5 Share Surface Abuse Controls: PASS
