@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-03-09T15:08:10Z",
+    "generated":  "2026-03-09T22:31:47Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -17,6 +17,15 @@
                             "name":  "foundation_log_activity_v1",
                             "tables":  [
                                            "activity_log"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "revoke_share_token_v1",
+                            "tables":  [
+                                           "share_tokens"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

@@ -270,38 +270,37 @@ BEGIN
       'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
     );
   END IF;
-
   IF p_token IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
       'error', json_build_object('message', 'token is required', 'fields', json_build_object())
     );
   END IF;
-
-  -- Hash the input token before comparison
   v_hash := extensions.digest(p_token, 'sha256');
-
-  SELECT st.deal_id, st.expires_at, d.calc_version
+  SELECT st.deal_id, st.expires_at, st.revoked_at, d.calc_version
   INTO v_row
   FROM public.share_tokens st
   JOIN public.deals d ON d.id = st.deal_id AND d.tenant_id = st.tenant_id
   WHERE st.token_hash = v_hash
     AND st.tenant_id = v_tenant_id;
-
   IF NOT FOUND THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
       'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
     );
   END IF;
-
+  IF v_row.revoked_at IS NOT NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
+    );
+  END IF;
   IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN
     RETURN json_build_object(
       'ok', false, 'code', 'TOKEN_EXPIRED', 'data', null,
       'error', json_build_object('message', 'Share token has expired', 'fields', json_build_object())
     );
   END IF;
-
   RETURN json_build_object(
     'ok', true,
     'code', 'OK',
@@ -347,6 +346,41 @@ END;
 $$;
 
 ALTER FUNCTION "public"."require_min_role_v1"("p_min" "public"."tenant_role") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."revoke_share_token_v1"("p_token" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant_id uuid;
+  v_hash      bytea;
+BEGIN
+  v_tenant_id := public.current_tenant_id();
+  IF v_tenant_id IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+  IF p_token IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'token is required', 'fields', json_build_object())
+    );
+  END IF;
+  v_hash := extensions.digest(p_token, 'sha256');
+  UPDATE public.share_tokens
+  SET revoked_at = now()
+  WHERE token_hash = v_hash
+    AND tenant_id  = v_tenant_id
+    AND revoked_at IS NULL;
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK', 'data', null, 'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."revoke_share_token_v1"("p_token" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -460,7 +494,8 @@ CREATE TABLE IF NOT EXISTS "public"."share_tokens" (
     "deal_id" "uuid" NOT NULL,
     "expires_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "token_hash" "bytea" NOT NULL
+    "token_hash" "bytea" NOT NULL,
+    "revoked_at" timestamp with time zone
 );
 
 ALTER TABLE "public"."share_tokens" OWNER TO "postgres";
