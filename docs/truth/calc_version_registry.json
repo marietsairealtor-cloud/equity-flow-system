@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -9,6 +9,13 @@
       "description": "Initial calculation version. Deals store assumptions and outputs via deal_inputs and deal_outputs tables. No formula logic implemented server-side yet; calc_version tracks schema generation only.",
       "introduced_pr": "baseline (6.1 greenfield migrations)",
       "released_at": "2026-02-19"
+    },
+    {
+      "calc_version": 1,
+      "label": "8.4 hash-at-rest",
+      "description": "8.4: share token lookup RPC references calc_version in SELECT/return. No calc logic changed. Hash-at-rest conversion only.",
+      "introduced_pr": "PR093",
+      "released_at": "2026-03-08"
     }
   ],
   "watch_surface": {

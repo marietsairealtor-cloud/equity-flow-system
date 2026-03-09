@@ -324,6 +324,9 @@
     },
     "8.3": {
       "proof_pattern": "^docs/proofs/8\\.3_cloud_migration_parity_"
+    },
+    "8.4": {
+      "proof_pattern": "^docs/proofs/8\\.4_share_token_hash_at_rest_"
     }
   }
 }

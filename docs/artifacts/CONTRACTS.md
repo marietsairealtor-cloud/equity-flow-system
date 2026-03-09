@@ -266,3 +266,12 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 - Any PR that adds or modifies a public RPC must update this table in the same PR.
 - Internal helpers are excluded from this table but must be listed in docs/truth/definer_allowlist.json if SECURITY DEFINER.
 - Gate: rpc-mapping-contract (merge-blocking, policy-coupling style).
+
+---
+
+## 18) Share Token Hash-at-Rest (8.4)
+
+- `public.share_tokens` no longer stores raw token text. Column `token` replaced by `token_hash` (bytea, SHA-256 via pgcrypto).
+- `public.lookup_share_token_v1` hashes input token before comparison. No signature change.
+- `public.share_token_packet` view no longer exposes raw token.
+- Unique index `share_tokens_token_hash_unique` replaces `share_tokens_tenant_token_unique`.

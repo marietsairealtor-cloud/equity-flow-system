@@ -20,12 +20,12 @@ VALUES
    'd7000000-0000-0000-0000-000000000001'::uuid, 1, 1, '{}'::jsonb);
 
 -- Seed share tokens: one valid, one expired (both Tenant A)
-INSERT INTO public.share_tokens (id, tenant_id, deal_id, token, expires_at)
+INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
 VALUES
   ('d7200000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid,
-   'd7000000-0000-0000-0000-000000000001'::uuid, 'valid_token_abc123', NULL),
+   'd7000000-0000-0000-0000-000000000001'::uuid, extensions.digest('valid_token_abc123', 'sha256'), NULL),
   ('d7200000-0000-0000-0000-000000000002'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid,
-   'd7000000-0000-0000-0000-000000000001'::uuid, 'expired_token_xyz789', '2020-01-01 00:00:00+00');
+   'd7000000-0000-0000-0000-000000000001'::uuid, extensions.digest('expired_token_xyz789', 'sha256'), '2020-01-01 00:00:00+00');
 
 -- Switch to Tenant A authenticated context
 RESET ROLE;
@@ -76,8 +76,8 @@ RESET ROLE;
 SELECT is(
   (SELECT count(*)::int FROM information_schema.columns
    WHERE table_schema = 'public' AND table_name = 'share_token_packet'),
-  4,
-  'Packet view exposes exactly 4 columns (token, deal_id, expires_at, calc_version)'
+  3,
+  'Packet view exposes exactly 3 columns (deal_id, expires_at, calc_version)'
 );
 
 SELECT * FROM finish();
