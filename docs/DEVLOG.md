@@ -4932,3 +4932,26 @@ DoD
 - Full suite: Files=15, Tests=120, Result: PASS
 
 Status: COMPLETE
+
+2026-03-09 — Build Route v2.4 — 8.5 Share Surface Abuse Controls
+
+Objective
+Share link surface includes deterministic anti-enumeration and replay controls.
+
+Changes
+- Created supabase/tests/8_5_share_surface_abuse_controls.test.sql (6 new pgTAP tests)
+- Updated qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1
+- Created docs/governance/GOVERNANCE_CHANGE_PR094.md
+
+Proof
+docs/proofs/8.5_share_surface_abuse_controls_20260309T153520Z.log
+
+DoD
+- Lookup RPC does not leak existence via differentiated error messages: PASS
+- Expired token fails deterministically with TOKEN_EXPIRED: PASS
+- Invalid token returns same response shape as nonexistent token (anti-enumeration): PASS
+- Cross-tenant token access returns NOT_FOUND with identical shape (no tenant leak): PASS
+- One-time/rotation mechanism: not enabled, documented as optional per DoD
+- Full suite: Files=16, Tests=126, Result: PASS
+
+Status: COMPLETE
