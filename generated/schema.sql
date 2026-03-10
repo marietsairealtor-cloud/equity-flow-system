@@ -262,6 +262,7 @@ DECLARE
   v_tenant_id uuid;
   v_row       record;
   v_hash      bytea;
+  v_result    json;
 BEGIN
   v_tenant_id := public.current_tenant_id();
   IF v_tenant_id IS NULL THEN
@@ -284,24 +285,60 @@ BEGIN
   WHERE st.token_hash = v_hash
     AND st.tenant_id = v_tenant_id;
   IF NOT FOUND THEN
-    RETURN json_build_object(
+    v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
       'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
     );
+    BEGIN
+      PERFORM public.foundation_log_activity_v1(
+        'share_token_lookup',
+        json_build_object(
+          'token_hash', encode(v_hash, 'hex'),
+          'success', false,
+          'failure_category', 'not_found'
+        )::jsonb,
+        null
+      );
+    EXCEPTION WHEN OTHERS THEN NULL; END;
+    RETURN v_result;
   END IF;
   IF v_row.revoked_at IS NOT NULL THEN
-    RETURN json_build_object(
+    v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
       'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
     );
+    BEGIN
+      PERFORM public.foundation_log_activity_v1(
+        'share_token_lookup',
+        json_build_object(
+          'token_hash', encode(v_hash, 'hex'),
+          'success', false,
+          'failure_category', 'revoked'
+        )::jsonb,
+        null
+      );
+    EXCEPTION WHEN OTHERS THEN NULL; END;
+    RETURN v_result;
   END IF;
   IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN
-    RETURN json_build_object(
+    v_result := json_build_object(
       'ok', false, 'code', 'TOKEN_EXPIRED', 'data', null,
       'error', json_build_object('message', 'Share token has expired', 'fields', json_build_object())
     );
+    BEGIN
+      PERFORM public.foundation_log_activity_v1(
+        'share_token_lookup',
+        json_build_object(
+          'token_hash', encode(v_hash, 'hex'),
+          'success', false,
+          'failure_category', 'expired'
+        )::jsonb,
+        null
+      );
+    EXCEPTION WHEN OTHERS THEN NULL; END;
+    RETURN v_result;
   END IF;
-  RETURN json_build_object(
+  v_result := json_build_object(
     'ok', true,
     'code', 'OK',
     'data', json_build_object(
@@ -311,6 +348,18 @@ BEGIN
     ),
     'error', null
   );
+  BEGIN
+    PERFORM public.foundation_log_activity_v1(
+      'share_token_lookup',
+      json_build_object(
+        'token_hash', encode(v_hash, 'hex'),
+        'success', true,
+        'failure_category', null
+      )::jsonb,
+      null
+    );
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+  RETURN v_result;
 END;
 $$;
 

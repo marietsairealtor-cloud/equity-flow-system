@@ -1,15 +1,26 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 63e532f
+HEAD: f7b6838
 
 === git status --porcelain=v1 ===
+M  docs/artifacts/CONTRACTS.md
+A  docs/governance/GOVERNANCE_CHANGE_PR097.md
+M  docs/truth/calc_version_registry.json
+M  docs/truth/cloud_migration_parity.json
+M  docs/truth/qa_claim.json
+M  docs/truth/qa_scope_map.json
  M docs/truth/write_path_registry.json
+M  scripts/ci_robot_owned_guard.ps1
+A  supabase/migrations/20260309000001_8_7_share_token_usage_logging.sql
+A  supabase/tests/8_7_share_token_usage_logging.test.sql
 
 === supabase status (sanitized summary) ===
 {
     "exitcode":  0,
     "stack_running":  false,
     "stopped_services":  [
-
+                             "supabase_imgproxy_equity-flow-system",
+                             "supabase_vector_equity-flow-system",
+                             "supabase_pooler_equity-flow-system"
                          ],
     "api_url":  null,
     "rest_url":  null,
@@ -18,10 +29,10 @@ HEAD: 63e532f
 }
 
 === last applied migration (DB) ===
- 20260309000000
+ 20260309000001
 
 === latest migration file in repo ===
-20260309000000_8_6_share_token_revocation.sql
+20260309000001_8_7_share_token_usage_logging.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes

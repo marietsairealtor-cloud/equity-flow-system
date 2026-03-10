@@ -143,7 +143,7 @@ Violation of any rule requires a new versioned RPC.
 - Internal helpers must not be directly executable by app roles.
 - public.require_min_role_v1(p_min tenant_role) is the authoritative DB-layer role enforcement helper. Enum ordering: owner(0) < admin(1) < member(2). Authorization fails when v_role > p_min (caller is less privileged). Any privileged RPC must call this as its first executable statement (Build Route 7.8).
 - No RPC may accept tenant_id as caller input. Tenant ID must be derived strictly from JWT via current_tenant_id(). RPCs that previously accepted p_tenant_id (foundation_log_activity_v1, lookup_share_token_v1) have had that parameter removed (Build Route 7.9).
-- Share tokens support explicit revocation via revoke_share_token_v1(text). Revocation is idempotent. Revoked tokens return NOT_FOUND — identical response shape to nonexistent tokens (no existence leak). Revocation overrides expiration: a token with future expires_at is still refused if revoked_at IS NOT NULL (Build Route 8.6). Tenant ID must be derived strictly from JWT via current_tenant_id(). RPCs that previously accepted p_tenant_id (foundation_log_activity_v1, lookup_share_token_v1) have had that parameter removed (Build Route 7.9).
+- Share tokens support explicit revocation via revoke_share_token_v1(text). Revocation is idempotent. Revoked tokens return NOT_FOUND — identical response shape to nonexistent tokens (no existence leak). Revocation overrides expiration: a token with future expires_at is still refused if revoked_at IS NOT NULL (Build Route 8.6). Tenant ID must be derived strictly from JWT via current_tenant_id(). RPCs that previously accepted p_tenant_id (foundation_log_activity_v1, lookup_share_token_v1) have had that parameter removed (Build Route 7.9). Lookup attempts are logged to the activity log via foundation_log_activity_v1 (best-effort, hash-only, never raw token). Failure categories: not_found, revoked, expired (Build Route 8.7). Lookup attempts are logged to the activity log via foundation_log_activity_v1 (best-effort, hash-only, never raw token). Failure categories: not_found, revoked, expired (Build Route 8.7).
 - Helpers may be executed only by allowlisted SECURITY DEFINER RPCs.
 - Granting EXECUTE to helpers requires contract update.
 
@@ -260,7 +260,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
-| lookup_share_token_v1 | 6.7 | Look up share token and return packet if valid | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| lookup_share_token_v1 | 6.7/8.7 | Look up share token; logs attempt to activity log (best-effort, hash-only) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | revoke_share_token_v1 | 8.6 | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 
 ### Mapping Rules
