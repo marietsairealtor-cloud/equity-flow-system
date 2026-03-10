@@ -735,8 +735,10 @@ ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
 
+REVOKE ALL ON FUNCTION "public"."get_user_entitlements_v1"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_user_entitlements_v1"() TO "authenticated";
 
+REVOKE ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer) TO "authenticated";
 
 GRANT SELECT,UPDATE ON TABLE "public"."user_profiles" TO "authenticated";
