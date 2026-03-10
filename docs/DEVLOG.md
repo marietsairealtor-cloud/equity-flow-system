@@ -5071,3 +5071,50 @@ DoD
 - green:twice, pr:preflight: PASS
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-09 — Build Route v2.4 — Item 8.7
+
+Objective
+Record every share token lookup attempt in the append-only activity log.
+Logging is best-effort — lookup RPC must not fail if logging fails.
+Log entries store only token_hash (never raw token).
+
+Changes
+- supabase/migrations/20260309000001_8_7_share_token_usage_logging.sql:
+  Updated lookup_share_token_v1 to call foundation_log_activity_v1 after
+  every lookup path (OK, NOT_FOUND, TOKEN_EXPIRED, revoked). Each call
+  wrapped in EXCEPTION WHEN OTHERS so logging failures never interrupt
+  lookup. Logged fields: token_hash (sha256 hex), success, failure_category.
+  Failure categories: not_found, revoked, expired.
+- supabase/tests/8_7_share_token_usage_logging.test.sql: 9 pgTAP tests.
+  Tests 1-2: successful lookup creates log entry. Tests 3-4: not_found
+  creates log entry. Tests 5-6: expired creates log entry. Test 7: raw
+  token never in log. Test 8: token_hash field present. Test 9: lookup
+  returns OK when logging is disabled (best-effort confirmed).
+- docs/artifacts/CONTRACTS.md: updated lookup_share_token_v1 table row
+  and added logging invariant note (hash-only, best-effort, 8.7).
+- docs/truth/calc_version_registry.json: version bumped (incidental token).
+- docs/truth/cloud_migration_parity.json: tip 20260309000001, count 33.
+- docs/truth/qa_claim.json: updated to 8.7.
+- docs/truth/qa_scope_map.json: added 8.7 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.7 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR097.md: governance justification.
+
+Proof
+docs/proofs/8.7_share_token_usage_logging_20260310T002418Z.log
+
+DoD
+- Successful lookup creates activity log entry: VERIFIED (test 2)
+- Failed lookup creates activity log entry: VERIFIED (tests 4, 6)
+- Log entries store only token hash: VERIFIED (tests 7, 8)
+- Logging failure does not interrupt lookup: VERIFIED (test 9)
+- pgTAP 9 tests green (145 total, 18 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- Test 9 was added after initial merge via fix/8.7-test9-missing PR.
+  The test was implemented locally before proof generation but not
+  committed in the main PR. Fixed immediately after merge.
+
+Status: COMPLETE — merged to main
