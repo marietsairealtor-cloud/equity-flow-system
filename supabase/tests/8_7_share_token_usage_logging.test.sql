@@ -36,7 +36,7 @@ SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'e8000000-0000-0000-0000-000000000001', true);
 SELECT set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-0000000000a1', true);
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_8_7')::json ->> 'code'),
+  (public.lookup_share_token_v1('valid_token_8_7', 'e8100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'OK',
   'Valid token lookup returns OK'
 );
@@ -56,7 +56,7 @@ SELECT is(
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'e8000000-0000-0000-0000-000000000001', true);
 SELECT is(
-  (public.lookup_share_token_v1('does_not_exist_8_7')::json ->> 'code'),
+  (public.lookup_share_token_v1('does_not_exist_8_7', 'e8100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Not-found lookup returns NOT_FOUND'
 );
@@ -76,7 +76,7 @@ SELECT is(
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'e8000000-0000-0000-0000-000000000001', true);
 SELECT is(
-  (public.lookup_share_token_v1('expired_token_8_7')::json ->> 'code'),
+  (public.lookup_share_token_v1('expired_token_8_7', 'e8100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Expired token lookup returns NOT_FOUND (no existence leak)'
 );
@@ -117,7 +117,7 @@ REVOKE EXECUTE ON FUNCTION public.foundation_log_activity_v1(text, jsonb, uuid) 
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'e8000000-0000-0000-0000-000000000001', true);
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_8_7')::json ->> 'code'),
+  (public.lookup_share_token_v1('valid_token_8_7', 'e8100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'OK',
   'Lookup still returns OK when logging fails (best-effort logging confirmed)'
 );

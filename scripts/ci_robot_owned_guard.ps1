@@ -100,6 +100,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/8\.7_share_token_usage_logging_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.7 proof log" }
   if($pp -match "^docs/proofs/8\.8_share_token_secure_generation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.8 proof log" }
   if($pp -match "^docs/proofs/8\.9_share_token_expiration_invariant_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.9 proof log" }
+  if($pp -match "^docs/proofs/8\.10_share_token_scope_enforcement_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.10 proof log" }
   if($pp -match "^docs/proofs/8\.2_clean_room_tests_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.2 proof log" }
   if($pp -match "^docs/proofs/8\.3_cloud_migration_parity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.3 proof log" }
   if($pp -eq "docs/truth/cloud_migration_parity.json"){ return "ALLOW:8.3 cloud_migration_parity.json (hand-authored truth)" }

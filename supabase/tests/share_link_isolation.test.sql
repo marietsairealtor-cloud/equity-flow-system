@@ -34,14 +34,14 @@ SELECT set_config('request.jwt.claim.tenant_id', 'a0000000-0000-0000-0000-000000
 
 -- Test 1: Valid token lookup returns OK
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_abc123')::json ->> 'code'),
+  (public.lookup_share_token_v1('valid_token_abc123', 'd7000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'OK',
   'Valid token + correct tenant returns OK'
 );
 
 -- Test 2: Valid token returns correct deal_id in data
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_abc123')::json -> 'data' ->> 'deal_id'),
+  (public.lookup_share_token_v1('valid_token_abc123', 'd7000000-0000-0000-0000-000000000001'::uuid)::json -> 'data' ->> 'deal_id'),
   'd7000000-0000-0000-0000-000000000001',
   'Valid token returns correct deal_id'
 );
@@ -49,7 +49,7 @@ SELECT is(
 -- Test 3: Cross-tenant isolation — Tenant B JWT cannot see Tenant A token
 SELECT set_config('request.jwt.claim.tenant_id', 'b0000000-0000-0000-0000-000000000001', true);
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_abc123')::json ->> 'code'),
+  (public.lookup_share_token_v1('valid_token_abc123', 'd7000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Tenant A token under Tenant B JWT context returns NOT_FOUND (isolated)'
 );
@@ -59,14 +59,14 @@ SELECT set_config('request.jwt.claim.tenant_id', 'a0000000-0000-0000-0000-000000
 
 -- Test 4: Expired token returns NOT_FOUND (no existence leak per 8.9)
 SELECT is(
-  (public.lookup_share_token_v1('expired_token_xyz789')::json ->> 'code'),
+  (public.lookup_share_token_v1('expired_token_xyz789', 'd7000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Expired token returns NOT_FOUND (no existence leak)'
 );
 
 -- Test 5: Nonexistent token returns NOT_FOUND
 SELECT is(
-  (public.lookup_share_token_v1('does_not_exist')::json ->> 'code'),
+  (public.lookup_share_token_v1('does_not_exist', 'd7000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Nonexistent token returns NOT_FOUND'
 );

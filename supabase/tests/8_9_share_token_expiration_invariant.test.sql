@@ -57,35 +57,35 @@ SELECT col_not_null('public', 'share_tokens', 'expires_at',
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'ea000000-0000-0000-0000-000000000001', true);
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_8_9')::json ->> 'code'),
+  (public.lookup_share_token_v1('valid_token_8_9', 'ea100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'OK',
   'Valid token before expiry resolves successfully'
 );
 
 -- Test 3: Expired token returns NOT_FOUND
 SELECT is(
-  (public.lookup_share_token_v1('expired_token_8_9')::json ->> 'code'),
+  (public.lookup_share_token_v1('expired_token_8_9', 'ea100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Expired token returns NOT_FOUND'
 );
 
 -- Test 4: Expired token response shape identical to nonexistent token
 SELECT is(
-  (public.lookup_share_token_v1('expired_token_8_9')::json ->> 'code'),
-  (public.lookup_share_token_v1('does_not_exist_8_9')::json ->> 'code'),
+  (public.lookup_share_token_v1('expired_token_8_9', 'ea100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('does_not_exist_8_9', 'ea100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'Expired token response code identical to nonexistent token'
 );
 
 -- Test 5: Expired token error message identical to nonexistent token
 SELECT is(
-  (public.lookup_share_token_v1('expired_token_8_9')::json -> 'error' ->> 'message'),
-  (public.lookup_share_token_v1('does_not_exist_8_9')::json -> 'error' ->> 'message'),
+  (public.lookup_share_token_v1('expired_token_8_9', 'ea100000-0000-0000-0000-000000000001'::uuid)::json -> 'error' ->> 'message'),
+  (public.lookup_share_token_v1('does_not_exist_8_9', 'ea100000-0000-0000-0000-000000000001'::uuid)::json -> 'error' ->> 'message'),
   'Expired token error message identical to nonexistent token (no existence leak)'
 );
 
 -- Test 6: Revoked token with future expiry returns NOT_FOUND (revocation overrides expiration)
 SELECT is(
-  (public.lookup_share_token_v1('revoked_token_8_9')::json ->> 'code'),
+  (public.lookup_share_token_v1('revoked_token_8_9', 'ea100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Revoked token with future expiry returns NOT_FOUND (revocation overrides expiration)'
 );

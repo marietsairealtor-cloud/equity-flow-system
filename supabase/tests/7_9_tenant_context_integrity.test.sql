@@ -110,7 +110,7 @@ SELECT set_config('request.jwt.claim.tenant_id', 'e0000000-0000-0000-0000-000000
 
 -- Test 9: lookup_share_token_v1 with Tenant B JWT returns NOT_FOUND for Tenant A token
 SELECT is(
-  (public.lookup_share_token_v1('nonexistent_token')::json -> 'code')::text,
+  (public.lookup_share_token_v1('nonexistent_token', 'e1000000-0000-0000-0000-000000000001'::uuid)::json -> 'code')::text,
   '"NOT_FOUND"',
   'lookup_share_token_v1: Tenant B JWT cannot find Tenant A token (isolated)'
 );
