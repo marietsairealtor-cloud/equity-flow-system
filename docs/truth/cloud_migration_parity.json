@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260310000002",
+  "migration_tip": "20260310000003",
   "migration_tip_file": "20260308000001_8_4_share_token_lookup_hash.sql",
-  "migration_count": 36,
+  "migration_count": 37,
   "pinned_at": "2026-03-09"
 }

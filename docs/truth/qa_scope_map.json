@@ -342,6 +342,9 @@
     },
     "8.9": {
       "proof_pattern": "^docs/proofs/8\\.9_share_token_expiration_invariant_"
+    },
+    "8.10": {
+      "proof_pattern": "^docs/proofs/8\\.10_share_token_scope_enforcement_"
     }
   }
 }
