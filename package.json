@@ -56,7 +56,8 @@
     "lint:migration-grants": "node scripts/lint_migration_grants.mjs",
     "gen:write-path-registry": "pwsh -File scripts/gen_write_path_registry.ps1",
     "surface:capture": "node scripts/capture_surface_truth.mjs",
-    "surface:verify": "node scripts/ci_surface_truth.mjs"
+    "surface:verify": "node scripts/ci_surface_truth.mjs",
+    "surface:invariants": "node scripts/ci_surface_invariants.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",
