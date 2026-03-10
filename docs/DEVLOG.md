@@ -5302,3 +5302,58 @@ Verification:
 - pr:preflight — PASS
 
 Section 8 declared closed. Proceeding to Section 9 — Surface Truth (PostgREST exposure).
+---
+2026-03-10 — Build Route v2.4 — Item 9.1
+
+Objective
+Establish surface truth schema and canonicalization harness. PostgREST
+exposure must be captured deterministically and verifiable by CI gate.
+
+Changes
+- docs/truth/surface_truth.schema.json: expanded from stub to full schema
+  with required fields: version, captured_at, rpc, tables, anon_exposed.
+- docs/truth/surface_truth.json: first authoritative capture of PostgREST
+  surface. RPCs (anon): current_tenant_id only. Business RPCs:
+  authenticated-only.
+- scripts/capture_surface_truth.mjs: harness that queries PostgREST
+  OpenAPI endpoint and writes canonicalized surface_truth.json
+  deterministically (sorted output, no hardcoded secrets).
+- scripts/ci_surface_truth.mjs: CI gate that compares live surface against
+  truth file. Fails on any addition or removal.
+- supabase/migrations/20260310000004_9_1_revoke_anon_rpc_execute.sql:
+  Revoked PUBLIC/anon EXECUTE on create_deal_v1, update_deal_v1,
+  list_deals_v1, get_user_entitlements_v1. Unintended anon exposure
+  discovered during surface truth review.
+- docs/truth/execute_allowlist.json: updated to reflect authenticated-only
+  grants. Removed business RPCs from anon allowlist.
+- docs/truth/lane_policy.json: added surface-truth lane.
+- docs/artifacts/CONTRACTS.md: added §12 note on anon execute revocation.
+- package.json: added surface:capture and surface:verify scripts.
+- docs/truth/calc_version_registry.json: version bumped.
+- docs/truth/cloud_migration_parity.json: tip 20260310000004, count 38.
+- docs/truth/qa_claim.json: updated to 9.1.
+- docs/truth/qa_scope_map.json: added 9.1 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 9.1 proof log path and
+  docs/truth/surface_truth.json.
+- docs/governance/GOVERNANCE_CHANGE_PR101.md: governance justification.
+
+Proof
+docs/proofs/9.1_surface_truth_schema_20260310T221024Z.log
+
+DoD
+- Truth schema exists: VERIFIED
+- Harness canonicalizes deterministically: VERIFIED
+- Actual surface output captured: VERIFIED (5 paths, 1 anon RPC)
+- CI gate verifies surface: VERIFIED (surface:verify PASS)
+- surface-truth lane registered: VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- Surface review revealed unintended anon EXECUTE grants on all business
+  RPCs (create_deal_v1, update_deal_v1, list_deals_v1,
+  get_user_entitlements_v1). Fixed via migration 20260310000004.
+  Post-fix anon surface: current_tenant_id only.
+- capture_surface_truth.mjs must NOT be called during proof log generation
+  as it mutates surface_truth.json. Proof log reads committed file only.
+
+Status: COMPLETE — merged to main
