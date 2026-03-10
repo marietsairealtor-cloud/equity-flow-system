@@ -5274,3 +5274,31 @@ Notes
 - Section 8 share token lifecycle complete (8.4-8.10).
 
 Status: COMPLETE — merged to main
+
+## 2026-03-10 — Section 8 Closed (Share Token Security)
+
+Section 8 completed. Share token capability system now enforces full lifecycle security invariants.
+
+Items delivered:
+- 8.4 Hash-at-rest — tokens stored as SHA256 hashes.
+- 8.5 Anti-enumeration — lookup RPC does not leak token existence.
+- 8.6 Revocation — revoked tokens fail deterministically.
+- 8.7 Usage logging — successful and failed lookups recorded (hash-only).
+- 8.8 Secure generation — tokens generated via gen_random_bytes(32) with shr_ prefix.
+- 8.9 Expiration invariant — expired tokens rejected deterministically.
+- 8.10 Scope enforcement — lookup requires (token, deal_id) and verifies scope match.
+
+Security properties achieved:
+- Capability tokens cannot be enumerated.
+- Tokens cannot be reused across resources.
+- Revocation overrides expiration.
+- Token values never stored in plaintext.
+- All access paths verified by pgTAP.
+
+Verification:
+- pgTAP suite: 167 tests PASS
+- green:once — PASS
+- green:twice — PASS
+- pr:preflight — PASS
+
+Section 8 declared closed. Proceeding to Section 9 — Surface Truth (PostgREST exposure).
