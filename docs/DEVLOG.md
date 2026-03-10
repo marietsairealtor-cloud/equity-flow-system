@@ -5118,3 +5118,51 @@ Notes
   committed in the main PR. Fixed immediately after merge.
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-09 — Build Route v2.4 — Item 8.8
+
+Objective
+Establish share token secure generation contract. Tokens must use
+cryptographically secure randomness, contain shr_ prefix, meet minimum
+entropy requirement, and be stored only as hash including prefix.
+
+Changes
+- supabase/migrations/20260310000000_8_8_share_token_secure_generation.sql:
+  Added create_share_token_v1(uuid, timestamptz) RPC. Token format:
+  shr_ prefix + encode(gen_random_bytes(32), hex) = 68 chars minimum,
+  256 bits entropy. Full token including prefix hashed via
+  extensions.digest(v_token, sha256) before storage. Raw token returned
+  to caller only at creation — never persisted.
+- supabase/tests/8_8_share_token_secure_generation.test.sql: 8 pgTAP
+  tests. Token returns OK, contains shr_ prefix, length >= 68, unique
+  per call, stored only as hash, hash = 32 bytes, function exists,
+  NOT_AUTHORIZED without tenant context.
+- docs/artifacts/CONTRACTS.md: added create_share_token_v1 table row.
+- docs/truth/privilege_truth.json: added create_share_token_v1.
+- docs/truth/definer_allowlist.json: added public.create_share_token_v1.
+- docs/truth/execute_allowlist.json: added create_share_token_v1.
+- docs/truth/calc_version_registry.json: version bumped (incidental token).
+- docs/truth/cloud_migration_parity.json: tip 20260310000000, count 34.
+- docs/truth/qa_claim.json: updated to 8.8.
+- docs/truth/qa_scope_map.json: added 8.8 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.8 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR098.md: governance justification.
+
+Proof
+docs/proofs/8.8_share_token_secure_generation_20260310T014004Z.log
+
+DoD
+- Token generation uses gen_random_bytes(32) — 256 bits entropy: VERIFIED
+- Tokens contain shr_ prefix: VERIFIED (pgTAP test 2)
+- Token length >= 68 chars: VERIFIED (pgTAP test 3)
+- Token hash-at-rest includes prefix: VERIFIED (pgTAP test 6, hash=32 bytes)
+- pgTAP 8 tests green (153 total, 19 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- generated/schema.sql had encoding issue with em dash in comment
+  (double-encoded UTF-8). Fixed by replacing with ASCII hyphen in both
+  migration file and generated schema before final push.
+
+Status: COMPLETE — merged to main
