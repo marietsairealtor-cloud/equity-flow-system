@@ -5166,3 +5166,61 @@ Notes
   migration file and generated schema before final push.
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-10 — Build Route v2.4 — Item 8.9
+
+Objective
+Enforce share token expiration invariant. expires_at must be NOT NULL.
+Expired tokens return NOT_FOUND (no existence leak). Revocation check
+still occurs before expiration check.
+
+Changes
+- supabase/migrations/20260310000001_8_9_share_token_expiration_invariant.sql:
+  Backfilled NULL expires_at rows, made expires_at NOT NULL. Updated
+  create_share_token_v1 - expires_at now required (no default, returns
+  VALIDATION_ERROR if NULL or past). Updated lookup_share_token_v1 -
+  expired tokens return NOT_FOUND instead of TOKEN_EXPIRED (no existence
+  leak). Revocation check still occurs before expiration check.
+- supabase/migrations/20260310000002_8_9_fix_comment_encoding.sql:
+  Corrective migration - re-created lookup_share_token_v1 with ASCII-safe
+  comments (em dash encoding issue in original migration).
+- supabase/tests/8_9_share_token_expiration_invariant.test.sql: 7 pgTAP
+  tests. expires_at NOT NULL, valid token resolves, expired returns
+  NOT_FOUND, expired response identical to nonexistent (code + message),
+  revoked token with future expiry returns NOT_FOUND, create requires
+  expires_at.
+- supabase/tests/7_5, 8_4, 8_5, 8_6, 8_7, 8_8, share_link_isolation:
+  Updated all share_tokens inserts to include expires_at (NOT NULL
+  enforcement). Replaced all TOKEN_EXPIRED expectations with NOT_FOUND.
+- docs/artifacts/CONTRACTS.md: removed TOKEN_EXPIRED from valid response
+  code set. Updated create_share_token_v1 row (expires_at required, 8.9).
+- docs/truth/calc_version_registry.json: version bumped.
+- docs/truth/cloud_migration_parity.json: tip 20260310000002, count 36.
+- docs/truth/qa_claim.json: updated to 8.9.
+- docs/truth/qa_scope_map.json: added 8.9 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.9 proof log path and
+  generated/schema_ci.sql.
+- docs/governance/GOVERNANCE_CHANGE_PR099.md: governance justification.
+- .gitignore: added generated/schema_ci.sql (CI-generated, not tracked).
+
+Proof
+docs/proofs/8.9_share_token_expiration_invariant_20260310T164516Z.log
+
+DoD
+- expires_at NOT NULL: VERIFIED (catalog query + pgTAP test 1)
+- Lookup refuses expired tokens: VERIFIED (pgTAP test 3)
+- Expired response identical to nonexistent: VERIFIED (pgTAP tests 4+5)
+- Expiration check after revocation check: VERIFIED (pgTAP test 6)
+- pgTAP 7 tests green (160 total, 19 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- TOKEN_EXPIRED is no longer a valid response code. All callers must treat
+  NOT_FOUND as the canonical failure for invalid/expired/nonexistent tokens.
+- Em dash encoding in SQL comments caused a 2-hour schema drift battle.
+  Root cause: em dashes in migration comments get double-encoded when
+  schema is regenerated. Rule going forward: ASCII hyphens only in SQL
+  comments.
+
+Status: COMPLETE — merged to main
