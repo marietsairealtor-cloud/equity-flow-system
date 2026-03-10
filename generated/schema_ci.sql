@@ -1,4 +1,4 @@
-﻿-- 20260310000002_8_9_fix_comment_encoding.sql
+-- 20260310000002_8_9_fix_comment_encoding.sql
 -- Corrective: re-create lookup_share_token_v1 with ASCII-safe comments.
 
 -- Corrective: re-create lookup_share_token_v1 - expired tokens return NOT_FOUND (no existence leak)

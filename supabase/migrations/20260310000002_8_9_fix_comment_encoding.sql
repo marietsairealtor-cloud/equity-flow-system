@@ -1,8 +1,8 @@
 -- 20260310000002_8_9_fix_comment_encoding.sql
 -- Corrective: re-create lookup_share_token_v1 with ASCII-safe comments.
 
--- Step 4: Update lookup_share_token_v1 — expired tokens return NOT_FOUND
--- (same shape as invalid tokens, no existence leak)
+-- Corrective: re-create lookup_share_token_v1 - expired tokens return NOT_FOUND (no existence leak)
+
 DROP FUNCTION IF EXISTS public.lookup_share_token_v1(text);
 CREATE FUNCTION public.lookup_share_token_v1(
   p_token text
