@@ -2,7 +2,7 @@
 -- pgTAP: 8.7 Share Token Usage Logging
 -- GUARDRAILS §25-28: SQL-only, no DO blocks, no backslash lines.
 BEGIN;
-SELECT plan(8);
+SELECT plan(9);
 
 SET CONSTRAINTS ALL DEFERRED;
 
@@ -109,6 +109,21 @@ SELECT is(
   3,
   'Activity log entries contain token_hash field'
 );
+
+-- Test 9: Logging failure does not interrupt lookup RPC
+-- Revoke execute on foundation_log_activity_v1 to simulate logging failure
+RESET ROLE;
+REVOKE EXECUTE ON FUNCTION public.foundation_log_activity_v1(text, jsonb, uuid) FROM PUBLIC, authenticated, anon;
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.tenant_id', 'e8000000-0000-0000-0000-000000000001', true);
+SELECT is(
+  (public.lookup_share_token_v1('valid_token_8_7')::json ->> 'code'),
+  'OK',
+  'Lookup still returns OK when logging fails (best-effort logging confirmed)'
+);
+-- Restore execute permission
+RESET ROLE;
+GRANT EXECUTE ON FUNCTION public.foundation_log_activity_v1(text, jsonb, uuid) TO authenticated;
 
 SELECT finish();
 ROLLBACK;
