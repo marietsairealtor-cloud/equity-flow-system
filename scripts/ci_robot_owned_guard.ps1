@@ -144,6 +144,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -eq "docs/handoff_latest.txt"){ return "ALLOW:handoff artifact" }
   if($pp -eq "generated/contracts.snapshot.json"){ return "ALLOW:handoff artifact" }
   if($pp -eq "generated/schema.sql"){ return "ALLOW:handoff artifact" }
+  if($pp -eq "generated/schema_ci.sql"){ return "ALLOW:generated schema CI artifact" }
 
   # Allowed historical proof repairs (SOP §3.2) — explicit file allowlist
   if($pp -eq "docs/proofs/1.3_denylist_20260208_002421.log"){ return "ALLOW:1.3 repaired log" }
