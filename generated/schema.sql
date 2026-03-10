@@ -377,7 +377,7 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  -- Expiration check â€” returns NOT_FOUND (no existence leak)
+  -- Expiration check - returns NOT_FOUND (no existence leak)
   IF v_row.expires_at <= now() THEN
     v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
