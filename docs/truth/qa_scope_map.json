@@ -339,6 +339,9 @@
     },
     "8.8": {
       "proof_pattern": "^docs/proofs/8\\.8_share_token_secure_generation_"
+    },
+    "8.9": {
+      "proof_pattern": "^docs/proofs/8\\.9_share_token_expiration_invariant_"
     }
   }
 }

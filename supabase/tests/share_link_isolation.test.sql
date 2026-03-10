@@ -23,7 +23,7 @@ VALUES
 INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
 VALUES
   ('d7200000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid,
-   'd7000000-0000-0000-0000-000000000001'::uuid, extensions.digest('valid_token_abc123', 'sha256'), NULL),
+   'd7000000-0000-0000-0000-000000000001'::uuid, extensions.digest('valid_token_abc123', 'sha256'), now() + interval '30 days'),
   ('d7200000-0000-0000-0000-000000000002'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid,
    'd7000000-0000-0000-0000-000000000001'::uuid, extensions.digest('expired_token_xyz789', 'sha256'), '2020-01-01 00:00:00+00');
 
@@ -57,11 +57,11 @@ SELECT is(
 -- Restore Tenant A context
 SELECT set_config('request.jwt.claim.tenant_id', 'a0000000-0000-0000-0000-000000000001', true);
 
--- Test 4: Expired token returns TOKEN_EXPIRED (distinct code per CONTRACTS S1)
+-- Test 4: Expired token returns NOT_FOUND (no existence leak per 8.9)
 SELECT is(
   (public.lookup_share_token_v1('expired_token_xyz789')::json ->> 'code'),
-  'TOKEN_EXPIRED',
-  'Expired token returns TOKEN_EXPIRED (distinct from NOT_FOUND)'
+  'NOT_FOUND',
+  'Expired token returns NOT_FOUND (no existence leak)'
 );
 
 -- Test 5: Nonexistent token returns NOT_FOUND

@@ -1,0 +1,78 @@
+PROOF_HEAD=92e474b601fb41555fdde2e6764d89da210dd9fb
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.9 Share Token Expiration Invariant — Proof Log ===
+Date: 2026-03-10T12:42:58.0487968-04:00
+Branch: feat/8.9-share-token-expiration-invariant
+PR HEAD SHA: 92e474b601fb41555fdde2e6764d89da210dd9fb
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: expires_at column exists and is required ===
+Covered by catalog query and pgTAP test 1 - expires_at is NOT NULL.
+
+Covered by pgTAP test 1 — col_not_null assertion passes.
+
+=== DoD 2: Lookup RPC refuses expired tokens ===
+Covered by pgTAP test 3 — expired token returns NOT_FOUND.
+
+=== DoD 3: Expired tokens produce identical response shape as invalid tokens ===
+Covered by pgTAP tests 4+5 — code and error message identical to nonexistent token.
+
+=== DoD 4: Expiration check occurs after revocation check ===
+Covered by pgTAP test 6 — revoked token with future expiry returns NOT_FOUND.
+Revocation block appears before expiration block in lookup_share_token_v1.
+
+=== pgTAP test results ===
+Connecting to local database...
+  6.10_activity_log_append_only.pgtap.sql ........ ok
+  6_11_role_guard_helper.test.sql ................ ok
+  6_8_seat_role_model.test.sql ................... ok
+  6_9_foundation_surface.test.sql ................ ok
+  7_10_tenant_role_ordering_invariant.sql ........ ok
+  7_4_entitlement_truth.test.sql ................. ok
+  7_5_rls_negative_suite.test.sql ................ ok
+  7_6_calc_version_protocol.pgtap.sql ............ ok
+  7_8_role_enforcement_rpc.test.sql .............. ok
+  7_9_tenant_context_integrity.test.sql .......... ok
+  8_4_share_token_hash_at_rest.test.sql .......... ok
+  8_5_share_surface_abuse_controls.test.sql ...... ok
+  8_6_share_token_revocation.test.sql ............ ok
+  8_7_share_token_usage_logging.test.sql ......... ok
+  8_8_share_token_secure_generation.test.sql ..... ok
+  8_9_share_token_expiration_invariant.test.sql .. ok
+  rls_structural_audit.test.sql .................. ok
+  row_version_concurrency.test.sql ............... ok
+  share_link_isolation.test.sql .................. ok
+  tenant_isolation.test.sql ...................... ok
+All tests successful.
+Files=20, Tests=160,  1 wallclock secs ( 0.03 usr  0.03 sys +  0.08 cusr  0.08 csys =  0.22 CPU)
+Result: PASS
+
+=== expires_at NOT NULL verification ===
+ column_name | is_nullable |        data_type         
+-------------+-------------+--------------------------
+ expires_at  | NO          | timestamp with time zone
+(1 row)
+
+
+=== Response shape comparison ===
+pgTAP test 4: expired token code = nonexistent token code = NOT_FOUND (PASS)
+pgTAP test 5: expired token error message = nonexistent token error message (PASS)
+No existence leak — callers cannot distinguish expired from nonexistent tokens.
+
+=== Revocation precedence scenario ===
+pgTAP test 6: revoked_token_8_9 has expires_at = now() + 1 year (future)
+Result: NOT_FOUND — revocation overrides future expiration (PASS)
+
+=== Phase 3 verification ===
+green:once  — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.9 Share Token Expiration Invariant: PASS

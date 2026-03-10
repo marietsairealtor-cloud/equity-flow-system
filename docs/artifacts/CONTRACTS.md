@@ -12,7 +12,7 @@ All RPCs return exactly:
 ```json
 {
   "ok": true|false,
-  "code": "OK" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_AUTHORIZED" | "NOT_FOUND" | "TOKEN_EXPIRED" | "INTERNAL",
+  "code": "OK" | "VALIDATION_ERROR" | "CONFLICT" | "NOT_AUTHORIZED" | "NOT_FOUND" | "INTERNAL",
   "data": object|null,
   "error": { "message": string, "fields": { [field]: string } } | null
 }
@@ -262,7 +262,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7 | Look up share token; logs attempt to activity log (best-effort, hash-only) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | revoke_share_token_v1 | 8.6 | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
-| create_share_token_v1 | 8.8 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 
 ### Mapping Rules
 
