@@ -1,8 +1,9 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 154b36e
+HEAD: 911f0d8
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json
+M  supabase/migrations/20260310000001_8_9_share_token_expiration_invariant.sql
 
 === supabase status (sanitized summary) ===
 {

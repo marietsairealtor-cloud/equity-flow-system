@@ -2,7 +2,7 @@
 -- 8.9: Make expires_at NOT NULL on share_tokens.
 -- All tokens must include expiration. Lookup RPC enforces expires_at > now().
 -- Expired tokens return NOT_FOUND (same shape as invalid tokens — no existence leak).
--- Revocation check still occurs before expiration check.
+  -- Expiration check - returns NOT_FOUND (no existence leak)
 
 -- Step 1: Backfill any NULL expires_at with 30 days from now (safety net)
 UPDATE public.share_tokens
@@ -152,7 +152,7 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  -- Expiration check — returns NOT_FOUND (no existence leak)
+  -- Expiration check - returns NOT_FOUND (no existence leak)
   IF v_row.expires_at <= now() THEN
     v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
