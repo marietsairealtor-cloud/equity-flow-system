@@ -1,0 +1,73 @@
+PROOF_HEAD=45631b1fe105a421d170dbb4ab3d302d24a4734a
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.7 Share Token Usage Logging — Proof Log ===
+Date: 2026-03-09T20:20:46.6923055-04:00
+Branch: feat/8.7-share-token-usage-logging
+PR HEAD SHA: 45631b1fe105a421d170dbb4ab3d302d24a4734a
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: Successful token resolution creates activity log entry ===
+Covered by pgTAP tests 1+2 — valid lookup returns OK, log entry count=1.
+
+=== DoD 2: Failed token resolution creates activity log entry ===
+Covered by pgTAP tests 3+4 (not_found) and 5+6 (expired).
+
+=== DoD 3: Log entries store only token hash (never raw token) ===
+Covered by pgTAP test 7 — count of log entries containing raw token string = 0.
+Covered by pgTAP test 8 — count of log entries containing token_hash field = 3.
+
+=== DoD 4: Logging failure does not interrupt lookup RPC ===
+Covered by pgTAP test 9:
+  - REVOKE EXECUTE ON foundation_log_activity_v1 FROM authenticated
+  - lookup_share_token_v1('valid_token_8_7') called — returns OK
+  - GRANT EXECUTE restored after test
+  Test passes: lookup succeeds despite logging being unavailable.
+
+=== pgTAP test results ===
+Connecting to local database...
+  6.10_activity_log_append_only.pgtap.sql .... ok
+  6_11_role_guard_helper.test.sql ............ ok
+  6_8_seat_role_model.test.sql ............... ok
+  6_9_foundation_surface.test.sql ............ ok
+  7_10_tenant_role_ordering_invariant.sql .... ok
+  7_4_entitlement_truth.test.sql ............. ok
+  7_5_rls_negative_suite.test.sql ............ ok
+  7_6_calc_version_protocol.pgtap.sql ........ ok
+  7_8_role_enforcement_rpc.test.sql .......... ok
+  7_9_tenant_context_integrity.test.sql ...... ok
+  8_4_share_token_hash_at_rest.test.sql ...... ok
+  8_5_share_surface_abuse_controls.test.sql .. ok
+  8_6_share_token_revocation.test.sql ........ ok
+  8_7_share_token_usage_logging.test.sql ..... ok
+  rls_structural_audit.test.sql .............. ok
+  row_version_concurrency.test.sql ........... ok
+  share_link_isolation.test.sql .............. ok
+  tenant_isolation.test.sql .................. ok
+All tests successful.
+Files=18, Tests=145,  0 wallclock secs ( 0.04 usr  0.03 sys +  0.07 cusr  0.07 csys =  0.21 CPU)
+Result: PASS
+
+=== Evidence note ===
+pgTAP tests run inside a transaction (ROLLBACK at end). Activity log rows
+exist within the transaction and are verified by count queries in tests 2, 4,
+6, 7, 8. After ROLLBACK, no persistent rows remain — this is expected and correct.
+The pgTAP pass results are the authoritative evidence for all DoD items.
+
+=== Hash-only storage confirmation ===
+pgTAP test 7: count of activity_log entries containing raw token string = 0 (PASS)
+pgTAP test 8: count of activity_log entries with token_hash field = 3 (PASS)
+token_hash values are sha256 hex digests — never raw token strings.
+
+=== Phase 3 verification ===
+green:once   — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.7 Share Token Usage Logging: PASS
