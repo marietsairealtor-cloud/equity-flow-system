@@ -1,8 +1,25 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["version"],
+  "required": ["version", "captured_at", "rpc", "tables", "anon_exposed"],
   "properties": {
-    "version": {"type":"integer"}
+    "version": { "type": "integer" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "rpc": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sorted list of RPC names exposed via PostgREST /rpc/ surface"
+    },
+    "tables": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sorted list of table/view names exposed via PostgREST REST surface"
+    },
+    "anon_exposed": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sorted list of paths accessible to anon role"
+    },
+    "notes": { "type": "string" }
   }
 }

@@ -73,6 +73,28 @@
         "CI / truth-sync-enforced",
         "CI / waiver-debt-enforcement"
       ]
+    },
+    {
+      "lane": "surface-truth",
+      "include_globs": [
+        "docs/truth/surface_truth.json",
+        "scripts/capture_surface_truth.mjs",
+        "scripts/ci_surface_truth.mjs"
+      ],
+      "exclude_globs": [],
+      "required_checks": [
+        "CI / ci-semantic-contract",
+        "CI / ci-topology-audit",
+        "CI / env-sanity",
+        "CI / foundation-invariants",
+        "CI / proof-commit-binding",
+        "CI / proof-manifest",
+        "CI / stop-the-line",
+        "CI / test",
+        "CI / toolchain-contract",
+        "CI / truth-sync-enforced",
+        "CI / waiver-debt-enforcement"
+      ]
     }
   ]
 }

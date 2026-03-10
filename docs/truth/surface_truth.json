@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "captured_at": "2026-03-10T20:34:27.829Z",
+  "rpc": [
+    "create_deal_v1",
+    "current_tenant_id",
+    "get_user_entitlements_v1",
+    "list_deals_v1",
+    "update_deal_v1"
+  ],
+  "tables": [],
+  "anon_exposed": [
+    "/rpc/create_deal_v1",
+    "/rpc/current_tenant_id",
+    "/rpc/get_user_entitlements_v1",
+    "/rpc/list_deals_v1",
+    "/rpc/update_deal_v1"
+  ]
+}
