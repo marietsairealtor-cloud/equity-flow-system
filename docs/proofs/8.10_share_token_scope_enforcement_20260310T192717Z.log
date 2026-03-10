@@ -1,0 +1,78 @@
+PROOF_HEAD=78d211bc73137b9a253eb06ca710c625887b06b2
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 8.10 Share Token Scope Enforcement — Proof Log ===
+Date: 2026-03-10T15:25:02.7747644-04:00
+Branch: feat/8.10-share-token-scope-enforcement
+PR HEAD SHA: 78d211bc73137b9a253eb06ca710c625887b06b2
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: Share token table contains resource scope field ===
+ column_name | data_type | is_nullable 
+-------------+-----------+-------------
+ deal_id     | uuid      | NO
+(1 row)
+
+
+=== DoD 2: Lookup RPC verifies token resource matches requested resource ===
+lookup_share_token_v1 now requires p_deal_id uuid parameter.
+WHERE clause: st.token_hash = extensions.digest(p_token, 'sha256') AND st.deal_id = p_deal_id AND st.tenant_id = v_tenant_id
+Covered by pgTAP test 1 - correct deal resolves OK.
+Covered by pgTAP test 2 - wrong deal returns NOT_FOUND.
+
+=== DoD 3: Cross-resource token usage fails deterministically ===
+Covered by pgTAP test 2 - token for deal A fails when called with deal B.
+
+=== DoD 4: Cross-resource failures return identical response shape as invalid tokens ===
+Covered by pgTAP tests 3+4 - code and error message identical to nonexistent token.
+
+=== pgTAP test results ===
+Connecting to local database...
+  6.10_activity_log_append_only.pgtap.sql ........ ok
+  6_11_role_guard_helper.test.sql ................ ok
+  6_8_seat_role_model.test.sql ................... ok
+  6_9_foundation_surface.test.sql ................ ok
+  7_10_tenant_role_ordering_invariant.sql ........ ok
+  7_4_entitlement_truth.test.sql ................. ok
+  7_5_rls_negative_suite.test.sql ................ ok
+  7_6_calc_version_protocol.pgtap.sql ............ ok
+  7_8_role_enforcement_rpc.test.sql .............. ok
+  7_9_tenant_context_integrity.test.sql .......... ok
+  8_10_share_token_scope_enforcement.test.sql .... ok
+  8_4_share_token_hash_at_rest.test.sql .......... ok
+  8_5_share_surface_abuse_controls.test.sql ...... ok
+  8_6_share_token_revocation.test.sql ............ ok
+  8_7_share_token_usage_logging.test.sql ......... ok
+  8_8_share_token_secure_generation.test.sql ..... ok
+  8_9_share_token_expiration_invariant.test.sql .. ok
+  rls_structural_audit.test.sql .................. ok
+  row_version_concurrency.test.sql ............... ok
+  share_link_isolation.test.sql .................. ok
+  tenant_isolation.test.sql ...................... ok
+All tests successful.
+Files=21, Tests=167,  1 wallclock secs ( 0.04 usr  0.03 sys +  0.10 cusr  0.06 csys =  0.23 CPU)
+Result: PASS
+
+=== Scope enforcement verification ===
+pgTAP test 1: token resolves for correct deal (PASS)
+pgTAP test 2: token fails for different deal - NOT_FOUND (PASS)
+pgTAP test 3: cross-resource code = nonexistent token code = NOT_FOUND (PASS)
+pgTAP test 4: cross-resource error message = nonexistent token message (PASS)
+pgTAP test 5: resolved token data contains correct deal_id (PASS)
+
+=== Signature change verification ===
+pgTAP test 6: lookup_share_token_v1(text, uuid) exists (PASS)
+pgTAP test 7: lookup_share_token_v1(text) no longer exists (PASS)
+
+=== Phase 3 verification ===
+green:once   — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+8.10 Share Token Scope Enforcement: PASS
