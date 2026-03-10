@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-03-10T00:05:40Z",
+    "generated":  "2026-03-10T01:54:19Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -8,6 +8,15 @@
                             "tables":  [
                                            "deal_inputs",
                                            "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_share_token_v1",
+                            "tables":  [
+                                           "share_tokens"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
