@@ -318,7 +318,7 @@ $$;
 
 ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer) OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_token" "text") RETURNS json
+CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -341,13 +341,20 @@ BEGIN
       'error', json_build_object('message', 'token is required', 'fields', json_build_object())
     );
   END IF;
+  IF p_deal_id IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'deal_id is required', 'fields', json_build_object())
+    );
+  END IF;
   v_hash := extensions.digest(p_token, 'sha256');
   SELECT st.deal_id, st.expires_at, st.revoked_at, d.calc_version
   INTO v_row
   FROM public.share_tokens st
   JOIN public.deals d ON d.id = st.deal_id AND d.tenant_id = st.tenant_id
   WHERE st.token_hash = v_hash
-    AND st.tenant_id = v_tenant_id;
+    AND st.tenant_id  = v_tenant_id
+    AND st.deal_id    = p_deal_id;
   IF NOT FOUND THEN
     v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
@@ -413,7 +420,7 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."lookup_share_token_v1"("p_token" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."require_min_role_v1"("p_min" "public"."tenant_role") RETURNS "void"
     LANGUAGE "plpgsql"
