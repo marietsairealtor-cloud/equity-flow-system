@@ -1,8 +1,9 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: efbdc55
+HEAD: eaa295e
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json
+?? supabase/migrations/20260310000002_8_9_fix_comment_encoding.sql
 
 === supabase status (sanitized summary) ===
 {
@@ -24,7 +25,7 @@ HEAD: efbdc55
  20260310000001
 
 === latest migration file in repo ===
-20260310000001_8_9_share_token_expiration_invariant.sql
+20260310000002_8_9_fix_comment_encoding.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
