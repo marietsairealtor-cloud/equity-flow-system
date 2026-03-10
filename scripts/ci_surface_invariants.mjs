@@ -7,6 +7,18 @@ import { execSync } from "node:child_process";
 
 const API_URL = "http://127.0.0.1:54321";
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.ANON_KEY || "";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const JWT_SECRET = process.env.JWT_SECRET || "super-secret-jwt-token-with-at-least-32-characters-long";
+let AUTH_TOKEN = ANON_KEY;
+try {
+  const jwt = require("jsonwebtoken");
+  AUTH_TOKEN = jwt.sign(
+    { role: "authenticated", iss: "supabase", aud: "authenticated" },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+} catch (_) { AUTH_TOKEN = ANON_KEY; }
 const EXPECTED_PATH = "docs/truth/expected_surface.json";
 const ALLOWLIST_PATH = "docs/truth/execute_allowlist.json";
 
@@ -25,7 +37,7 @@ function getDbRpcs() {
 }
 
 async function getOpenApiRpcs() {
-  const headers = { "apikey": ANON_KEY || "placeholder" };
+  const headers = { "apikey": ANON_KEY || AUTH_TOKEN, "Authorization": `Bearer ${AUTH_TOKEN}` };
   const res = await fetch(`${API_URL}/rest/v1/`, { headers });
   if (!res.ok) throw new Error(`PostgREST responded ${res.status}`);
   const spec = await res.json();
@@ -96,4 +108,5 @@ async function main() {
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
+
 
