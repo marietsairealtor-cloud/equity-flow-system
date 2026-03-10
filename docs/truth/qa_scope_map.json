@@ -345,6 +345,9 @@
     },
     "8.10": {
       "proof_pattern": "^docs/proofs/8\\.10_share_token_scope_enforcement_"
+    },
+    "9.1": {
+      "proof_pattern": "^docs/proofs/9\\.1_surface_truth_schema_"
     }
   }
 }
