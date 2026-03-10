@@ -6,12 +6,13 @@
 import fs from "node:fs";
 
 const API_URL = "http://127.0.0.1:54321";
-const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiYXVkIjoiYXV0aGVudGljYXRlZCIsImV4cCI6MTc3MjkzNTYwMH0.placeholder";
+const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.ANON_KEY || "";
 
 async function fetchSurface() {
   const res = await fetch(`${API_URL}/rest/v1/`, {
     headers: { "apikey": ANON_KEY }
   });
+  // ANON_KEY optional for OpenAPI spec endpoint
   if (!res.ok) throw new Error(`PostgREST responded ${res.status}`);
   return res.json();
 }
@@ -48,3 +49,4 @@ async function main() {
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
+
