@@ -1,9 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: aa2b759
+HEAD: 84ce049
 
 === git status --porcelain=v1 ===
  M docs/truth/write_path_registry.json
-?? supabase/migrations/20260310000002_8_9_fix_comment_encoding.sql
 
 === supabase status (sanitized summary) ===
 {
