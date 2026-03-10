@@ -1,0 +1,95 @@
+PROOF_HEAD=cbb4a23076b0da427dcbed682ecec7f1793712fc
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 9.1 Surface Truth Schema + Canonicalization — Proof Log ===
+Date: 2026-03-10T18:08:23.5480278-04:00
+Branch: feat/9.1-surface-truth-schema
+PR HEAD SHA: cbb4a23076b0da427dcbed682ecec7f1793712fc
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: Truth schema exists ===
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["version", "captured_at", "rpc", "tables", "anon_exposed"],
+  "properties": {
+    "version": { "type": "integer" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "rpc": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sorted list of RPC names exposed via PostgREST /rpc/ surface"
+    },
+    "tables": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sorted list of table/view names exposed via PostgREST REST surface"
+    },
+    "anon_exposed": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Sorted list of paths accessible to anon role"
+    },
+    "notes": { "type": "string" }
+  }
+}
+
+=== DoD 2: Harness canonicalizes deterministically ===
+capture_surface_truth.mjs queries PostgREST OpenAPI endpoint.
+Output is sorted: RPCs sorted, tables sorted, anon_exposed sorted.
+Sorting is deterministic - identical input always produces identical output.
+
+=== DoD 3: Actual surface output (from committed surface_truth.json) ===
+{
+  "version": 1,
+  "captured_at": "2026-03-10T21:39:07.226Z",
+  "rpc": [
+    "current_tenant_id"
+  ],
+  "tables": [],
+  "anon_exposed": [
+    "/rpc/current_tenant_id"
+  ]
+}
+
+=== DoD 4: CI gate verifies surface matches truth ===
+
+> equity-flow-system@0.0.0 surface:verify
+> node scripts/ci_surface_truth.mjs
+
+=== ci_surface_truth ===
+  RPCs: current_tenant_id
+  Tables: (none)
+ci_surface_truth: PASS
+
+=== DoD 5: surface-truth lane added to lane_policy.json ===
+"lane": "surface-truth",
+
+=== Anon exposure correction (found during proof review) ===
+business RPCs (create_deal_v1, update_deal_v1, list_deals_v1, get_user_entitlements_v1)
+had PUBLIC/anon EXECUTE grants — unintended exposure.
+Fixed via migration 20260310000004_9_1_revoke_anon_rpc_execute.sql.
+Post-fix anon surface: current_tenant_id only (utility - reads JWT claims).
+
+=== Post-fix grant verification ===
+         proname          |                     proacl                     
+--------------------------+------------------------------------------------
+ create_deal_v1           | {postgres=X/postgres,authenticated=X/postgres}
+ get_user_entitlements_v1 | {postgres=X/postgres,authenticated=X/postgres}
+ list_deals_v1            | {postgres=X/postgres,authenticated=X/postgres}
+ update_deal_v1           | {postgres=X/postgres,authenticated=X/postgres}
+(4 rows)
+
+
+=== Phase 3 verification ===
+green:once   — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+9.1 Surface Truth Schema + Canonicalization: PASS
