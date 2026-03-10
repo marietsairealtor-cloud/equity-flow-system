@@ -1,1 +1,17 @@
-{"version":1,"rpc":[],"tables":[],"notes":"stub"}
+{
+  "version": 1,
+  "description": "Expected PostgREST + DB RPC surface. Must match normalized DB grants and OpenAPI surface. execute_allowlist must be a strict subset.",
+  "rpc": [
+    "create_deal_v1",
+    "create_share_token_v1",
+    "current_tenant_id",
+    "foundation_log_activity_v1",
+    "get_user_entitlements_v1",
+    "list_deals_v1",
+    "lookup_share_token_v1",
+    "revoke_share_token_v1",
+    "update_deal_v1"
+  ],
+  "tables": [],
+  "notes": "Populated 9.2. All RPCs with explicit grants plus current_tenant_id (implicit public execute, anon-accessible via PostgREST). Internal trigger functions excluded."
+}

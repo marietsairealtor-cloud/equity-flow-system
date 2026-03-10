@@ -1,0 +1,114 @@
+PROOF_HEAD=bc678452d7ba539bbb4d9940049f4710c1068fe2
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 9.2 Expected Surface + Executable Allowlist Invariants — Proof Log ===
+Date: 2026-03-10T19:48:25.6970800-04:00
+Branch: feat/9.2-surface-allowlist-invariants
+PR HEAD SHA: bc678452d7ba539bbb4d9940049f4710c1068fe2
+
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+
+=== DoD 1: expected_surface equals normalized DB surface ===
+DB grants query:
+create_deal_v1
+create_share_token_v1
+foundation_log_activity_v1
+get_user_entitlements_v1
+list_deals_v1
+lookup_share_token_v1
+revoke_share_token_v1
+update_deal_v1
+
+=== DoD 2: expected_surface equals normalized OpenAPI /rpc surface ===
+OpenAPI surface captured via authenticated token (role=authenticated).
+Anon surface captured separately — shows only current_tenant_id.
+
+=== DoD 3: execute_allowlist is strict subset of expected_surface ===
+{
+  "version": 1,
+  "allow": [
+    "create_deal_v1",
+    "create_share_token_v1",
+    "foundation_log_activity_v1",
+    "get_user_entitlements_v1",
+    "list_deals_v1",
+    "lookup_share_token_v1",
+    "revoke_share_token_v1",
+    "update_deal_v1"
+  ]
+}
+
+=== DoD 4: Mismatches hard-fail ===
+ci_surface_invariants.mjs exits with code 1 on any violation.
+Three checks enforced: DB==expected, OpenAPI==expected, allowlist subset expected.
+
+=== CI gate output ===
+
+> equity-flow-system@0.0.0 surface:invariants
+> node scripts/ci_surface_invariants.mjs
+
+=== ci_surface_invariants ===
+Check 1: DB surface vs expected_surface...
+  PASS: DB surface matches expected (9 RPCs)
+Check 2: OpenAPI surface vs expected_surface...
+  PASS: OpenAPI surface matches expected (9 RPCs exposed)
+Check 3: execute_allowlist vs expected_surface...
+  PASS: execute_allowlist is strict subset of expected_surface (8 entries)
+
+Expected RPCs: create_deal_v1, create_share_token_v1, current_tenant_id, foundation_log_activity_v1, get_user_entitlements_v1, list_deals_v1, lookup_share_token_v1, revoke_share_token_v1, update_deal_v1
+DB grants: create_deal_v1, create_share_token_v1, current_tenant_id, foundation_log_activity_v1, get_user_entitlements_v1, list_deals_v1, lookup_share_token_v1, revoke_share_token_v1, update_deal_v1
+OpenAPI exposed: create_deal_v1, create_share_token_v1, current_tenant_id, foundation_log_activity_v1, get_user_entitlements_v1, list_deals_v1, lookup_share_token_v1, revoke_share_token_v1, update_deal_v1
+Allowlist: create_deal_v1, create_share_token_v1, foundation_log_activity_v1, get_user_entitlements_v1, list_deals_v1, lookup_share_token_v1, revoke_share_token_v1, update_deal_v1
+ci_surface_invariants: PASS
+
+=== Committed surface truth ===
+{
+  "version": 1,
+  "captured_at": "2026-03-10T23:37:06.494Z",
+  "rpc": [
+    "create_deal_v1",
+    "create_share_token_v1",
+    "current_tenant_id",
+    "foundation_log_activity_v1",
+    "get_user_entitlements_v1",
+    "list_deals_v1",
+    "lookup_share_token_v1",
+    "revoke_share_token_v1",
+    "update_deal_v1"
+  ],
+  "tables": [],
+  "anon_exposed": [
+    "/rpc/current_tenant_id"
+  ]
+}
+
+=== Committed expected surface ===
+{
+  "version": 1,
+  "description": "Expected PostgREST + DB RPC surface. Must match normalized DB grants and OpenAPI surface. execute_allowlist must be a strict subset.",
+  "rpc": [
+    "create_deal_v1",
+    "create_share_token_v1",
+    "current_tenant_id",
+    "foundation_log_activity_v1",
+    "get_user_entitlements_v1",
+    "list_deals_v1",
+    "lookup_share_token_v1",
+    "revoke_share_token_v1",
+    "update_deal_v1"
+  ],
+  "tables": [],
+  "notes": "Populated 9.2. All RPCs with explicit grants plus current_tenant_id (implicit public execute, anon-accessible via PostgREST). Internal trigger functions excluded."
+}
+
+=== Phase 3 verification ===
+green:once   — PASS
+green:twice  — PASS
+pr:preflight — PASS
+
+=== RESULT ===
+9.2 Expected Surface + Executable Allowlist Invariants: PASS

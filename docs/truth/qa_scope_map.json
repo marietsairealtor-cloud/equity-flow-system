@@ -348,6 +348,9 @@
     },
     "9.1": {
       "proof_pattern": "^docs/proofs/9\\.1_surface_truth_schema_"
+    },
+    "9.2": {
+      "proof_pattern": "^docs/proofs/9\\.2_surface_truth_"
     }
   }
 }
