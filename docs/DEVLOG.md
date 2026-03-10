@@ -5224,3 +5224,53 @@ Notes
   comments.
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-10 — Build Route v2.4 — Item 8.10
+
+Objective
+Enforce share token resource scope. Caller must assert expected deal_id.
+Token lookup verifies token.deal_id matches requested deal_id.
+Cross-resource token use fails deterministically with no existence leak.
+
+Changes
+- supabase/migrations/20260310000003_8_10_share_token_scope_enforcement.sql:
+  Dropped single-arg lookup_share_token_v1(text). Recreated as
+  lookup_share_token_v1(text, uuid) - caller must provide p_deal_id.
+  WHERE clause enforces st.deal_id = p_deal_id alongside token hash and
+  tenant checks. Mismatch returns NOT_FOUND (no existence leak).
+- supabase/tests/8_10_share_token_scope_enforcement.test.sql: 7 pgTAP
+  tests. Correct deal resolves OK, wrong deal returns NOT_FOUND,
+  cross-resource code identical to nonexistent token, cross-resource
+  message identical to nonexistent token, resolved data contains correct
+  deal_id, new signature exists, old signature no longer exists.
+- supabase/tests/7_5, 7_9, 8_5, 8_6, 8_7, 8_9, share_link_isolation:
+  All lookup_share_token_v1 calls updated to pass deal_id as second arg.
+- docs/artifacts/CONTRACTS.md: updated lookup_share_token_v1 row to
+  reflect new signature and 8.10 scope enforcement requirement.
+- docs/truth/privilege_truth.json: kept function name without signature
+  (allowlist matches by name).
+- docs/truth/calc_version_registry.json: version bumped.
+- docs/truth/cloud_migration_parity.json: tip 20260310000003, count 37.
+- docs/truth/qa_claim.json: updated to 8.10.
+- docs/truth/qa_scope_map.json: added 8.10 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 8.10 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR100.md: governance justification.
+
+Proof
+docs/proofs/8.10_share_token_scope_enforcement_20260310T192717Z.log
+
+DoD
+- share_tokens.deal_id NOT NULL FK exists: VERIFIED (catalog query)
+- Lookup RPC verifies deal_id scope: VERIFIED (pgTAP tests 1+2)
+- Cross-resource failure deterministic: VERIFIED (pgTAP test 2)
+- Cross-resource response identical to invalid token: VERIFIED (pgTAP tests 3+4)
+- Old single-arg signature removed: VERIFIED (pgTAP test 7)
+- pgTAP 7 tests green (167 total, 20 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- Breaking signature change. All internal callers updated.
+- Section 8 share token lifecycle complete (8.4-8.10).
+
+Status: COMPLETE — merged to main
