@@ -336,6 +336,9 @@
     },
     "8.7": {
       "proof_pattern": "^docs/proofs/8\\.7_share_token_usage_logging_"
+    },
+    "8.8": {
+      "proof_pattern": "^docs/proofs/8\\.8_share_token_secure_generation_"
     }
   }
 }

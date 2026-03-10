@@ -7,6 +7,7 @@
     "public.lookup_share_token_v1",
     "public.get_user_entitlements_v1",
     "public.update_deal_v1",
-    "public.revoke_share_token_v1"
+    "public.revoke_share_token_v1",
+    "public.create_share_token_v1"
   ]
 }
