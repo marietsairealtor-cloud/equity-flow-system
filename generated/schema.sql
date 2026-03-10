@@ -121,7 +121,7 @@ $$;
 
 ALTER FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer, "p_assumptions" "jsonb") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."create_share_token_v1"("p_deal_id" "uuid", "p_expires_at" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS json
+CREATE OR REPLACE FUNCTION "public"."create_share_token_v1"("p_deal_id" "uuid", "p_expires_at" timestamp with time zone) RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -143,6 +143,18 @@ BEGIN
       'error', json_build_object('message', 'deal_id is required', 'fields', json_build_object())
     );
   END IF;
+  IF p_expires_at IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'expires_at is required', 'fields', json_build_object())
+    );
+  END IF;
+  IF p_expires_at <= now() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'expires_at must be in the future', 'fields', json_build_object())
+    );
+  END IF;
   -- Verify deal belongs to tenant
   IF NOT EXISTS (
     SELECT 1 FROM public.deals
@@ -155,8 +167,7 @@ BEGIN
   END IF;
   -- Generate token: shr_ prefix + 32 random bytes as hex (256 bits entropy)
   v_token := 'shr_' || encode(extensions.gen_random_bytes(32), 'hex');
-  -- Hash full token including prefix before storage
-  v_hash := extensions.digest(v_token, 'sha256');
+  v_hash  := extensions.digest(v_token, 'sha256');
   INSERT INTO public.share_tokens (tenant_id, deal_id, token_hash, expires_at)
   VALUES (v_tenant_id, p_deal_id, v_hash, p_expires_at);
   -- Return raw token to caller - only time it is ever seen in plaintext
@@ -345,16 +356,13 @@ BEGIN
     BEGIN
       PERFORM public.foundation_log_activity_v1(
         'share_token_lookup',
-        json_build_object(
-          'token_hash', encode(v_hash, 'hex'),
-          'success', false,
-          'failure_category', 'not_found'
-        )::jsonb,
+        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'not_found')::jsonb,
         null
       );
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
+  -- Revocation check first (overrides expiration)
   IF v_row.revoked_at IS NOT NULL THEN
     v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
@@ -363,29 +371,22 @@ BEGIN
     BEGIN
       PERFORM public.foundation_log_activity_v1(
         'share_token_lookup',
-        json_build_object(
-          'token_hash', encode(v_hash, 'hex'),
-          'success', false,
-          'failure_category', 'revoked'
-        )::jsonb,
+        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'revoked')::jsonb,
         null
       );
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  IF v_row.expires_at IS NOT NULL AND v_row.expires_at < now() THEN
+  -- Expiration check â€” returns NOT_FOUND (no existence leak)
+  IF v_row.expires_at <= now() THEN
     v_result := json_build_object(
-      'ok', false, 'code', 'TOKEN_EXPIRED', 'data', null,
-      'error', json_build_object('message', 'Share token has expired', 'fields', json_build_object())
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
     );
     BEGIN
       PERFORM public.foundation_log_activity_v1(
         'share_token_lookup',
-        json_build_object(
-          'token_hash', encode(v_hash, 'hex'),
-          'success', false,
-          'failure_category', 'expired'
-        )::jsonb,
+        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'expired')::jsonb,
         null
       );
     EXCEPTION WHEN OTHERS THEN NULL; END;
@@ -404,11 +405,7 @@ BEGIN
   BEGIN
     PERFORM public.foundation_log_activity_v1(
       'share_token_lookup',
-      json_build_object(
-        'token_hash', encode(v_hash, 'hex'),
-        'success', true,
-        'failure_category', null
-      )::jsonb,
+      json_build_object('token_hash', encode(v_hash, 'hex'), 'success', true, 'failure_category', null)::jsonb,
       null
     );
   EXCEPTION WHEN OTHERS THEN NULL; END;
@@ -594,7 +591,7 @@ CREATE TABLE IF NOT EXISTS "public"."share_tokens" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "tenant_id" "uuid" NOT NULL,
     "deal_id" "uuid" NOT NULL,
-    "expires_at" timestamp with time zone,
+    "expires_at" timestamp with time zone NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "token_hash" "bytea" NOT NULL,
     "revoked_at" timestamp with time zone
