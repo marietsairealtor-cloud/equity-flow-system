@@ -5,3 +5,4 @@ supabase/.branches/
 supabase/.temp/
 .DS_Store
 .tmp.driveupload/
+generated/schema_ci.sql
