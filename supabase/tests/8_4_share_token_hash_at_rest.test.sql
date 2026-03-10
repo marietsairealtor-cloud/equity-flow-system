@@ -13,12 +13,13 @@ INSERT INTO public.deals (id, tenant_id, row_version, calc_version, assumptions_
 VALUES ('d0000000-0000-0000-0000-000000000084', 'a0000000-0000-0000-0000-000000000084', 1, 1, 'd0100000-0000-0000-0000-000000000084');
 
 -- Insert a share token using hash
-INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash)
+INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
 VALUES (
   'e0000000-0000-0000-0000-000000000084',
   'a0000000-0000-0000-0000-000000000084',
   'd0000000-0000-0000-0000-000000000084',
-  extensions.digest('test-token-84', 'sha256')
+  extensions.digest('test-token-84', 'sha256'),
+  now() + interval '30 days'
 );
 
 -- Test 1: share_tokens table has token_hash column

@@ -23,7 +23,7 @@ VALUES
   ('e8300000-0000-0000-0000-000000000001'::uuid,
    'e8000000-0000-0000-0000-000000000001'::uuid,
    'e8100000-0000-0000-0000-000000000001'::uuid,
-   extensions.digest('valid_token_8_7', 'sha256'), NULL, NULL),
+   extensions.digest('valid_token_8_7', 'sha256'), now() + interval '30 days', NULL),
   ('e8300000-0000-0000-0000-000000000002'::uuid,
    'e8000000-0000-0000-0000-000000000001'::uuid,
    'e8100000-0000-0000-0000-000000000001'::uuid,
@@ -72,13 +72,13 @@ SELECT is(
   'Failed lookup (not_found) creates activity log entry'
 );
 
--- Test 5: Expired token lookup returns TOKEN_EXPIRED
+-- Test 5: Expired token lookup returns NOT_FOUND (no existence leak per 8.9)
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'e8000000-0000-0000-0000-000000000001', true);
 SELECT is(
   (public.lookup_share_token_v1('expired_token_8_7')::json ->> 'code'),
-  'TOKEN_EXPIRED',
-  'Expired token lookup returns TOKEN_EXPIRED'
+  'NOT_FOUND',
+  'Expired token lookup returns NOT_FOUND (no existence leak)'
 );
 
 -- Test 6: Expired token lookup creates activity log entry with failure_category=expired

@@ -1,6 +1,6 @@
 -- 8.5: Share Surface Abuse Controls pgTAP tests
 -- Anti-enumeration: invalid token response shape = nonexistent token response shape.
--- Expiry: expired token fails deterministically with TOKEN_EXPIRED.
+-- Expiry: expired token fails deterministically with NOT_FOUND (no existence leak per 8.9).
 -- Cross-tenant: token under wrong tenant context returns NOT_FOUND.
 
 BEGIN;
@@ -15,9 +15,9 @@ INSERT INTO public.deals (id, tenant_id, row_version, calc_version, assumptions_
 VALUES ('d0000000-0000-0000-0000-000000000085', 'a0000000-0000-0000-0000-000000000085', 1, 1, 'd0100000-0000-0000-0000-000000000085');
 
 -- Valid token (not expired)
-INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash)
+INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
 VALUES ('e0000000-0000-0000-0000-000000000085', 'a0000000-0000-0000-0000-000000000085', 'd0000000-0000-0000-0000-000000000085',
-  extensions.digest('valid-abuse-test-token', 'sha256'));
+  extensions.digest('valid-abuse-test-token', 'sha256'), now() + interval '30 days');
 
 -- Expired token
 INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
@@ -34,11 +34,11 @@ SELECT set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-
 SELECT set_config('request.jwt.claim.tenant_id', 'a0000000-0000-0000-0000-000000000085', true);
 SET ROLE authenticated;
 
--- Test 1: Expired token returns TOKEN_EXPIRED deterministically
+-- Test 1: Expired token returns NOT_FOUND deterministically (no existence leak per 8.9)
 SELECT is(
   (public.lookup_share_token_v1('expired-abuse-test-token')::json ->> 'code'),
-  'TOKEN_EXPIRED',
-  'Expired token returns TOKEN_EXPIRED deterministically'
+  'NOT_FOUND',
+  'Expired token returns NOT_FOUND deterministically (no existence leak)'
 );
 
 -- Test 2: Nonexistent token returns NOT_FOUND

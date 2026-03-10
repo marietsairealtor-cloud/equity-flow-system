@@ -29,7 +29,7 @@ VALUES
   ('f3000000-0000-0000-0000-000000000001'::uuid,
    'f0000000-0000-0000-0000-000000000001'::uuid,
    'f1000000-0000-0000-0000-000000000001'::uuid,
-   extensions.digest('valid_token_8_6', 'sha256'), NULL, NULL),
+   extensions.digest('valid_token_8_6', 'sha256'), now() + interval '30 days', NULL),
   -- revoked token (future expiry — revocation must override)
   ('f3000000-0000-0000-0000-000000000002'::uuid,
    'f0000000-0000-0000-0000-000000000001'::uuid,
@@ -109,3 +109,4 @@ SELECT has_function('public', 'revoke_share_token_v1', ARRAY['text'],
 
 SELECT finish();
 ROLLBACK;
+

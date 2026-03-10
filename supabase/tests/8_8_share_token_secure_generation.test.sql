@@ -27,28 +27,28 @@ SELECT set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-0000000000a1
 
 -- Test 1: create_share_token_v1 returns OK
 SELECT is(
-  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid, now() + interval '30 days')::json ->> 'code'),
   'OK',
   'create_share_token_v1 returns OK'
 );
 
 -- Test 2: Token contains shr_ prefix
 SELECT ok(
-  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid)::json -> 'data' ->> 'token') LIKE 'shr_%',
+  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid, now() + interval '30 days')::json -> 'data' ->> 'token') LIKE 'shr_%',
   'Generated token contains shr_ prefix'
 );
 
 -- Test 3: Token meets minimum length (shr_ + 64 hex = 68 chars minimum)
 SELECT ok(
-  length((public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid)::json -> 'data' ->> 'token')) >= 68,
+  length((public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid, now() + interval '30 days')::json -> 'data' ->> 'token')) >= 68,
   'Generated token meets minimum length of 68 characters'
 );
 
 -- Test 4: Token is unique per call (no two identical tokens)
 SELECT ok(
-  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid)::json -> 'data' ->> 'token')
+  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid, now() + interval '30 days')::json -> 'data' ->> 'token')
   <>
-  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid)::json -> 'data' ->> 'token'),
+  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid, now() + interval '30 days')::json -> 'data' ->> 'token'),
   'Each token generation call produces unique token'
 );
 
@@ -82,7 +82,7 @@ RESET ROLE;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', '', true);
 SELECT is(
-  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.create_share_token_v1('e9100000-0000-0000-0000-000000000001'::uuid, now() + interval '30 days')::json ->> 'code'),
   'NOT_AUTHORIZED',
   'create_share_token_v1 returns NOT_AUTHORIZED without tenant context'
 );
