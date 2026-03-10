@@ -1,13 +1,13 @@
 {
   "version": 1,
   "allow": [
-    "list_deals_v1",
     "create_deal_v1",
-    "update_deal_v1",
-    "lookup_share_token_v1",
+    "create_share_token_v1",
     "foundation_log_activity_v1",
     "get_user_entitlements_v1",
+    "list_deals_v1",
+    "lookup_share_token_v1",
     "revoke_share_token_v1",
-    "create_share_token_v1"
+    "update_deal_v1"
   ]
 }
