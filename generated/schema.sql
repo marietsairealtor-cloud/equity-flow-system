@@ -159,7 +159,7 @@ BEGIN
   v_hash := extensions.digest(v_token, 'sha256');
   INSERT INTO public.share_tokens (tenant_id, deal_id, token_hash, expires_at)
   VALUES (v_tenant_id, p_deal_id, v_hash, p_expires_at);
-  -- Return raw token to caller â€” only time it is ever seen in plaintext
+  -- Return raw token to caller - only time it is ever seen in plaintext
   RETURN json_build_object(
     'ok', true,
     'code', 'OK',
