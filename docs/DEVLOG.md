@@ -5402,3 +5402,45 @@ Notes
   current_tenant_id (PostgREST filters by role on OpenAPI endpoint).
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-11 — Build Route v2.4 — Item 9.3
+
+Objective
+Establish single canonical reload path for PostgREST schema cache.
+Eliminate contradiction between local and cloud reload behavior.
+
+Changes
+- docs/artifacts/CONTRACTS.md §19: canonical reload contract added.
+  SIGUSR1 is the only approved reload mechanism. Reload is deploy-lane
+  only. Local harnesses do not perform or claim reload.
+- docs/truth/lane_policy.json: added deploy lane (reload evidence required
+  in proof logs after migration apply) and release lane (surface:invariants
+  must pass after reload).
+- docs/truth/lane_checks.json: added deploy lane check
+  (reload-evidence-required) and release lane check (CI / surface-invariants).
+- docs/truth/qa_claim.json: updated to 9.3.
+- docs/truth/qa_scope_map.json: added 9.3 entry.
+- docs/truth/calc_version_registry.json: version bumped.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 9.3 proof doc path.
+- docs/governance/GOVERNANCE_CHANGE_PR103.md: governance justification.
+
+Proof
+docs/proofs/9.3_reload_contract_20260311T004611Z.md
+
+DoD
+- Canonical reload documented (CONTRACTS.md §19): VERIFIED
+- Reload restricted to deploy lane: VERIFIED
+- Local harness does not claim reload: VERIFIED
+- Lane config evidence in proof: VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- test_postgrest_isolation.mjs SIGUSR1 usage is grandfathered test-environment
+  setup and does not represent a deploy-lane reload. test setup != reload contract.
+- Deploy and release lanes are stubs — enforcement will be wired when deploy
+  pipeline is formally defined.
+- Section 9 PostgREST governance loop now complete:
+  deploy reload -> capture surface -> compare to expected -> block drift.
+
+Status: COMPLETE — merged to main
