@@ -5727,3 +5727,63 @@ No further architectural questions remain for this phase.
    * 10.11 RPC Error Contract Tests
 
 Advisor meeting concluded with **all decisions finalized and no outstanding items**.
+
+2026-03-11 — Build Route v2.4 — Item 9.6
+
+Objective
+CI detects direct data exposure drift through PostgREST. Surface truth
+snapshot extended to include schemas_exposed, tables_exposed, and
+views_exposed. Privilege drift causing new table or view exposure fails
+the merge-blocking data-surface-truth gate.
+
+Changes
+- scripts/ci_data_surface_truth.mjs: New CI gate. Queries
+  information_schema.role_table_grants and pg_namespace for roles anon
+  and authenticated in public schema only. Supabase internal schemas
+  excluded. Hard-fails on any mismatch between actual and expected
+  surface. Reports unexpected exposure explicitly.
+- docs/truth/expected_surface.json: bumped to v2. Added
+  schemas_exposed: [public], tables_exposed: [user_profiles],
+  views_exposed: []. data_surface_exceptions documents user_profiles
+  as CONTRACTS S12 allowed exception.
+- package.json: added data-surface:truth script.
+- .github/workflows/ci.yml: added data-surface-truth job (needs:
+  changes, lane-enforcement; if: docs_only != true; starts Supabase,
+  runs npm run data-surface:truth). Added to required.needs aggregate.
+  Fixed pre-existing naming wart: migration-grant-lint job name had
+  redundant CI / prefix causing CI / CI / migration-grant-lint in
+  required_checks.json — removed redundant prefix.
+- docs/truth/required_checks.json: regenerated via truth:sync.
+  Added CI / data-surface-truth. Fixed CI / CI / migration-grant-lint
+  → CI / migration-grant-lint.
+- docs/artifacts/CONTRACTS.md: appended S22 data surface truth contract.
+- docs/governance/GOVERNANCE_CHANGE_PR107.md: governance justification.
+- docs/truth/qa_claim.json: updated to 9.6.
+- docs/truth/qa_scope_map.json: added 9.6 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 9.6 proof log path.
+
+Proof
+docs/proofs/9.6_data_surface_truth_20260311T190022Z.log
+
+DoD
+- schemas_exposed, tables_exposed, views_exposed in expected_surface.json: VERIFIED
+- Roles checked (anon, authenticated): VERIFIED
+- Expected surface in expected_surface.json: VERIFIED (v2)
+- Core tables not in exposed sets except user_profiles: VERIFIED
+- actual_surface == expected_surface enforced by CI gate: VERIFIED
+- Privilege drift fails CI: VERIFIED (script exits 1 on mismatch)
+- Gate is merge-blocking data-surface-truth: VERIFIED
+  (ci.yml job + required.needs + required_checks.json)
+- green:twice, pr:preflight: PASS
+
+Notes
+- Initial script had two bugs: schema check queried all Supabase schemas
+  (returned auth, extensions, storage etc.) — fixed by scoping to
+  PRODUCT_SCHEMAS = [public] only. Table query used table_type column
+  that does not exist in role_table_grants — fixed by joining
+  information_schema.tables.
+- QA blocked finalize on missing merge-blocking CI wiring. Gate job,
+  required.needs entry, and required_checks.json all added before
+  finalizing proof.
+
+Status: COMPLETE — merged to main
