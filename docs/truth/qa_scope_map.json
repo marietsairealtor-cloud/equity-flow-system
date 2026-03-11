@@ -360,6 +360,9 @@
     },
     "9.5": {
       "proof_pattern": "^docs/proofs/9\\.5_token_cardinality_guard_"
+    },
+    "9.6": {
+      "proof_pattern": "^docs/proofs/9\\.6_data_surface_truth_"
     }
   }
 }

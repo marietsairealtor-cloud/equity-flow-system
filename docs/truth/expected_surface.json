@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "description": "Expected PostgREST + DB RPC surface. Must match normalized DB grants and OpenAPI surface. execute_allowlist must be a strict subset.",
+  "version": 2,
+  "description": "Expected PostgREST + DB RPC and data surface. Must match normalized DB grants and OpenAPI surface. execute_allowlist must be a strict subset. Data surface (schemas, tables, views) enforced by 9.6.",
   "rpc": [
     "create_deal_v1",
     "create_share_token_v1",
@@ -13,5 +13,15 @@
     "update_deal_v1"
   ],
   "tables": [],
-  "notes": "Populated 9.2. All RPCs with explicit grants plus current_tenant_id (implicit public execute, anon-accessible via PostgREST). Internal trigger functions excluded."
+  "schemas_exposed": [
+    "public"
+  ],
+  "tables_exposed": [
+    "user_profiles"
+  ],
+  "views_exposed": [],
+  "data_surface_exceptions": {
+    "user_profiles": "CONTRACTS S12 — privilege firewall exception. user_profiles SELECT granted to authenticated only. anon has no access."
+  },
+  "notes": "Populated 9.2. RPCs with explicit grants plus current_tenant_id. Internal trigger functions excluded. Data surface fields added 9.6: tables_exposed and views_exposed must match actual PostgREST-reachable objects for anon and authenticated roles."
 }

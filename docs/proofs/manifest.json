@@ -153,6 +153,7 @@
     "docs/proofs/9.2_surface_truth_20260310T235240Z.log": "99e63b0ddb112e561cfef6e3267278ac7b731cf17a6484202b048e5debe5dc6e",
     "docs/proofs/9.3_reload_contract_20260311T004611Z.md": "a378c64b85eec84951d751430320fefdfff8a1234275a4d38b3bcca4e87d627f",
     "docs/proofs/9.4_token_format_validation_20260311T122947Z.log": "2075520456a25d3cfc33d3201e64f99ae773897cbd5fe90e22a14f7f17a80f6f",
-    "docs/proofs/9.5_token_cardinality_guard_20260311T152141Z.log": "ce2c80079ad553dc2971cb37589c893a509eafc78b2392e813846831947a8c4f"
+    "docs/proofs/9.5_token_cardinality_guard_20260311T152141Z.log": "ce2c80079ad553dc2971cb37589c893a509eafc78b2392e813846831947a8c4f",
+    "docs/proofs/9.6_data_surface_truth_20260311T190022Z.log": "ddbc9f684e26e1b5e31cf93bc03f28c307889e9ee6970f1de0d22cbd62a67702"
   }
 }
