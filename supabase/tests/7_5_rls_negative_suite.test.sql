@@ -141,13 +141,13 @@ SELECT set_config('request.jwt.claim.tenant_id', 'c0000000-0000-0000-0000-000000
 RESET ROLE;
 INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
 VALUES ('c5000000-0000-0000-0000-000000000001'::uuid, 'c0000000-0000-0000-0000-000000000001'::uuid,
-        'c2000000-0000-0000-0000-000000000001'::uuid, extensions.digest('cross_tenant_token_75', 'sha256'), now() + interval '30 days');
+        'c2000000-0000-0000-0000-000000000001'::uuid, extensions.digest('shr_cc75000000000000000000000000000000000000000000000000000000000000', 'sha256'), now() + interval '30 days');
 
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.tenant_id', 'c0000000-0000-0000-0000-000000000002', true);
 
 SELECT is(
-  (public.lookup_share_token_v1('cross_tenant_token_75', 'c2000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_cc75000000000000000000000000000000000000000000000000000000000000', 'c2000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'share-link: cross-tenant token lookup returns NOT_FOUND (tenant isolated)'
 );

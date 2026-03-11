@@ -354,6 +354,9 @@
     },
     "9.3": {
       "proof_pattern": "^docs/proofs/9\\.3_reload_contract_"
+    },
+    "9.4": {
+      "proof_pattern": "^docs/proofs/9\\.4_token_format_validation_"
     }
   }
 }

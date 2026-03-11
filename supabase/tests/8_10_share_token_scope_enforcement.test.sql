@@ -32,7 +32,7 @@ VALUES
   ('eb300000-0000-0000-0000-000000000001'::uuid,
    'eb000000-0000-0000-0000-000000000001'::uuid,
    'eb100000-0000-0000-0000-000000000001'::uuid,
-   extensions.digest('scope_token_8_10', 'sha256'),
+   extensions.digest('shr_8a000000000000000000000000000000000000000000000000000000000000aa', 'sha256'),
    now() + interval '1 hour');
 
 RESET ROLE;
@@ -42,35 +42,35 @@ SELECT set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-0000000000a1
 
 -- Test 1: Token resolves for correct deal
 SELECT is(
-  (public.lookup_share_token_v1('scope_token_8_10', 'eb100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_8a000000000000000000000000000000000000000000000000000000000000aa', 'eb100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'OK',
   'Token resolves for correct deal'
 );
 
 -- Test 2: Token fails for different deal (cross-resource)
 SELECT is(
-  (public.lookup_share_token_v1('scope_token_8_10', 'eb100000-0000-0000-0000-000000000002'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_8a000000000000000000000000000000000000000000000000000000000000aa', 'eb100000-0000-0000-0000-000000000002'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Token fails for different deal (cross-resource rejection)'
 );
 
 -- Test 3: Cross-resource response code identical to nonexistent token
 SELECT is(
-  (public.lookup_share_token_v1('scope_token_8_10', 'eb100000-0000-0000-0000-000000000002'::uuid)::json ->> 'code'),
-  (public.lookup_share_token_v1('does_not_exist_8_10', 'eb100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_8a000000000000000000000000000000000000000000000000000000000000aa', 'eb100000-0000-0000-0000-000000000002'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_8a000000000000000000000000000000000000000000000000000000000000bb', 'eb100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'Cross-resource response code identical to nonexistent token (no existence leak)'
 );
 
 -- Test 4: Cross-resource error message identical to nonexistent token
 SELECT is(
-  (public.lookup_share_token_v1('scope_token_8_10', 'eb100000-0000-0000-0000-000000000002'::uuid)::json -> 'error' ->> 'message'),
-  (public.lookup_share_token_v1('does_not_exist_8_10', 'eb100000-0000-0000-0000-000000000001'::uuid)::json -> 'error' ->> 'message'),
+  (public.lookup_share_token_v1('shr_8a000000000000000000000000000000000000000000000000000000000000aa', 'eb100000-0000-0000-0000-000000000002'::uuid)::json -> 'error' ->> 'message'),
+  (public.lookup_share_token_v1('shr_8a000000000000000000000000000000000000000000000000000000000000bb', 'eb100000-0000-0000-0000-000000000001'::uuid)::json -> 'error' ->> 'message'),
   'Cross-resource error message identical to nonexistent token (no existence leak)'
 );
 
 -- Test 5: Resolved token data contains correct deal_id
 SELECT is(
-  (public.lookup_share_token_v1('scope_token_8_10', 'eb100000-0000-0000-0000-000000000001'::uuid)::json -> 'data' ->> 'deal_id'),
+  (public.lookup_share_token_v1('shr_8a000000000000000000000000000000000000000000000000000000000000aa', 'eb100000-0000-0000-0000-000000000001'::uuid)::json -> 'data' ->> 'deal_id'),
   'eb100000-0000-0000-0000-000000000001',
   'Resolved token data contains correct deal_id'
 );

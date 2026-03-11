@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -9,6 +9,13 @@
       "description": "Initial calculation version. Deals store assumptions and outputs via deal_inputs and deal_outputs tables. No formula logic implemented server-side yet; calc_version tracks schema generation only.",
       "introduced_pr": "baseline (6.1 greenfield migrations)",
       "released_at": "2026-02-19"
+    },
+    {
+      "calc_version": 1,
+      "label": "9.4 token format validation",
+      "description": "9.4: lookup_share_token_v1 recreated with format guard before hashing. Migration joins deals to return calc_version in success response — incidental token reference, no calc logic changed.",
+      "introduced_pr": "PR104",
+      "released_at": "2026-03-11"
     },
     {
       "calc_version": 1,

@@ -29,12 +29,12 @@ VALUES
   ('f3000000-0000-0000-0000-000000000001'::uuid,
    'f0000000-0000-0000-0000-000000000001'::uuid,
    'f1000000-0000-0000-0000-000000000001'::uuid,
-   extensions.digest('valid_token_8_6', 'sha256'), now() + interval '30 days', NULL),
+   extensions.digest('shr_86000000000000000000000000000000000000000000000000000000000000aa', 'sha256'), now() + interval '30 days', NULL),
   -- revoked token (future expiry — revocation must override)
   ('f3000000-0000-0000-0000-000000000002'::uuid,
    'f0000000-0000-0000-0000-000000000001'::uuid,
    'f1000000-0000-0000-0000-000000000001'::uuid,
-   extensions.digest('revoked_token_8_6', 'sha256'),
+   extensions.digest('shr_86000000000000000000000000000000000000000000000000000000000000bb', 'sha256'),
    now() + interval '1 year',
    now() - interval '1 hour');
 
@@ -45,56 +45,56 @@ SELECT set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-0000000000a1
 
 -- Test 1: Valid token returns OK
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_8_6', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000aa', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'OK',
   'Valid token returns OK'
 );
 
 -- Test 2: Revoked token returns NOT_FOUND
 SELECT is(
-  (public.lookup_share_token_v1('revoked_token_8_6', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000bb', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Revoked token returns NOT_FOUND'
 );
 
 -- Test 3: Revoked token response identical to nonexistent token (no existence leak)
 SELECT is(
-  (public.lookup_share_token_v1('revoked_token_8_6', 'f1000000-0000-0000-0000-000000000001'::uuid)::json::text),
-  (public.lookup_share_token_v1('does_not_exist_8_6', 'f1000000-0000-0000-0000-000000000001'::uuid)::json::text),
+  (public.lookup_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000bb', 'f1000000-0000-0000-0000-000000000001'::uuid)::json::text),
+  (public.lookup_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000cc', 'f1000000-0000-0000-0000-000000000001'::uuid)::json::text),
   'Revoked token response identical to nonexistent token (no existence leak)'
 );
 
 -- Test 4: Revoked token cannot be used even if expires_at is in the future
 SELECT is(
-  (public.lookup_share_token_v1('revoked_token_8_6', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000bb', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Revoked token cannot be used even if expires_at in future (revocation overrides expiration)'
 );
 
 -- Test 5: revoke_share_token_v1 succeeds on valid token
 SELECT is(
-  (public.revoke_share_token_v1('valid_token_8_6')::json ->> 'code'),
+  (public.revoke_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000aa')::json ->> 'code'),
   'OK',
   'revoke_share_token_v1 returns OK'
 );
 
 -- Test 6: Token is now revoked — lookup returns NOT_FOUND
 SELECT is(
-  (public.lookup_share_token_v1('valid_token_8_6', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000aa', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Token is NOT_FOUND after revocation'
 );
 
 -- Test 7: Revocation is idempotent — revoking again returns OK
 SELECT is(
-  (public.revoke_share_token_v1('valid_token_8_6')::json ->> 'code'),
+  (public.revoke_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000aa')::json ->> 'code'),
   'OK',
   'Revocation is idempotent — second revoke returns OK'
 );
 
 -- Test 8: Revoking nonexistent token returns OK (silent success)
 SELECT is(
-  (public.revoke_share_token_v1('does_not_exist_8_6')::json ->> 'code'),
+  (public.revoke_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000cc')::json ->> 'code'),
   'OK',
   'Revoking nonexistent token returns OK silently'
 );

@@ -17,12 +17,12 @@ VALUES ('d0000000-0000-0000-0000-000000000085', 'a0000000-0000-0000-0000-0000000
 -- Valid token (not expired)
 INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
 VALUES ('e0000000-0000-0000-0000-000000000085', 'a0000000-0000-0000-0000-000000000085', 'd0000000-0000-0000-0000-000000000085',
-  extensions.digest('valid-abuse-test-token', 'sha256'), now() + interval '30 days');
+  extensions.digest('shr_ab850000000000000000000000000000000000000000000000000000000000aa', 'sha256'), now() + interval '30 days');
 
 -- Expired token
 INSERT INTO public.share_tokens (id, tenant_id, deal_id, token_hash, expires_at)
 VALUES ('e1000000-0000-0000-0000-000000000085', 'a0000000-0000-0000-0000-000000000085', 'd0000000-0000-0000-0000-000000000085',
-  extensions.digest('expired-abuse-test-token', 'sha256'), '2020-01-01 00:00:00+00');
+  extensions.digest('shr_ab850000000000000000000000000000000000000000000000000000000000bb', 'sha256'), '2020-01-01 00:00:00+00');
 
 -- Tenant B (for cross-tenant test)
 INSERT INTO public.tenants (id) VALUES ('b0000000-0000-0000-0000-000000000085');
@@ -36,29 +36,29 @@ SET ROLE authenticated;
 
 -- Test 1: Expired token returns NOT_FOUND deterministically (no existence leak per 8.9)
 SELECT is(
-  (public.lookup_share_token_v1('expired-abuse-test-token', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000bb', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Expired token returns NOT_FOUND deterministically (no existence leak)'
 );
 
 -- Test 2: Nonexistent token returns NOT_FOUND
 SELECT is(
-  (public.lookup_share_token_v1('completely-nonexistent-token', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000cc', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Nonexistent token returns NOT_FOUND'
 );
 
 -- Test 3: Invalid (random garbage) token returns NOT_FOUND — same shape as nonexistent
 SELECT is(
-  (public.lookup_share_token_v1('aaaa-bbbb-cccc-not-a-real-token', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000dd', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Invalid token returns NOT_FOUND — same response shape as nonexistent (anti-enumeration)'
 );
 
 -- Test 4: NOT_FOUND response shape matches between nonexistent and invalid tokens
 SELECT is(
-  (public.lookup_share_token_v1('completely-nonexistent-token', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
-  (public.lookup_share_token_v1('aaaa-bbbb-cccc-not-a-real-token', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000cc', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000dd', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
   'Nonexistent and invalid tokens produce identical error shape (no existence leak)'
 );
 
@@ -69,15 +69,15 @@ SELECT set_config('request.jwt.claim.tenant_id', 'b0000000-0000-0000-0000-000000
 SET ROLE authenticated;
 
 SELECT is(
-  (public.lookup_share_token_v1('valid-abuse-test-token', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000aa', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Cross-tenant: Tenant A token under Tenant B context returns NOT_FOUND (isolated)'
 );
 
 -- Test 6: Cross-tenant NOT_FOUND shape matches regular NOT_FOUND (no tenant-existence leak)
 SELECT is(
-  (public.lookup_share_token_v1('valid-abuse-test-token', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
-  (public.lookup_share_token_v1('does-not-exist-at-all', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000aa', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
+  (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000ee', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'error'),
   'Cross-tenant NOT_FOUND shape matches regular NOT_FOUND (no tenant leak)'
 );
 
