@@ -357,6 +357,9 @@
     },
     "9.4": {
       "proof_pattern": "^docs/proofs/9\\.4_token_format_validation_"
+    },
+    "9.5": {
+      "proof_pattern": "^docs/proofs/9\\.5_token_cardinality_guard_"
     }
   }
 }
