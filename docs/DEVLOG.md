@@ -5544,3 +5544,186 @@ Notes
   "Returns code='CONFLICT' at limit" for envelope consistency.
 
 Status: COMPLETE — merged to main
+
+## Devlog — Advisor Review: Section 9 Hardening & Section 10 Contract Layer
+
+**Date:** 2026-03-11
+**Purpose:** Validate Section 9 completion and confirm hardening gaps before proceeding into Section 10 (WeWeb integration + API behavioral contracts).
+
+---
+
+# Meeting Outcome
+
+Advisor review confirmed that **Section 9 is architecturally sound and may be considered closed**, with two targeted hardening amendments added before progressing into Section 10.
+
+No structural redesign was required.
+All feedback focused on **closing enforcement gaps between documented contracts and CI verification**.
+
+Advisor guidance also confirmed the **correct direction for Section 10**, which will enforce behavioral API contracts between Supabase and the frontend.
+
+---
+
+# Section 9 Hardening Amendments (Approved)
+
+## 9.6 — PostgREST Data Surface Truth
+
+**Decision:** Implement.
+
+**Reason:**
+Current surface truth only tracks RPC endpoints. However, PostgREST can expose tables or views directly if privileges drift.
+
+Example failure scenario:
+
+```
+GRANT SELECT ON public.deals TO authenticated
+```
+
+This would expose:
+
+```
+GET /rest/v1/deals
+```
+
+without changing the RPC surface and therefore without triggering CI.
+
+**Action:**
+Extend surface truth harness to track:
+
+* `schemas_exposed`
+* `tables_exposed`
+* `views_exposed`
+
+Expected state for core tables is **not exposed**, with one documented exception:
+
+```
+public.user_profiles
+```
+
+This exception must be explicitly listed in `expected_surface.json` with reference to **CONTRACTS §12**.
+
+CI will fail if actual exposure differs from expected exposure.
+
+---
+
+## 9.7 — Share Token Maximum Lifetime Invariant
+
+**Decision:** Implement.
+
+**Reason:**
+The token contract requires `expires_at`, but currently places **no upper bound**.
+
+A caller could create a token valid for years, effectively creating a permanent credential.
+
+**Action:**
+Enforce inside `create_share_token_v1`:
+
+```
+expires_at > now()
+expires_at <= now() + interval '90 days'
+```
+
+Violations return:
+
+```
+VALIDATION_ERROR
+```
+
+with a field-level error on `expires_at`.
+
+This invariant will be documented in **CONTRACTS §17** as part of the RPC behavioral contract.
+
+pgTAP tests will confirm the invariant.
+
+---
+
+# Section 10 Direction (Confirmed)
+
+Section 10 will enforce **API behavioral contracts**, complementing the structural guarantees implemented in Sections 7–9.
+
+The advisor confirmed that Section 10 should focus on preventing **payload and error contract drift**.
+
+---
+
+# Section 10 Additions (Approved)
+
+## 10.9 — RPC Response Schema Contracts
+
+Public RPCs will have governed JSON response schemas stored under:
+
+```
+docs/truth/rpc_schemas/
+```
+
+Initial scope:
+
+```
+list_deals_v1
+get_user_entitlements_v1
+```
+
+These schemas define the structure of the `data` payload.
+
+Envelope structure (`ok`, `code`, `data`, `error`) remains governed by **CONTRACTS §1**.
+
+---
+
+## 10.10 — RPC Response Contract Tests
+
+CI will execute governed RPCs and verify that their responses match the committed schema definitions.
+
+Tests detect:
+
+* missing fields
+* renamed fields
+* type drift
+* unexpected fields
+
+CI fails on response contract drift.
+
+---
+
+## 10.11 — RPC Error Contract Tests
+
+Negative-path tests will verify that RPCs return the expected error envelope and machine-readable error codes.
+
+Test coverage includes:
+
+```
+VALIDATION_ERROR
+NOT_FOUND
+CONFLICT
+```
+
+Tests confirm:
+
+* correct error code
+* correct envelope structure
+* correct `error.fields` format
+
+Tests do **not** require exact message text matching.
+
+---
+
+# Final Outcome
+
+Advisor review concluded:
+
+* Section 9 architecture is **strong and complete**.
+* Two additional hardening items (9.6, 9.7) close the remaining enforcement gaps.
+* Section 10 should focus on **API behavioral contract stability**.
+
+No further architectural questions remain for this phase.
+
+---
+
+# Next Execution Order
+
+1. Implement **9.6 PostgREST Data Surface Truth**
+2. Implement **9.7 Share Token Maximum Lifetime**
+3. Begin Section 10:
+
+   * 10.9 RPC Response Schema Contracts
+   * 10.10 RPC Response Contract Tests
+   * 10.11 RPC Error Contract Tests
+
+Advisor meeting concluded with **all decisions finalized and no outstanding items**.
