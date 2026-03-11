@@ -5357,3 +5357,48 @@ Notes
   as it mutates surface_truth.json. Proof log reads committed file only.
 
 Status: COMPLETE — merged to main
+
+---
+2026-03-10 — Build Route v2.4 — Item 9.2
+
+Objective
+Enforce invariant that DB surface, OpenAPI surface, and execute_allowlist
+cannot diverge from expected_surface. Hard-fail on any mismatch.
+
+Changes
+- docs/truth/expected_surface.json: populated from stub with all 9 RPCs
+  having explicit grants (authenticated + anon). Replaces "stub" version.
+- scripts/ci_surface_invariants.mjs: CI gate enforcing three invariants:
+  (1) DB grants == expected_surface.rpc
+  (2) OpenAPI surface (authenticated) == expected_surface.rpc
+  (3) execute_allowlist strict subset of expected_surface.rpc
+  Hard-fails with exit code 1 on any violation.
+- scripts/capture_surface_truth.mjs: updated to use two fetches -
+  authenticated token for full RPC surface, anon token for anon_exposed.
+  Correctly separates authenticated surface from anon-visible surface.
+- docs/truth/surface_truth.json: recaptured with correct dual-role fetch.
+  RPCs (authenticated): 9. Anon exposed: current_tenant_id only.
+- package.json: added surface:invariants script.
+- docs/truth/qa_claim.json: updated to 9.2.
+- docs/truth/qa_scope_map.json: added 9.2 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 9.2 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR102.md: governance justification.
+
+Proof
+docs/proofs/9.2_surface_truth_20260310T235240Z.log
+
+DoD
+- expected_surface equals normalized DB surface: VERIFIED (9 RPCs, exact match)
+- expected_surface equals normalized OpenAPI surface: VERIFIED (authenticated fetch)
+- execute_allowlist strict subset of expected_surface: VERIFIED (8 of 9 RPCs)
+- mismatches hard-fail: VERIFIED (exit code 1 on violation)
+- green:twice, pr:preflight: PASS
+
+Notes
+- Initial implementation used anon token for OpenAPI fetch — only saw
+  current_tenant_id. Fixed by using authenticated token for full surface
+  capture. QA correctly identified this as a spec violation.
+- anon_exposed field in surface_truth.json correctly shows only
+  current_tenant_id (PostgREST filters by role on OpenAPI endpoint).
+
+Status: COMPLETE — merged to main
