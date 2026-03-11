@@ -3829,6 +3829,68 @@ docs/proofs/9.5_token_cardinality_guard_<UTC>.log
 
 Gate:
 pgtap (merge-blocking)
+
+### **9.6 — PostgREST Data Surface Truth**
+
+Deliverable:
+CI detects direct data exposure drift through PostgREST.
+
+DoD:
+1. Surface truth snapshot includes:
+schemas_exposed
+tables_exposed
+views_exposed
+
+2. Snapshot reflects objects reachable by roles:
+anon
+authenticated
+
+3. Expected surface defined in:
+expected_surface.json
+4. Core tables must not appear in exposed sets except documented contract exceptions.
+
+5. Example allowed exception:
+user_profiles
+
+per CONTRACTS §12.
+6. CI verification enforces:
+actual_surface == expected_surface
+
+7. Privilege drift causing new table or view exposure fails CI.
+
+Proof:
+docs/proofs/9.6_data_surface_truth_<UTC>.log
+
+Gate:
+merge-blocking data-surface-truth
+
+### **9.7 — Share Token Maximum Lifetime Invariant**
+
+Deliverable:
+Share tokens cannot become long-lived credentials.
+
+DoD:
+1. Token creation RPC enforces:
+
+expires_at > now()
+expires_at <= now() + interval '90 days'
+
+2. Violations return:
+VALIDATION_ERROR
+3. Error response includes field-level message referencing max lifetime.
+4. CONTRACTS §17 updated to document token lifetime invariant.
+
+5. pgTAP tests verify:
+valid lifetime succeeds
+excessive lifetime rejected
+expired tokens rejected
+
+Proof:
+docs/proofs/9.7_token_lifetime_invariant_<UTC>.md
+
+Gate:
+merge-blocking token-lifetime
+
 ---
 
 ## **10 — WeWeb Integration (Scope-controlled)**
@@ -3940,6 +4002,160 @@ docs/proofs/10.8_frontend_surface_enumeration_<UTC>.log
 
 Gate:
 lane-only surface-enumeration
+
+### **10.9 — RPC Response Schema Contracts**
+
+Deliverable:
+Public RPC response payloads have governed schema contracts.
+
+DoD:
+Governed schema files exist for selected public RPCs under:
+
+docs/truth/rpc_schemas/
+
+Initial scope includes:
+
+list_deals_v1
+
+get_user_entitlements_v1
+
+Each schema defines:
+
+data payload structure
+
+required fields
+
+field types
+
+nullability
+
+Envelope contract remains governed by CONTRACTS.md §1.
+
+Schema changes require governance review.
+
+Proof:
+docs/proofs/10.9_rpc_response_schema_contracts_<UTC>.md
+
+Gate:
+lane-only rpc-response-schemas
+
+### **10.10 — RPC Response Contract Tests**
+
+Deliverable:
+CI validates public RPC responses against governed response contracts.
+
+DoD:
+Contract tests execute governed RPCs and verify response structure matches committed schema.
+
+Tests verify:
+
+required fields present
+
+field types correct
+
+nullability correct
+
+no unexpected fields
+
+Initial scope includes:
+
+list_deals_v1
+
+get_user_entitlements_v1
+
+CI fails on response payload drift.
+
+Proof:
+docs/proofs/10.10_rpc_response_contract_tests_<UTC>.log
+
+Gate:
+merge-blocking rpc-response-contract-tests
+
+### **10.11 — RPC Error Contract Tests**
+
+Deliverable:
+Error responses from public RPCs follow the frozen envelope contract.
+
+DoD:
+1. Negative-path tests exist for governed RPCs.
+2. Tests confirm:
+correct error code returned
+correct error envelope shape
+correct field-level error mapping
+3. Typical cases validated:
+invalid input → VALIDATION_ERROR
+missing record → NOT_FOUND
+conflict condition → CONFLICT
+4. CI fails if:
+error code changes
+error structure changes
+undocumented error returned
+
+Proof:
+docs/proofs/10.11_rpc_error_contract_tests_<UTC>.log
+
+Gate:
+merge-blocking rpc-error-contracts once promoted
+
+Add **one more Section 10 item**:
+
+### **10.12 — RPC Contract Registry**
+
+Deliverable:
+Every public RPC has one governed contract record tying together inputs, outputs, errors, and version.
+
+DoD:
+
+1. Truth file exists:
+
+```text
+docs/truth/rpc_contract_registry.json
+```
+
+2. Each public RPC entry includes:
+
+  * rpc name
+  * version
+  * input contract reference
+  * response schema reference
+  * documented error codes
+  * Build Route item owner
+
+3. No public RPC may exist in `expected_surface.json` or `execute_allowlist.json` unless it also exists in `rpc_contract_registry.json`.
+
+4. CI hard-fails on:
+
+  * RPC in surface but missing from registry
+  * registry entry pointing to missing schema file
+  * undocumented error code in tests
+
+Proof:
+`docs/proofs/10.12_rpc_contract_registry_<UTC>.log`
+
+Gate:
+`merge-blocking rpc-contract-registry`
+
+### Why this is high-value
+
+It stops this stupid future failure mode:
+
+```text
+RPC exists
+frontend uses it
+response changes
+nobody knows which schema / errors / owner apply
+```
+
+The registry becomes the **single source of truth** linking:
+
+```text
+surface → allowlist → schema → tests → ownership
+```
+
+So instead of API chaos, you get one mechanical rule:
+
+**No registered contract = no public RPC.**
+
 ---
 
 ## **11 — Release \+ Handoff Discipline**
