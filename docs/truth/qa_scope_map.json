@@ -351,6 +351,9 @@
     },
     "9.2": {
       "proof_pattern": "^docs/proofs/9\\.2_surface_truth_"
+    },
+    "9.3": {
+      "proof_pattern": "^docs/proofs/9\\.3_reload_contract_"
     }
   }
 }

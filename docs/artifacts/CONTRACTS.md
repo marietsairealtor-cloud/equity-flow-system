@@ -280,3 +280,18 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 - `public.lookup_share_token_v1` hashes input token before comparison. No signature change.
 - `public.share_token_packet` view no longer exposes raw token.
 - Unique index `share_tokens_token_hash_unique` replaces `share_tokens_tenant_token_unique`.
+
+## 19) Reload Mechanism Contract (9.3)
+
+Canonical PostgREST schema cache reload path: `docker kill -s SIGUSR1 <postgrest_container>`.
+SIGUSR1 is the only approved reload mechanism. Container restart is not a substitute.
+
+Rules:
+- Reload is deploy-lane only. Local harnesses do not send reload signals.
+- Local harnesses (pgTAP, ci_surface_truth, ci_surface_invariants) run against
+  DB or PostgREST without issuing reload. They do not claim reload occurred.
+- Cloud/deploy harness must include reload evidence in proof logs after migration apply.
+- test_postgrest_isolation.mjs SIGUSR1 usage is grandfathered (pre-9.3 test setup).
+  New harnesses must not add reload calls outside deploy lane.
+- Release lane: ci_surface_invariants.mjs must pass after reload to confirm
+  PostgREST surface matches expected_surface.json.

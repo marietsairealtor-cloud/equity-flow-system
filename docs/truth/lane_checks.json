@@ -6,7 +6,21 @@
     },
     {
       "lane": "cloud",
-      "checks": ["CI / cloud-migration-parity"]
+      "checks": [
+        "CI / cloud-migration-parity"
+      ]
+    },
+    {
+      "lane": "deploy",
+      "checks": [
+        "reload-evidence-required"
+      ]
+    },
+    {
+      "lane": "release",
+      "checks": [
+        "CI / surface-invariants"
+      ]
     }
   ]
 }
