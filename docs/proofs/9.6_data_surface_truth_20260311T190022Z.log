@@ -1,0 +1,471 @@
+PROOF_HEAD=88428b399b588f5da4cddb2abb0eea14650fccf2
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 9.6 PostgREST Data Surface Truth -- Proof Log ===
+Date: 2026-03-11T14:59:22.2356442-04:00
+Branch: feat/9.6-data-surface-truth
+PR HEAD SHA: 88428b399b588f5da4cddb2abb0eea14650fccf2
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+=== DoD: Surface truth snapshot includes schemas_exposed, tables_exposed, views_exposed ===
+expected_surface.json v2 includes all three fields.
+schemas_exposed: [public]
+tables_exposed:  [user_profiles] (CONTRACTS S12 documented exception)
+views_exposed:   []
+=== DoD: Snapshot reflects objects reachable by anon and authenticated ===
+ci_data_surface_truth.mjs queries information_schema.role_table_grants
+and pg_namespace for roles anon and authenticated in public schema only.
+Supabase internal schemas (auth, storage, extensions etc.) excluded.
+=== DoD: Expected surface defined in expected_surface.json ===
+docs/truth/expected_surface.json version 2.
+=== DoD: Core tables must not appear in exposed sets except documented exceptions ===
+user_profiles is the only allowed exception per CONTRACTS S12.
+All other core tables (deals, share_tokens, tenants, etc.) are unexposed.
+=== DoD: CI verification enforces actual_surface == expected_surface ===
+Gate: data-surface-truth (merge-blocking)
+Job added to .github/workflows/ci.yml and required.needs aggregate.
+required_checks.json entry: CI / data-surface-truth
+=== DoD: Privilege drift causing new table or view exposure fails CI ===
+Script exits 1 on any mismatch with explicit diff of expected vs actual.
+=== Gate output ===
+
+> equity-flow-system@0.0.0 data-surface:truth
+> node scripts/ci_data_surface_truth.mjs
+
+=== ci_data_surface_truth ===
+Check 1: exposed product schemas vs expected_surface...
+  PASS: product schemas match (public)
+Check 2: exposed tables vs expected_surface...
+  PASS: tables match ([user_profiles])
+Check 3: exposed views vs expected_surface...
+  PASS: views match ([])
+
+Schemas exposed: public
+Tables exposed:  user_profiles
+Views exposed:   (none)
+ci_data_surface_truth: PASS
+
+=== ci-semantic-contract ===
+=== ci-semantic-contract ===
+STRICT_MODE= false
+WORKFLOWS_INSPECTED= 5
+ - .github\workflows\ci.yml
+ - .github\workflows\database-tests.yml
+ - .github\workflows\placeholder.yml
+ - .github\workflows\policy-drift-attestation.yml
+ - .github\workflows\secrets-scan.yml
+REQUIRED_CHECKS=
+ - CI / anon-privilege-audit
+ - CI / automation-contract
+ - CI / background-context-review
+ - CI / blocked-identifiers
+ - CI / calc-version-registry
+ - CI / ci-db-smoke
+ - CI / ci-encoding-audit
+ - CI / ci-normalize-sweep
+ - CI / ci-path-leak-audit
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / clean-room-replay
+ - CI / cloud-schema-drift
+ - CI / data-surface-truth
+ - CI / db-heavy
+ - CI / deferred-proof-registry
+ - CI / definer-safety-audit
+ - CI / docs-push-contract
+ - CI / entitlement-policy-coupling
+ - CI / env-sanity
+ - CI / foundation-invariants
+ - CI / governance-change-guard
+ - CI / governance-path-coverage
+ - CI / handoff-commit-safety
+ - CI / handoff-idempotency
+ - CI / handoff-preconditions
+ - CI / job-graph-ordering
+ - CI / lane-enforcement
+ - CI / lane-policy-contract
+ - CI / migration-grant-lint
+ - CI / migration-rls-colocation
+ - CI / migration-schema-coupling
+ - CI / policy-coupling
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / qa-requirements-contract
+ - CI / qa-scope-coverage
+ - CI / qa-verify
+ - CI / rls-strategy-consistent
+ - CI / robot-owned-guard
+ - CI / robot-owned-publish-guard
+ - CI / rpc-mapping-contract
+ - CI / schema-drift
+ - CI / ship-guard
+ - CI / stop-the-line
+ - CI / stop-the-line-xor
+ - CI / test
+ - CI / toolchain-contract
+ - CI / toolchain-contract-supabase
+ - CI / truth-sync-enforced
+ - CI / unregistered-table-access
+ - CI / waiver-debt-enforcement
+ - CI / waiver-rate-limit
+ - database-tests / pgtap
+CHECK CI / anon-privilege-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: anon-privilege-audit
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / automation-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: automation-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / background-context-review
+  FILE: .github\workflows\ci.yml
+  JOB_ID: background-context-review
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / blocked-identifiers
+  FILE: .github\workflows\ci.yml
+  JOB_ID: blocked-identifiers
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / calc-version-registry
+  FILE: .github\workflows\ci.yml
+  JOB_ID: calc-version-registry
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-db-smoke
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-db-smoke
+  RUN_STEPS: 4
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-encoding-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-encoding-audit
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-normalize-sweep
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-normalize-sweep
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-path-leak-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-path-leak-audit
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-semantic-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-semantic-contract
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-topology-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-topology-audit
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / clean-room-replay
+  FILE: .github\workflows\ci.yml
+  JOB_ID: clean-room-replay
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / cloud-schema-drift
+  FILE: .github\workflows\ci.yml
+  JOB_ID: cloud-schema-drift
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / data-surface-truth
+  FILE: .github\workflows\ci.yml
+  JOB_ID: data-surface-truth
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / db-heavy
+  FILE: .github\workflows\ci.yml
+  JOB_ID: db-heavy
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / deferred-proof-registry
+  FILE: .github\workflows\ci.yml
+  JOB_ID: deferred-proof-registry
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / definer-safety-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: definer-safety-audit
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / docs-push-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: docs-push-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / entitlement-policy-coupling
+  FILE: .github\workflows\ci.yml
+  JOB_ID: entitlement-policy-coupling
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / env-sanity
+  FILE: .github\workflows\ci.yml
+  JOB_ID: env-sanity
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / foundation-invariants
+  FILE: .github\workflows\ci.yml
+  JOB_ID: foundation-invariants
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / governance-change-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: governance-change-guard
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / governance-path-coverage
+  FILE: .github\workflows\ci.yml
+  JOB_ID: governance-path-coverage
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / handoff-commit-safety
+  FILE: .github\workflows\ci.yml
+  JOB_ID: handoff-commit-safety
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / handoff-idempotency
+  FILE: .github\workflows\ci.yml
+  JOB_ID: handoff-idempotency
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / handoff-preconditions
+  FILE: .github\workflows\ci.yml
+  JOB_ID: handoff-preconditions
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / job-graph-ordering
+  FILE: .github\workflows\ci.yml
+  JOB_ID: job-graph-ordering
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / lane-enforcement
+  FILE: .github\workflows\ci.yml
+  JOB_ID: lane-enforcement
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / lane-policy-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: lane-policy-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / migration-grant-lint
+  FILE: .github\workflows\ci.yml
+  JOB_ID: migration-grant-lint
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / migration-rls-colocation
+  FILE: .github\workflows\ci.yml
+  JOB_ID: migration-rls-colocation
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / migration-schema-coupling
+  FILE: .github\workflows\ci.yml
+  JOB_ID: migration-schema-coupling
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / policy-coupling
+  FILE: .github\workflows\ci.yml
+  JOB_ID: policy-coupling
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / proof-commit-binding
+  FILE: .github\workflows\ci.yml
+  JOB_ID: proof-commit-binding
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / proof-manifest
+  FILE: .github\workflows\ci.yml
+  JOB_ID: proof-manifest
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / qa-requirements-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: qa-requirements-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / qa-scope-coverage
+  FILE: .github\workflows\ci.yml
+  JOB_ID: qa-scope-coverage
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / qa-verify
+  FILE: .github\workflows\ci.yml
+  JOB_ID: qa-verify
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / rls-strategy-consistent
+  FILE: .github\workflows\ci.yml
+  JOB_ID: rls-strategy-consistent
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / robot-owned-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: robot-owned-guard
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / robot-owned-publish-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: robot-owned-publish-guard
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / rpc-mapping-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: rpc-mapping-contract
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / schema-drift
+  FILE: .github\workflows\ci.yml
+  JOB_ID: schema-drift
+  RUN_STEPS: 4
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ship-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ship-guard
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / stop-the-line
+  FILE: .github\workflows\ci.yml
+  JOB_ID: stop-the-line
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / stop-the-line-xor
+  FILE: .github\workflows\ci.yml
+  JOB_ID: stop-the-line-xor
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / test
+  FILE: .github\workflows\ci.yml
+  JOB_ID: test
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / toolchain-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: toolchain-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / toolchain-contract-supabase
+  FILE: .github\workflows\ci.yml
+  JOB_ID: toolchain-contract-supabase
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / truth-sync-enforced
+  FILE: .github\workflows\ci.yml
+  JOB_ID: truth-sync-enforced
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / unregistered-table-access
+  FILE: .github\workflows\ci.yml
+  JOB_ID: unregistered-table-access
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / waiver-debt-enforcement
+  FILE: .github\workflows\ci.yml
+  JOB_ID: waiver-debt-enforcement
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / waiver-rate-limit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: waiver-rate-limit
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK database-tests / pgtap
+  FILE: .github\workflows\database-tests.yml
+  JOB_ID: pgtap
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+RESULT=PASS
+
+=== Truth bookkeeping ===
+qa_claim.json:
+{"item":"9.6"}
+
+qa_scope_map.json 9.6 entry:
+  364: "9.6": {
+expected_surface.json version:
+  "version": 2,
+required_checks.json data-surface-truth entry:
+  69: "name": "CI / data-surface-truth",
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR107.md
+docs/handoff_latest.txt
+docs/truth/expected_surface.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/required_checks.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+package.json
+scripts/ci_data_surface_truth.mjs
+scripts/ci_robot_owned_guard.ps1
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+=== RESULT ===
+9.6 PostgREST Data Surface Truth: PASS
