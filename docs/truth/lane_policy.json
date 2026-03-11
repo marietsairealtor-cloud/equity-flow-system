@@ -95,6 +95,48 @@
         "CI / truth-sync-enforced",
         "CI / waiver-debt-enforcement"
       ]
+    },
+    {
+      "lane": "deploy",
+      "include_globs": [
+        "supabase/migrations/**"
+      ],
+      "exclude_globs": [],
+      "required_checks": [
+        "CI / ci-semantic-contract",
+        "CI / ci-topology-audit",
+        "CI / env-sanity",
+        "CI / foundation-invariants",
+        "CI / proof-commit-binding",
+        "CI / proof-manifest",
+        "CI / stop-the-line",
+        "CI / test",
+        "CI / toolchain-contract",
+        "CI / truth-sync-enforced",
+        "CI / waiver-debt-enforcement"
+      ],
+      "notes": "Deploy lane: reload must occur after migration apply. Reload evidence required in proof logs."
+    },
+    {
+      "lane": "release",
+      "include_globs": [
+        "docs/proofs/**"
+      ],
+      "exclude_globs": [],
+      "required_checks": [
+        "CI / ci-semantic-contract",
+        "CI / ci-topology-audit",
+        "CI / env-sanity",
+        "CI / foundation-invariants",
+        "CI / proof-commit-binding",
+        "CI / proof-manifest",
+        "CI / stop-the-line",
+        "CI / test",
+        "CI / toolchain-contract",
+        "CI / truth-sync-enforced",
+        "CI / waiver-debt-enforcement"
+      ],
+      "notes": "Release lane: ci_surface_invariants.mjs must pass after reload. Surface must match expected_surface.json."
     }
   ]
 }
