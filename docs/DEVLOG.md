@@ -5444,3 +5444,54 @@ Notes
   deploy reload -> capture surface -> compare to expected -> block drift.
 
 Status: COMPLETE — merged to main
+
+2026-03-11 — Build Route v2.4 — Item 9.4
+
+Objective
+Enforce token format validation in lookup_share_token_v1 before hashing.
+Malformed tokens fail deterministically with NOT_FOUND before digest() is called.
+
+Changes
+- supabase/migrations/20260311000000_9_4_token_format_validation.sql:
+  Dropped and recreated lookup_share_token_v1(text, uuid). Format guard
+  fires before extensions.digest(): shr_ prefix required, body must be
+  exactly 64 lowercase hex chars [0-9a-f], total length >= 68. Invalid
+  tokens return NOT_FOUND — identical shape to nonexistent tokens (no
+  format leak). Logging best-effort with failure_category=format_invalid.
+- supabase/tests/9_4_token_format_validation.test.sql: 9 pgTAP tests.
+  NULL token, missing prefix, short token, uppercase hex, non-hex body
+  all return NOT_FOUND. Malformed response shape identical to nonexistent
+  valid-format token (tests 6+7). Function exists (test 8). Valid format
+  resolves OK (test 9).
+- supabase/tests/7_5, 7_9, 8_5, 8_6, 8_7, 8_9, 8_10, share_link_isolation:
+  All bare token strings replaced with shr_-prefixed valid-format tokens
+  (shr_ + 64 lowercase hex chars). digest() seed strings updated to match
+  full token including prefix. 8_7 LIKE pattern updated to reference new
+  token string.
+- docs/artifacts/CONTRACTS.md: added S20 token format validation contract.
+- docs/governance/GOVERNANCE_CHANGE_PR104.md: governance justification.
+- docs/truth/calc_version_registry.json: bumped to v14, added 9.4 note.
+- docs/truth/cloud_migration_parity.json: tip 20260311000000, count 39.
+- docs/truth/qa_claim.json: updated to 9.4.
+- docs/truth/qa_scope_map.json: added 9.4 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 9.4 proof log path.
+
+Proof
+docs/proofs/9.4_token_format_validation_20260311T122947Z.log
+
+DoD
+- Format validation fires before hashing: VERIFIED (tests 1-5, all return NOT_FOUND pre-digest)
+- Malformed tokens return identical shape to nonexistent tokens: VERIFIED (tests 6+7)
+- Valid format token proceeds to lookup stage: VERIFIED (test 9, resolves OK)
+- lookup_share_token_v1(text, uuid) exists: VERIFIED (test 8)
+- pgTAP 9 tests green (176 total, 22 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- All 8 prior test files using bare tokens updated atomically in same PR.
+  No existing test semantics changed — only token string values updated to
+  satisfy the new format contract.
+- qa_claim.json fix required amend commit: initial replace used wrong key
+  name (claim vs item). Caught and fixed before proof generation.
+
+Status: COMPLETE — merged to main
