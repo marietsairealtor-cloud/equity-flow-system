@@ -321,7 +321,7 @@ ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer) OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
-    AS $$
+    AS $_$
 DECLARE
   v_tenant_id uuid;
   v_row       record;
@@ -335,16 +335,32 @@ BEGIN
       'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
     );
   END IF;
-  IF p_token IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
-      'error', json_build_object('message', 'token is required', 'fields', json_build_object())
-    );
-  END IF;
   IF p_deal_id IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
       'error', json_build_object('message', 'deal_id is required', 'fields', json_build_object())
+    );
+  END IF;
+  -- 9.4: Format validation - occurs BEFORE hashing.
+  -- Rule 1: prefix must be 'shr_'
+  -- Rule 2: body after prefix must be exactly 64 lowercase hex chars
+  -- Rule 3: total length >= 68
+  -- Returns NOT_FOUND - identical shape to nonexistent token (no format leak).
+  IF p_token IS NULL
+     OR length(p_token) < 68
+     OR left(p_token, 4) <> 'shr_'
+     OR substring(p_token FROM 5) !~ '^[0-9a-f]{64}$'
+  THEN
+    BEGIN
+      PERFORM public.foundation_log_activity_v1(
+        'share_token_lookup',
+        json_build_object('token_hash', null, 'success', false, 'failure_category', 'format_invalid')::jsonb,
+        null
+      );
+    EXCEPTION WHEN OTHERS THEN NULL; END;
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
     );
   END IF;
   v_hash := extensions.digest(p_token, 'sha256');
@@ -369,7 +385,7 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  -- Revocation check first (overrides expiration)
+  -- Revocation check first (overrides expiration per 8.6)
   IF v_row.revoked_at IS NOT NULL THEN
     v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
@@ -384,7 +400,7 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  -- Expiration check - returns NOT_FOUND (no existence leak)
+  -- Expiration check - returns NOT_FOUND (no existence leak per 8.9)
   IF v_row.expires_at <= now() THEN
     v_result := json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
@@ -418,7 +434,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN NULL; END;
   RETURN v_result;
 END;
-$$;
+$_$;
 
 ALTER FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") OWNER TO "postgres";
 

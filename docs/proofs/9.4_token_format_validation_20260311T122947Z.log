@@ -1,0 +1,102 @@
+PROOF_HEAD=fdc1173c7a6b2022b7b12c642daef6b5ebf30147
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 9.4 RPC Token Format Validation -- Proof Log ===
+Date: 2026-03-11T08:26:21.5576670-04:00
+Branch: feat/9.4-token-format-validation
+PR HEAD SHA: fdc1173c7a6b2022b7b12c642daef6b5ebf30147
+=== Versions ===
+Node: v20.18.1
+pwsh: 7.5.4
+Supabase CLI: 2.76.11
+=== DoD: Lookup RPC validates token format before hashing ===
+Migration 20260311000000 drops and recreates lookup_share_token_v1 with format
+guard before extensions.digest() is called. Rules: shr_ prefix required, body
+must be exactly 64 lowercase hex chars [0-9a-f], total length == 68.
+=== DoD: Invalid tokens fail immediately before DB lookup ===
+Tests 1-5 prove: NULL token, missing prefix, short token, uppercase hex body,
+and non-hex body all return NOT_FOUND before hashing occurs.
+=== DoD: Malformed tokens return identical response shape as invalid tokens ===
+Tests 6-7 prove: malformed token response code and error message are identical
+to a nonexistent valid-format token. No format information leaked to callers.
+=== DoD: Valid format token proceeds to lookup stage ===
+Test 9 proves: a well-formed shr_-prefixed token with valid hex body resolves
+OK against a seeded share_tokens row.
+=== DoD: pgTAP tests ===
+Connecting to local database...
+supabase/tests/6.10_activity_log_append_only.pgtap.sql ........ ok
+supabase/tests/6_11_role_guard_helper.test.sql ................ ok
+supabase/tests/6_8_seat_role_model.test.sql ................... ok
+supabase/tests/6_9_foundation_surface.test.sql ................ ok
+supabase/tests/7_10_tenant_role_ordering_invariant.sql ........ ok
+supabase/tests/7_4_entitlement_truth.test.sql ................. ok
+supabase/tests/7_5_rls_negative_suite.test.sql ................ ok
+supabase/tests/7_6_calc_version_protocol.pgtap.sql ............ ok
+supabase/tests/7_8_role_enforcement_rpc.test.sql .............. ok
+supabase/tests/7_9_tenant_context_integrity.test.sql .......... ok
+supabase/tests/8_10_share_token_scope_enforcement.test.sql .... ok
+supabase/tests/8_4_share_token_hash_at_rest.test.sql .......... ok
+supabase/tests/8_5_share_surface_abuse_controls.test.sql ...... ok
+supabase/tests/8_6_share_token_revocation.test.sql ............ ok
+supabase/tests/8_7_share_token_usage_logging.test.sql ......... ok
+supabase/tests/8_8_share_token_secure_generation.test.sql ..... ok
+supabase/tests/8_9_share_token_expiration_invariant.test.sql .. ok
+supabase/tests/9_4_token_format_validation.test.sql ........... ok
+supabase/tests/rls_structural_audit.test.sql .................. ok
+supabase/tests/row_version_concurrency.test.sql ............... ok
+supabase/tests/share_link_isolation.test.sql .................. ok
+supabase/tests/tenant_isolation.test.sql ...................... ok
+All tests successful.
+Files=22, Tests=176,  1 wallclock secs ( 0.05 usr  0.04 sys +  0.07 cusr  0.12 csys =  0.28 CPU)
+Result: PASS
+
+=== Test summary ===
+Test 1: NULL token returns NOT_FOUND (format guard fires before hashing)
+Test 2: Token without shr_ prefix returns NOT_FOUND
+Test 3: Token too short (67 chars) returns NOT_FOUND
+Test 4: Token with uppercase hex body returns NOT_FOUND (charset restricted to [0-9a-f])
+Test 5: Token with non-hex body returns NOT_FOUND
+Test 6: Malformed token response code identical to nonexistent valid-format token (no format leak)
+Test 7: Malformed token error message identical to nonexistent valid-format token (no format leak)
+Test 8: lookup_share_token_v1(text, uuid) exists
+Test 9: Valid format token proceeds to lookup stage and resolves OK
+=== Truth bookkeeping ===
+qa_claim.json:
+{"item":"9.4"}
+
+qa_scope_map.json 9.4 entry:
+  358: "9.4": {
+calc_version_registry.json version:
+  "version": 14,
+cloud_migration_parity.json tip:
+  "migration_tip": "20260311000000",   "migration_tip_file": "20260311000000_9_4_token_format_validation.sql",
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR104.md
+docs/handoff_latest.txt
+docs/truth/calc_version_registry.json
+docs/truth/cloud_migration_parity.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260311000000_9_4_token_format_validation.sql
+supabase/tests/7_5_rls_negative_suite.test.sql
+supabase/tests/7_9_tenant_context_integrity.test.sql
+supabase/tests/8_10_share_token_scope_enforcement.test.sql
+supabase/tests/8_5_share_surface_abuse_controls.test.sql
+supabase/tests/8_6_share_token_revocation.test.sql
+supabase/tests/8_7_share_token_usage_logging.test.sql
+supabase/tests/8_9_share_token_expiration_invariant.test.sql
+supabase/tests/9_4_token_format_validation.test.sql
+supabase/tests/share_link_isolation.test.sql
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+=== RESULT ===
+9.4 RPC Token Format Validation: PASS

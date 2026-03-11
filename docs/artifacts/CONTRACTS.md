@@ -282,6 +282,17 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 - Unique index `share_tokens_token_hash_unique` replaces `share_tokens_tenant_token_unique`.
 
 ## 19) Reload Mechanism Contract (9.3)
+  
+## 20) Token Format Validation Contract (9.4)
+
+`lookup_share_token_v1` enforces token format validation before hashing (Build Route 9.4).
+
+Validation rules (all checked before `extensions.digest()` is called):
+- Token must begin with prefix `shr_`
+- Token body after prefix must be exactly 64 lowercase hex characters `[0-9a-f]`
+- Total token length must be >= 68 characters
+
+Tokens failing any rule return `NOT_FOUND` immediately — identical response shape to nonexistent tokens. No format information is leaked to callers. Logging is best-effort (failure category: `format_invalid`). Signature unchanged: `lookup_share_token_v1(p_token text, p_deal_id uuid)`.
 
 Canonical PostgREST schema cache reload path: `docker kill -s SIGUSR1 <postgrest_container>`.
 SIGUSR1 is the only approved reload mechanism. Container restart is not a substitute.
