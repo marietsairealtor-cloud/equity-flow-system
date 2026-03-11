@@ -316,3 +316,14 @@ Active token definition: `revoked_at IS NULL AND expires_at > now()`.
 Revoked and expired tokens do not count toward the limit.
 Creation returns `CONFLICT` when active count >= 50.
 Signature unchanged: `create_share_token_v1(p_deal_id uuid, p_expires_at timestamptz)`.
+
+## 22) PostgREST Data Surface Truth Contract (9.6)
+
+CI verifies that actual PostgREST data exposure matches `expected_surface.json` (Build Route 9.6).
+
+Enforced fields: `schemas_exposed`, `tables_exposed`, `views_exposed`.
+Roles checked: `anon`, `authenticated`.
+Scope: `public` schema only. Supabase internal schemas excluded.
+Privilege drift causing new table or view exposure fails the `data-surface:truth` CI gate.
+
+Documented exception: `public.user_profiles` SELECT granted to `authenticated` only — per CONTRACTS S12 privilege firewall. No other core tables may appear in `tables_exposed`.
