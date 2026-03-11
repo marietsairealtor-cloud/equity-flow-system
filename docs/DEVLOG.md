@@ -5495,3 +5495,52 @@ Notes
   name (claim vs item). Caught and fixed before proof generation.
 
 Status: COMPLETE — merged to main
+
+2026-03-11 — Build Route v2.4 — Item 9.5
+
+Objective
+Enforce maximum active share tokens per resource. Resources cannot
+generate unbounded numbers of share tokens. Limit: 50 active tokens
+per deal. Revoked and expired tokens do not count toward limit.
+
+Changes
+- supabase/migrations/20260311000001_9_5_token_cardinality_guard.sql:
+  Dropped and recreated create_share_token_v1(uuid, timestamptz).
+  Cardinality guard fires after deal ownership check and before token
+  generation. Counts active tokens (revoked_at IS NULL AND
+  expires_at > now()) for the deal. Returns code='CONFLICT' when
+  count >= 50. All prior validation logic preserved in identical order.
+- supabase/tests/9_5_token_cardinality_guard.test.sql: 5 pgTAP tests.
+  Creation succeeds at 49 active tokens (test 1). Creation fails at 50
+  active tokens with code='CONFLICT' (test 2). CONFLICT message verified
+  (test 3). Revoking one token frees capacity, creation succeeds again
+  (test 4). Function signature exists (test 5).
+- docs/artifacts/CONTRACTS.md: appended S21 cardinality guard contract.
+- docs/governance/GOVERNANCE_CHANGE_PR105.md: governance justification.
+- docs/truth/calc_version_registry.json: bumped to v15, added 9.5 note.
+- docs/truth/cloud_migration_parity.json: tip 20260311000001, count 40.
+- docs/truth/qa_claim.json: updated to 9.5.
+- docs/truth/qa_scope_map.json: added 9.5 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 9.5 proof log path.
+
+Proof
+docs/proofs/9.5_token_cardinality_guard_20260311T152141Z.log
+
+DoD
+- Active token count enforced per resource: VERIFIED (tests 1+2)
+- Creation fails at limit with code='CONFLICT': VERIFIED (tests 2+3)
+- Revoked tokens do not count toward limit: VERIFIED (test 1, seeded revoked token excluded)
+- Expired tokens do not count toward limit: VERIFIED (test 1, seeded expired token excluded)
+- Revoked tokens free capacity: VERIFIED (test 4)
+- pgTAP 5 tests green (181 total, 23 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- Initial test used LIMIT in UPDATE statement — invalid PostgreSQL syntax.
+  Fixed by rewriting as subquery (WHERE id = (SELECT id ... LIMIT 1)).
+  Test 4 placeholder for revoke_share_token_v1 removed; direct UPDATE
+  used instead to avoid coupling tests across RPCs.
+- proof log nit fixed before finalize: "Returns CONFLICT at limit" →
+  "Returns code='CONFLICT' at limit" for envelope consistency.
+
+Status: COMPLETE — merged to main
