@@ -126,9 +126,11 @@ CREATE OR REPLACE FUNCTION "public"."create_share_token_v1"("p_deal_id" "uuid", 
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant_id uuid;
-  v_token     text;
-  v_hash      bytea;
+  v_tenant_id    uuid;
+  v_token        text;
+  v_hash         bytea;
+  v_active_count int;
+  v_max_tokens   constant int := 50;
 BEGIN
   v_tenant_id := public.current_tenant_id();
   IF v_tenant_id IS NULL THEN
@@ -163,6 +165,25 @@ BEGIN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', null,
       'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+  -- 9.5: Cardinality guard - count active tokens for this deal.
+  -- Active = revoked_at IS NULL AND expires_at > now().
+  -- Revoked or expired tokens do not count toward limit.
+  SELECT count(*)::int
+  INTO v_active_count
+  FROM public.share_tokens
+  WHERE deal_id   = p_deal_id
+    AND tenant_id = v_tenant_id
+    AND revoked_at IS NULL
+    AND expires_at > now();
+  IF v_active_count >= v_max_tokens THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', null,
+      'error', json_build_object(
+        'message', 'Active token limit reached for this resource',
+        'fields', json_build_object()
+      )
     );
   END IF;
   -- Generate token: shr_ prefix + 32 random bytes as hex (256 bits entropy)
