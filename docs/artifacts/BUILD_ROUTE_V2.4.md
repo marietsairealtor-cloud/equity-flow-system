@@ -4156,6 +4156,385 @@ So instead of API chaos, you get one mechanical rule:
 
 **No registered contract = no public RPC.**
 
+### **10.13 — Gate Promotion Protocol**
+
+Deliverable:
+Any lane-only gate can be promoted to merge-blocking via a governed, mechanical PR with no ambiguity.
+
+DoD:
+
+1. Truth file exists:
+
+```text
+docs/truth/gate_promotion_registry.json
+```
+
+2. Each entry includes:
+
+* gate name
+* current status (`lane-only` or `merge-blocking`)
+* promotion trigger condition
+* Build Route item owner
+* promoted-by PR number (null until promoted)
+
+3. Promotion PR requirements (enforced by this item, applied to all future promotions):
+
+* Gate moved from `lane_checks.json` to `required_checks.json`
+* Gate wired into `required.needs` in `.github/workflows/ci.yml`
+* `docs/truth/required_checks.json` regenerated via `truth:sync`
+* `gate_promotion_registry.json` entry updated: status → `merge-blocking`, promoted-by → PR number
+* Governance file `docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md` required
+* DEVLOG entry required after merge
+
+4. CI hard-fails on:
+
+* Gate present in `required_checks.json` but missing from `gate_promotion_registry.json`
+* Gate marked `merge-blocking` in registry but absent from `required.needs`
+* Registry entry with null `promoted-by` but status `merge-blocking`
+
+5. Initial registry population includes all currently conditional named gates within Section 10:
+
+* `weweb-drift` — WeWeb in scope (10.2)
+* `frontend-contract-guard` — explicit promotion (10.7)
+* `surface-enumeration` — explicit promotion (10.8)
+* `rpc-error-contracts` — explicit promotion (10.11)
+
+Future sections register their own conditional gates in this registry when their items are implemented.
+
+Proof:
+`docs/proofs/10.13_gate_promotion_registry_<UTC>.log`
+
+Gate:
+`merge-blocking gate-promotion-registry`
+
+# Section 10 — WeWeb UI Build (10.14–10.23)
+
+**Status:** READY FOR MERGE INTO BUILD ROUTE  
+**Scope:** WeWeb UI surfaces, pages, flows, and end-to-end wiring verification  
+**Authority:** Build Route v2.4 governance; Foundation Boundary contract (2.16.5A)  
+**Prerequisite:** 10.1 (WeWeb smoke) and 10.2 (WeWeb drift guard) merged to main  
+
+---
+
+## Design Decisions (LOCKED for this block)
+
+These decisions were made during the 10.14–10.23 planning review and are authoritative for all items in this block.
+
+1. **Command Centre simplified to three views:** Acquisition, Dispo Dashboard, Transaction Coordination. Exec Overview is folded into Acquisition as a summary strip. Lead Analysis is killed as a separate view — incoming leads land directly in Acquisition with filter capability.
+
+2. **Acquisition and Dispo are separate views, not toggles.** Different user intent (buying vs selling), different data shape (deal-centric vs match-centric). Toggles on a single view create more cognitive load than two purpose-built views.
+
+3. **Buyer Interface removed from top-level navigation.** Share link management is folded into Dispo Dashboard (10.18). No logged-in buyer portal exists. Buyers receive an unauthenticated share link (10.19). Revisit only if buyers request saved/favorited deals at volume (V2+).
+
+4. **Free MAO Calculator is stateless — no persistence, no caps.** No 3-deal save cap. No 1-share-link cap. No free-tier tenant. No `CONFLICT` handling. Calculator runs without login, delivers MAO number with full math transparency, and presents upgrade CTA. Upgrade sells the workflow, not data rescue.
+
+5. **No LocalStorage bridge for auth redirect.** OAuth/Magic Link redirects will wipe in-memory state. This is acceptable. After auth completes and tenant is provisioned, user lands in a clean paid hub with an empty Acquisition pipeline and a clear "Add your first deal" action. Re-entry cost is ~60 seconds. The engineering cost of LocalStorage bridging, edge case handling, and RPC validation of arbitrary calculator payloads is not justified.
+
+6. **Stage-to-view mapping is the single rule preventing UI black holes.** Every deal has exactly one stage. Every stage maps to exactly one view. Acquisition shows: New, Analyzing, Offer Sent, Under Contract. Dispo Dashboard shows: Dispo. Transaction Coordination shows: Closing. `update_deal_v1` enforces valid stage transitions server-side.
+
+---
+
+## Execution Order
+
+```
+10.14  WeWeb UI Foundation (Layouts, Auth Flow, Navigation)
+  ↓
+10.15  Free MAO Calculator (Public Surface)
+  ↓
+10.16  Command Centre: Acquisition Dashboard
+  ↓
+10.17  Command Centre: Offer Generator
+  ↓
+10.18  Command Centre: Dispo Dashboard + Buyer Match + Share Links
+  ↓
+10.19  Buyer-Ready Deal Packet (Unauthenticated Share Link)
+  ↓
+10.20  Command Centre: Transaction Coordination Dashboard
+  ↓
+10.21  Forms: Seller Lead Intake + Buyer Registration
+  ↓
+10.22  Forms: Partner Deal Submission + Lead Intake (Internal)
+  ↓
+10.23  End-to-End WeWeb Wiring Verification
+```
+
+---
+
+### **10.14 — WeWeb UI Foundation (Layouts, Auth Flow, Navigation)**
+
+**Deliverable:**  
+Base WeWeb project structure established. Two distinct entry surfaces: public (free calculator) and authenticated (paid hub). Auth flow, navigation, and layout shells exist for all major surfaces.
+
+**DoD:**
+
+* Public surface (free MAO calculator) loads without login — no tenant, no auth required.
+* Authenticated surface (paid hub) requires Supabase Auth — sign in, sign out, session persistence functional.
+* Upgrade path wires public calculator → auth flow → tenant provisioning → paid hub without friction. No data bridging required — user lands in clean hub.
+* Global navigation routes authenticated users to: Acquisition, Dispo Dashboard, Transaction Coordination, Forms.
+* No "Buyer Interface" in top-level navigation. Share link management lives inside Dispo Dashboard.
+* Acquisition view includes a summary strip displaying: deal count by stage, pipeline value, lead volume. This replaces the standalone Exec Overview.
+* Layout shells exist for all Command Centre dashboard views (no content required yet).
+* Tenant context resolves correctly on authenticated page load via `get_user_entitlements_v1`.
+* No direct table calls — all data via allowlisted RPCs only.
+
+**Proof:**  
+`docs/proofs/10.14_weweb_ui_foundation_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.15 — Free MAO Calculator (Public Surface)**
+
+**Deliverable:**  
+Public-facing MAO calculator is functional, deterministic, and self-contained. No login required. No persistence.
+
+**DoD:**
+
+* Calculator runs without login — no tenant, no auth, no account.
+* Inputs → MAO output renders correctly (best / expected / worst offer range).
+* Same math and assumptions as paid system — uses same `calc_version`.
+* Results display clearly with logic visible (numbers + reasoning, no black box).
+* No persistence — calculator is stateless; results exist only in the current session.
+* No save cap, no share link cap, no `CONFLICT` handling — none of this exists in the free tier.
+* Upgrade CTA present on results screen — routes to auth flow → tenant provisioning.
+* CTA messaging sells the workflow: "Run this deal from offer to close" — not "save your results."
+* No forbidden direct table calls.
+
+**Proof:**  
+`docs/proofs/10.15_free_mao_calculator_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.16 — Command Centre: Acquisition Dashboard**
+
+**Deliverable:**  
+Acquisition dashboard functional for the acquisition-side stage model. Summary metrics strip included.
+
+**DoD:**
+
+* Dashboard displays deals in stages: New, Analyzing, Offer Sent, Under Contract.
+* Deals in stages outside this set (Dispo, Closing, Closed, Dead) do not appear — stage-to-view mapping enforced client-side via RPC filter.
+* Stage transitions trigger `update_deal_v1` — no direct writes.
+* `update_deal_v1` enforces valid stage transitions server-side. Invalid transitions (e.g., New → Closed) are rejected by the RPC and surfaced in UI.
+* Valid stage transition map documented in proof:
+  - New → Analyzing
+  - Analyzing → Offer Sent | Dead
+  - Offer Sent → Under Contract | Dead
+  - Under Contract → Dispo | Dead
+* Summary strip at top displays: deal count by stage, total pipeline value, lead volume — via allowlisted RPCs.
+* Owner assignment, notes, and timestamps render correctly per deal.
+* Activity log visible per deal via `foundation_log_activity_v1`.
+* **Cross-view transition feedback (applies to all cross-view stage moves):** When a stage transition moves a deal out of the current view and into a different dashboard (e.g., Under Contract → Dispo), the UI displays a confirmation toast naming the destination view with a clickable link to navigate there (e.g., "Deal moved to Dispo Dashboard → [Go to Dispo]"). This requirement applies in 10.16 (Under Contract → Dispo), 10.18 (Dispo → Closing), and 10.20 (Closing → Closed/Dead). The deal must not silently vanish from the current screen.
+* Empty states handled deterministically per stage.
+* No forbidden direct table calls.
+
+**Proof:**  
+`docs/proofs/10.16_command_centre_acquisition_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.17 — Command Centre: Offer Generator**
+
+**Deliverable:**  
+Offer Generator functional — produces offer number, terms block, and seller-ready copy.
+
+**DoD:**
+
+* Offer number computed deterministically from MAO inputs using stored `calc_version`.
+* Terms block and seller-ready text/email copy generated from offer output.
+* "Offer Sent" stage transition triggered via `update_deal_v1` on send.
+* Follow-up reminder state recorded via `foundation_log_activity_v1`.
+* Offer output tied to deal record — no orphaned offers.
+* No forbidden direct table calls.
+
+**Proof:**  
+`docs/proofs/10.17_command_centre_offer_generator_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.18 — Command Centre: Dispo Dashboard + Buyer Match + Share Links**
+
+**Deliverable:**  
+Dispo Dashboard functional for disposition-side workflow. Includes buyer-deal matching and share link management (no separate Buyer Interface surface).
+
+**DoD:**
+
+* Dashboard displays deals in stage: Dispo.
+* Deals in stages outside this set do not appear — stage-to-view mapping enforced client-side via RPC filter.
+* Buyer-deal matching functional via allowlisted RPC — match status tracked per deal-buyer pair.
+* Share link generation available from deal context in Dispo Dashboard — no separate navigation surface.
+* Share link status (active / revoked / expired / viewed) visible per deal.
+* Share link generation calls `create_share_token_v1` — token lifecycle governed by Section 8 (hash-at-rest, expiry, revocation, cardinality, scope).
+* Share link revocation available per deal via allowlisted RPC.
+* Stage transition from Dispo → Closing triggers move to Transaction Coordination view. Cross-view transition toast required per 10.16 UX contract.
+* Activity log visible per deal via `foundation_log_activity_v1`.
+* Empty states handled deterministically.
+* No forbidden direct table calls.
+
+**Proof:**  
+`docs/proofs/10.18_command_centre_dispo_dashboard_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.19 — Buyer-Ready Deal Packet (Unauthenticated Share Link)**
+
+**Deliverable:**  
+Mobile-friendly unauthenticated buyer-facing deal packet renders correctly via share token.
+
+**DoD:**
+
+* Share token validated via `lookup_share_token_v1` before any data renders.
+* Token lifecycle enforcement inherited from Section 8: hash-at-rest (8.4), abuse controls (8.5), revocation (8.6), usage logging (8.7), secure generation (8.8), expiration (8.9), scope enforcement (8.10).
+* Packet displays: ARV, repairs, assignment ask, terms, photos/notes.
+* No internal identifiers exposed — allowlisted fields only.
+* Expired, revoked, or invalid token renders deterministic blocked state — no data leak. Response shape identical regardless of failure reason (no existence leak).
+* Mobile-friendly rendering confirmed.
+* No authentication required.
+* No forbidden direct table calls.
+
+**Proof:**  
+`docs/proofs/10.19_buyer_deal_packet_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.20 — Command Centre: Transaction Coordination Dashboard**
+
+**Deliverable:**  
+Transaction Coordination dashboard functional for active closings.
+
+**DoD:**
+
+* Dashboard displays deals in stage: Closing.
+* Deals in stages outside this set do not appear — stage-to-view mapping enforced client-side via RPC filter.
+* Stage transition from Closing → Closed triggers deal completion and removal from active TC view. Cross-view transition toast required per 10.16 UX contract (deal moves to archived state).
+* Stage transition from Closing → Dead handles failed closings. Cross-view transition toast required per 10.16 UX contract.
+* TC-specific data renders per deal: current stage progression, key dates, notes.
+* All team members have full visibility — no role gating in V1.
+* Activity log visible per deal via `foundation_log_activity_v1`.
+* Empty states handled deterministically.
+* No forbidden direct table calls.
+
+**Proof:**  
+`docs/proofs/10.20_command_centre_tc_dashboard_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.21 — Forms: Seller Lead Intake + Buyer Registration**
+
+**Deliverable:**  
+Seller Lead Intake and Buyer Registration forms functional and writing via contracts.
+
+**DoD:**
+
+* Seller Lead Intake writes to Leads table via allowlisted RPC only — acquisition-side inbound.
+* Buyer Registration writes to Contacts table via allowlisted RPC only — buyer profile creation.
+* Required field validation fires client-side before RPC call.
+* RPC validation errors surface with field-level error display.
+* Idempotency key generated per submission (`gs_pendingIdempotencyKey`).
+* No direct table writes.
+
+**Proof:**  
+`docs/proofs/10.21_forms_seller_buyer_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.22 — Forms: Partner Deal Submission + Lead Intake (Internal)**
+
+**Deliverable:**  
+Partner Deal Submission and internal Lead Intake forms functional and writing via contracts.
+
+**DoD:**
+
+* Partner Deal Submission writes to Leads/Contacts via allowlisted RPC only — dispo-side inbound from co-wholesalers and JV partners.
+* Lead Intake Form writes via allowlisted RPC only — internal acquisition team use.
+* Required field validation fires client-side before RPC call.
+* RPC validation errors surface with field-level error display.
+* Idempotency key generated per submission (`gs_pendingIdempotencyKey`).
+* No direct table writes.
+
+**Proof:**  
+`docs/proofs/10.22_forms_partner_lead_intake_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+### **10.23 — End-to-End WeWeb Wiring Verification**
+
+**Deliverable:**  
+All WeWeb pages and flows wired correctly end-to-end. No forbidden surface access. All three paths (public, authenticated, share token) verified.
+
+**DoD:**
+
+* Full `weweb:drift` scan passes across all pages and flows.
+* All data access confirmed via allowlisted RPCs only — no `/rest/v1/` direct table calls detected.
+* **Public path verified:** unauthenticated → free MAO calculator → stateless results → upgrade CTA → auth flow.
+* **Authenticated path verified:** auth → tenant resolution → `get_user_entitlements_v1` → Command Centre (Acquisition, Dispo Dashboard, Transaction Coordination).
+* **Share token path verified:** token validation → buyer packet renders → revoked/expired/invalid token blocks with no data leak.
+* Stage-to-view mapping confirmed: each stage appears in exactly one dashboard view, no deals fall between views.
+* All 4 forms submit without direct table writes — confirmed by negative probe.
+* Navigation structure matches design decisions: three Command Centre views, no Buyer Interface nav item, no Exec Overview nav item.
+
+**Proof:**  
+`docs/proofs/10.23_weweb_wiring_verification_<UTC>.md`
+
+**Gate:**  
+`lane-only until promoted`
+
+---
+
+## Stage-to-View Mapping (Authoritative Reference)
+
+This mapping is the single source of truth for which deals appear in which dashboard view. It is enforced client-side via RPC filters and server-side via valid stage transition rules in `update_deal_v1`.
+
+| Stage | View | Notes |
+|-------|------|-------|
+| New | Acquisition | Entry point for all new leads/deals |
+| Analyzing | Acquisition | MAO analysis in progress |
+| Offer Sent | Acquisition | Offer delivered to seller |
+| Under Contract | Acquisition | Deal locked, pre-disposition |
+| Dispo | Dispo Dashboard | Active disposition + buyer matching |
+| Closing | Transaction Coordination | Active closing in progress |
+| Closed | None (archived) | Completed deal — accessible via filters/search |
+| Dead | None (archived) | Dead deal — accessible via filters/search |
+
+## Valid Stage Transitions (Authoritative Reference)
+
+| From | Allowed To |
+|------|-----------|
+| New | Analyzing |
+| Analyzing | Offer Sent, Dead |
+| Offer Sent | Under Contract, Dead |
+| Under Contract | Dispo, Dead |
+| Dispo | Closing, Dead |
+| Closing | Closed, Dead |
+| Closed | *(terminal)* |
+| Dead | *(terminal — reopening is a new deal)* |
+
 ---
 
 ## **11 — Release \+ Handoff Discipline**
@@ -4291,7 +4670,7 @@ DoD:
 
 * Proof includes replay of same event twice → no double seats.  
 Proof: docs/proofs/11.8\_billing\_webhook\_idempotency\_.md  
-Gate: merge-blocking once billing is enabled
+Gate: Gate: billing-webhook-idempotency (merge-blocking once billing is enabled)
 
 ### **11.9 Entitlement cutover checklist (free → paid)**
 
