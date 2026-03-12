@@ -6031,3 +6031,47 @@ DoD
 
 Status
 PASS
+
+2026-03-12 — Build Route v2.4 — Governance PR112
+
+Objective
+Renumber Section 10 items 10.3–10.12 (old) to accommodate eleven new
+backend and governance items inserted ahead of the WeWeb UI build block,
+following advisor review session 2026-03-12.
+
+Already-merged items 10.1 and 10.2 are unaffected. Proof file names,
+gate names, and truth registrations for 10.1 and 10.2 unchanged.
+
+Renumbering map (old → new)
+10.3  MAO golden-path smoke         → 10.10
+10.4  Save deal + reopen deal       → 10.14
+10.5  Deal packet share-link smoke  → 10.16
+10.6  Seat enforcement UX + API     → 10.22
+10.7  Frontend RPC contract guard   → 10.20
+10.8  Frontend surface enumeration  → 10.21
+
+New items inserted (10.3–10.9, 10.11–10.13, 10.15, 10.17–10.19, 10.23)
+10.3   RPC Response Schema Contracts
+10.4   RPC Response Contract Tests
+10.5   RPC Error Contract Tests
+10.6   RPC Contract Registry
+10.7   Gate Promotion Protocol
+10.8   WeWeb UI Foundation
+10.9   Free MAO Calculator (public surface)
+10.11  Command Centre: Acquisition Dashboard
+10.12  Command Centre: Offer Generator
+10.13  Command Centre: Dispo Dashboard + Buyer Match
+10.15  Buyer-Ready Deal Packet
+10.17  Command Centre: TC Dashboard
+10.18  Forms: Seller Lead Intake + Buyer Registration
+10.19  Forms: Partner Deal Submission + Lead Intake
+10.23  End-to-End WeWeb Wiring Verification
+
+Execution order now authoritative per PR112 governance file.
+Next item: 10.3 — RPC Response Schema Contracts.
+
+Changes
+- docs/governance/GOVERNANCE_CHANGE_PR112.md: renumbering map,
+  execution order, safety justification.
+
+Status: COMPLETE — merged to main
