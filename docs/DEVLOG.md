@@ -5787,3 +5787,95 @@ Notes
   finalizing proof.
 
 Status: COMPLETE — merged to main
+
+2026-03-12 — Build Route v2.4 — Item 9.7
+
+Objective
+Share tokens cannot become long-lived credentials. Token creation RPC
+enforces expires_at <= now() + interval '90 days'. Violations return
+VALIDATION_ERROR with field-level error on expires_at.
+
+Changes
+- supabase/migrations/20260311000002_9_7_token_lifetime_invariant.sql:
+  Dropped and recreated create_share_token_v1 with 90-day maximum
+  lifetime guard inserted after existing expires_at > now() check.
+  Returns VALIDATION_ERROR with error.fields.expires_at populated.
+  Cardinality guard from 9.5 preserved verbatim.
+- supabase/tests/9_7_token_lifetime_invariant.test.sql: 7 pgTAP tests.
+  Valid lifetime 1 hour succeeds (test 1). Boundary 90 days succeeds
+  (test 2). 91 days rejected with VALIDATION_ERROR (test 3). Error
+  message references max lifetime (test 4). Field-level error on
+  expires_at present (test 5). Past expires_at rejected (test 6).
+  Function signature exists (test 7).
+- .github/workflows/ci.yml: added token-lifetime merge-blocking job
+  (needs: changes, lane-enforcement; starts Supabase, resets DB, runs
+  full pgTAP suite).
+- docs/truth/required_checks.json: regenerated via truth:sync.
+  Added CI / token-lifetime.
+- docs/artifacts/CONTRACTS.md: appended S23 token lifetime invariant.
+- docs/governance/GOVERNANCE_CHANGE_PR108.md: governance justification.
+- docs/truth/calc_version_registry.json: bumped to v16, added 9.7 note.
+- docs/truth/cloud_migration_parity.json: tip 20260311000002, count 41.
+- docs/truth/qa_claim.json: updated to 9.7.
+- docs/truth/qa_scope_map.json: added 9.7 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 9.7 proof doc path.
+- generated/schema.sql: regenerated after migration encoding fix.
+
+Proof
+docs/proofs/9.7_token_lifetime_invariant_20260312T125657Z.md
+
+DoD
+- expires_at <= now() + 90 days enforced: VERIFIED (tests 2+3)
+- Violations return VALIDATION_ERROR: VERIFIED (test 3)
+- Field-level error on expires_at: VERIFIED (test 5)
+- Valid lifetime succeeds: VERIFIED (tests 1+2)
+- Excessive lifetime rejected: VERIFIED (test 3)
+- Expired tokens rejected: VERIFIED (test 6)
+- CONTRACTS S23 documents invariant: VERIFIED
+- merge-blocking token-lifetime gate wired: VERIFIED
+  (ci.yml job + required.needs + required_checks.json)
+- pgTAP 7 tests green (188 total, 24 files): VERIFIED
+- green:twice, pr:preflight: PASS
+
+Notes
+- Migration had em dash in comment causing schema-drift FAIL in CI.
+  Fixed by replacing with plain ASCII hyphen before push. Schema
+  regenerated and committed as part of amend.
+
+Status: COMPLETE — merged to main
+
+=== DEVLOG: Section 9 Closeout — PostgREST Surface & Share Token Security ===
+Date: 2026-03-12
+Status: COMPLETE
+
+Section 9 establishes deterministic control over the PostgREST service surface and the share-token lifecycle. CI gates now enforce the exposed RPC surface, database exposure, and share token invariants.
+
+9.1 Surface Truth Schema
+Introduced canonical surface representation and deterministic capture of the PostgREST OpenAPI surface. CI verifies runtime surface matches canonical truth.
+
+9.2 Expected Surface + Allowlist
+`expected_surface.json` defines the authoritative RPC surface. CI enforces that DB EXECUTE grants, OpenAPI exposure, and execute allowlists remain consistent.
+
+9.3 Reload Mechanism Contract
+Defined a single canonical PostgREST reload path (SIGUSR1). Only the deploy lane may perform reload; local harnesses do not claim reload behavior.
+
+9.4 Token Format Validation
+Share token structure validated before processing. Malformed tokens are rejected.
+
+9.5 Token Cardinality Guard
+Token creation limited by a cardinality guard to prevent uncontrolled token proliferation.
+
+9.6 Data Surface Truth Gate
+CI verifies exposed schemas, tables, and views against the expected surface.
+Only approved exception: `user_profiles`.
+
+9.7 Token Lifetime Invariant
+Token creation enforces `expires_at ≤ now() + 90 days`.
+Past expiration and excessive lifetimes are rejected. Boundary case (90 days) allowed.
+
+Verification
+green:once — PASS
+green:twice — PASS
+pr:preflight — PASS
+
+SECTION 9: COMPLETE
