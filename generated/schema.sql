@@ -157,6 +157,16 @@ BEGIN
       'error', json_build_object('message', 'expires_at must be in the future', 'fields', json_build_object())
     );
   END IF;
+  -- 9.7: Maximum lifetime invariant â€” tokens cannot exceed 90 days
+  IF p_expires_at > now() + interval '90 days' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object(
+        'message', 'expires_at exceeds maximum allowed lifetime of 90 days',
+        'fields', json_build_object('expires_at', 'Maximum token lifetime is 90 days')
+      )
+    );
+  END IF;
   -- Verify deal belongs to tenant
   IF NOT EXISTS (
     SELECT 1 FROM public.deals
@@ -167,9 +177,7 @@ BEGIN
       'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
     );
   END IF;
-  -- 9.5: Cardinality guard - count active tokens for this deal.
-  -- Active = revoked_at IS NULL AND expires_at > now().
-  -- Revoked or expired tokens do not count toward limit.
+  -- 9.5: Cardinality guard - count active tokens for this deal
   SELECT count(*)::int
   INTO v_active_count
   FROM public.share_tokens
