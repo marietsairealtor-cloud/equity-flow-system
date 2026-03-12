@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260311000001",
-  "migration_tip_file": "20260311000001_9_5_token_cardinality_guard.sql",
-  "migration_count": 40,
+  "migration_tip": "20260311000002",
+  "migration_tip_file": "20260311000002_9_7_token_lifetime_invariant.sql",
+  "migration_count": 41,
   "pinned_at": "2026-03-11"
 }

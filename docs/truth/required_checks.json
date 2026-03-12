@@ -236,6 +236,11 @@
       "required": true
     },
     {
+      "name": "CI / token-lifetime",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / toolchain-contract",
       "type": "github_status",
       "required": true

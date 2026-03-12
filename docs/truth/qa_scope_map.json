@@ -363,6 +363,9 @@
     },
     "9.6": {
       "proof_pattern": "^docs/proofs/9\\.6_data_surface_truth_"
+    },
+    "9.7": {
+      "proof_pattern": "^docs/proofs/9\\.7_token_lifetime_invariant_"
     }
   }
 }
