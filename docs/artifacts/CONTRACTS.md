@@ -327,3 +327,16 @@ Scope: `public` schema only. Supabase internal schemas excluded.
 Privilege drift causing new table or view exposure fails the `data-surface:truth` CI gate.
 
 Documented exception: `public.user_profiles` SELECT granted to `authenticated` only — per CONTRACTS S12 privilege firewall. No other core tables may appear in `tables_exposed`.
+
+## 23) Share Token Maximum Lifetime Invariant (9.7)
+
+`create_share_token_v1` enforces a maximum token lifetime of 90 days (Build Route 9.7).
+
+Rules (checked in order after existing expires_at validations):
+- `expires_at > now()` — token must be in the future (enforced since 8.9)
+- `expires_at <= now() + interval '90 days'` — token cannot exceed 90-day lifetime
+
+Violations return `VALIDATION_ERROR` with field-level error:
+- `error.fields.expires_at = 'Maximum token lifetime is 90 days'`
+
+Signature unchanged: `create_share_token_v1(p_deal_id uuid, p_expires_at timestamptz)`.
