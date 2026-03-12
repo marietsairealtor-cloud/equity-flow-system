@@ -5932,3 +5932,51 @@ Lane-only. Promote to merge-blocking when WeWeb becomes an actively
 maintained production surface.
 
 Status: COMPLETE — merged to main
+
+2026-03-12 — Build Route v2.4 — Item 10.2
+
+Objective
+WeWeb drift guard — lane-only. Detect forbidden /rest/v1/<table> direct
+table access patterns in repo-owned frontend artifacts. Runs automatically
+on every PR via CI but does not block merge until promoted.
+
+Changes
+- scripts/ci_weweb_drift_guard.mjs: New verifier. Scans products/,
+  docs/artifacts/, scripts/ for forbidden /rest/v1/<table> patterns.
+  Fails if any detected outside excluded paths. Logs forbidden and allowed
+  pattern counts. test_postgrest_isolation.mjs excluded (negative probe).
+- docs/truth/weweb_endpoints_truth.json: New truth file (version 1).
+  Defines 8 allowed /rest/v1/rpc/<function> patterns and 8 forbidden
+  /rest/v1/<table> patterns. Source of truth for drift verifier.
+- .github/workflows/ci.yml: Added weweb-drift job. Runs automatically
+  on every PR. NOT in required.needs — lane-only until promoted.
+- docs/truth/lane_checks.json: Added weweb lane with CI / weweb-drift.
+- package.json: Added weweb:drift npm script.
+- scripts/truth_bootstrap_check.mjs: Added weweb_endpoints_truth.json
+  to required array (triple-registration #2).
+- scripts/ci_robot_owned_guard.ps1: Allowlisted 10.2 proof log path
+  (triple-registration #1).
+- docs/truth/qa_claim.json: updated to 10.2.
+- docs/truth/qa_scope_map.json: added 10.2 entry.
+- docs/governance/GOVERNANCE_CHANGE_PR110.md: governance justification.
+- docs/proofs/10.2_weweb_drift_20260312T192252Z.log: proof log.
+
+Triple-registration
+1. ci_robot_owned_guard.ps1: PASS (proof log path allowlisted)
+2. truth_bootstrap_check.mjs required array: PASS (exists + JSON parses)
+3. handoff.ps1: N/A (hand-authored file, not machine-derived)
+
+QA findings resolved
+- Initial submission rejected: triple-registration incomplete.
+  weweb_endpoints_truth.json not registered in truth-bootstrap.
+- Fix: added to truth_bootstrap_check.mjs required array.
+- handoff.ps1 edit attempted and correctly rejected by QA —
+  robot-owned file, forbidden to hand-edit per GUARDRAILS §19-22.
+
+Gate promotion path
+Promote weweb-drift from lane_checks.json to required_checks.json
+and add to required.needs when WeWeb becomes an actively maintained
+production surface (first real user traffic or committed WeWeb
+workflow artifacts in repo).
+
+Status: COMPLETE — merged to main
