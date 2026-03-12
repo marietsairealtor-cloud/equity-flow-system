@@ -5879,3 +5879,56 @@ green:twice — PASS
 pr:preflight — PASS
 
 SECTION 9: COMPLETE
+
+2026-03-12 — Build Route v2.4 — Item 10.1
+
+Objective
+WeWeb smoke proof — lane-only. Verify WeWeb connects using contracts,
+calls only allowed RPC surfaces, and cannot make forbidden direct table
+calls. Not promoted to merge-blocking CI gate per Section 10
+scope-control policy.
+
+Changes
+- docs/proofs/10.1_weweb_smoke_20260312T171032Z.md: Proof document.
+  Evidence of WeWeb calling list_deals_v1 via native Supabase plugin
+  (not direct table access). Negative probe confirms deals table returns
+  permission denied. Contract enforcement chain verified end-to-end.
+- docs/governance/GOVERNANCE_CHANGE_PR109.md: governance justification.
+- docs/truth/qa_claim.json: updated to 10.1.
+- docs/truth/qa_scope_map.json: added 10.1 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.1 proof doc path.
+- scripts/cloud_schema_drift_check.ps1: added line-range deletion filter
+  for get_complete_schema — Supabase platform-managed introspection
+  function present on cloud project but absent from local migrations.
+  Filter operates on in-memory cloud dump string only. generated/schema.sql
+  unchanged. Exclusion logged explicitly at runtime.
+
+WeWeb Setup
+- WeWeb project: https://editor.weweb.io/b3268184-011c-4ebc-9921-27fc956bb67a
+- Supabase plugin connected (green) to upnelewdvbicxvfgzojg.supabase.co
+- Supabase Auth plugin connected
+- Workflow: On page load -> Sign in -> Call list_deals_v1 (native plugin)
+
+Proof Evidence
+- list_deals_v1 called via native Supabase plugin: VERIFIED
+  Log: [Supabase] Call a Postgres function - list_deals_v1
+  Response: ok=false, code=NOT_AUTHORIZED (no tenant context — correct)
+- Direct table access blocked: VERIFIED
+  Log: [Supabase] Selecting deals
+  Error: permission denied for table deals
+- No forbidden RPCs: VERIFIED (execute_allowlist enforced server-side)
+
+cloud-schema-drift fix
+- Root cause: get_complete_schema is a Supabase platform-managed
+  function added to cloud public schema by Supabase — not by us.
+  pg_dump v17 (CI) captured it; local CLI dump did not.
+- Fix: line-range block stripper added to cloud_schema_drift_check.ps1
+  Two approaches failed first (platformPatterns line filter, regex block
+  match) before line-range deletion succeeded.
+- Gate now passes: DRIFT_CHECK: NO DRIFT DETECTED
+
+Gate Status
+Lane-only. Promote to merge-blocking when WeWeb becomes an actively
+maintained production surface.
+
+Status: COMPLETE — merged to main
