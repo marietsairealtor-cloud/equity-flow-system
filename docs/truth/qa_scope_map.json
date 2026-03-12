@@ -366,6 +366,9 @@
     },
     "9.7": {
       "proof_pattern": "^docs/proofs/9\\.7_token_lifetime_invariant_"
+    },
+    "10.1": {
+      "proof_pattern": "^docs/proofs/10\\.1_weweb_smoke_"
     }
   }
 }
