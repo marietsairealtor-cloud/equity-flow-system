@@ -21,6 +21,12 @@
       "checks": [
         "CI / surface-invariants"
       ]
+    },
+    {
+      "lane": "weweb",
+      "checks": [
+        "CI / weweb-drift"
+      ]
     }
   ]
 }

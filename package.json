@@ -58,7 +58,8 @@
     "surface:capture": "node scripts/capture_surface_truth.mjs",
     "surface:verify": "node scripts/ci_surface_truth.mjs",
     "surface:invariants": "node scripts/ci_surface_invariants.mjs",
-  "data-surface:truth": "node scripts/ci_data_surface_truth.mjs"
+  "data-surface:truth": "node scripts/ci_data_surface_truth.mjs",
+  "weweb:drift": "node scripts/ci_weweb_drift_guard.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",

@@ -369,6 +369,9 @@
     },
     "10.1": {
       "proof_pattern": "^docs/proofs/10\\.1_weweb_smoke_"
+    },
+    "10.2": {
+      "proof_pattern": "^docs/proofs/10\\.2_weweb_drift_"
     }
   }
 }

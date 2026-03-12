@@ -813,6 +813,20 @@ jobs:
           supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres 2>&1 | grep -E "9_7_token_lifetime|Files=|Result:|ok$|not ok"
           supabase test db
 
+  weweb-drift:
+    name: weweb-drift
+    needs: [changes, lane-enforcement]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: weweb-drift
+        run: npm run weweb:drift
+
   data-surface-truth:
     name: data-surface-truth
     needs: [changes, lane-enforcement]
