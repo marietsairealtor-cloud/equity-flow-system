@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "description": "WeWeb allowed endpoint patterns. Verifier fails if forbidden /rest/v1/ direct table access is detected in repo-owned frontend artifacts. Governed by Build Route 10.2.",
+  "allowed_patterns": [
+    "/rest/v1/rpc/create_deal_v1",
+    "/rest/v1/rpc/create_share_token_v1",
+    "/rest/v1/rpc/foundation_log_activity_v1",
+    "/rest/v1/rpc/get_user_entitlements_v1",
+    "/rest/v1/rpc/list_deals_v1",
+    "/rest/v1/rpc/lookup_share_token_v1",
+    "/rest/v1/rpc/revoke_share_token_v1",
+    "/rest/v1/rpc/update_deal_v1"
+  ],
+  "forbidden_patterns": [
+    "/rest/v1/deals",
+    "/rest/v1/share_tokens",
+    "/rest/v1/tenants",
+    "/rest/v1/tenant_memberships",
+    "/rest/v1/deal_inputs",
+    "/rest/v1/deal_outputs",
+    "/rest/v1/activity_log",
+    "/rest/v1/calc_versions"
+  ],
+  "notes": "Direct table access via /rest/v1/<table> is forbidden. All WeWeb data access must go through /rest/v1/rpc/<function> using the execute_allowlist. Enforced by ci_weweb_drift_guard.mjs."
+}

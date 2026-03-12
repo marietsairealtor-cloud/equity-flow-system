@@ -1,0 +1,69 @@
+PROOF_HEAD=fcc26baa5d8014a0c8101a0dabd31555063ef43c
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.2 WeWeb Drift Guard -- Proof Log ===
+Date: 2026-03-12T15:22:09.4069268-04:00
+Branch: feat/10.2-weweb-drift-guard
+PR HEAD SHA: fcc26baa5d8014a0c8101a0dabd31555063ef43c
+
+=== DoD: Endpoints truth exists ===
+docs/truth/weweb_endpoints_truth.json (version 1)
+Allowed RPC patterns: 8
+Forbidden direct table patterns: 8 (deals, share_tokens, tenants,
+tenant_memberships, deal_inputs, deal_outputs, activity_log, calc_versions)
+
+=== DoD: Verifier detects forbidden /rest/v1/ usage ===
+Script: scripts/ci_weweb_drift_guard.mjs
+npm script: weweb:drift
+CI job: weweb-drift (lane-only, not in required.needs)
+Registered in: docs/truth/lane_checks.json (weweb lane)
+
+=== Gate output ===
+
+> equity-flow-system@0.0.0 weweb:drift
+> node scripts/ci_weweb_drift_guard.mjs
+
+=== ci_weweb_drift_guard ===
+Forbidden patterns: /rest/v1/deals, /rest/v1/share_tokens, /rest/v1/tenants, /rest/v1/tenant_memberships, /rest/v1/deal_inputs, /rest/v1/deal_outputs, /rest/v1/activity_log, /rest/v1/calc_versions
+Scanning: products, docs/artifacts, scripts
+
+No forbidden endpoint patterns detected in repo-owned files.
+Allowed RPC endpoints: 8
+Forbidden table endpoints checked: 8
+ci_weweb_drift_guard: PASS
+
+
+=== Truth-bootstrap ===
+
+PASS EXISTS docs/truth/weweb_endpoints_truth.json
+PASS JSON docs/truth/weweb_endpoints_truth.json
+STATUS: PASS (truth-bootstrap OK)
+
+
+
+=== Triple-registration ===
+1. ci_robot_owned_guard.ps1: PASS (10.2 proof log path allowlisted)
+2. truth_bootstrap_check.mjs required array: PASS (exists + JSON parses)
+3. handoff.ps1: N/A (hand-authored file, not machine-derived)
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR110.md
+docs/truth/lane_checks.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/weweb_endpoints_truth.json
+package.json
+scripts/ci_robot_owned_guard.ps1
+scripts/ci_weweb_drift_guard.mjs
+scripts/truth_bootstrap_check.mjs
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.2 WeWeb Drift Guard: PASS (lane-only)
