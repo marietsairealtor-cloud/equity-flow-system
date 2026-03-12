@@ -157,7 +157,7 @@ BEGIN
       'error', json_build_object('message', 'expires_at must be in the future', 'fields', json_build_object())
     );
   END IF;
-  -- 9.7: Maximum lifetime invariant â€” tokens cannot exceed 90 days
+  -- 9.7: Maximum lifetime invariant - tokens cannot exceed 90 days
   IF p_expires_at > now() + interval '90 days' THEN
     RETURN json_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
