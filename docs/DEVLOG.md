@@ -5980,3 +5980,54 @@ production surface (first real user traffic or committed WeWeb
 workflow artifacts in repo).
 
 Status: COMPLETE — merged to main
+
+## 2026-03-12 — Build Route v2.4 — Items 10.13–10.23 (Section 10 UI Build Block)
+
+Objective
+Added eleven Build Route items closing two governance gaps: no mechanical
+gate promotion path existed, and the WeWeb UI build had no governed section
+with DoD, proof artifacts, or gate posture.
+
+Changes
+- BUILD_ROUTE_V2_4.md: appended items 10.13–10.23 to Section 10.
+- 10.13: Gate Promotion Protocol — gate_promotion_registry.json truth file,
+  merge-blocking gate-promotion-registry, initial registry covers all named
+  conditional gates in Section 10 (weweb-drift, frontend-contract-guard,
+  surface-enumeration, rpc-error-contracts).
+- 10.14: WeWeb UI Foundation — auth flow, navigation shells, public vs
+  authenticated surface split, upgrade path.
+- 10.15: Free MAO Calculator — stateless public surface, no persistence,
+  no caps, upgrade CTA.
+- 10.16: Command Centre Acquisition Dashboard — stages New/Analyzing/Offer
+  Sent/Under Contract, summary strip, cross-view transition toast contract.
+- 10.17: Command Centre Offer Generator — deterministic offer number, terms
+  block, seller-ready copy, Offer Sent transition.
+- 10.18: Command Centre Dispo Dashboard — Dispo stage, buyer match, share
+  link management, Dispo → Closing transition.
+- 10.19: Buyer-Ready Deal Packet — unauthenticated share link surface,
+  Section 8 token lifecycle enforced, mobile-friendly.
+- 10.20: Command Centre TC Dashboard — Closing stage, Closed/Dead
+  transitions, cross-view toast contract.
+- 10.21: Forms — Seller Lead Intake + Buyer Registration.
+- 10.22: Forms — Partner Deal Submission + Internal Lead Intake.
+- 10.23: End-to-End WeWeb Wiring Verification — all three paths verified
+  (public, authenticated, share token), stage-to-view mapping confirmed.
+- docs/governance/GOVERNANCE_CHANGE_PR111.md: governance justification.
+
+Proof
+- No proof artifact required — Build Route documentation addition only.
+- Governance file: docs/governance/GOVERNANCE_CHANGE_PR111.md
+
+DoD
+- 10.13–10.23 appended to BUILD_ROUTE_V2_4.md
+- Design decisions locked and authoritative for UI build block
+- Stage-to-view mapping and valid stage transitions documented as
+  authoritative reference
+- Gate impact documented: one new merge-blocking gate (10.13),
+  ten lane-only gates (10.14–10.23)
+- Governance change file present
+- No Foundation paths touched
+- No existing items modified
+
+Status
+PASS
