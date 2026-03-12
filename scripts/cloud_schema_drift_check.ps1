@@ -61,6 +61,7 @@ $platformPatterns = @(
   "^REVOKE ALL ON FUNCTION .* FROM PUBLIC",
   "^REVOKE ALL ON TABLE .* FROM PUBLIC",
   "^ALTER DEFAULT PRIVILEGES FOR ROLE",
+  "get_complete_schema",
   "^ALTER FUNCTION .* OWNER TO",
   "^\\restrict",
   "^\\unrestrict",
@@ -77,8 +78,32 @@ function Remove-PlatformLines([string]$text) {
     $keep
   }) -join "`n"
 }
+# Strip Supabase platform-managed function blocks from cloud dump using line-range deletion.
+# get_complete_schema: Supabase Table Editor introspection helper. Not created by product
+# migrations. Confirmed platform-managed 2026-03-12. Must be excluded from drift comparison.
+# This filter operates only on the in-memory cloud dump string — generated/schema.sql is never modified.
+function Remove-PlatformFunctionBlocks([string[]]$lines) {
+  $skip = $false
+  $stripped = $false
+  $result = foreach ($line in $lines) {
+    if ($line -match "CREATE (OR REPLACE )?FUNCTION `"?public`"?\.`"?get_complete_schema`"?") {
+      $skip = $true
+      $stripped = $true
+    }
+    if (-not $skip) { $line }
+    if ($skip -and $line -match "^\`$\`$;") {
+      $skip = $false
+    }
+  }
+  if ($stripped) {
+    Write-Host "  [platform-exclusion] get_complete_schema stripped from cloud dump (Supabase platform-managed, not a product migration)"
+  }
+  return $result -join "`n"
+}
+
 $local = Remove-PlatformLines((Get-Content $localSchema -Raw) -replace "`r`n","`n" -replace "\s+$","")
-$cloud = Remove-PlatformLines((Get-Content $tempSchema -Raw) -replace "`r`n","`n" -replace "\s+$","")
+$cloudRaw = Remove-PlatformFunctionBlocks((Get-Content $tempSchema) -replace "`r`n","")
+$cloud = Remove-PlatformLines($cloudRaw -replace "`r`n","`n" -replace "\s+$","")
 Remove-Item $tempSchema -ErrorAction SilentlyContinue
 
 # Normalize pg_dump version differences (v16 vs v17 quoting/formatting)
