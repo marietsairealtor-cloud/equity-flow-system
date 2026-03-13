@@ -6117,3 +6117,43 @@ No CI gate wired — lane-only. Schemas become merge-blocking inputs
 when 10.4 (RPC Response Contract Tests) is implemented and promoted.
 
 Status: COMPLETE — merged to main
+
+2026-03-13 — Build Route v2.4 — Item 10.4
+
+Objective
+RPC response contract tests — merge-blocking. CI validates public RPC
+responses against governed schemas introduced in 10.3. Gate enforces
+frozen envelope contract mechanically on every PR.
+
+Changes
+- supabase/tests/10_4_rpc_response_contract_tests.test.sql: 25 pgTAP
+  tests. Covers list_deals_v1 and get_user_entitlements_v1.
+  NOT_AUTHORIZED path: ok=false, code=NOT_AUTHORIZED, data=null,
+  error.message present, error.fields present.
+  OK path: ok=true, code=OK, error=null, correct data fields present,
+  data.items is array, data.next_cursor=null.
+  Seed uses fixed UUIDs in a0400000-* namespace. ROLLBACK transaction.
+- .github/workflows/ci.yml: Added rpc-response-contract-tests job.
+  Added to required.needs — merge-blocking.
+  Fixed db-url: localhost → 127.0.0.1 (TLS error on CI IPv6 resolution).
+- docs/truth/required_checks.json: regenerated via truth:sync.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.4 proof log path.
+- docs/truth/qa_claim.json: updated to 10.4.
+- docs/truth/qa_scope_map.json: added 10.4 entry.
+- docs/governance/GOVERNANCE_CHANGE_PR114.md: governance justification.
+- docs/proofs/10.4_rpc_response_contract_tests_20260313T142212Z.log
+
+Issues resolved
+- tests.create_supabase_user: schema does not exist — switched to
+  direct auth.users INSERT pattern used by all other test files.
+- tenants.name column does not exist — tenants table has id only.
+- tenant_memberships.id has no default — explicit UUID required.
+- current_tenant_id() reads tenant_id from JWT claims, not sub —
+  added tenant_id to JWT claims in authenticated test context.
+- PERFORM not valid in plain SQL — switched to SELECT set_config().
+- Plan count mismatch — SELECT set_config() counts as pgTAP test.
+- PATH_LEAK_AUDIT FAIL — /Users/ in proof log from test output.
+  Fixed by redacting absolute paths to <REPO_ROOT> in proof generation.
+- CI TLS error — localhost resolves to IPv6, use 127.0.0.1.
+
+Status: COMPLETE — merged to main
