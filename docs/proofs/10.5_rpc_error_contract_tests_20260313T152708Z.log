@@ -1,0 +1,466 @@
+PROOF_HEAD=8a1d50973a35fd4fcbb528ed743912f2ebf0d2f8
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.5 RPC Error Contract Tests -- Proof Log ===
+Date: 2026-03-13T11:22:59.1456406-04:00
+Branch: feat/10.5-rpc-error-contract-tests
+PR HEAD SHA: 8a1d50973a35fd4fcbb528ed743912f2ebf0d2f8
+
+=== DoD: Negative-path tests exist for governed RPCs ===
+Test file: supabase/tests/10_5_rpc_error_contract_tests.test.sql
+Total tests: 40
+Scope: create_deal_v1, update_deal_v1, create_share_token_v1,
+  revoke_share_token_v1, lookup_share_token_v1
+
+=== DoD: Tests confirm correct error code, envelope shape, field-level mapping ===
+create_deal_v1 (5): CONFLICT duplicate, NOT_AUTHORIZED
+update_deal_v1 (5): CONFLICT row version mismatch, NOT_AUTHORIZED
+create_share_token_v1 (15): VALIDATION_ERROR null expires_at,
+  VALIDATION_ERROR past expires_at, VALIDATION_ERROR >90d (field-level),
+  NOT_FOUND deal not in tenant, CONFLICT cardinality, NOT_AUTHORIZED
+revoke_share_token_v1 (5): VALIDATION_ERROR null token, NOT_AUTHORIZED
+lookup_share_token_v1 (10): VALIDATION_ERROR null deal_id,
+  NOT_FOUND bad format (no existence leak), NOT_FOUND nonexistent, NOT_AUTHORIZED
+
+=== DoD: Typical cases validated ===
+invalid input -> VALIDATION_ERROR: PASS (null expires_at, null token, null deal_id, past/future>90d)
+missing record -> NOT_FOUND: PASS (deal not in tenant, nonexistent token, bad format token)
+conflict condition -> CONFLICT: PASS (duplicate deal, row version mismatch, cardinality)
+
+=== DoD: CI fails on error code/structure change ===
+Gate: rpc-error-contracts (merge-blocking, in required.needs)
+
+=== Test run output ===
+<REPO_ROOT>/supabase/tests/10_5_rpc_error_contract_tests.test.sql ......... ok
+Result: PASS
+
+
+=== CI semantic contract ===
+=== ci-semantic-contract ===
+STRICT_MODE= false
+WORKFLOWS_INSPECTED= 5
+ - .github\workflows\ci.yml
+ - .github\workflows\database-tests.yml
+ - .github\workflows\placeholder.yml
+ - .github\workflows\policy-drift-attestation.yml
+ - .github\workflows\secrets-scan.yml
+REQUIRED_CHECKS=
+ - CI / anon-privilege-audit
+ - CI / automation-contract
+ - CI / background-context-review
+ - CI / blocked-identifiers
+ - CI / calc-version-registry
+ - CI / ci-db-smoke
+ - CI / ci-encoding-audit
+ - CI / ci-normalize-sweep
+ - CI / ci-path-leak-audit
+ - CI / ci-semantic-contract
+ - CI / ci-topology-audit
+ - CI / clean-room-replay
+ - CI / cloud-schema-drift
+ - CI / data-surface-truth
+ - CI / db-heavy
+ - CI / deferred-proof-registry
+ - CI / definer-safety-audit
+ - CI / docs-push-contract
+ - CI / entitlement-policy-coupling
+ - CI / env-sanity
+ - CI / foundation-invariants
+ - CI / governance-change-guard
+ - CI / governance-path-coverage
+ - CI / handoff-commit-safety
+ - CI / handoff-idempotency
+ - CI / handoff-preconditions
+ - CI / job-graph-ordering
+ - CI / lane-enforcement
+ - CI / lane-policy-contract
+ - CI / migration-grant-lint
+ - CI / migration-rls-colocation
+ - CI / migration-schema-coupling
+ - CI / policy-coupling
+ - CI / proof-commit-binding
+ - CI / proof-manifest
+ - CI / qa-requirements-contract
+ - CI / qa-scope-coverage
+ - CI / qa-verify
+ - CI / rls-strategy-consistent
+ - CI / robot-owned-guard
+ - CI / robot-owned-publish-guard
+ - CI / rpc-error-contracts
+ - CI / rpc-mapping-contract
+ - CI / rpc-response-contract-tests
+ - CI / schema-drift
+ - CI / ship-guard
+ - CI / stop-the-line
+ - CI / stop-the-line-xor
+ - CI / test
+ - CI / token-lifetime
+ - CI / toolchain-contract
+ - CI / toolchain-contract-supabase
+ - CI / truth-sync-enforced
+ - CI / unregistered-table-access
+ - CI / waiver-debt-enforcement
+ - CI / waiver-rate-limit
+ - database-tests / pgtap
+CHECK CI / anon-privilege-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: anon-privilege-audit
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / automation-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: automation-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / background-context-review
+  FILE: .github\workflows\ci.yml
+  JOB_ID: background-context-review
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / blocked-identifiers
+  FILE: .github\workflows\ci.yml
+  JOB_ID: blocked-identifiers
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / calc-version-registry
+  FILE: .github\workflows\ci.yml
+  JOB_ID: calc-version-registry
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-db-smoke
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-db-smoke
+  RUN_STEPS: 4
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-encoding-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-encoding-audit
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-normalize-sweep
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-normalize-sweep
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-path-leak-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-path-leak-audit
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-semantic-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-semantic-contract
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ci-topology-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ci-topology-audit
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / clean-room-replay
+  FILE: .github\workflows\ci.yml
+  JOB_ID: clean-room-replay
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / cloud-schema-drift
+  FILE: .github\workflows\ci.yml
+  JOB_ID: cloud-schema-drift
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / data-surface-truth
+  FILE: .github\workflows\ci.yml
+  JOB_ID: data-surface-truth
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / db-heavy
+  FILE: .github\workflows\ci.yml
+  JOB_ID: db-heavy
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / deferred-proof-registry
+  FILE: .github\workflows\ci.yml
+  JOB_ID: deferred-proof-registry
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / definer-safety-audit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: definer-safety-audit
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / docs-push-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: docs-push-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / entitlement-policy-coupling
+  FILE: .github\workflows\ci.yml
+  JOB_ID: entitlement-policy-coupling
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / env-sanity
+  FILE: .github\workflows\ci.yml
+  JOB_ID: env-sanity
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / foundation-invariants
+  FILE: .github\workflows\ci.yml
+  JOB_ID: foundation-invariants
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / governance-change-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: governance-change-guard
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / governance-path-coverage
+  FILE: .github\workflows\ci.yml
+  JOB_ID: governance-path-coverage
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / handoff-commit-safety
+  FILE: .github\workflows\ci.yml
+  JOB_ID: handoff-commit-safety
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / handoff-idempotency
+  FILE: .github\workflows\ci.yml
+  JOB_ID: handoff-idempotency
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / handoff-preconditions
+  FILE: .github\workflows\ci.yml
+  JOB_ID: handoff-preconditions
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / job-graph-ordering
+  FILE: .github\workflows\ci.yml
+  JOB_ID: job-graph-ordering
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / lane-enforcement
+  FILE: .github\workflows\ci.yml
+  JOB_ID: lane-enforcement
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / lane-policy-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: lane-policy-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / migration-grant-lint
+  FILE: .github\workflows\ci.yml
+  JOB_ID: migration-grant-lint
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / migration-rls-colocation
+  FILE: .github\workflows\ci.yml
+  JOB_ID: migration-rls-colocation
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / migration-schema-coupling
+  FILE: .github\workflows\ci.yml
+  JOB_ID: migration-schema-coupling
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / policy-coupling
+  FILE: .github\workflows\ci.yml
+  JOB_ID: policy-coupling
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / proof-commit-binding
+  FILE: .github\workflows\ci.yml
+  JOB_ID: proof-commit-binding
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / proof-manifest
+  FILE: .github\workflows\ci.yml
+  JOB_ID: proof-manifest
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / qa-requirements-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: qa-requirements-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / qa-scope-coverage
+  FILE: .github\workflows\ci.yml
+  JOB_ID: qa-scope-coverage
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / qa-verify
+  FILE: .github\workflows\ci.yml
+  JOB_ID: qa-verify
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / rls-strategy-consistent
+  FILE: .github\workflows\ci.yml
+  JOB_ID: rls-strategy-consistent
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / robot-owned-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: robot-owned-guard
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / robot-owned-publish-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: robot-owned-publish-guard
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / rpc-error-contracts
+  FILE: .github\workflows\ci.yml
+  JOB_ID: rpc-error-contracts
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / rpc-mapping-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: rpc-mapping-contract
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / rpc-response-contract-tests
+  FILE: .github\workflows\ci.yml
+  JOB_ID: rpc-response-contract-tests
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / schema-drift
+  FILE: .github\workflows\ci.yml
+  JOB_ID: schema-drift
+  RUN_STEPS: 4
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / ship-guard
+  FILE: .github\workflows\ci.yml
+  JOB_ID: ship-guard
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / stop-the-line
+  FILE: .github\workflows\ci.yml
+  JOB_ID: stop-the-line
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / stop-the-line-xor
+  FILE: .github\workflows\ci.yml
+  JOB_ID: stop-the-line-xor
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / test
+  FILE: .github\workflows\ci.yml
+  JOB_ID: test
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / token-lifetime
+  FILE: .github\workflows\ci.yml
+  JOB_ID: token-lifetime
+  RUN_STEPS: 3
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / toolchain-contract
+  FILE: .github\workflows\ci.yml
+  JOB_ID: toolchain-contract
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / toolchain-contract-supabase
+  FILE: .github\workflows\ci.yml
+  JOB_ID: toolchain-contract-supabase
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / truth-sync-enforced
+  FILE: .github\workflows\ci.yml
+  JOB_ID: truth-sync-enforced
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / unregistered-table-access
+  FILE: .github\workflows\ci.yml
+  JOB_ID: unregistered-table-access
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / waiver-debt-enforcement
+  FILE: .github\workflows\ci.yml
+  JOB_ID: waiver-debt-enforcement
+  RUN_STEPS: 1
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK CI / waiver-rate-limit
+  FILE: .github\workflows\ci.yml
+  JOB_ID: waiver-rate-limit
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+CHECK database-tests / pgtap
+  FILE: .github\workflows\database-tests.yml
+  JOB_ID: pgtap
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+RESULT=PASS
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR115.md
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/required_checks.json
+scripts/ci_robot_owned_guard.ps1
+supabase/tests/10_5_rpc_error_contract_tests.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.5 RPC Error Contract Tests: PASS (merge-blocking)
