@@ -375,6 +375,9 @@
     },
     "10.3": {
       "proof_pattern": "^docs/proofs/10\\.3_rpc_response_schema_contracts_"
+    },
+    "10.4": {
+      "proof_pattern": "^docs/proofs/10\\.4_rpc_response_contract_tests_"
     }
   }
 }

@@ -813,6 +813,22 @@ jobs:
           supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres 2>&1 | grep -E "9_7_token_lifetime|Files=|Result:|ok$|not ok"
           supabase test db
 
+  rpc-response-contract-tests:
+    name: rpc-response-contract-tests
+    needs: [changes, lane-enforcement]
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Start Supabase
+        run: npx supabase start
+      - name: Run pgTAP contract tests
+        run: npx supabase test db --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres
+
   weweb-drift:
     name: weweb-drift
     needs: [changes, lane-enforcement]
@@ -849,7 +865,7 @@ jobs:
         run: npm run data-surface:truth
 
   required:
-    needs: [ci-db-smoke, data-surface-truth, token-lifetime, clean-room-replay, schema-drift, calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract, db-heavy]
+    needs: [ci-db-smoke, data-surface-truth, token-lifetime, clean-room-replay, schema-drift, calc-version-registry, policy-coupling, background-context-review, blocked-identifiers, definer-safety-audit, unregistered-table-access, migration-grant-lint, migration-schema-coupling, migration-rls-colocation, rls-strategy-consistent, anon-privilege-audit, job-graph-ordering, qa-scope-coverage, governance-path-coverage, deferred-proof-registry, handoff-idempotency, handoff-preconditions, env-sanity, test, toolchain-contract, toolchain-contract-supabase, automation-contract, ship-guard, handoff-commit-safety, docs-push-contract, qa-requirements-contract, robot-owned-publish-guard, qa-verify, governance-change-guard, ci-semantic-contract, proof-commit-binding, waiver-rate-limit, waiver-debt-enforcement, ci-topology-audit, truth-sync-enforced, proof-manifest, entitlement-policy-coupling, foundation-invariants, stop-the-line, stop-the-line-xor, lane-policy-contract, lane-enforcement, robot-owned-guard, ci-normalize-sweep, ci-encoding-audit, ci-path-leak-audit, cloud-schema-drift, rpc-mapping-contract, db-heavy, rpc-response-contract-tests]
     runs-on: ubuntu-latest
     steps:
       - name: required (aggregate)
