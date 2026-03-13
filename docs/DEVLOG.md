@@ -6157,3 +6157,41 @@ Issues resolved
 - CI TLS error — localhost resolves to IPv6, use 127.0.0.1.
 
 Status: COMPLETE — merged to main
+
+2026-03-13 — Build Route v2.4 — Item 10.5
+
+Objective
+RPC error contract tests — merge-blocking. CI validates error responses
+from public RPCs follow the frozen envelope contract. Covers all
+VALIDATION_ERROR, NOT_FOUND, CONFLICT, and NOT_AUTHORIZED paths.
+
+Changes
+- supabase/tests/10_5_rpc_error_contract_tests.test.sql: 40 pgTAP
+  tests across 5 RPCs.
+  create_deal_v1: CONFLICT duplicate, NOT_AUTHORIZED.
+  update_deal_v1: CONFLICT row version mismatch, NOT_AUTHORIZED.
+  create_share_token_v1: VALIDATION_ERROR null/past/>90d expires_at
+    (field-level error verified), NOT_FOUND deal not in tenant,
+    CONFLICT cardinality (50-token seed), NOT_AUTHORIZED.
+  revoke_share_token_v1: VALIDATION_ERROR null token, NOT_AUTHORIZED.
+  lookup_share_token_v1: VALIDATION_ERROR null deal_id, NOT_FOUND
+    bad format (no existence leak), NOT_FOUND nonexistent, NOT_AUTHORIZED.
+  Seed uses fixed UUIDs in a0500000-* namespace. ROLLBACK transaction.
+  DO block seeds 50 share tokens for cardinality test — all rolled back.
+- .github/workflows/ci.yml: Added rpc-error-contracts job.
+  Added to required.needs — merge-blocking.
+- docs/truth/required_checks.json: regenerated via truth:sync.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.5 proof log path.
+- docs/truth/qa_claim.json: updated to 10.5.
+- docs/truth/qa_scope_map.json: added 10.5 entry.
+- docs/governance/GOVERNANCE_CHANGE_PR115.md: governance justification.
+- docs/proofs/10.5_rpc_error_contract_tests_20260313T152708Z.log
+
+QA findings resolved
+- Initial submission rejected: ci-semantic-contract output truncated.
+  Required fields missing: ALLOWLISTED_GATE, NOT_NOOP, RUN_STEPS.
+  Fixed: captured full semantic contract output in proof log.
+  Going forward: always include full ci-semantic-contract output for
+  newly introduced merge-blocking gates.
+
+Status: COMPLETE — merged to main
