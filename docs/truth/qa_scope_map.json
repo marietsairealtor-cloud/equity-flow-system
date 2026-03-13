@@ -378,6 +378,9 @@
     },
     "10.4": {
       "proof_pattern": "^docs/proofs/10\\.4_rpc_response_contract_tests_"
+    },
+    "10.5": {
+      "proof_pattern": "^docs/proofs/10\\.5_rpc_error_contract_tests_"
     }
   }
 }
