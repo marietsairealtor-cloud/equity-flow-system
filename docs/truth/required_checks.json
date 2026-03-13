@@ -211,6 +211,11 @@
       "required": true
     },
     {
+      "name": "CI / rpc-response-contract-tests",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "CI / schema-drift",
       "type": "github_status",
       "required": true
