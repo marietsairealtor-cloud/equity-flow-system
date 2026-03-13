@@ -1,0 +1,58 @@
+PROOF_HEAD=0cd09e65c73d67dcbcb9501b3a22a4dc6b72049f
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.4 RPC Response Contract Tests -- Proof Log ===
+Date: 2026-03-13T10:33:26.6174353-04:00
+Branch: feat/10.4-rpc-response-contract-tests
+PR HEAD SHA: 0cd09e65c73d67dcbcb9501b3a22a4dc6b72049f
+
+=== DoD: Contract tests execute governed RPCs and verify response structure ===
+Test file: supabase/tests/10_4_rpc_response_contract_tests.test.sql
+Total tests: 25
+Scope: list_deals_v1, get_user_entitlements_v1
+
+=== DoD: Tests verify required fields, types, nullability ===
+list_deals_v1 NOT_AUTHORIZED (6): ok=false, code=NOT_AUTHORIZED,
+  data=null, error present, error.message present, error.fields present
+list_deals_v1 OK (6): ok=true, code=OK, error=null, data.items present,
+  data.items is array, data.next_cursor=null
+get_user_entitlements_v1 NOT_AUTHORIZED (6): ok=false, code=NOT_AUTHORIZED,
+  data=null, error present, error.message present, error.fields present
+get_user_entitlements_v1 OK (7): ok=true, code=OK, error=null,
+  data.tenant_id present, data.user_id present, data.is_member present,
+  data.entitled present
+
+=== DoD: CI fails on response payload drift ===
+Gate: rpc-response-contract-tests (merge-blocking, in required.needs)
+
+=== Test run output ===
+<REPO_ROOT>/supabase/tests/10_4_rpc_response_contract_tests.test.sql ...... ok
+Result: PASS
+
+
+=== CI semantic contract ===
+
+ - CI / rpc-response-contract-tests
+CHECK CI / rpc-response-contract-tests
+  JOB_ID: rpc-response-contract-tests
+
+
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR114.md
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/required_checks.json
+scripts/ci_robot_owned_guard.ps1
+supabase/tests/10_4_rpc_response_contract_tests.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.4 RPC Response Contract Tests: PASS (merge-blocking)

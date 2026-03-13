@@ -158,6 +158,7 @@
     "docs/proofs/9.7_token_lifetime_invariant_20260312T125657Z.md": "8e70ac883c8020ce33682c78cb44eb7a58edb089070e97a9154aa9f418753158",
     "docs/proofs/10.1_weweb_smoke_20260312T171032Z.md": "1179f6288b13a028ee1f3cd84f8f2fb6a924a51f1f29c8b60ef05c10d56a7d51",
     "docs/proofs/10.2_weweb_drift_20260312T192252Z.log": "7031cef3c2164968bd171b4adfee13143c594285ad15ee2a394b6050aa60780c",
-    "docs/proofs/10.3_rpc_response_schema_contracts_20260313T010352Z.md": "8224c3700d14a95ad3e6a8729a12838488b8068489fd662d2a403a8139b8834b"
+    "docs/proofs/10.3_rpc_response_schema_contracts_20260313T010352Z.md": "8224c3700d14a95ad3e6a8729a12838488b8068489fd662d2a403a8139b8834b",
+    "docs/proofs/10.4_rpc_response_contract_tests_20260313T143445Z.log": "ea49035d7f53811265ae5f38ef828fca5d2bbc81712662f484c4ad4903d7f365"
   }
 }
