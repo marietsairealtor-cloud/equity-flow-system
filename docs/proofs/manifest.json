@@ -160,6 +160,7 @@
     "docs/proofs/10.2_weweb_drift_20260312T192252Z.log": "7031cef3c2164968bd171b4adfee13143c594285ad15ee2a394b6050aa60780c",
     "docs/proofs/10.3_rpc_response_schema_contracts_20260313T010352Z.md": "8224c3700d14a95ad3e6a8729a12838488b8068489fd662d2a403a8139b8834b",
     "docs/proofs/10.4_rpc_response_contract_tests_20260313T143445Z.log": "ea49035d7f53811265ae5f38ef828fca5d2bbc81712662f484c4ad4903d7f365",
-    "docs/proofs/10.5_rpc_error_contract_tests_20260313T152708Z.log": "738abba623d9684630531ecce8575d6f860fca0b2819d8deae7f7a7061917e8d"
+    "docs/proofs/10.5_rpc_error_contract_tests_20260313T152708Z.log": "738abba623d9684630531ecce8575d6f860fca0b2819d8deae7f7a7061917e8d",
+    "docs/proofs/10.6_rpc_contract_registry_20260313T164509Z.log": "1e2c8e39601c84e9b17754a154a033ebca858c064a55774a359dac6f84580fe8"
   }
 }
