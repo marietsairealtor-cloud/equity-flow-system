@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "rpc": "list_deals_v1",
+  "build_route_item": "10.3",
+  "description": "Returns paginated list of deals for the caller's tenant.",
+  "envelope": {
+    "ok": { "type": "boolean", "nullable": false },
+    "code": { "type": "string", "nullable": false },
+    "data": { "type": "object", "nullable": true },
+    "error": { "type": "object", "nullable": true }
+  },
+  "success_response": {
+    "ok": true,
+    "code": "OK",
+    "data": {
+      "items": {
+        "type": "array",
+        "nullable": false,
+        "items": {
+          "id": { "type": "uuid", "nullable": false },
+          "tenant_id": { "type": "uuid", "nullable": false },
+          "row_version": { "type": "integer", "nullable": false },
+          "calc_version": { "type": "integer", "nullable": false }
+        }
+      },
+      "next_cursor": { "type": "string", "nullable": true }
+    },
+    "error": null
+  },
+  "error_responses": {
+    "NOT_AUTHORIZED": {
+      "ok": false,
+      "code": "NOT_AUTHORIZED",
+      "data": null,
+      "error": {
+        "message": { "type": "string", "nullable": false },
+        "fields": { "type": "object", "nullable": false }
+      }
+    }
+  },
+  "notes": "items is always an array — empty list returns [] not null. next_cursor is always null in v1 (pagination not yet implemented). p_limit clamped to [1,100], default 25."
+}

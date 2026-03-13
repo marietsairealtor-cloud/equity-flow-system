@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "rpc": "get_user_entitlements_v1",
+  "build_route_item": "10.3",
+  "description": "Returns tenant membership, role, and entitlement state for the calling user.",
+  "envelope": {
+    "ok": { "type": "boolean", "nullable": false },
+    "code": { "type": "string", "nullable": false },
+    "data": { "type": "object", "nullable": true },
+    "error": { "type": "object", "nullable": true }
+  },
+  "success_response": {
+    "ok": true,
+    "code": "OK",
+    "data": {
+      "tenant_id": { "type": "uuid", "nullable": false },
+      "user_id": { "type": "uuid", "nullable": false },
+      "is_member": { "type": "boolean", "nullable": false },
+      "role": { "type": "string", "nullable": true, "enum": ["owner", "admin", "member"], "notes": "null if user has no membership row" },
+      "entitled": { "type": "boolean", "nullable": false }
+    },
+    "error": null
+  },
+  "error_responses": {
+    "NOT_AUTHORIZED": {
+      "ok": false,
+      "code": "NOT_AUTHORIZED",
+      "data": null,
+      "error": {
+        "message": { "type": "string", "nullable": false },
+        "fields": { "type": "object", "nullable": false }
+      }
+    }
+  },
+  "notes": "role is null when is_member is false. entitled mirrors is_member in v1 — no seat cap logic yet."
+}
