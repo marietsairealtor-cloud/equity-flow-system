@@ -6195,3 +6195,48 @@ QA findings resolved
   newly introduced merge-blocking gates.
 
 Status: COMPLETE — merged to main
+
+2026-03-13 — Build Route v2.4 — Item 10.6
+
+Objective
+RPC contract registry — merge-blocking. Every public RPC has one
+governed contract record tying together inputs, outputs, errors, and
+version. CI hard-fails if any RPC in the surface or allowlist is
+missing from the registry.
+
+Changes
+- docs/truth/rpc_contract_registry.json (version 2): 8 entries covering
+  all business RPCs in expected_surface.json and execute_allowlist.json.
+  Fields: name, version, build_route_owner, input_contract,
+  response_schema, error_codes, notes.
+  current_tenant_id excluded per CONTRACTS.md §17 (internal helper).
+- scripts/ci_rpc_contract_registry.mjs: Verifier script. Four checks:
+  (1) surface coverage, (2) allowlist coverage, (3) schema file refs,
+  (4) entry completeness. EXCLUDED_HELPERS set documents §17 exclusions.
+- scripts/ci_semantic_contract.mjs: allowlisted npm run rpc-contract-registry
+  in hasAllowlistedGate. Product-layer script — not robot-owned.
+- scripts/truth_bootstrap_check.mjs: rpc_contract_registry.json added
+  to required array (triple-registration #2).
+- .github/workflows/ci.yml: Added rpc-contract-registry job.
+  Added to required.needs — merge-blocking.
+- package.json: added rpc-contract-registry npm script.
+- docs/truth/required_checks.json: regenerated via truth:sync.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.6 proof log path.
+- docs/truth/qa_claim.json: updated to 10.6.
+- docs/truth/qa_scope_map.json: added 10.6 entry.
+- docs/governance/GOVERNANCE_CHANGE_PR116.md: governance justification.
+- docs/proofs/10.6_rpc_contract_registry_20260313T164509Z.log
+
+QA findings resolved
+- First submission rejected: current_tenant_id in registry contradicts
+  CONTRACTS.md §17. Removed from registry (entries 9→8). Verifier
+  updated with EXCLUDED_HELPERS set and explicit §17 skip log.
+- Second submission rejected: ci-semantic-contract block garbled in
+  proof log. Fixed by capturing to temp file and injecting clean block.
+
+Triple-registration
+1. ci_robot_owned_guard.ps1: PASS (proof log path allowlisted)
+2. truth_bootstrap_check.mjs: PASS (rpc_contract_registry.json in required array)
+3. handoff.ps1: N/A (hand-authored file)
+
+Status: COMPLETE — merged to main
