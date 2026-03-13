@@ -59,7 +59,8 @@
     "surface:verify": "node scripts/ci_surface_truth.mjs",
     "surface:invariants": "node scripts/ci_surface_invariants.mjs",
   "data-surface:truth": "node scripts/ci_data_surface_truth.mjs",
-  "weweb:drift": "node scripts/ci_weweb_drift_guard.mjs"
+  "weweb:drift": "node scripts/ci_weweb_drift_guard.mjs",
+    "rpc-contract-registry": "node scripts/ci_rpc_contract_registry.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",

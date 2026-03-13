@@ -1,0 +1,117 @@
+PROOF_HEAD=e03a78491967884b9587722ad3cd44462c5669e1
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.6 RPC Contract Registry -- Proof Log ===
+Date: 2026-03-13T12:39:23.0642119-04:00
+Branch: feat/10.6-rpc-contract-registry
+PR HEAD SHA: e03a78491967884b9587722ad3cd44462c5669e1
+
+=== DoD: Truth file exists ===
+docs/truth/rpc_contract_registry.json (version 2)
+Entries: 8 (current_tenant_id excluded per CONTRACTS.md §17 — internal helper)
+
+=== DoD: Each entry includes required fields ===
+name, version, build_route_owner, input_contract, response_schema,
+error_codes, notes — all present for all 8 entries.
+
+=== DoD: No RPC in surface/allowlist missing from registry ===
+expected_surface.json RPCs: 9 — 8 in registry, 1 skipped (current_tenant_id — internal helper)
+execute_allowlist.json RPCs: 8 — all in registry
+
+=== DoD: CI hard-fails on violations ===
+Gate: rpc-contract-registry (merge-blocking, in required.needs)
+Checks: surface coverage (with helper exclusion), allowlist coverage,
+  schema file refs, entry completeness
+
+=== current_tenant_id exclusion rationale ===
+CONTRACTS.md §17: internal helpers excluded from RPC mapping table.
+current_tenant_id is anon-accessible (expected_surface.json §12 Note 9.1)
+but is not a business RPC. Verifier skips it with explicit CONTRACTS §17 note.
+
+=== Registry verifier output ===
+=== ci_rpc_contract_registry ===
+
+--- Check 1: expected_surface.json RPCs in registry ---
+  PASS: create_deal_v1
+  PASS: create_share_token_v1
+  SKIP: current_tenant_id (excluded internal helper per CONTRACTS.md ┬º17)
+  PASS: foundation_log_activity_v1
+  PASS: get_user_entitlements_v1
+  PASS: list_deals_v1
+  PASS: lookup_share_token_v1
+  PASS: revoke_share_token_v1
+  PASS: update_deal_v1
+
+--- Check 2: execute_allowlist.json RPCs in registry ---
+  PASS: create_deal_v1
+  PASS: create_share_token_v1
+  PASS: foundation_log_activity_v1
+  PASS: get_user_entitlements_v1
+  PASS: list_deals_v1
+  PASS: lookup_share_token_v1
+  PASS: revoke_share_token_v1
+  PASS: update_deal_v1
+
+--- Check 3: response_schema file references ---
+  SKIP: create_deal_v1 -> no response_schema
+  SKIP: create_share_token_v1 -> no response_schema
+  SKIP: foundation_log_activity_v1 -> no response_schema
+  PASS: get_user_entitlements_v1 -> docs/truth/rpc_schemas/get_user_entitlements_v1.json
+  PASS: list_deals_v1 -> docs/truth/rpc_schemas/list_deals_v1.json
+  SKIP: lookup_share_token_v1 -> no response_schema
+  SKIP: revoke_share_token_v1 -> no response_schema
+  SKIP: update_deal_v1 -> no response_schema
+
+--- Check 4: registry entry completeness ---
+  PASS: create_deal_v1
+  PASS: create_share_token_v1
+  PASS: foundation_log_activity_v1
+  PASS: get_user_entitlements_v1
+  PASS: list_deals_v1
+  PASS: lookup_share_token_v1
+  PASS: revoke_share_token_v1
+  PASS: update_deal_v1
+
+Registry entries: 8
+Surface RPCs checked: 9
+Allowlist RPCs checked: 8
+ci_rpc_contract_registry: PASS
+
+
+=== CI semantic contract (rpc-contract-registry) ===
+CHECK CI / rpc-contract-registry
+  FILE: .github\workflows\ci.yml
+  JOB_ID: rpc-contract-registry
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+=== Truth-bootstrap ===
+
+PASS EXISTS docs/truth/rpc_contract_registry.json
+PASS JSON docs/truth/rpc_contract_registry.json
+STATUS: PASS (truth-bootstrap OK)
+
+
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR116.md
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/required_checks.json
+docs/truth/rpc_contract_registry.json
+package.json
+scripts/ci_robot_owned_guard.ps1
+scripts/ci_rpc_contract_registry.mjs
+scripts/ci_semantic_contract.mjs
+scripts/truth_bootstrap_check.mjs
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.6 RPC Contract Registry: PASS (merge-blocking)
