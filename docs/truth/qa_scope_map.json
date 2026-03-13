@@ -384,6 +384,9 @@
     },
     "10.6": {
       "proof_pattern": "^docs/proofs/10\\.6_rpc_contract_registry_"
+    },
+    "10.7": {
+      "proof_pattern": "^docs/proofs/10\\.7_gate_promotion_registry_"
     }
   }
 }

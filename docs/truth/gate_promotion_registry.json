@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "description": "Registry of conditional named gates in Section 10. Governs the mechanical path for promoting lane-only gates to merge-blocking. Enforced by CI gate gate-promotion-registry (Build Route 10.7). Scope: Section 10 only — Foundation gates (Sections 1-9) are permanently merge-blocking and do not participate in the promotion lifecycle.",
+  "promotion_pr_requirements": [
+    "Gate moved from lane_checks.json to required_checks.json",
+    "Gate wired into required.needs in .github/workflows/ci.yml",
+    "docs/truth/required_checks.json regenerated via truth:sync",
+    "gate_promotion_registry.json entry updated: status -> merge-blocking, promoted-by -> PR number",
+    "Governance file docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md required",
+    "DEVLOG entry required after merge"
+  ],
+  "gates": [
+    {
+      "name": "weweb-drift",
+      "current_status": "lane-only",
+      "promotion_trigger": "WeWeb becomes an actively maintained production surface — first real user traffic or committed WeWeb workflow artifacts in repo",
+      "build_route_owner": "10.2",
+      "promoted_by": null
+    },
+    {
+      "name": "rpc-error-contracts",
+      "current_status": "merge-blocking",
+      "promotion_trigger": "N/A — promoted at implementation (Build Route 10.5)",
+      "build_route_owner": "10.5",
+      "promoted_by": "PR115"
+    },
+    {
+      "name": "frontend-contract-guard",
+      "current_status": "lane-only",
+      "promotion_trigger": "Explicit promotion PR per Build Route 10.20",
+      "build_route_owner": "10.20",
+      "promoted_by": null
+    },
+    {
+      "name": "surface-enumeration",
+      "current_status": "lane-only",
+      "promotion_trigger": "Explicit promotion PR per Build Route 10.21",
+      "build_route_owner": "10.21",
+      "promoted_by": null
+    }
+  ]
+}
