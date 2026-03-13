@@ -6075,3 +6075,45 @@ Changes
   execution order, safety justification.
 
 Status: COMPLETE — merged to main
+
+2026-03-12 — Build Route v2.4 — Item 10.3
+
+Objective
+RPC response schema contracts — lane-only. Establish governed schema
+files for public RPCs list_deals_v1 and get_user_entitlements_v1.
+Defines the baseline that 10.4 (RPC Response Contract Tests) will
+validate against.
+
+Changes
+- docs/truth/rpc_schemas/list_deals_v1.json (version 1): Governed
+  schema for list_deals_v1. Defines envelope, success response
+  (items array with id/tenant_id/row_version/calc_version, next_cursor),
+  error responses (NOT_AUTHORIZED), and nullability rules.
+  Notes: items always array never null, next_cursor always null in v1,
+  p_limit clamped [1,100] default 25.
+- docs/truth/rpc_schemas/get_user_entitlements_v1.json (version 1):
+  Governed schema for get_user_entitlements_v1. Defines envelope,
+  success response (tenant_id, user_id, is_member, role, entitled),
+  error responses (NOT_AUTHORIZED), and nullability rules.
+  Notes: role null when is_member false, entitled mirrors is_member in v1.
+- scripts/truth_bootstrap_check.mjs: both schema files added to
+  required array (triple-registration #2).
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.3 proof doc path
+  (triple-registration #1).
+- docs/truth/qa_claim.json: updated to 10.3.
+- docs/truth/qa_scope_map.json: added 10.3 entry.
+- docs/governance/GOVERNANCE_CHANGE_PR113.md: governance justification.
+  Documents schema change governance requirement: any schema change
+  requires governance PR, version increment, and downstream test update.
+- docs/proofs/10.3_rpc_response_schema_contracts_20260313T010352Z.md
+
+Triple-registration
+1. ci_robot_owned_guard.ps1: PASS (proof doc path allowlisted)
+2. truth_bootstrap_check.mjs required array: PASS (both files exist + JSON parse)
+3. handoff.ps1: N/A (hand-authored files, not machine-derived)
+
+Gate promotion path
+No CI gate wired — lane-only. Schemas become merge-blocking inputs
+when 10.4 (RPC Response Contract Tests) is implemented and promoted.
+
+Status: COMPLETE — merged to main
