@@ -151,20 +151,13 @@ SELECT isnt(
 -- ============================================================
 -- create_share_token_v1 — CONFLICT (cardinality — seed 50 tokens)
 -- ============================================================
-DO $$
-DECLARE i int;
-BEGIN
-  FOR i IN 1..50 LOOP
-    INSERT INTO public.share_tokens (tenant_id, deal_id, token_hash, expires_at)
-    VALUES (
-      'a0500000-0000-0000-0000-000000000001'::uuid,
-      'a0500000-0000-0000-0000-000000000004'::uuid,
-      extensions.digest(gen_random_uuid()::text, 'sha256'),
-      now() + interval '1 day'
-    );
-  END LOOP;
-END;
-$$;
+INSERT INTO public.share_tokens (tenant_id, deal_id, token_hash, expires_at)
+SELECT
+  'a0500000-0000-0000-0000-000000000001'::uuid,
+  'a0500000-0000-0000-0000-000000000004'::uuid,
+  extensions.digest(gen_random_uuid()::text, 'sha256'),
+  now() + interval '1 day'
+FROM generate_series(1, 50);
 
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, now() + interval '1 day')::json)->>'ok',
