@@ -6291,3 +6291,31 @@ Promotion PR requirements (enforced going forward)
 6. DEVLOG entry required after merge
 
 Status: COMPLETE — merged to main
+---
+
+## 2026-03-13 — Build Route v2.4 — Added 10.7.1 Legacy Gate Promotion Retrofit
+
+Objective
+
+Record QA decision to add item 10.7.1 to the Build Route to capture orphaned historical `lane-only` gates with explicit promotion triggers, bringing them under the new mechanical enforcement registry established in 10.7.
+
+Changes
+
+* Added item 10.7.1 to `docs/artifacts/BUILD_ROUTE_V2.4.md` immediately following 10.7.
+* Defined retrofit scope for three legacy gates: `command-smoke-db` (4.2a), `surface-truth` (9.1), and `ci_validator` (2.17.4).
+* Added requirement to set status to `lane-only` and `promoted-by` to `null`.
+* Confirmed this is a governance-only modification.
+
+Proof
+
+* N/A (Build Route specification update only).
+
+DoD
+
+* 10.7.1 exists in the Build Route under Section 10.
+* Legacy gates and their historical promotion triggers are explicitly documented.
+* No implementation changes in this entry.
+
+Status
+
+ADDED — implementation deferred to 10.7.1 PR.
