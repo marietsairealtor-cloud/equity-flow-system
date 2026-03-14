@@ -1,0 +1,79 @@
+PROOF_HEAD=d78ddfb894b0e67d611aa252e715ad8458df9eb3
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.7.1 Legacy Gate Promotion Retrofit -- Proof Log ===
+Date: 2026-03-13T21:09:18.4435032-04:00
+Branch: feat/10.7.1-impl-legacy-gate-retrofit
+PR HEAD SHA: d78ddfb894b0e67d611aa252e715ad8458df9eb3
+
+=== DoD: gate_promotion_registry.json updated with 3 legacy entries ===
+command-smoke-db (4.2a): lane-only, promoted_by null
+  trigger: Promote to merge-blocking only after stable
+surface-truth (9.1): lane-only, promoted_by null
+  trigger: Lane-only until stable
+ci_validator (2.17.4): lane-only, promoted_by null
+  trigger: Promote only if it catches real corruption
+
+=== DoD: Each entry sets status=lane-only and promoted_by=null ===
+PASS — all three entries verified by verifier
+
+=== DoD: gate-promotion-registry CI gate passes ===
+=== ci_gate_promotion_registry ===
+
+Registry gates: 7
+--- Checking registry entries ---
+
+Gate: weweb-drift (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+Gate: rpc-error-contracts (merge-blocking)
+  PASS: in required_checks.json
+  PASS: in required.needs
+  PASS: promoted_by = PR115
+
+Gate: frontend-contract-guard (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+Gate: surface-enumeration (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+Gate: command-smoke-db (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+Gate: surface-truth (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+Gate: ci_validator (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+ci_gate_promotion_registry: PASS
+
+
+=== Files changed in PR ===
+docs/governance/GOVERNANCE_CHANGE_PR119.md
+docs/truth/gate_promotion_registry.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+scripts/ci_robot_owned_guard.ps1
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.7.1 Legacy Gate Promotion Retrofit: PASS (merge-blocking gate-promotion-registry)
