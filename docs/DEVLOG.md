@@ -6293,29 +6293,37 @@ Promotion PR requirements (enforced going forward)
 Status: COMPLETE — merged to main
 ---
 
-## 2026-03-13 — Build Route v2.4 — Added 10.7.1 Legacy Gate Promotion Retrofit
+2026-03-13 — Build Route v2.4 — Item 10.7.1
 
 Objective
+Legacy gate promotion retrofit — backfill three historical lane-only
+gates with explicit promotion triggers into gate_promotion_registry.json,
+bringing all promotable gates under unified mechanical enforcement
+established in 10.7.
 
-Record QA decision to add item 10.7.1 to the Build Route to capture orphaned historical `lane-only` gates with explicit promotion triggers, bringing them under the new mechanical enforcement registry established in 10.7.
+Background
+Item 10.7 scoped registry to Section 10 only per QA ruling. Post-merge
+QA review identified three pre-Section-10 gates with explicit promotion
+triggers that require formal registration to prevent uncontrolled
+promotion. Item 10.7.1 governs this backfill as a discrete PR.
+Build Route amendment (PR118) preceded this implementation PR (PR119).
 
 Changes
+- docs/truth/gate_promotion_registry.json: 3 new lane-only entries.
+  command-smoke-db (4.2a): trigger — promote to merge-blocking only
+    after stable.
+  surface-truth (9.1): trigger — lane-only until stable.
+  ci_validator (2.17.4): trigger — promote only if it catches real
+    corruption.
+  Registry entries: 4 → 7. All new entries lane-only, promoted_by null.
+- docs/truth/qa_claim.json: updated to 10.7.1.
+- docs/truth/qa_scope_map.json: added 10.7.1 entry.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.7.1 proof log path.
+- docs/governance/GOVERNANCE_CHANGE_PR119.md: governance justification.
+- docs/proofs/10.7.1_legacy_gate_promotion_retrofit_20260314T011015Z.log
 
-* Added item 10.7.1 to `docs/artifacts/BUILD_ROUTE_V2.4.md` immediately following 10.7.
-* Defined retrofit scope for three legacy gates: `command-smoke-db` (4.2a), `surface-truth` (9.1), and `ci_validator` (2.17.4).
-* Added requirement to set status to `lane-only` and `promoted-by` to `null`.
-* Confirmed this is a governance-only modification.
+Two-PR structure
+PR118: Build Route specification amendment only (10.7.1 item added).
+PR119: Implementation (registry backfill, this PR).
 
-Proof
-
-* N/A (Build Route specification update only).
-
-DoD
-
-* 10.7.1 exists in the Build Route under Section 10.
-* Legacy gates and their historical promotion triggers are explicitly documented.
-* No implementation changes in this entry.
-
-Status
-
-ADDED — implementation deferred to 10.7.1 PR.
+Status: COMPLETE — merged to main
