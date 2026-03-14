@@ -24,6 +24,7 @@ const required = [
   "docs/truth/qa_claim.json",
   "docs/truth/weweb_endpoints_truth.json",
   "docs/truth/rpc_contract_registry.json",
+  "docs/truth/gate_promotion_registry.json",
   "docs/truth/rpc_schemas/list_deals_v1.json",
   "docs/truth/rpc_schemas/get_user_entitlements_v1.json",
   "docs/truth/surface_truth.schema.json",

@@ -1,0 +1,100 @@
+PROOF_HEAD=533b801e1da95e30b76b21f6d79e950531f52101
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.7 Gate Promotion Protocol -- Proof Log ===
+Date: 2026-03-13T19:51:59.3404863-04:00
+Branch: feat/10.7-gate-promotion-registry
+PR HEAD SHA: 533b801e1da95e30b76b21f6d79e950531f52101
+
+=== DoD: Truth file exists ===
+docs/truth/gate_promotion_registry.json (version 1)
+Entries: 4
+
+=== DoD: Each entry includes required fields ===
+name, current_status, promotion_trigger, build_route_owner, promoted_by
+All present for all 4 entries.
+
+=== DoD: Initial registry population (exact per DoD 5) ===
+1. weweb-drift (10.2) — lane-only, promoted_by null
+2. rpc-error-contracts (10.5) — merge-blocking, promoted_by PR115
+3. frontend-contract-guard (10.20) — lane-only, promoted_by null
+4. surface-enumeration (10.21) — lane-only, promoted_by null
+Scope: Section 10 only. Foundation gates excluded per QA ruling 2026-03-13.
+
+=== DoD: Promotion PR requirements documented ===
+PASS — documented in gate_promotion_registry.json and GOVERNANCE_CHANGE_PR117.md
+
+=== DoD: CI hard-fails on violations ===
+Gate: gate-promotion-registry (merge-blocking, in required.needs)
+Checks: merge-blocking in required_checks+needs, lane-only excluded,
+  promoted_by non-null for merge-blocking
+
+=== Registry verifier output ===
+=== ci_gate_promotion_registry ===
+
+Registry gates: 4
+--- Checking registry entries ---
+
+Gate: weweb-drift (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+Gate: rpc-error-contracts (merge-blocking)
+  PASS: in required_checks.json
+  PASS: in required.needs
+  PASS: promoted_by = PR115
+
+Gate: frontend-contract-guard (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+Gate: surface-enumeration (lane-only)
+  PASS: not in required_checks.json (correct for lane-only)
+  PASS: not in required.needs (correct for lane-only)
+  PASS: promoted_by = null (correct for lane-only)
+
+ci_gate_promotion_registry: PASS
+
+
+=== CI semantic contract (gate-promotion-registry) ===
+BLOCK_START
+CHECK CI / gate-promotion-registry
+  FILE: .github\workflows\ci.yml
+  JOB_ID: gate-promotion-registry
+  RUN_STEPS: 2
+  ALLOWLISTED_GATE: YES
+  NOT_NOOP: YES
+BLOCK_END
+
+=== Truth-bootstrap ===
+
+PASS EXISTS docs/truth/gate_promotion_registry.json
+PASS JSON docs/truth/gate_promotion_registry.json
+STATUS: PASS (truth-bootstrap OK)
+
+
+
+=== Files changed in PR ===
+.github/workflows/ci.yml
+docs/governance/GOVERNANCE_CHANGE_PR117.md
+docs/truth/gate_promotion_registry.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/required_checks.json
+package.json
+scripts/ci_gate_promotion_registry.mjs
+scripts/ci_robot_owned_guard.ps1
+scripts/ci_semantic_contract.mjs
+scripts/truth_bootstrap_check.mjs
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.7 Gate Promotion Protocol: PASS (merge-blocking)

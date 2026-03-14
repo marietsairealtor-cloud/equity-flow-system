@@ -129,7 +129,7 @@ function hasAllowlistedGate(cmd){
     /\.?[/\\]scripts[/\\]ci_[A-Za-z0-9_.-]+\.ps1\b/,
     /\.?[/\\]scripts[/\\]cloud_schema_drift_check\.ps1\b/,
     /\bnode\s+scripts[/\\][A-Za-z0-9_.-]+\.mjs\b/,
-    /\bnpm\s+run\s+(truth-bootstrap|env:sanity|stop-the-line|stop-the-line-xor|toolchain:contract|main-moved-guard|truth:sync|entitlement:policy-coupling|foundation:invariants|rpc-contract-registry)\b/,
+    /\bnpm\s+run\s+(truth-bootstrap|env:sanity|stop-the-line|stop-the-line-xor|toolchain:contract|main-moved-guard|truth:sync|entitlement:policy-coupling|foundation:invariants|rpc-contract-registry|gate-promotion-registry)\b/,
     /\bdocker\s+run\b.*\bgitleaks\b.*\bdetect\b/,
     /\bsupabase\s+(start|status|db\s+reset|test\s+db)\b/,
     /\bpsql\s+-[hUpd]\b/

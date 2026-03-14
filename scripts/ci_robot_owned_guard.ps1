@@ -114,6 +114,8 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/10\.4_rpc_response_contract_tests_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.4 proof log" }
   if($pp -match "^docs/proofs/10\.5_rpc_error_contract_tests_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.5 proof log" }
   if($pp -match "^docs/proofs/10\.6_rpc_contract_registry_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.6 proof log" }
+  if($pp -match "^docs/proofs/10\.7_gate_promotion_registry_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.7 proof log" }
+  if($pp -match "^docs/proofs/10\.7_gate_promotion_registry_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.7 proof log" }
   if($pp -eq "docs/truth/surface_truth.json"){ return "ALLOW:9.1 surface truth capture" }
   if($pp -match "^docs/proofs/8\.2_clean_room_tests_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.2 proof log" }
   if($pp -match "^docs/proofs/8\.3_cloud_migration_parity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.3 proof log" }
