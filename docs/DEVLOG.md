@@ -6240,3 +6240,54 @@ Triple-registration
 3. handoff.ps1: N/A (hand-authored file)
 
 Status: COMPLETE — merged to main
+
+2026-03-13 — Build Route v2.4 — Item 10.7
+
+Objective
+Gate promotion protocol — merge-blocking. Establishes the governed,
+mechanical path for promoting any lane-only gate to merge-blocking.
+No ambiguity in promotion requirements going forward.
+
+Changes
+- docs/truth/gate_promotion_registry.json (version 1): 4 entries.
+  weweb-drift (10.2): lane-only, promoted_by null.
+  rpc-error-contracts (10.5): merge-blocking, promoted_by PR115.
+  frontend-contract-guard (10.20): lane-only, promoted_by null.
+  surface-enumeration (10.21): lane-only, promoted_by null.
+  Scope: Section 10 only — Foundation gates excluded per QA ruling.
+- scripts/ci_gate_promotion_registry.mjs: Verifier. Three checks:
+  (1) merge-blocking entries in required_checks.json + required.needs,
+  (2) lane-only entries absent from required_checks.json + required.needs,
+  (3) merge-blocking entries have non-null promoted_by.
+  Foundational gates absent from registry do not trigger failures.
+- scripts/ci_semantic_contract.mjs: allowlisted gate-promotion-registry.
+- scripts/truth_bootstrap_check.mjs: gate_promotion_registry.json added
+  to required array (triple-registration #2).
+- .github/workflows/ci.yml: Added gate-promotion-registry job.
+  Added to required.needs — merge-blocking.
+- package.json: added gate-promotion-registry npm script.
+- docs/truth/required_checks.json: regenerated via truth:sync.
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.7 proof log path.
+- docs/truth/qa_claim.json: updated to 10.7.
+- docs/truth/qa_scope_map.json: added 10.7 entry.
+- docs/governance/GOVERNANCE_CHANGE_PR117.md: governance justification.
+- docs/proofs/10.7_gate_promotion_registry_20260313T235318Z.log
+
+QA process
+- Pre-implementation QA consultation on 4 questions: scope, rpc-response-schemas
+  inclusion, pre-registration of unimplemented gates, hard-fail rule ambiguity.
+- QA ruled: Section 10 scope only, exact 4-entry list per DoD 5,
+  no pre-registration, verifier checks registry entries only (not all
+  of required_checks.json).
+- rpc-response-schemas correctly excluded — not a promotable CI job.
+
+Promotion PR requirements (enforced going forward)
+1. Gate moved from lane_checks.json to required_checks.json
+2. Gate wired into required.needs in ci.yml
+3. required_checks.json regenerated via truth:sync
+4. gate_promotion_registry.json updated: status -> merge-blocking,
+   promoted_by -> PR number
+5. Governance file required
+6. DEVLOG entry required after merge
+
+Status: COMPLETE — merged to main
