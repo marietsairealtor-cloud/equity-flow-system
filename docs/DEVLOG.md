@@ -6327,3 +6327,30 @@ PR118: Build Route specification amendment only (10.7.1 item added).
 PR119: Implementation (registry backfill, this PR).
 
 Status: COMPLETE — merged to main
+
+2026-03-13 — Build Route v2.4 — Build Route Correction: 10.24 and 11.0
+Objective
+
+Record QA-directed corrections to the Build Route to close a missing promotion trigger gap in Section 10 and remove a stale documentation paradox (ghost step) in Section 11.
+
+Changes
+
+Updated docs/artifacts/BUILD_ROUTE_V2.4.md item 10.24 — UI Gate Promotion Execution: Appended save-reopen-deal (10.14) to the list of gates that must be promoted to merge-blocking.
+
+Updated docs/artifacts/BUILD_ROUTE_V2.4.md item 11.0 — Activate Direct IPv4 Provisioning: Deleted three stale lines requiring the removal of the db-heavy stub and STUB_GATES_ACTIVE blocks, as these were already formally cleared during item 8.0.5.
+
+Proof
+
+N/A (Build Route specification update only).
+
+DoD
+
+save-reopen-deal (10.14) explicitly listed in 10.24 DoD.
+
+All references to db-heavy and STUB_GATES_ACTIVE removed from 11.0 Deliverables and DoD.
+
+No implementation changes in this entry.
+
+Status
+
+PASS

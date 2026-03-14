@@ -4433,33 +4433,38 @@ All WeWeb pages and flows wired correctly end-to-end. No forbidden surface acces
 **Gate:**
 `lane-only until promoted`
 
----
+### **10.24 — UI Gate Promotion Execution (Frontend Stable)**
 
-## Execution Order (Top to Bottom — No Jumping)
+**Deliverable:**
+Execute the 10.7 Gate Promotion Protocol to formally elevate frontend and UI-centric gates to merge-blocking now that the initial UI build is complete.
 
-```
-10.3   RPC Response Schema Contracts          ← backend, no WeWeb
-10.4   RPC Response Contract Tests            ← backend, no WeWeb
-10.5   RPC Error Contract Tests               ← backend, no WeWeb
-10.6   RPC Contract Registry                  ← backend, no WeWeb
-10.7   Gate Promotion Protocol                ← governance, no WeWeb
-10.8   WeWeb UI Foundation                    ← WeWeb prerequisite
-10.9   Free MAO Calculator (public)           ← builds calculator
-10.10  MAO Calculator Golden-Path Smoke       ← proves 10.9
-10.11  Acquisition Dashboard                  ← builds pipeline
-10.12  Offer Generator                        ← builds offers
-10.13  Dispo Dashboard + Buyer Match          ← builds dispo
-10.14  Save Deal + Reopen Deal                ← proves persistence
-10.15  Buyer-Ready Deal Packet                ← builds share link surface
-10.16  Deal Packet Share-Link Smoke           ← proves 10.15
-10.17  Transaction Coordination Dashboard     ← builds TC
-10.18  Forms: Seller + Buyer                  ← builds forms
-10.19  Forms: Partner + Lead Intake           ← builds forms
-10.20  Frontend RPC Contract Guard            ← scans completed UI
-10.21  Frontend Surface Enumeration Guard     ← probes completed UI
-10.22  Seat Enforcement UX + API              ← billing dependent
-10.23  End-to-End Wiring Verification         ← capstone
-```
+**DoD:**
+
+Execute the promotion protocol for the following gates:
+
+weweb-drift (10.2)
+
+frontend-contract-guard (10.20)
+
+surface-enumeration (10.21)
+
+weweb-smoke (10.1)
+
+share-link-smoke (10.16)
+
+save-reopen-deal (10.14)
+
+docs/truth/gate_promotion_registry.json reflects status: "merge-blocking" and records the promoted-by PR number for each.
+
+The promoted gates are wired into .github/workflows/ci.yml required.needs.
+
+docs/truth/required_checks.json is synced.
+
+**Proof:**
+docs/proofs/10.24_ui_gate_promotion_<UTC>.log
+
+**Gate:**
+merge-blocking gate-promotion-registry
 
 ---
 
@@ -4474,9 +4479,7 @@ All WeWeb pages and flows wired correctly end-to-end. No forbidden surface acces
 3. Direct IPv4 host pinned in `docs/truth/toolchain.json`
 4. CI secret updated to use IPv4 direct connection string (not pooler)
 5. Successful `psql` smoke test from GitHub Actions to direct host
-6. Tier-2 gates activated (remove `db-heavy` stub)
-7. `STUB_GATES_ACTIVE` updated to reflect removal
-8. Canonical proof artifact generated and committed
+6. Canonical proof artifact generated and committed
 
 ---
 
@@ -4485,7 +4488,6 @@ All WeWeb pages and flows wired correctly end-to-end. No forbidden surface acces
 * CI runner can connect directly to Postgres over IPv4
 * Tier-2 session-state tests execute successfully in CI
 * No Tier-2 tests rely on pooler endpoints
-* `db-heavy` stub removed from truth surface
 * CI fully green on `main`
 * No regression in Tier-1 gates
 
@@ -4567,6 +4569,36 @@ Proof includes E2E run output and artifact references.
 Proof: docs/proofs/11.5\_e2e\_.log  
 Gate: lane-only e2e until promoted
 
+### **11.5.1 — Pre-Stable Gate Promotion Execution (Backend Stable)**
+(To be inserted immediately after 11.5 E2E gates, just before 11.6 Stable declaration)
+
+**Deliverable:**
+Execute the 10.7 Gate Promotion Protocol to formally elevate historical backend lane-only gates to merge-blocking as a hard prerequisite for declaring the system "Stable".
+
+**DoD:**
+
+Execute the promotion protocol for the following gates:
+
+command-smoke-db (4.2a)
+
+surface-truth (9.1)
+
+release-workflow-guard (11.4)
+
+e2e (11.5)
+
+docs/truth/gate_promotion_registry.json reflects status: "merge-blocking" and records the promoted-by PR number for each.
+
+The promoted gates are wired into .github/workflows/ci.yml required.needs.
+
+docs/truth/required_checks.json is synced.
+
+**Proof:**
+docs/proofs/11.5.1_pre_stable_gate_promotion_<UTC>.log
+
+**Gate:**
+merge-blocking gate-promotion-registry
+
 ### **11.6 Stable declaration (tag \+ releases entry \+ one-time proofs)**
 
 Deliverable: Stable is a gated event.  
@@ -4610,6 +4642,32 @@ DoD:
 * Support playbook exists for "payment failed → access degraded" states.  
 Proof: docs/proofs/11.9\_entitlement\_cutover\_checklist\_.md  
 Gate: merge-blocking (release)
+
+### **11.9.1 — Billing Gate Promotion Execution**
+(To be inserted immediately after 11.9 Entitlement cutover checklist)
+
+**Deliverable:**
+Execute the 10.7 Gate Promotion Protocol for seat/billing enforcement gates now that the entitlement cutover logic is fully implemented.
+
+**DoD:**
+
+Execute the promotion protocol for the 10.22 gate:
+
+seat-enforcement-consistency (10.22)
+
+billing-webhook-idempotency (11.8)
+
+docs/truth/gate_promotion_registry.json reflects status: "merge-blocking" and records the promoted-by PR number.
+
+The promoted gate is wired into .github/workflows/ci.yml required.needs.
+
+docs/truth/required_checks.json is synced.
+
+**Proof:**
+docs/proofs/11.9.1_billing_gate_promotion_<UTC>.log
+
+**Gate:**
+merge-blocking gate-promotion-registry
 
 ---
 
