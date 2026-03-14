@@ -37,6 +37,27 @@
       "promotion_trigger": "Explicit promotion PR per Build Route 10.21",
       "build_route_owner": "10.21",
       "promoted_by": null
+    },
+    {
+      "name": "command-smoke-db",
+      "current_status": "lane-only",
+      "promotion_trigger": "Promote to merge-blocking only after stable",
+      "build_route_owner": "4.2a",
+      "promoted_by": null
+    },
+    {
+      "name": "surface-truth",
+      "current_status": "lane-only",
+      "promotion_trigger": "Lane-only until stable",
+      "build_route_owner": "9.1",
+      "promoted_by": null
+    },
+    {
+      "name": "ci_validator",
+      "current_status": "lane-only",
+      "promotion_trigger": "Promote only if it catches real corruption",
+      "build_route_owner": "2.17.4",
+      "promoted_by": null
     }
   ]
 }

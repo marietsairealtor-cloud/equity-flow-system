@@ -387,6 +387,9 @@
     },
     "10.7": {
       "proof_pattern": "^docs/proofs/10\\.7_gate_promotion_registry_"
+    },
+    "10.7.1": {
+      "proof_pattern": "^docs/proofs/10\\.7\\.1_legacy_gate_promotion_retrofit_"
     }
   }
 }
