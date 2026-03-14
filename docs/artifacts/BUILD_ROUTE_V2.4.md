@@ -4434,7 +4434,6 @@ All WeWeb pages and flows wired correctly end-to-end. No forbidden surface acces
 `lane-only until promoted`
 
 ### **10.24 — UI Gate Promotion Execution (Frontend Stable)**
-(To be inserted immediately after 10.23 End-to-End WeWeb Wiring Verification)
 
 **Deliverable:**
 Execute the 10.7 Gate Promotion Protocol to formally elevate frontend and UI-centric gates to merge-blocking now that the initial UI build is complete.
