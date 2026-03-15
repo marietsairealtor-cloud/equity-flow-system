@@ -4071,400 +4071,825 @@ Backfill historical `lane-only` gates from prior sections that possess explicit 
 `merge-blocking gate-promotion-registry`
 
 ---
+# Build Route v2.4 — Section 10 Amendment (v6 Architecture Alignment)
 
-### **10.8 — WeWeb UI Foundation (Layouts, Auth Flow, Navigation)**
-
-**Deliverable:**
-Base WeWeb project structure established. Two distinct entry surfaces: public (free calculator) and authenticated (paid hub). Auth flow, navigation, and layout shells exist for all major surfaces.
-
-**DoD:**
-
-* Public surface (free MAO calculator) loads without login — no tenant, no auth required
-* Authenticated surface (paid hub) requires Supabase Auth — sign in, sign out, session persistence functional
-* Upgrade path wires public calculator → auth flow → tenant provisioning → paid hub without friction. No data bridging required — user lands in clean hub
-* Global navigation routes authenticated users to: Acquisition, Dispo Dashboard, Transaction Coordination, Forms
-* No "Buyer Interface" in top-level navigation. Share link management lives inside Dispo Dashboard
-* Acquisition view includes a summary strip displaying: deal count by stage, pipeline value, lead volume. This replaces the standalone Exec Overview
-* Layout shells exist for all Command Centre dashboard views (no content required yet)
-* Tenant context resolves correctly on authenticated page load via `get_user_entitlements_v1`
-* No direct table calls — all data via allowlisted RPCs only
-
-**Proof:**
-`docs/proofs/10.8_weweb_ui_foundation_<UTC>.md`
-
-**Gate:**
-`lane-only until promoted`
+**Status:** LOCKED (changes only via PR + proof)
+**Governance:** This amendment replaces items 10.8–10.24 with 10.8–10.30. Items 10.1–10.7.1 are merged and unaffected.
+**Authority:** WeWeb 10.8 Architecture Reference v6 FINAL
+**Requires:** `docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md`
 
 ---
 
-### **10.9 — Free MAO Calculator (Public Surface)**
+## Deal Stages (AUTHORITATIVE — replaces all prior stage references)
 
-**Deliverable:**
-Public-facing MAO calculator is functional, deterministic, and self-contained. No login required. No persistence.
+New → Analyzing → Offer Sent → Under Contract (UC) → Dispo → Closed / Dead
 
-**DoD:**
-
-* Calculator runs without login — no tenant, no auth, no account
-* Inputs → MAO output renders correctly (best / expected / worst offer range)
-* Same math and assumptions as paid system — uses same `calc_version`
-* Results display clearly with logic visible (numbers + reasoning, no black box)
-* No persistence — calculator is stateless; results exist only in the current session
-* No save cap, no share link cap, no `CONFLICT` handling — none of this exists in the free tier
-* Upgrade CTA present on results screen — routes to auth flow → tenant provisioning
-* CTA messaging sells the workflow: "Run this deal from offer to close" — not "save your results"
-* No forbidden direct table calls
-
-**Proof:**
-`docs/proofs/10.9_free_mao_calculator_<UTC>.md`
-
-**Gate:**
-`lane-only until promoted`
+Closed and Dead are terminal states. Records become read-only upon reaching either.
+FUP tiers (2 Weeks, One Month, 90 Days) are eliminated. Follow-up timing is handled by the reminder engine (10.8.3), not stage buckets.
 
 ---
 
-### **10.10 — MAO Calculator Golden-Path Smoke**
+## Boundary Lines — DO NOT BUILD
+
+These apply to ALL items in Section 10. Violation = scope creep = reject.
+
+**Workflow:** No custom pipeline stages. No generic to-do lists. No complex task dependencies or approval workflows. No lead routing or round-robin assignment. No automated drip campaigns.
+
+**Communication:** No built-in calling, Twilio, or SMS infrastructure. No in-app messaging or chat. No two-way email sync (IMAP/SMTP). Use native tel:/sms:/mailto: links only.
+
+**Integration:** No Zapier or webhooks for V1. No automated comp integrations (PropStream/Zillow API). No in-app e-signatures (DocuSign/HelloSign).
+
+**UI complexity:** No custom fields or flexible schema. No custom form builders or drag-and-drop. No visual map interfaces or polygon drawing for farm areas. No in-app image editing or cropping. No granular user permissions beyond Owner/Admin/Member. No cash buyer CRM or Rolodex.
+
+**Technical:** No complex calculators (BRRRR, rental yield, refi). No per-deal currency toggles. No per-user timezone settings. No offline mode or PWA/local-first sync.
+
+---
+
+## Execution Order + Dependency Map
+
+### P0 — Ship the free hook first
+
+| Item | Title | Type | Prereq |
+|---|---|---|---|
+| 10.8.1 | Slug system (forms infrastructure) | DB + RPC | None |
+| 10.8.2 | Entitlements extension (subscription status) | DB + RPC | None |
+| 10.8 | Authenticated shell + navbar | WeWeb | 10.7.1 |
+| 10.9 | MAO calculator (dual-route) | WeWeb | 10.8 |
+| 10.10 | MAO golden-path smoke | Proof | 10.9 |
+| 10.8.8 | Auth page | WeWeb | 10.8 |
+| 10.8.9 | Onboarding wizard | WeWeb + Stripe | 10.8, 10.8.2 |
+| 10.8.10 | Today view (shell) | WeWeb | 10.8 |
+
+### P1 — Core product
+
+| Item | Title | Type | Prereq |
+|---|---|---|---|
+| 10.8.3 | Reminder engine | DB + pg_cron | None |
+| 10.8.4 | Deal health computation | Logic | None |
+| 10.8.5 | TC checklist data model | DB | None |
+| 10.8.6 | Farm areas table | DB | None |
+| 10.8.7 | TC contract storage bucket | Storage | None |
+| 10.11 | Acquisition + auto-advance | WeWeb | 10.8, 10.8.4 |
+| 10.12 | Offer generator + PDF + expiration | WeWeb | 10.9, 10.11 |
+| 10.13 | Dispo dashboard (share links) | WeWeb | 10.11 |
+| 10.14 | Save deal + reopen deal | WeWeb | 10.9 |
+| 10.15 | Deal viewer + branding + buyer CTA | WeWeb | 10.13 |
+| 10.16 | Deal packet share-link smoke | Proof | 10.15 |
+| 10.17 | TC + checklist + upload + immutable close | WeWeb | 10.11, 10.8.5, 10.8.7 |
+| 10.18 | Lead intake (slug forms + management) | WeWeb | 10.8.1 |
+| 10.19 | Intake-to-MAO pre-fill | WeWeb | 10.18, 10.9 |
+| 10.25 | Today view: task synthesis + optimistic UI | WeWeb + RPC | 10.8.10, 10.8.3, 10.8.4 |
+
+### P2 — Polish + settings + gates
+
+| Item | Title | Type | Prereq |
+|---|---|---|---|
+| 10.26 | Micro-friction bundle | WeWeb + API | 10.9, 10.18 |
+| 10.27 | Workspace settings (general + members + billing) | WeWeb | 10.8, 10.8.6 |
+| 10.28 | Profile settings | WeWeb | 10.8 |
+| 10.29 | Error pages + friendly expired-token | WeWeb | 10.8 |
+| 10.30 | Quick-copy deal summary + context links | WeWeb | 10.11 |
+| 10.22 | Seat enforcement UX + API | WeWeb | 10.8.9 |
+| 10.23 | E2E wiring verification | Proof | All pages |
+| 10.20 | Frontend RPC contract guard | CI gate | 10.23 |
+| 10.21 | Frontend surface enumeration guard | CI gate | 10.23 |
+| 10.24 | UI gate promotion execution | Governance | 10.23 |
+
+---
+
+## Item Specifications
+
+---
+
+### **10.8 — Authenticated Shell + Navbar**
+
+**Deliverable:**
+Persistent authenticated layout with navbar, workspace dropdown, notification bell, and expired subscription banner. All authenticated pages render inside this shell.
+
+**DoD:**
+
+- Authenticated shell renders with navbar on all auth pages
+- Navbar items in order: Today (amber) | MAO (green) | Acquisition (purple) | Dispo (purple) | TC (purple) | Lead intake (blue) | 🔔 Bell (gray) | Workspace ▾ (coral)
+- Workspace ▾ dropdown contains: switch workspace, workspace settings (admin+), profile settings, sign out
+- Switch workspace: writes `gs_selectedTenantId` (CONTRACTS §4), updates `user_profiles.current_tenant_id` (CONTRACTS §3), refetches `get_user_entitlements_v1`. No page navigation — data reloads in place.
+- Expired subscription banner component renders at top of shell when sub lapses mid-session. Links to payment flow. RPCs return NOT_AUTHORIZED server-side regardless.
+- Mobile: navbar collapses to hamburger menu. Workspace dropdown remains accessible.
+- Tenant context resolves via `get_user_entitlements_v1` on authenticated page load
+- No direct table calls — all data via allowlisted RPCs only
+
+**Proof:** `docs/proofs/10.8_authenticated_shell_<UTC>.md`
+
+**Gate:** `lane-only until promoted`
+
+---
+
+### **10.8.1 — Slug System (Forms Infrastructure)**
+
+**Deliverable:**
+`tenant_slugs` table, `resolve_form_slug_v1` RPC (anon-callable), `submit_form_v1` RPC (anon-callable). Backend infrastructure for permanent, embeddable intake form URLs.
+
+**DoD:**
+
+- `tenant_slugs` table exists: `tenant_id UUID NOT NULL`, `slug TEXT NOT NULL UNIQUE` (lowercase, URL-safe, validated)
+- `resolve_form_slug_v1(p_slug TEXT, p_form_type TEXT)` RPC exists: anon-callable, SECURITY DEFINER, fixed search_path. Resolves slug + form_type to tenant context. Returns NOT_FOUND for invalid slugs (no existence leak between form types).
+- `submit_form_v1(p_slug TEXT, p_form_type TEXT, p_payload JSONB)` RPC exists: anon-callable, SECURITY DEFINER, fixed search_path. Routes submission to tenant inbox. Creates draft deal record with pre-filled MAO fields from seller submissions (asking_price, repair_estimate).
+- CONTRACTS §12 controlled exception documented for anon EXECUTE on both RPCs
+- Invisible spam protection field in payload (Turnstile/reCAPTCHA token validated server-side)
+- pgTAP tests for both RPCs: valid slug resolves, invalid slug returns NOT_FOUND, submission creates draft deal, spam token validation
+- CONTRACTS §17 RPC mapping table updated with both RPCs
+- No `$$` in SQL (GUARDRAILS §29)
+
+**Proof:** `docs/proofs/10.8.1_slug_system_<UTC>.log`
+
+**Gate:** `merge-blocking` (new public RPC surface)
+
+---
+
+### **10.8.2 — Entitlements Extension (Subscription Status)**
+
+**Deliverable:**
+Extend `get_user_entitlements_v1` to include subscription status. Required for onboarding gate logic.
+
+**DoD:**
+
+- `get_user_entitlements_v1` return shape extended: add `subscription_status` field (active | expired | none)
+- Gate logic derivable from single RPC call: no memberships → onboarding Step 1, membership + no active sub → Step 3, membership + active sub → hub
+- Response schema `docs/truth/rpc_schemas/get_user_entitlements_v1.json` updated with new field
+- Existing pgTAP tests updated for new field
+- RPC response contract tests (10.4) updated
+- No breaking change to existing callers (field is additive)
+- DROP FUNCTION + CREATE FUNCTION pattern per CONTRACTS §2
+
+**Proof:** `docs/proofs/10.8.2_entitlements_extension_<UTC>.log`
+
+**Gate:** `merge-blocking` (RPC signature change)
+
+---
+
+### **10.8.3 — Reminder Engine**
+
+**Deliverable:**
+One table + one pg_cron job. Follow-up reminders surface through notification bell and Today view.
+
+**DoD:**
+
+- `deal_reminders` table exists: `id UUID`, `deal_id UUID NOT NULL`, `tenant_id UUID NOT NULL`, `reminder_date TIMESTAMPTZ NOT NULL`, `reminder_type TEXT NOT NULL`, `completed_at TIMESTAMPTZ`, `created_at TIMESTAMPTZ`
+- RLS ON, tenant-scoped, REVOKE ALL from anon/authenticated (per GUARDRAILS §11-13)
+- pg_cron job runs on schedule, identifies overdue reminders (reminder_date < now() AND completed_at IS NULL)
+- Reminder auto-created on stage transitions: Offer Sent → sets follow-up reminder (configurable default: 3 days)
+- Read via existing list RPCs or new `list_reminders_v1` RPC (authenticated, SECURITY DEFINER)
+- pgTAP tests: reminder creation, overdue detection, completion marking, tenant isolation
+
+**Proof:** `docs/proofs/10.8.3_reminder_engine_<UTC>.log`
+
+**Gate:** `merge-blocking` (new table)
+
+---
+
+### **10.8.4 — Deal Health Computation**
+
+**Deliverable:**
+Stage-based activity thresholds. Red/yellow/green health status derivable from existing deal data.
+
+**DoD:**
+
+- Health computed from `deals.updated_at` vs stage-specific day thresholds
+- Thresholds defined in `docs/truth/deal_health_thresholds.json`: e.g. New: 3d, Analyzing: 7d, Offer Sent: 5d, UC: 14d, Dispo: 7d
+- Red = gap > threshold, Yellow = gap > threshold × 0.7, Green = within threshold
+- Computation is read-time (function or view), not stored — always fresh
+- No new table needed — derived from `deals.updated_at` and `deals.stage`
+- Health status returned as part of deal list queries (added to list_deals_v1 or computed client-side)
+- Truth file registered in robot-owned guard + truth-bootstrap (triple registration if new truth file)
+
+**Proof:** `docs/proofs/10.8.4_deal_health_<UTC>.log`
+
+**Gate:** `lane-only`
+
+---
+
+### **10.8.5 — TC Checklist Data Model**
+
+**Deliverable:**
+Database schema for transaction coordination: closing checklist items, key dates, actual fee tracking.
+
+**DoD:**
+
+- `deal_tc` table (or columns on deals) exists with: `aps_signed_date TIMESTAMPTZ`, `conditional_deadline TIMESTAMPTZ`, `closing_date TIMESTAMPTZ`, `assignment_fee NUMERIC`, `sell_price NUMERIC`, `actual_assignment_fee NUMERIC` (populated at close), `buyer_info JSONB`, `notes TEXT`
+- `deal_tc_checklist` table: `deal_id UUID`, `item_key TEXT` (aps_signed, deposit_received, sold_firm, docs_to_lawyer, closing_confirmed, fee_received), `completed_at TIMESTAMPTZ`
+- Progress % derivable: count(completed) / count(total) checklist items
+- Days to close derivable: closing_date - now()
+- Immutable close: when deal stage = Closed or Dead, all deal fields and TC fields become read-only. Enforced by update RPC rejecting writes to terminal-stage deals.
+- RLS ON, tenant-scoped on all new tables
+- pgTAP tests: checklist completion, immutable close enforcement, progress computation
+
+**Proof:** `docs/proofs/10.8.5_tc_data_model_<UTC>.log`
+
+**Gate:** `merge-blocking` (new tables)
+
+---
+
+### **10.8.6 — Farm Areas Table**
+
+**Deliverable:**
+`tenant_farm_areas` table for geographic targeting. Text-based tags, no map polygons.
+
+**DoD:**
+
+- `tenant_farm_areas` table: `id UUID`, `tenant_id UUID NOT NULL`, `area_name TEXT NOT NULL`, `created_at TIMESTAMPTZ`
+- Unique constraint on (tenant_id, area_name)
+- RLS ON, tenant-scoped
+- CRUD via authenticated RPCs (SECURITY DEFINER)
+- Deals can reference farm area (FK or text match)
+- pgTAP tests: create, delete, tenant isolation, uniqueness
+
+**Proof:** `docs/proofs/10.8.6_farm_areas_<UTC>.log`
+
+**Gate:** `merge-blocking` (new table)
+
+---
+
+### **10.8.7 — TC Contract Storage Bucket**
+
+**Deliverable:**
+Supabase Storage bucket for executed contract PDFs. One file per deal.
+
+**DoD:**
+
+- Storage bucket `tc-contracts` exists in Supabase
+- Upload path: `{tenant_id}/{deal_id}/contract.pdf` (single file, overwrite on re-upload)
+- Access control: authenticated users with tenant membership only
+- File type restriction: PDF only
+- Max file size: 10MB
+- No direct storage access from anon
+- Upload/download via authenticated RPC or Supabase Storage client with RLS
+
+**Proof:** `docs/proofs/10.8.7_tc_storage_<UTC>.log`
+
+**Gate:** `lane-only`
+
+---
+
+### **10.8.8 — Auth Page**
+
+**Deliverable:**
+WeWeb auth page handling login, signup, password reset, and invite acceptance via Supabase Auth plugin.
+
+**DoD:**
+
+- Auth page exists at /auth
+- Login (email/password) functional via Supabase Auth plugin
+- Signup (new account) functional
+- Password reset: Supabase Auth handles token in URL hash, page handles redirect state
+- Invite acceptance: invite token carried through URL, resolved after auth completes
+- Post-auth redirect: routes to onboarding (if new user) or Today view (if returning)
+- No direct table calls
+
+**Proof:** `docs/proofs/10.8.8_auth_page_<UTC>.md`
+
+**Gate:** `lane-only`
+
+---
+
+### **10.8.9 — Onboarding Wizard**
+
+**Deliverable:**
+Single onboarding page with sequential steps: create/join workspace, pick slug, subscribe via Stripe.
+
+**DoD:**
+
+- Onboarding page exists at /onboarding
+- Step 1: Create workspace OR accept invite (token from URL) OR join existing workspace
+- Step 2: Pick workspace slug (validated: lowercase, URL-safe, unique via tenant_slugs)
+- Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle with 2 months free)
+- Resume behavior: wizard detects current state from `get_user_entitlements_v1` and shows correct step. User who closed browser mid-payment returns to Step 3.
+- Gate logic: no memberships → Step 1 | membership + no active sub → Step 3 | active sub → skip to Today
+- Stripe webhook confirms subscription activation, updates entitlement state
+- No direct table calls
+
+**Proof:** `docs/proofs/10.8.9_onboarding_wizard_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8, 10.8.2 merged
+
+---
+
+### **10.8.10 — Today View (Shell)**
+
+**Deliverable:**
+Today view page shell with layout structure. Default authenticated landing page. Task synthesis wired in 10.25.
+
+**DoD:**
+
+- Today view exists at /today, set as default landing after auth
+- Compact summary strip renders: pipeline deal count, total value, new leads, closing this week (placeholder data acceptable until RPCs wired)
+- Task list area with layout for: health dot, deal address, context line, one-tap action button
+- Pipeline snapshot: compact stage count pills (New: N, Analyzing: N, etc.)
+- Layout shell only for this item — live data wired in 10.25
+- No direct table calls
+
+**Proof:** `docs/proofs/10.8.10_today_view_shell_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8 merged
+
+---
+
+### **10.9 — MAO Calculator (Dual-Route)**
+
+**Deliverable:**
+Public + authenticated MAO calculator. Free hook with upgrade CTA. Paid users get save + offer generator access.
+
+**DoD:**
+
+- Public context: /mao-calculator loads standalone (no navbar, no auth required)
+- Authenticated context: same URL renders inside authenticated shell with navbar
+- Inputs: ARV (with address field for future autocomplete), repair estimate (quick toggles: Light $15K | Medium $40K | Heavy $80K + custom input), desired profit/assignment fee
+- MAO multiplier toggle: 70% | 75% | 80% (default 70%, stored with calc_version)
+- Output: single MAO number with formula shown transparently (ARV × multiplier − repairs − profit)
+- All financial inputs: `inputmode="numeric"`, auto-format with commas as typed
+- `calc_version` stored with every calculation
+- Public: full results shown, no blur/gate. CTA below: "Save this deal + generate offer copy → Sign up free"
+- Authenticated: "Save as deal" button (calls `create_deal_v1` with calc inputs + calc_version + multiplier) + "Generate offer copy" button (wired in 10.12)
+- No direct table calls
+
+**Proof:** `docs/proofs/10.9_mao_calculator_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8 merged
+
+---
+
+### **10.10 — MAO Golden-Path Smoke (unchanged)**
 
 **Deliverable:**
 MAO calculator works end-to-end (WeWeb → Supabase) on the golden path.
 
 **DoD:**
 
-* Inputs → MAO output renders correctly
-* Output includes offer range (best/expected/worst) using same `calc_version`
-* No forbidden direct table calls (contract surfaces only)
+- Inputs → MAO output renders correctly
+- Output uses stored `calc_version`
+- No forbidden direct table calls
 
-**Proof:**
-`docs/proofs/10.10_mao_golden_path_<UTC>.md`
+**Proof:** `docs/proofs/10.10_mao_golden_path_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.9 merged
 
 ---
 
-### **10.11 — Command Centre: Acquisition Dashboard**
+### **10.11 — Acquisition Dashboard + Auto-Advance**
 
 **Deliverable:**
-Acquisition dashboard functional for the acquisition-side stage model. Summary metrics strip included.
+Full pipeline view with authoritative stage tabs, health dots, deal detail, auto-advancing stage transitions, and one-click context links.
 
 **DoD:**
 
-* Dashboard displays deals in stages: New, Analyzing, Offer Sent, Under Contract
-* Deals in stages outside this set do not appear — stage-to-view mapping enforced client-side via RPC filter
-* Stage transitions trigger `update_deal_v1` — no direct writes
-* `update_deal_v1` enforces valid stage transitions server-side. Invalid transitions rejected by RPC and surfaced in UI
-* Valid stage transition map:
-  * New → Analyzing
-  * Analyzing → Offer Sent | Dead
-  * Offer Sent → Under Contract | Dead
-  * Under Contract → Dispo | Dead
-* Summary strip displays: deal count by stage, total pipeline value, lead volume — via allowlisted RPCs
-* Owner assignment, notes, and timestamps render correctly per deal
-* Activity log visible per deal via `foundation_log_activity_v1`
-* **Cross-view transition feedback:** When a stage transition moves a deal out of the current view, UI displays a confirmation toast naming the destination view with a clickable link (e.g., "Deal moved to Dispo Dashboard → [Go to Dispo]"). Deal must not silently vanish. Applies in 10.11 (Under Contract → Dispo), 10.13 (Dispo → Closing), and 10.15 (Closing → Closed/Dead)
-* Empty states handled deterministically per stage
-* No forbidden direct table calls
+- Summary strip: deal count by stage, pipeline value, lead volume (via allowlisted RPCs)
+- Stage tabs: New | Analyzing | Offer Sent | UC | Dispo | Closed/Dead
+- Farm area filter (depends on 10.8.6 data, graceful fallback if no areas configured)
+- Deal list with health dots (red/yellow/green from 10.8.4)
+- Click deal → /acquisition/:deal_id sub-route for detail/edit view
+- Deal detail: one-click Zillow/Redfin/Realtor.com links auto-generated from address
+- All phone/email fields render as native `tel:` / `sms:` / `mailto:` links
+- Auto-advance: "Send offer" action moves deal from Analyzing → Offer Sent automatically via `update_deal_v1`. User never manually updates a dropdown.
+- Valid stage transitions enforced server-side by `update_deal_v1`
+- Cross-view transition toast when deal moves to different view (e.g., "Deal moved to Dispo → [Go to Dispo]")
+- Copy address icon next to every property address
+- Quick-copy deal summary button: copies 2-line teaser (address | ARV | ask)
+- Follow-up reminders visible in deal detail (from 10.8.3)
+- Owner assignment, notes, timestamps per deal
+- Activity log per deal via `foundation_log_activity_v1`
+- Empty states per stage
+- No direct table calls
 
-**Proof:**
-`docs/proofs/10.11_command_centre_acquisition_<UTC>.md`
+**Proof:** `docs/proofs/10.11_acquisition_auto_advance_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8, 10.8.4 merged
 
 ---
 
-### **10.12 — Command Centre: Offer Generator**
+### **10.12 — Offer Generator + PDF + 48hr Expiration**
 
 **Deliverable:**
-Offer Generator functional — produces offer number, terms block, and seller-ready copy.
+Seller-ready copy from MAO results. Three output formats. Dynamic expiration clause. Stage auto-advance on send.
 
 **DoD:**
 
-* Offer number computed deterministically from MAO inputs using stored `calc_version`
-* Terms block and seller-ready text/email copy generated from offer output
-* "Offer Sent" stage transition triggered via `update_deal_v1` on send
-* Follow-up reminder state recorded via `foundation_log_activity_v1`
-* Offer output tied to deal record — no orphaned offers
-* No forbidden direct table calls
+- Offer copy generated from MAO inputs + calc_version + multiplier
+- Three output formats: Copy text | Copy email | Download PDF
+- Dynamic 48-hour expiration clause auto-injected into all copy formats
+- "Send offer" triggers Analyzing → Offer Sent stage transition via `update_deal_v1`
+- Follow-up reminder auto-created on offer send (via 10.8.3 reminder engine)
+- Offer output tied to deal record — no orphaned offers
+- No direct table calls
 
-**Proof:**
-`docs/proofs/10.12_command_centre_offer_generator_<UTC>.md`
+**Proof:** `docs/proofs/10.12_offer_generator_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.9, 10.11 merged
 
 ---
 
-### **10.13 — Command Centre: Dispo Dashboard + Buyer Match + Share Links**
+### **10.13 — Dispo Dashboard (Share Links Only)**
 
 **Deliverable:**
-Dispo Dashboard functional for disposition-side workflow. Includes buyer-deal matching and share link management.
+Share link management for deals in Dispo stage. No buyer CRM. No buyer-deal matching.
 
 **DoD:**
 
-* Dashboard displays deals in stage: Dispo
-* Deals in stages outside this set do not appear — stage-to-view mapping enforced client-side via RPC filter
-* Buyer-deal matching functional via allowlisted RPC — match status tracked per deal-buyer pair
-* Share link generation available from deal context in Dispo Dashboard — no separate navigation surface
-* Share link status (active / revoked / expired / viewed) visible per deal
-* Share link generation calls `create_share_token_v1` — token lifecycle governed by Section 8
-* Share link revocation available per deal via `revoke_share_token_v1`
-* Stage transition from Dispo → Closing triggers cross-view transition toast per 10.11 UX contract
-* Activity log visible per deal via `foundation_log_activity_v1`
-* Empty states handled deterministically
-* No forbidden direct table calls
+- Dashboard displays deals in Dispo stage only
+- Share link generation via `create_share_token_v1` — token lifecycle governed by Section 8
+- Share link status (active / revoked / expired) visible per deal
+- Revocation via `revoke_share_token_v1`
+- Cross-view transition toast on stage transitions
+- Activity log per deal via `foundation_log_activity_v1`
+- NO buyer-deal matching (boundary line: no buyer CRM/Rolodex)
+- Empty states handled
+- No direct table calls
 
-**Proof:**
-`docs/proofs/10.13_command_centre_dispo_dashboard_<UTC>.md`
+**Proof:** `docs/proofs/10.13_dispo_dashboard_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.11 merged
 
 ---
 
-### **10.14 — Save Deal + Reopen Deal**
+### **10.14 — Save Deal + Reopen Deal (unchanged)**
 
 **Deliverable:**
 Saved deals are reliable and re-open exactly (no silent recompute drift).
 
 **DoD:**
 
-* Save persists inputs + outputs + `calc_version`
-* Reopen shows identical values to what was saved
-* Activity log records mutations
+- Save persists inputs + outputs + `calc_version` + multiplier
+- Reopen shows identical values to what was saved
+- Activity log records mutations
 
-**Proof:**
-`docs/proofs/10.14_save_reopen_deal_<UTC>.md`
+**Proof:** `docs/proofs/10.14_save_reopen_deal_<UTC>.md`
 
-**Gate:**
-`merge-blocking once Hub is in scope`
+**Gate:** `merge-blocking once Hub is in scope`
+
+**Prerequisite:** 10.9 merged
 
 ---
 
-### **10.15 — Buyer-Ready Deal Packet (Unauthenticated Share Link)**
+### **10.15 — Deal Viewer + Tenant Branding + Buyer CTA**
 
 **Deliverable:**
-Mobile-friendly unauthenticated buyer-facing deal packet renders correctly via share token.
+Token-gated buyer deal packet with workspace branding and "I'm Interested" button. Friendly expired-token handling.
 
 **DoD:**
 
-* Share token validated via `lookup_share_token_v1` before any data renders
-* Token lifecycle enforcement inherited from Section 8: hash-at-rest (8.4), abuse controls (8.5), revocation (8.6), usage logging (8.7), secure generation (8.8), expiration (8.9), scope enforcement (8.10)
-* Packet displays: ARV, repairs, assignment ask, terms, photos/notes
-* No internal identifiers exposed — allowlisted fields only
-* Expired, revoked, or invalid token renders deterministic blocked state — no data leak. Response shape identical regardless of failure reason (no existence leak)
-* Mobile-friendly rendering confirmed
-* No authentication required
-* No forbidden direct table calls
+- Token validated via `lookup_share_token_v1` before any data renders
+- Section 8 lifecycle enforced: hash-at-rest, revocation, expiration, scope
+- Displays: ARV, repairs, assignment ask, terms, photos/notes
+- Tenant branding: workspace name auto-displayed at top of page (zero config, read from tenant context)
+- "I'm Interested" CTA at bottom: `mailto:` link pre-filled with deal address + wholesaler email + subject line
+- Notification bell pinged on buyer click (best-effort via `foundation_log_activity_v1`)
+- Mobile-friendly rendering
+- Expired/revoked/invalid token: friendly "This deal is no longer available" page (polite, not scary 404). Response shape identical regardless of failure reason (anti-enumeration).
+- No authentication required
+- No direct table calls
 
-**Proof:**
-`docs/proofs/10.15_buyer_deal_packet_<UTC>.md`
+**Proof:** `docs/proofs/10.15_deal_viewer_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.13 merged
 
 ---
 
-### **10.16 — Deal Packet Share-Link Smoke**
+### **10.16 — Deal Packet Share-Link Smoke (unchanged)**
 
 **Deliverable:**
 Share link renders a buyer-ready packet and respects allowlist.
 
 **DoD:**
 
-* Share link works unauthenticated
-* Only allowlisted fields appear
-* Negative probe: cannot access non-shared deal
+- Share link works unauthenticated
+- Only allowlisted fields appear
+- Negative probe: cannot access non-shared deal
 
-**Proof:**
-`docs/proofs/10.16_share_link_smoke_<UTC>.md`
+**Proof:** `docs/proofs/10.16_share_link_smoke_<UTC>.md`
 
-**Gate:**
-`merge-blocking (security) once enabled`
+**Gate:** `merge-blocking (security) once enabled`
+
+**Prerequisite:** 10.15 merged
 
 ---
 
-### **10.17 — Command Centre: Transaction Coordination Dashboard**
+### **10.17 — TC + Checklist + Upload + Immutable Close**
 
 **Deliverable:**
-Transaction Coordination dashboard functional for active closings.
+Closing tracker with checklist, contract upload, actual vs estimated fee comparison, and read-only lock on terminal states.
 
 **DoD:**
 
-* Dashboard displays deals in stage: Closing
-* Deals in stages outside this set do not appear — stage-to-view mapping enforced client-side via RPC filter
-* Stage transition Closing → Closed triggers deal completion and removal from active TC view. Cross-view transition toast required per 10.11 UX contract
-* Stage transition Closing → Dead handles failed closings. Cross-view transition toast required per 10.11 UX contract
-* TC-specific data renders per deal: current stage progression, key dates, notes
-* All team members have full visibility — no role gating in V1
-* Activity log visible per deal via `foundation_log_activity_v1`
-* Empty states handled deterministically
-* No forbidden direct table calls
+- TC page at /tc/:deal_id
+- Progress % computed from checklist completion (count completed / total items)
+- Days to close computed from closing_date
+- Key dates render: APS signed date, conditional deadline, closing date
+- Closing checklist: APS signed, deposit received, sold firm, docs to lawyer, closing confirmed, assignment fee received — each with checkbox + timestamp on completion
+- Contract upload: single PDF slot (Supabase Storage via 10.8.7). One file per deal. Upload replaces previous. Not a document management system.
+- On Close: "Actual assignment fee" input field. Compare to original MAO "desired profit" — display delta.
+- Immutable close: when deal stage = Closed or Dead, entire deal record + TC data becomes READ-ONLY. `update_deal_v1` rejects writes to terminal-stage deals.
+- Assignment fee, sell price, buyer info section, notes
+- Activity log per deal
+- No direct table calls
 
-**Proof:**
-`docs/proofs/10.17_command_centre_tc_dashboard_<UTC>.md`
+**Proof:** `docs/proofs/10.17_tc_dashboard_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.11, 10.8.5, 10.8.7 merged
 
 ---
 
-### **10.18 — Forms: Seller Lead Intake + Buyer Registration**
+### **10.18 — Lead Intake (Slug Forms + Management)**
 
 **Deliverable:**
-Seller Lead Intake and Buyer Registration forms functional and writing via contracts.
+Slug-gated public intake forms + authenticated management view. Replaces old 10.18 + 10.19.
 
 **DoD:**
 
-* Seller Lead Intake writes to Leads table via allowlisted RPC only — acquisition-side inbound
-* Buyer Registration writes to Contacts table via allowlisted RPC only — buyer profile creation
-* Required field validation fires client-side before RPC call
-* RPC validation errors surface with field-level error display
-* Idempotency key generated per submission (`gs_pendingIdempotencyKey`)
-* No direct table writes
+- Public form page at /form/:slug/:type renders correct form based on slug + form_type
+- Three form types: buyer, seller, birddog (hardcoded fields, no custom form builder)
+- Seller form fields: address, asking price, self-reported repairs, condition notes, timeline
+- Buyer form fields: name, email, phone, areas of interest, budget range
+- Birddog form fields: property address, owner info, condition notes, asking price if known
+- Address autocomplete on all address fields (Google Places, wired in 10.26 or inline)
+- Submission calls `submit_form_v1` (10.8.1)
+- Management view at /lead-intake (authenticated): submissions list, copy form links per type, generate embed code snippet, toggle form types on/off
+- Empty state: when zero submissions, show prominent "Copy Seller Form Link" CTA button
+- No direct table calls
 
-**Proof:**
-`docs/proofs/10.18_forms_seller_buyer_<UTC>.md`
+**Proof:** `docs/proofs/10.18_lead_intake_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8.1 merged
 
 ---
 
-### **10.19 — Forms: Partner Deal Submission + Lead Intake (Internal)**
+### **10.19 — Intake-to-MAO Pre-fill**
 
 **Deliverable:**
-Partner Deal Submission and internal Lead Intake forms functional and writing via contracts.
+Seller intake submissions auto-draft MAO calculator state. "Analyze →" opens pre-filled calculator.
 
 **DoD:**
 
-* Partner Deal Submission writes to Leads/Contacts via allowlisted RPC only — dispo-side inbound from co-wholesalers and JV partners
-* Lead Intake Form writes via allowlisted RPC only — internal acquisition team use
-* Required field validation fires client-side before RPC call
-* RPC validation errors surface with field-level error display
-* Idempotency key generated per submission (`gs_pendingIdempotencyKey`)
-* No direct table writes
+- When seller submits via intake form with asking_price and/or repair_estimate, those values are stored on the draft deal record (created by `submit_form_v1`)
+- Today view "Analyze →" action opens MAO calculator at /mao-calculator?deal_id=X with fields pre-filled from draft
+- ARV defaults from asking_price (user can adjust), repairs default from self-reported estimate
+- No re-entry, no loss of context
+- Pre-fill data stored on deal record, not separate table
 
-**Proof:**
-`docs/proofs/10.19_forms_partner_lead_intake_<UTC>.md`
+**Proof:** `docs/proofs/10.19_intake_mao_prefill_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.18, 10.9 merged
 
 ---
 
-### **10.20 — Frontend RPC Contract Guard**
+### **10.20 — Frontend RPC Contract Guard (unchanged)**
 
 **Deliverable:**
 Frontend cannot call RPC endpoints outside the approved contract surface.
 
 **DoD:**
 
-* RPC calls originate only from allowlisted endpoints
-* Requests outside the allowed RPC list fail CI verification
-* Contract surface defined by `docs/truth/execute_allowlist.json`
-* Verification harness scans frontend API usage
+- RPC calls originate only from allowlisted endpoints
+- Contract surface defined by `docs/truth/execute_allowlist.json`
+- Verification harness scans frontend API usage
 
-**Proof:**
-`docs/proofs/10.20_frontend_rpc_contract_guard_<UTC>.log`
+**Proof:** `docs/proofs/10.20_frontend_rpc_contract_guard_<UTC>.log`
 
-**Gate:**
-`lane-only frontend-contract-guard`
+**Gate:** `lane-only frontend-contract-guard`
+
+**Prerequisite:** 10.23 merged
 
 ---
 
-### **10.21 — Frontend Surface Enumeration Guard**
+### **10.21 — Frontend Surface Enumeration Guard (unchanged)**
 
 **Deliverable:**
 Frontend cannot discover or access hidden endpoints.
 
 **DoD:**
 
-* Automated probe enumerates `/rest/v1/` and `/rpc/`
-* Only allowlisted endpoints are reachable
-* Hidden RPCs remain inaccessible
-* Negative probes confirm: direct table access fails, non-allowlisted RPC fails, authentication bypass fails
+- Automated probe enumerates `/rest/v1/` and `/rpc/`
+- Only allowlisted endpoints are reachable
+- Negative probes: direct table access fails, non-allowlisted RPC fails
 
-**Proof:**
-`docs/proofs/10.21_frontend_surface_enumeration_<UTC>.log`
+**Proof:** `docs/proofs/10.21_frontend_surface_enumeration_<UTC>.log`
 
-**Gate:**
-`lane-only surface-enumeration`
+**Gate:** `lane-only surface-enumeration`
+
+**Prerequisite:** 10.23 merged
 
 ---
 
-### **10.22 — Seat Enforcement UX + API Consistency**
+### **10.22 — Seat Enforcement UX + API Consistency (unchanged)**
 
 **Deliverable:**
 Seat/entitlement enforcement is consistent between UI and API.
 
 **DoD:**
 
-* Over-seat condition blocks actions at API (not just UI)
-* UI displays a deterministic "blocked because entitlement" state
-* No "partial access" inconsistencies
+- Over-seat condition blocks actions at API (not just UI)
+- UI displays deterministic "blocked because entitlement" state
+- No "partial access" inconsistencies
 
-**Proof:**
-`docs/proofs/10.22_seat_enforcement_consistency_<UTC>.md`
+**Proof:** `docs/proofs/10.22_seat_enforcement_consistency_<UTC>.md`
 
-**Gate:**
-`merge-blocking once billing is enabled`
+**Gate:** `merge-blocking once billing is enabled`
+
+**Prerequisite:** 10.8.9 merged
 
 ---
 
-### **10.23 — End-to-End WeWeb Wiring Verification**
+### **10.23 — E2E WeWeb Wiring Verification (UPDATED scope)**
 
 **Deliverable:**
-All WeWeb pages and flows wired correctly end-to-end. No forbidden surface access. All three paths (public, authenticated, share token) verified.
+All WeWeb pages and flows wired correctly end-to-end. No forbidden surface access. All access tiers verified.
 
 **DoD:**
 
-* Full `weweb:drift` scan passes across all pages and flows
-* All data access confirmed via allowlisted RPCs only — no `/rest/v1/` direct table calls detected
-* **Public path verified:** unauthenticated → free MAO calculator → stateless results → upgrade CTA → auth flow
-* **Authenticated path verified:** auth → tenant resolution → `get_user_entitlements_v1` → Command Centre (Acquisition, Dispo Dashboard, Transaction Coordination)
-* **Share token path verified:** token validation → buyer packet renders → revoked/expired/invalid token blocks with no data leak
-* Stage-to-view mapping confirmed: each stage appears in exactly one dashboard view, no deals fall between views
-* All 4 forms submit without direct table writes — confirmed by negative probe
-* Navigation structure matches design decisions: three Command Centre views, no Buyer Interface nav item, no Exec Overview nav item
+- Full `weweb:drift` scan passes across all pages
+- All data access via allowlisted RPCs only
+- **Public path:** /mao-calculator loads without auth, full results, upgrade CTA
+- **Slug-gated path:** /form/:slug/:type resolves and renders, submission routes to tenant
+- **Token-gated path:** /deal/:share_token validates, renders packet, expired token shows friendly page
+- **Authenticated path:** auth → gate logic → Today view (or onboarding) → all nav items functional
+- Today view renders with task list structure
+- Acquisition: stage tabs match authoritative list, deal detail loads, auto-advance works
+- Dispo: share links generate and display
+- TC: checklist renders, contract upload works, immutable close enforced
+- Lead intake: forms render via slug, management view shows submissions
+- Workspace settings: all three tabs render with correct role gating
+- Profile settings: renders
+- Error pages: 404, invalid slug, expired token all show friendly messages
+- Stage-to-view mapping: each stage appears in exactly one dashboard view
+- Navigation matches v6 architecture: Today | MAO | Acquisition | Dispo | TC | Lead intake | 🔔 | Workspace ▾
 
-**Proof:**
-`docs/proofs/10.23_weweb_wiring_verification_<UTC>.md`
+**Proof:** `docs/proofs/10.23_weweb_wiring_verification_<UTC>.md`
 
-**Gate:**
-`lane-only until promoted`
+**Gate:** `lane-only`
 
-### **10.24 — UI Gate Promotion Execution (Frontend Stable)**
+**Prerequisite:** All pages merged
+
+---
+
+### **10.24 — UI Gate Promotion Execution (UPDATED list)**
 
 **Deliverable:**
-Execute the 10.7 Gate Promotion Protocol to formally elevate frontend and UI-centric gates to merge-blocking now that the initial UI build is complete.
+Promote frontend gates to merge-blocking via 10.7 protocol.
 
 **DoD:**
 
-Execute the promotion protocol for the following gates:
+- Promote: weweb-drift (10.2), frontend-contract-guard (10.20), surface-enumeration (10.21), weweb-smoke (10.1), share-link-smoke (10.16), save-reopen-deal (10.14)
+- `gate_promotion_registry.json` updated: status → merge-blocking, promoted_by → PR number
+- Gates wired into `.github/workflows/ci.yml` `required.needs`
+- `required_checks.json` synced via `truth:sync`
 
-weweb-drift (10.2)
+**Proof:** `docs/proofs/10.24_ui_gate_promotion_<UTC>.log`
 
-frontend-contract-guard (10.20)
+**Gate:** `merge-blocking gate-promotion-registry`
 
-surface-enumeration (10.21)
+**Prerequisite:** 10.23 merged
 
-weweb-smoke (10.1)
+---
 
-share-link-smoke (10.16)
+### **10.25 — Today View: Task Synthesis + Optimistic UI**
 
-save-reopen-deal (10.14)
+**Deliverable:**
+Wire Today view to live data. Task synthesis RPC aggregates from 4 sources. Optimistic UI on actions.
 
-docs/truth/gate_promotion_registry.json reflects status: "merge-blocking" and records the promoted-by PR number for each.
+**DoD:**
 
-The promoted gates are wired into .github/workflows/ci.yml required.needs.
+- Task synthesis RPC (or client-side aggregation) returns tasks from: overdue reminders (10.8.3), pending offers (Analyzing + MAO done + no offer), closing deadlines (UC/Dispo near close), new intake submissions (draft deals from 10.8.1)
+- Tasks sorted by urgency (overdue first, then approaching, then pending)
+- Each task displays: health dot (from 10.8.4), deal address, context line, one-tap action button
+- One-tap actions wired: Follow up → native sms:/mailto: with pre-written copy, Send offer → pre-filled offer gen (auto-advances stage), Open TC → /tc/:deal_id, Analyze → MAO pre-filled from intake
+- Optimistic UI: task disappears instantly on action click, server processes in background
+- Summary strip wired to live data: pipeline count, value, new leads, closing this week
 
-docs/truth/required_checks.json is synced.
+**Proof:** `docs/proofs/10.25_today_task_synthesis_<UTC>.md`
 
-**Proof:**
-docs/proofs/10.24_ui_gate_promotion_<UTC>.log
+**Gate:** `lane-only`
 
-**Gate:**
-merge-blocking gate-promotion-registry
+**Prerequisite:** 10.8.10, 10.8.3, 10.8.4 merged
+
+---
+
+### **10.26 — Micro-Friction Bundle**
+
+**Deliverable:**
+Address autocomplete, numeric input modes, currency formatting, spam protection, copy icons.
+
+**DoD:**
+
+- Google Places API integrated for address fields on: MAO calculator, intake forms, deal detail
+- Auto-fills: street, city, state/province, zip/postal, country
+- `inputmode="numeric"` on all financial inputs (MAO, deal detail, TC fees)
+- Auto-format currency with commas as typed (350000 → 350,000)
+- Invisible spam protection on public intake forms (Cloudflare Turnstile or reCAPTCHA v3)
+- Copy address icon next to every property address (Acquisition, TC, Lead Intake)
+
+**Proof:** `docs/proofs/10.26_micro_friction_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.9, 10.18 merged
+
+---
+
+### **10.27 — Workspace Settings (General + Members + Billing)**
+
+**Deliverable:**
+Workspace settings page with role-gated tabs. Accessible via Workspace ▾ dropdown.
+
+**DoD:**
+
+- General tab (admin+): workspace name, slug (editable with warning), country, currency, measurement unit, farm areas list (add/delete, text-based, no map polygons)
+- Members tab (admin+): view members, invite (email), remove, change roles (Owner/Admin/Member). Uses `tenant_memberships` + `tenant_invites`.
+- Billing tab (owner only): current plan, payment method, cancel subscription (Stripe customer portal)
+- Timezone: tenant-level setting (single dropdown)
+- No direct table calls — all via authenticated RPCs with `require_min_role_v1`
+
+**Proof:** `docs/proofs/10.27_workspace_settings_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8, 10.8.6 merged
+
+---
+
+### **10.28 — Profile Settings**
+
+**Deliverable:**
+User-scoped settings page. Accessible via Workspace ▾ dropdown.
+
+**DoD:**
+
+- Display name, email (read-only or Supabase Auth managed)
+- Password change (via Supabase Auth)
+- Notification preferences (email notifications on/off, reminder frequency)
+- No direct table calls
+
+**Proof:** `docs/proofs/10.28_profile_settings_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8 merged
+
+---
+
+### **10.29 — Error Pages + Friendly Expired Token**
+
+**Deliverable:**
+Universal error handling. Clean, non-scary error pages.
+
+**DoD:**
+
+- Invalid slug → "Workspace not found" (friendly message, not developer error)
+- Expired/revoked share token → "This deal is no longer available" (polite, anti-enumeration — identical page regardless of failure reason)
+- Invalid route → 404 page (clean design)
+- All error pages: no stack traces, no developer jargon, no "Token Expired" or "NOT_FOUND" raw responses
+
+**Proof:** `docs/proofs/10.29_error_pages_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.8 merged
+
+---
+
+### **10.30 — Quick-Copy Deal Summary + Context Links**
+
+**Deliverable:**
+One-button deal teaser copy. Zillow/Redfin/Realtor.com outbound links.
+
+**DoD:**
+
+- Quick-copy button on deal detail (Acquisition): copies 2-line deal summary to clipboard (e.g., "123 Oak St | ARV: $350K | Ask: $185K")
+- Context links on deal detail: "Open in Zillow" / "Open in Redfin" / "Open in Realtor.com" — auto-generated from property address, opens new tab
+- URL templates configurable per service (simple string interpolation from address)
+
+**Proof:** `docs/proofs/10.30_quick_copy_context_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.11 merged
 
 ---
 

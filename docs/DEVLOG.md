@@ -6354,3 +6354,38 @@ No implementation changes in this entry.
 Status
 
 PASS
+
+## 2026-03-15 — Build Route v2.4 — Build Route Modification: Section 10 Amendment
+
+Objective
+Decompose Section 10 (10.8–10.24) into 30 discrete items aligned with v6 Architecture Spec and Wholesale Hub business plan. Old items were too broad for one-objective-one-PR discipline.
+
+Changes
+- Replaced 10.8–10.24 with 10.8–10.30 (30 items with sub-items 10.8.1–10.8.10)
+- Stage names reconciled to biz plan: New → Analyzing → Offer Sent → UC → Dispo → Closed/Dead
+- Added boundary lines (21 DO NOT BUILD items)
+- Added P0/P1/P2 priority tiers with dependency map
+- Items 10.1–10.7.1 unaffected
+
+Proof
+N/A — specification amendment. See docs/governance/GOVERNANCE_CHANGE_PR121.md.
+
+Status
+PASS
+
+---
+
+## 2026-03-15 — Build Route v2.4 — Governance Artifact Addition: WEWEB_ARCHITECTURE.md
+
+Objective
+Add docs/artifacts/WEWEB_ARCHITECTURE.md as authoritative UI architecture artifact. Single source of truth for pages, access tiers, navigation, micro-friction features, and boundary lines.
+
+Changes
+- docs/artifacts/WEWEB_ARCHITECTURE.md created (v6 content, 13 sections)
+- docs/truth/governance_change_guard.json updated to protect new artifact
+
+Proof
+N/A — governance artifact addition. See docs/governance/GOVERNANCE_CHANGE_PR121.md.
+
+Status
+PASS
