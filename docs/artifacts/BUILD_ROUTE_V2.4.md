@@ -4172,7 +4172,7 @@ Persistent authenticated layout with navbar, workspace dropdown, notification be
 - Navbar items in order: Today (amber) | MAO (green) | Acquisition (purple) | Dispo (purple) | TC (purple) | Lead intake (blue) | 🔔 Bell (gray) | Workspace ▾ (coral)
 - Workspace ▾ dropdown contains: switch workspace, workspace settings (admin+), profile settings, sign out
 - Switch workspace: writes `gs_selectedTenantId` (CONTRACTS §4), updates `user_profiles.current_tenant_id` (CONTRACTS §3), refetches `get_user_entitlements_v1`. No page navigation — data reloads in place.
-- Expired subscription banner component renders at top of shell when sub lapses mid-session. Links to payment flow. RPCs return NOT_AUTHORIZED server-side regardless.
+- Subscription banner component renders at top of shell in two states: warning (≤5 days before expiration, "Your subscription expires in X days — Renew now →") and expired (after lapse, "Subscription expired — Renew now →"). Warning computed client-side from `subscription_expires_at`. Banner hidden when expiration >5 days away.
 - Mobile: navbar collapses to hamburger menu. Workspace dropdown remains accessible.
 - Tenant context resolves via `get_user_entitlements_v1` on authenticated page load
 - No direct table calls — all data via allowlisted RPCs only
@@ -4212,7 +4212,7 @@ Extend `get_user_entitlements_v1` to include subscription status. Required for o
 
 **DoD:**
 
-- `get_user_entitlements_v1` return shape extended: add `subscription_status` field (active | expired | none)
+- `get_user_entitlements_v1` return shape extended: add `subscription_status` field (active | expired | none) and `subscription_expires_at` field (TIMESTAMPTZ, null when no subscription)ption_status` field (active | expired | none)
 - Gate logic derivable from single RPC call: no memberships → onboarding Step 1, membership + no active sub → Step 3, membership + active sub → hub
 - Response schema `docs/truth/rpc_schemas/get_user_entitlements_v1.json` updated with new field
 - Existing pgTAP tests updated for new field
