@@ -4171,7 +4171,7 @@ Persistent authenticated layout with navbar, workspace dropdown, notification be
 - Authenticated shell renders with navbar on all auth pages
 - Navbar items in order: Today (amber) | MAO (green) | Acquisition (purple) | Dispo (purple) | TC (purple) | Lead intake (blue) | 🔔 Bell (gray) | Workspace ▾ (coral)
 - Workspace ▾ dropdown contains: switch workspace, workspace settings (admin+), profile settings, sign out
-- Switch workspace: writes `gs_selectedTenantId` (CONTRACTS §4), updates `user_profiles.current_tenant_id` (CONTRACTS §3), refetches `get_user_entitlements_v1`. No page navigation — data reloads in place.
+- Switch workspace: dropdown popup exists, `gs_selectedTenantId` variable created. Live tenant list + selection wiring deferred to 10.8.11 (requires `list_user_tenants_v1` RPC which does not yet exist).
 - Subscription banner component renders at top of shell in two states: warning (≤5 days before expiration, "Your subscription expires in X days — Renew now →") and expired (after lapse, "Subscription expired — Renew now →"). Warning computed client-side from `subscription_expires_at`. Banner hidden when expiration >5 days away.
 - Mobile: navbar collapses to hamburger menu. Workspace dropdown remains accessible.
 - Tenant context resolves via `get_user_entitlements_v1` on authenticated page load
@@ -4396,6 +4396,33 @@ Today view page shell with layout structure. Default authenticated landing page.
 **Gate:** `lane-only`
 
 **Prerequisite:** 10.8 merged
+
+### **10.8.11 — List User Tenants RPC + Workspace Switcher Wiring**
+
+**Deliverable:**
+`list_user_tenants_v1` RPC returning all tenant memberships for the authenticated user, plus WeWeb workspace switcher wired end-to-end.
+
+**DoD:**
+
+- `list_user_tenants_v1()` RPC exists: authenticated-only, SECURITY DEFINER, fixed search_path
+- No `tenant_id` parameter — reads user from JWT context (`auth.uid()`)
+- Returns array of: `tenant_id`, `tenant_name`, `slug`, `role`, `subscription_status`
+- Current active tenant flagged in response (matches `current_tenant_id()`)
+- CONTRACTS §17 RPC mapping table updated
+- CONTRACTS snapshot updated
+- REVOKE EXECUTE from anon (authenticated only)
+- pgTAP tests: returns correct tenants for user, excludes other users' tenants, role correct per membership, current tenant flagged
+- WeWeb workspace switcher dropdown populated from `list_user_tenants_v1` response
+- Current active tenant highlighted in dropdown
+- On select: writes `gs_selectedTenantId` (CONTRACTS §4), calls backend to update `user_profiles.current_tenant_id` (CONTRACTS §3), refetches `get_user_entitlements_v1`, page data reloads in place
+- No page navigation on workspace switch
+- No direct table calls
+
+**Proof:** `docs/proofs/10.8.11_list_user_tenants_<UTC>.log`
+
+**Gate:** `merge-blocking` (new public RPC)
+
+**Prerequisite:** 10.8 merged (shell + dropdown popup must exist)
 
 ---
 
