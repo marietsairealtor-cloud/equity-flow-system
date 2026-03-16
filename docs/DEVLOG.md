@@ -6426,6 +6426,6 @@ Changes
 10.8.11 added: list_user_tenants_v1 RPC + workspace switcher wiring end-to-end
 
 Proof
-N/A — specification update. See docs/governance/GOVERNANCE_CHANGE_PR124.md.
+See docs/governance/GOVERNANCE_CHANGE_PR124.md.
 Status
 PASS
