@@ -6403,3 +6403,16 @@ Proof
 N/A — specification update. See docs/governance/GOVERNANCE_CHANGE_PR122.md.
 Status
 PASS
+
+2026-03-16 — Build Route v2.4 — Build Route Modification: Server-Side Subscription Expiration
+Objective
+Move subscription expiration logic from WeWeb (client-side date math) to get_user_entitlements_v1 (server-side). Enforces GUARDRAILS §5.
+Changes
+
+10.8.2 DoD: subscription_status now 4 values (added expiring), subscription_expires_at replaced with subscription_days_remaining
+WEWEB_ARCHITECTURE.md §6.2 and §13.1 updated
+
+Proof
+N/A — specification update. See docs/governance/GOVERNANCE_CHANGE_PR123.md.
+Status
+PASS

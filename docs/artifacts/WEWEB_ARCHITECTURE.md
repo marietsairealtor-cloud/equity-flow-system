@@ -210,7 +210,7 @@ Component (not a page) rendered at top of authenticated shell. Two states:
 - **Warning (≤5 days before expiration):** "Your subscription expires in X days. [Renew now →]" — soft, informational. All features remain functional.
 - **Expired (after lapse):** "Subscription expired. [Renew now →]" — RPCs return NOT_AUTHORIZED server-side.
 
-Warning countdown computed client-side from `subscription_expires_at` returned by `get_user_entitlements_v1`. Banner hidden when expiration is more than 5 days away.
+`get_user_entitlements_v1` returns `subscription_status` = 'expiring' when ≤5 days remain (computed server-side). WeWeb checks the status string only — no date math in frontend. GUARDRAILS §5: no business logic in WeWeb.
 
 ### 6.3 Workspace ▾ Dropdown
 
@@ -456,7 +456,7 @@ These apply to ALL Section 10 items. Each is explicitly rejected with rationale 
 - §3 Tenancy Resolution — `current_tenant_id()` resolves tenant context
 - §4 UI State Contract — `gs_selectedTenantId` allowed (UI routing cache only, never authorization)
 - §5 Pagination Contract — `list_deals_v1` with cursor pagination
-- §5A Entitlement RPC — `get_user_entitlements_v1` for gate logic (extended with subscription_status)
+- §5A Entitlement RPC — `get_user_entitlements_v1` for gate logic (extended with subscription_status) returns `subscription_status` (active | expiring | expired | none) and `subscription_days_remaining` (integer). Expiration threshold computed server-side. Frontend displays only.
 - §8 SECURITY DEFINER Safety — all RPCs follow safety rules
 - §9 Helper Function Exposure — `require_min_role_v1` for role gating
 - §12 Privilege Firewall — core tables not readable by anon/authenticated. Controlled exception for `resolve_form_slug_v1` and `submit_form_v1` (anon-callable).
