@@ -6416,3 +6416,16 @@ Proof
 N/A — specification update. See docs/governance/GOVERNANCE_CHANGE_PR123.md.
 Status
 PASS
+
+2026-03-16 — Build Route v2.4 — Build Route Modification: 10.8 Switch Workspace Deferral + 10.8.11 Addition
+Objective
+Gap identified during 10.8 implementation: switch workspace requires tenant list RPC that does not exist. Defer wiring to new item 10.8.11.
+Changes
+
+10.8 DoD: switch workspace revised to shell-only (popup + variable), live wiring deferred
+10.8.11 added: list_user_tenants_v1 RPC + workspace switcher wiring end-to-end
+
+Proof
+N/A — specification update. See docs/governance/GOVERNANCE_CHANGE_PR123.md.
+Status
+PASS
