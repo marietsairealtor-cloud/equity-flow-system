@@ -4212,8 +4212,11 @@ Extend `get_user_entitlements_v1` to include subscription status. Required for o
 
 **DoD:**
 
-- `get_user_entitlements_v1` return shape extended: add `subscription_status` field (active | expired | none) and `subscription_expires_at` field (TIMESTAMPTZ, null when no subscription)ption_status` field (active | expired | none)
-- Gate logic derivable from single RPC call: no memberships → onboarding Step 1, membership + no active sub → Step 3, membership + active sub → hub
+- `get_user_entitlements_v1` return shape extended: add `subscription_status` field (active | expiring | expired | none) and `subscription_days_remaining` field (integer, null when no subscription)
+- `expiring` computed server-side: status = 'expiring' when subscription is active AND ≤5 days remain. Threshold lives in RPC, not in frontend.
+- `subscription_days_remaining` computed server-side: days until expiration (0 or negative when expired)
+- Gate logic derivable from single RPC call: no memberships → onboarding Step 1, membership + status none/expired → Step 3, membership + status active/expiring → hub
+- WeWeb performs zero date math. UI checks status string only.
 - Response schema `docs/truth/rpc_schemas/get_user_entitlements_v1.json` updated with new field
 - Existing pgTAP tests updated for new field
 - RPC response contract tests (10.4) updated
