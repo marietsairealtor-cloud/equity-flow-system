@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 GOVERNANCE_CHANGE_PR124.md
+=======
+10.8.11 gov devlog · MDCopyGOVERNANCE_CHANGE_PR124.md
+>>>>>>> 53527f0544c43a68e5ed2ab629370843f2af664a
 What changed
 
 docs/artifacts/BUILD_ROUTE_V2_4.md item 10.8 — Switch workspace DoD revised. Live tenant list + selection wiring deferred to 10.8.11. Shell (dropdown popup + gs_selectedTenantId variable) ships in 10.8.
