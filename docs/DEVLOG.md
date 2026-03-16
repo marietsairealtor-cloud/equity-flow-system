@@ -6389,3 +6389,17 @@ N/A — governance artifact addition. See docs/governance/GOVERNANCE_CHANGE_PR12
 
 Status
 PASS
+
+2026-03-16 — Build Route v2.4 — Build Route Modification: Subscription Banner Warning State
+Objective
+Add 5-day pre-expiration warning to subscription banner. Users see countdown before losing access, not just a surprise lockout.
+Changes
+
+WEWEB_ARCHITECTURE.md §6.2: two-state banner (warning ≤5 days + expired)
+Build Route 10.8 DoD: updated banner spec
+Build Route 10.8.2 DoD: added subscription_expires_at field to entitlements RPC
+
+Proof
+N/A — specification update. See docs/governance/GOVERNANCE_CHANGE_PR122.md.
+Status
+PASS

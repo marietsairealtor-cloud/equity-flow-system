@@ -205,7 +205,12 @@ Mobile: navbar collapses to hamburger menu. Workspace dropdown remains accessibl
 
 ### 6.2 Expired Subscription Banner
 
-Component (not a page) rendered at top of authenticated shell when subscription lapses mid-session. Shows "Subscription expired — Renew now →" linking to payment flow. RPCs return NOT_AUTHORIZED server-side regardless — this is UX polish.
+Component (not a page) rendered at top of authenticated shell. Two states:
+
+- **Warning (≤5 days before expiration):** "Your subscription expires in X days. [Renew now →]" — soft, informational. All features remain functional.
+- **Expired (after lapse):** "Subscription expired. [Renew now →]" — RPCs return NOT_AUTHORIZED server-side.
+
+Warning countdown computed client-side from `subscription_expires_at` returned by `get_user_entitlements_v1`. Banner hidden when expiration is more than 5 days away.
 
 ### 6.3 Workspace ▾ Dropdown
 
