@@ -4203,6 +4203,37 @@ Persistent authenticated layout with navbar, workspace dropdown, notification be
 
 **Gate:** `merge-blocking` (new public RPC surface)
 
+
+---
+
+### **10.8.1A — Subscriptions Table (Billing Data Source)**
+
+**Deliverable:**
+`tenant_subscriptions` table providing the data source for subscription status computation in `get_user_entitlements_v1` (10.8.2). Stripe webhook handler is out of scope — this item creates the schema and seed path only.
+
+**DoD (all must be true):**
+
+1. `tenant_subscriptions` table exists with at minimum: `id UUID DEFAULT gen_random_uuid() PRIMARY KEY`, `tenant_id UUID NOT NULL REFERENCES tenants(id)`, `status TEXT NOT NULL CHECK (status IN ('active', 'expiring', 'expired', 'canceled'))`, `current_period_end TIMESTAMPTZ NOT NULL`, `stripe_subscription_id TEXT`, `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`, `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+2. Unique constraint on `(tenant_id)` — one active subscription per tenant. If multi-subscription support is needed later, this is an additive schema change.
+3. RLS ON. REVOKE ALL from `anon` and `authenticated` per GUARDRAILS §11–13. No direct table access.
+4. `tenant_subscriptions` added to CONTRACTS §12 privilege firewall core table list.
+5. `docs/truth/privilege_truth.json` updated — table appears with zero grants.
+6. `docs/truth/tenant_table_selector.json` updated — table is tenant-scoped.
+7. No RPC created in this item. 10.8.2 wires the computation into `get_user_entitlements_v1`. Stripe webhook population is a future billing item (10.8.9 prerequisite).
+8. pgTAP tests prove: table exists, RLS enabled, `anon` has zero privileges, `authenticated` has zero privileges, tenant_id NOT NULL enforced, status CHECK constraint enforced, unique constraint on tenant_id enforced.
+9. `docs/truth/completed_items.json` updated with 10.8.1A.
+10. `docs/truth/qa_claim.json` updated to 10.8.1A.
+11. `docs/truth/qa_scope_map.json` updated with 10.8.1A entry.
+12. `scripts/ci_robot_owned_guard.ps1` updated with 10.8.1A proof log path.
+13. CONTRACTS §17 is NOT updated — no public RPC introduced.
+14. Migration uses named dollar tags only (no `$$`). UTF-8 no BOM. LF only. No dynamic SQL.
+
+**Proof:** `docs/proofs/10.8.1A_subscriptions_table_<UTC>.log`
+
+**Gate:** merge-blocking (existing gates: clean-room-replay, schema-drift, pgtap, definer-safety-audit, anon-privilege-audit, privilege-firewall)
+
+**Prerequisite:** 10.8.1 merged and main clean.
+
 ---
 
 ### **10.8.2 — Entitlements Extension (Subscription Status)**
