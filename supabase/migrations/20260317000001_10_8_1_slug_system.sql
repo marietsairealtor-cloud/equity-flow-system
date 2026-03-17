@@ -18,10 +18,10 @@ CREATE TABLE public.tenant_slugs (
   CONSTRAINT tenant_slugs_slug_format CHECK (slug ~ '^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$')
 );
 
--- RLS ON — default deny
+-- RLS ON -- default deny
 ALTER TABLE public.tenant_slugs ENABLE ROW LEVEL SECURITY;
 
--- No direct access — all reads via allowlisted RPCs
+-- No direct access -- all reads via allowlisted RPCs
 REVOKE ALL ON TABLE public.tenant_slugs FROM anon, authenticated;
 
 -- ============================================================
@@ -47,11 +47,11 @@ ALTER TABLE public.draft_deals ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.draft_deals FROM anon, authenticated;
 
 -- ============================================================
--- 3) resolve_form_slug_v1 — anon-callable, SECURITY DEFINER
+-- 3) resolve_form_slug_v1 -- anon-callable, SECURITY DEFINER
 -- ============================================================
 -- CONTRACTS §12 controlled exception: anon EXECUTE granted.
 -- Rationale: Public intake form URLs require slug resolution without auth.
--- Security: Returns only tenant_id — no internal identifiers exposed.
+-- Security: Returns only tenant_id -- no internal identifiers exposed.
 -- No existence leak between form types: invalid slug OR form_type → NOT_FOUND.
 
 CREATE OR REPLACE FUNCTION public.resolve_form_slug_v1(
@@ -67,7 +67,7 @@ DECLARE
   v_tenant_id uuid;
   v_valid_types text[] := ARRAY['buyer', 'seller', 'birddog'];
 BEGIN
-  -- Validate form_type — NOT_FOUND (no form type leak)
+  -- Validate form_type -- NOT_FOUND (no form type leak)
   IF p_form_type IS NULL OR NOT (p_form_type = ANY(v_valid_types)) THEN
     RETURN json_build_object(
       'ok', false,
@@ -112,17 +112,17 @@ $fn$;
 
 ALTER FUNCTION public.resolve_form_slug_v1(text, text) OWNER TO postgres;
 
--- CONTRACTS §12 controlled exception — anon EXECUTE
+-- CONTRACTS §12 controlled exception -- anon EXECUTE
 REVOKE ALL ON FUNCTION public.resolve_form_slug_v1(text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.resolve_form_slug_v1(text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.resolve_form_slug_v1(text, text) TO authenticated;
 
 -- ============================================================
--- 4) submit_form_v1 — anon-callable, SECURITY DEFINER
+-- 4) submit_form_v1 -- anon-callable, SECURITY DEFINER
 -- ============================================================
 -- CONTRACTS §12 controlled exception: anon EXECUTE granted.
 -- Rationale: Public intake form submissions require no auth.
--- Security: Resolves tenant from slug internally — no tenant_id param.
+-- Security: Resolves tenant from slug internally -- no tenant_id param.
 -- Seller submissions create draft deal with asking_price + repair_estimate.
 
 CREATE OR REPLACE FUNCTION public.submit_form_v1(
@@ -242,7 +242,7 @@ $fn$;
 
 ALTER FUNCTION public.submit_form_v1(text, text, jsonb) OWNER TO postgres;
 
--- CONTRACTS §12 controlled exception — anon EXECUTE
+-- CONTRACTS §12 controlled exception -- anon EXECUTE
 REVOKE ALL ON FUNCTION public.submit_form_v1(text, text, jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.submit_form_v1(text, text, jsonb) TO anon;
 GRANT EXECUTE ON FUNCTION public.submit_form_v1(text, text, jsonb) TO authenticated;
