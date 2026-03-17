@@ -6593,3 +6593,43 @@ DoD
 
 Status
 PASS
+
+2026-03-17 — Build Route v2.4 — Item 10.8.1A
+
+Objective
+Subscriptions table -- billing data source for get_user_entitlements_v1
+subscription status computation (10.8.2). Schema and RLS only -- no RPC,
+no Stripe webhook.
+
+Changes
+- supabase/migrations/20260317000003_10_8_1A_subscriptions_table.sql:
+  tenant_subscriptions table: id UUID PK, tenant_id UUID NOT NULL FK tenants,
+  status TEXT NOT NULL CHECK (active | expiring | expired | canceled),
+  current_period_end TIMESTAMPTZ NOT NULL, stripe_subscription_id TEXT,
+  created_at/updated_at TIMESTAMPTZ NOT NULL DEFAULT now().
+  UNIQUE constraint on tenant_id (one subscription per tenant).
+  RLS ON. REVOKE ALL from anon, authenticated.
+- supabase/tests/10_8_1A_subscriptions_table_tests.test.sql: 12 pgTAP tests.
+  Table exists, RLS enabled, anon/authenticated zero privileges, tenant_id
+  NOT NULL enforced, status CHECK enforced, unique constraint enforced,
+  valid status values accepted.
+- docs/artifacts/CONTRACTS.md: §12 core table list updated -- tenant_subscriptions
+  added.
+- docs/truth/tenant_table_selector.json: tenant_subscriptions added to
+  tenant_owned_tables. Also added tenant_slugs and draft_deals (10.8.1 gap fix).
+- docs/truth/cloud_migration_parity.json: tip 20260317000003, count 44
+- docs/governance/GOVERNANCE_CHANGE_PR129.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8.1A
+- docs/truth/qa_scope_map.json: added 10.8.1A entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.8.1A proof log path
+- docs/proofs/10.8.1A_subscriptions_table_20260317T215655Z.log
+
+QA findings
+- DoD item 9 (completed_items.json) skipped -- file deleted from repo
+  previously, QA-approved skip.
+- tenant_slugs and draft_deals added to tenant_table_selector.json as
+  10.8.1 gap fix (those tables were missing from the selector).
+
+Gate: merge-blocking (existing gates cover new table)
+
+Status: COMPLETE -- merged to main
