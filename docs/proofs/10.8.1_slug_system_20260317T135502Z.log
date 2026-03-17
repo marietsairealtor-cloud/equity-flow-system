@@ -1,0 +1,109 @@
+PROOF_HEAD=b1d385e7c26434237d04d2c0f5f3ae99768cd544
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.1 Slug System (Forms Infrastructure) -- Proof Log ===
+Date: 2026-03-17T09:53:12.1191610-04:00
+Branch: feat/10.8.1-slug-system
+PR HEAD SHA: b1d385e7c26434237d04d2c0f5f3ae99768cd544
+
+=== DoD: tenant_slugs table exists ===
+PASS -- tenant_id UUID NOT NULL, slug TEXT NOT NULL UNIQUE
+     -- slug format validated: ^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$
+     -- RLS ON, REVOKE from anon/authenticated
+     -- FK to tenants(id) ON DELETE CASCADE
+
+=== DoD: draft_deals table exists ===
+PASS -- tenant_id, slug, form_type, payload, asking_price, repair_estimate
+     -- RLS ON, REVOKE from anon/authenticated
+     -- form_type CHECK: buyer, seller, birddog
+
+=== DoD: resolve_form_slug_v1 RPC exists ===
+PASS -- anon-callable, SECURITY DEFINER, SET search_path = public
+     -- Returns NOT_FOUND for invalid slug, invalid form_type, nonexistent slug
+     -- No existence leak between form types
+     -- Returns tenant_id only -- no internal identifiers exposed
+
+=== DoD: submit_form_v1 RPC exists ===
+PASS -- anon-callable, SECURITY DEFINER, SET search_path = public
+     -- Routes submission to tenant inbox (draft_deals)
+     -- Seller submissions: asking_price + repair_estimate pre-filled
+     -- spam_token required -- VALIDATION_ERROR if missing
+     -- NOT_FOUND on invalid slug
+
+=== DoD: CONTRACTS §12 controlled exception documented ===
+PASS -- §12 updated with anon EXECUTE exception for both RPCs
+     -- §17 RPC mapping table updated with both RPCs
+     -- privilege_truth.json updated: routine_grants.anon, migration_grant_allowlist.anon
+     -- execute_allowlist.json updated with both RPCs
+     -- definer_allowlist.json updated: allow + anon_callable arrays
+     -- rpc_contract_registry.json updated with both RPCs
+
+=== DoD: Spam token validation ===
+PASS -- submit_form_v1 returns VALIDATION_ERROR when spam_token absent or empty
+     -- error.fields.spam_token = 'Required'
+
+=== DoD: pgTAP tests -- 23/23 PASS ===
+PASS -- resolve_form_slug_v1: valid slug resolves (5 tests)
+     -- resolve_form_slug_v1: invalid slug returns NOT_FOUND (3 tests)
+     -- resolve_form_slug_v1: invalid/null form_type returns NOT_FOUND (2 tests)
+     -- resolve_form_slug_v1: null slug returns NOT_FOUND (1 test)
+     -- submit_form_v1: valid seller creates draft deal (3 tests)
+     -- submit_form_v1: valid buyer (1 test)
+     -- submit_form_v1: missing spam_token VALIDATION_ERROR (2 tests)
+     -- submit_form_v1: invalid slug NOT_FOUND (1 test)
+     -- submit_form_v1: invalid form_type VALIDATION_ERROR (1 test)
+     -- submit_form_v1: null payload VALIDATION_ERROR (1 test)
+     -- draft deal MAO pre-fill verified (1 test)
+     -- anon-safe callable without auth context (2 tests)
+
+=== DoD: CONTRACTS §17 RPC mapping table updated ===
+PASS -- resolve_form_slug_v1 registered with all 5 required fields
+     -- submit_form_v1 registered with all 5 required fields
+
+=== DoD: No pr:preflight in SQL (GUARDRAILS §29) ===
+PASS -- migration uses named dollar tags only: $
+     -- test file uses no dollar tags (plain SQL)
+
+=== Gate: merge-blocking ===
+PASS -- rpc-contract-registry: PASS
+     -- definer-safety-audit: PASS (anon_callable exemption)
+     -- migration-grant-lint: PASS (anon_routines allowlist)
+     -- anon-privilege-audit: PASS
+     -- schema-drift: PASS (corrective migration 20260317000002 applied)
+     -- cloud-migration-parity: PASS (tip 20260317000002, count 43)
+
+=== CI gate wiring ===
+NOTE: 10.8.1 is merge-blocking per DoD. Gate promotion not required --
+      existing gates (rpc-contract-registry, definer-safety-audit,
+      migration-grant-lint, schema-drift) are already merge-blocking.
+      No new CI job introduced.
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR126.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_definer_safety_audit.ps1
+scripts/ci_robot_owned_guard.ps1
+scripts/lint_migration_grants.mjs
+supabase/migrations/20260317000001_10_8_1_slug_system.sql
+supabase/migrations/20260317000002_10_8_1_fix_comment_encoding.sql
+supabase/tests/10_8_1_slug_system_tests.test.sql
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.1 Slug System (Forms Infrastructure): PASS (merge-blocking)
