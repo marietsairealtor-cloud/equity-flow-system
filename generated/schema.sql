@@ -851,6 +851,19 @@ CREATE TABLE IF NOT EXISTS "public"."tenant_slugs" (
 
 ALTER TABLE "public"."tenant_slugs" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."tenant_subscriptions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "status" "text" NOT NULL,
+    "current_period_end" timestamp with time zone NOT NULL,
+    "stripe_subscription_id" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "tenant_subscriptions_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'expiring'::"text", 'expired'::"text", 'canceled'::"text"])))
+);
+
+ALTER TABLE "public"."tenant_subscriptions" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."tenants" (
     "id" "uuid" NOT NULL
 );
@@ -896,6 +909,12 @@ ALTER TABLE ONLY "public"."tenant_slugs"
 ALTER TABLE ONLY "public"."tenant_slugs"
     ADD CONSTRAINT "tenant_slugs_slug_unique" UNIQUE ("slug");
 
+ALTER TABLE ONLY "public"."tenant_subscriptions"
+    ADD CONSTRAINT "tenant_subscriptions_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."tenant_subscriptions"
+    ADD CONSTRAINT "tenant_subscriptions_tenant_id_unique" UNIQUE ("tenant_id");
+
 ALTER TABLE ONLY "public"."tenants"
     ADD CONSTRAINT "tenants_pkey" PRIMARY KEY ("id");
 
@@ -938,6 +957,9 @@ ALTER TABLE ONLY "public"."tenant_memberships"
 ALTER TABLE ONLY "public"."tenant_slugs"
     ADD CONSTRAINT "tenant_slugs_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
 
+ALTER TABLE ONLY "public"."tenant_subscriptions"
+    ADD CONSTRAINT "tenant_subscriptions_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
 ALTER TABLE "public"."activity_log" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "activity_log_insert_own" ON "public"."activity_log" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
@@ -975,6 +997,8 @@ CREATE POLICY "tenant_memberships_select_own" ON "public"."tenant_memberships" F
 CREATE POLICY "tenant_memberships_update_own" ON "public"."tenant_memberships" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."tenant_slugs" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."tenant_subscriptions" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 
