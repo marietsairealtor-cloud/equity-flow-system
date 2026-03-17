@@ -77,6 +77,9 @@ for (const entry of (allowlist.authenticated_tables || [])) {
 const allowedAuthRoutine = new Set(
   (allowlist.authenticated_routines || []).map((r) => r.toLowerCase())
 );
+const allowedAnonRoutine = new Set(
+  (allowlist.anon_routines || []).map((r) => r.toLowerCase())
+);
 
 const allowedDefaultPrivs = new Set(
   (allowlist.alter_default_privileges || []).map((e) =>
@@ -217,7 +220,12 @@ for (const filePath of sqlFiles.sort()) {
     const role = m[2].trim().toLowerCase();
 
     if (role === "anon") {
-      failures.push(`${rel}: GRANT EXECUTE ON FUNCTION ${routineName} TO anon — not in allowlist (CONTRACTS.md §12)`);
+      if (!allowedAnonRoutine.has(routineName)) {
+        failures.push(`${rel}: GRANT EXECUTE ON FUNCTION ${routineName} TO anon — not in allowlist (CONTRACTS.md §12)`);
+      } else {
+        passCount++;
+        console.log(`  PASS: ${rel}: GRANT EXECUTE ON FUNCTION ${routineName} TO anon — allowlisted (§12 exception)`);
+      }
     } else {
       if (!allowedAuthRoutine.has(routineName)) {
         failures.push(`${rel}: GRANT EXECUTE ON FUNCTION ${routineName} TO authenticated — not in allowlist (CONTRACTS.md §12)`);

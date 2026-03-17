@@ -1,8 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 179075f
+HEAD: 0c9305a
 
 === git status --porcelain=v1 ===
-?? docs/truth/write_path_registry.json
+ M docs/truth/write_path_registry.json
 
 === supabase status (sanitized summary) ===
 {
@@ -18,10 +18,10 @@ HEAD: 179075f
 }
 
 === last applied migration (DB) ===
- 20260311000002
+ 20260317000002
 
 === latest migration file in repo ===
-20260311000002_9_7_token_lifetime_invariant.sql
+20260317000002_10_8_1_fix_comment_encoding.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes

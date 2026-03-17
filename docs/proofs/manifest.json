@@ -164,6 +164,7 @@
     "docs/proofs/10.6_rpc_contract_registry_20260313T164509Z.log": "1e2c8e39601c84e9b17754a154a033ebca858c064a55774a359dac6f84580fe8",
     "docs/proofs/10.7_gate_promotion_registry_20260313T235318Z.log": "8faf68e6dd3b6142563224ad4e279b790b225adb881b91f32d4bd3242bf523a5",
     "docs/proofs/10.7.1_legacy_gate_promotion_retrofit_20260314T011015Z.log": "cdcb2eec4a8e62c6b06bc3609d68033e3a6f891f53e84f2c9d0433fd5fd54a09",
-    "docs/proofs/10.8_authenticated_shell_20260317T013513Z.md": "4e255285f4ec15ddbff2a6f019a96710ee6b0147b463aa37b336da689a918709"
+    "docs/proofs/10.8_authenticated_shell_20260317T013513Z.md": "4e255285f4ec15ddbff2a6f019a96710ee6b0147b463aa37b336da689a918709",
+    "docs/proofs/10.8.1_slug_system_20260317T135502Z.log": "4075bafd03a349fd0c98f61988553f2965bf2830f7b731f377a20545913da130"
   }
 }

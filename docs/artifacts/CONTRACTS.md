@@ -181,6 +181,8 @@ Note (9.1): EXECUTE on all business RPCs (create_deal_v1, update_deal_v1, list_d
   - Forbidden: any GRANT to `anon`, or `GRANT ALL` to any role.
 - Privilege enforcement is evaluated on the **final database state** after all migrations.
 
+Documented exception (10.8.1): `resolve_form_slug_v1` and `submit_form_v1` EXECUTE granted to `anon` — per Build Route 10.8.1. Rationale: public intake form URLs require slug resolution and submission without authentication. Both RPCs are SECURITY DEFINER with fixed search_path. No tenant_id param. No internal identifiers exposed. Spam token required on submissions.
+
 ---
 
 ## 13) Default Privileges Lockdown
@@ -265,6 +267,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
 | revoke_share_token_v1 | 8.6 | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
+| submit_form_v1 | 10.8.1 | Submit public intake form; creates draft deal with MAO pre-fill for seller submissions | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
 
 ### Mapping Rules
 

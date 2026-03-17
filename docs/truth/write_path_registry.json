@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-03-15T21:10:01Z",
+    "generated":  "2026-03-17T13:45:57Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -35,6 +35,15 @@
                             "name":  "revoke_share_token_v1",
                             "tables":  [
                                            "share_tokens"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "submit_form_v1",
+                            "tables":  [
+                                           "draft_deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

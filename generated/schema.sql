@@ -498,6 +498,52 @@ $$;
 
 ALTER FUNCTION "public"."require_min_role_v1"("p_min" "public"."tenant_role") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."resolve_form_slug_v1"("p_slug" "text", "p_form_type" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+DECLARE
+  v_tenant_id uuid;
+  v_valid_types text[] := ARRAY['buyer', 'seller', 'birddog'];
+BEGIN
+  -- Validate form_type -- NOT_FOUND (no form type leak)
+  IF p_form_type IS NULL OR NOT (p_form_type = ANY(v_valid_types)) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  -- Validate slug format
+  IF p_slug IS NULL OR p_slug !~ '^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  -- Resolve slug to tenant_id
+  SELECT ts.tenant_id INTO v_tenant_id
+  FROM public.tenant_slugs ts
+  WHERE ts.slug = p_slug;
+
+  IF v_tenant_id IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('tenant_id', v_tenant_id),
+    'error', null
+  );
+END;
+$_$;
+
+ALTER FUNCTION "public"."resolve_form_slug_v1"("p_slug" "text", "p_form_type" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."revoke_share_token_v1"("p_token" "text") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -532,6 +578,117 @@ END;
 $$;
 
 ALTER FUNCTION "public"."revoke_share_token_v1"("p_token" "text") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."submit_form_v1"("p_slug" "text", "p_form_type" "text", "p_payload" "jsonb") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+DECLARE
+  v_tenant_id     uuid;
+  v_draft_id      uuid;
+  v_asking_price  numeric;
+  v_repair_est    numeric;
+  v_valid_types   text[] := ARRAY['buyer', 'seller', 'birddog'];
+  v_spam_token    text;
+BEGIN
+  -- Validate form_type
+  IF p_form_type IS NULL OR NOT (p_form_type = ANY(v_valid_types)) THEN
+    RETURN json_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', null,
+      'error', json_build_object(
+        'message', 'Invalid form type',
+        'fields', json_build_object('form_type', 'Must be buyer, seller, or birddog')
+      )
+    );
+  END IF;
+
+  -- Validate slug
+  IF p_slug IS NULL OR p_slug !~ '^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$' THEN
+    RETURN json_build_object(
+      'ok', false,
+      'code', 'NOT_FOUND',
+      'data', null,
+      'error', json_build_object('message', 'Not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  -- Validate payload present
+  IF p_payload IS NULL THEN
+    RETURN json_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', null,
+      'error', json_build_object(
+        'message', 'Payload required',
+        'fields', json_build_object('payload', 'Required')
+      )
+    );
+  END IF;
+
+  -- Validate spam token present (Turnstile/reCAPTCHA)
+  v_spam_token := p_payload->>'spam_token';
+  IF v_spam_token IS NULL OR length(trim(v_spam_token)) = 0 THEN
+    RETURN json_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', null,
+      'error', json_build_object(
+        'message', 'Spam protection token required',
+        'fields', json_build_object('spam_token', 'Required')
+      )
+    );
+  END IF;
+
+  -- Resolve slug to tenant
+  SELECT ts.tenant_id INTO v_tenant_id
+  FROM public.tenant_slugs ts
+  WHERE ts.slug = p_slug;
+
+  IF v_tenant_id IS NULL THEN
+    RETURN json_build_object(
+      'ok', false,
+      'code', 'NOT_FOUND',
+      'data', null,
+      'error', json_build_object('message', 'Not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  -- Extract MAO pre-fill fields from seller submissions
+  IF p_form_type = 'seller' THEN
+    v_asking_price := (p_payload->>'asking_price')::numeric;
+    v_repair_est   := (p_payload->>'repair_estimate')::numeric;
+  END IF;
+
+  -- Insert draft deal record
+  INSERT INTO public.draft_deals (
+    tenant_id,
+    slug,
+    form_type,
+    payload,
+    asking_price,
+    repair_estimate
+  ) VALUES (
+    v_tenant_id,
+    p_slug,
+    p_form_type,
+    p_payload,
+    v_asking_price,
+    v_repair_est
+  )
+  RETURNING id INTO v_draft_id;
+
+  RETURN json_build_object(
+    'ok', true,
+    'code', 'OK',
+    'data', json_build_object('draft_id', v_draft_id),
+    'error', null
+  );
+END;
+$_$;
+
+ALTER FUNCTION "public"."submit_form_v1"("p_slug" "text", "p_form_type" "text", "p_payload" "jsonb") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -639,6 +796,20 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
 
 ALTER TABLE "public"."deals" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."draft_deals" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "slug" "text" NOT NULL,
+    "form_type" "text" NOT NULL,
+    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "asking_price" numeric,
+    "repair_estimate" numeric,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "draft_deals_form_type_check" CHECK (("form_type" = ANY (ARRAY['buyer'::"text", 'seller'::"text", 'birddog'::"text"])))
+);
+
+ALTER TABLE "public"."draft_deals" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."share_tokens" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -670,6 +841,16 @@ CREATE TABLE IF NOT EXISTS "public"."tenant_memberships" (
 
 ALTER TABLE "public"."tenant_memberships" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."tenant_slugs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "slug" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "tenant_slugs_slug_format" CHECK (("slug" ~ '^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$'::"text"))
+);
+
+ALTER TABLE "public"."tenant_slugs" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."tenants" (
     "id" "uuid" NOT NULL
 );
@@ -697,6 +878,9 @@ ALTER TABLE ONLY "public"."deal_outputs"
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."draft_deals"
+    ADD CONSTRAINT "draft_deals_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."share_tokens"
     ADD CONSTRAINT "share_tokens_pkey" PRIMARY KEY ("id");
 
@@ -705,6 +889,12 @@ ALTER TABLE ONLY "public"."tenant_memberships"
 
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_tenant_user_unique" UNIQUE ("tenant_id", "user_id");
+
+ALTER TABLE ONLY "public"."tenant_slugs"
+    ADD CONSTRAINT "tenant_slugs_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."tenant_slugs"
+    ADD CONSTRAINT "tenant_slugs_slug_unique" UNIQUE ("slug");
 
 ALTER TABLE ONLY "public"."tenants"
     ADD CONSTRAINT "tenants_pkey" PRIMARY KEY ("id");
@@ -736,11 +926,17 @@ ALTER TABLE ONLY "public"."deal_outputs"
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_assumptions_snapshot_fk" FOREIGN KEY ("assumptions_snapshot_id") REFERENCES "public"."deal_inputs"("id") DEFERRABLE INITIALLY DEFERRED;
 
+ALTER TABLE ONLY "public"."draft_deals"
+    ADD CONSTRAINT "draft_deals_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."share_tokens"
     ADD CONSTRAINT "share_tokens_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
 
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
+
+ALTER TABLE ONLY "public"."tenant_slugs"
+    ADD CONSTRAINT "tenant_slugs_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
 
 ALTER TABLE "public"."activity_log" ENABLE ROW LEVEL SECURITY;
 
@@ -764,6 +960,8 @@ CREATE POLICY "deals_select_own" ON "public"."deals" FOR SELECT TO "authenticate
 
 CREATE POLICY "deals_update_own" ON "public"."deals" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
+ALTER TABLE "public"."draft_deals" ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE "public"."share_tokens" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."tenant_memberships" ENABLE ROW LEVEL SECURITY;
@@ -775,6 +973,8 @@ CREATE POLICY "tenant_memberships_insert_own" ON "public"."tenant_memberships" F
 CREATE POLICY "tenant_memberships_select_own" ON "public"."tenant_memberships" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 CREATE POLICY "tenant_memberships_update_own" ON "public"."tenant_memberships" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+ALTER TABLE "public"."tenant_slugs" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 

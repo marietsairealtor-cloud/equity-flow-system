@@ -23,8 +23,19 @@
   },
   "routine_grants": {
     "comment": "EXECUTE grants on public schema routines. Source: information_schema.role_routine_grants. Must match execute_allowlist.json exactly.",
-    "anon": [],
-    "anon_explicit_none": "anon holds zero routine grants. Any EXECUTE grant to anon is a CONTRACTS.md §12 violation.",
+    "anon": [
+      {
+        "routine": "resolve_form_slug_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1"
+      },
+      {
+        "routine": "submit_form_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1"
+      }
+    ],
+    "anon_explicit_none": "anon holds zero routine grants except CONTRACTS.md §12 controlled exceptions: resolve_form_slug_v1 and submit_form_v1 (Build Route 10.8.1). Any other EXECUTE grant to anon is a violation.",
     "authenticated": [
       {
         "routine": "create_deal_v1",
@@ -49,6 +60,14 @@
       {
         "routine": "update_deal_v1",
         "privilege": "EXECUTE"
+      },
+      {
+        "routine": "resolve_form_slug_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "submit_form_v1",
+        "privilege": "EXECUTE"
       }
     ]
   },
@@ -67,7 +86,18 @@
   },
   "migration_grant_allowlist": {
     "comment": "Authoritative allowlist for the migration-grant-lint gate. Any GRANT in supabase/migrations/**/*.sql to anon or authenticated not present here fails the gate. Comments in migration files are not a control mechanism.",
-    "anon": [],
+    "anon": [
+      {
+        "routine": "resolve_form_slug_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1"
+      },
+      {
+        "routine": "submit_form_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1"
+      }
+    ],
     "authenticated_tables": [
       {
         "table": "user_profiles",
@@ -85,7 +115,13 @@
       "lookup_share_token_v1",
       "update_deal_v1",
       "revoke_share_token_v1",
-      "create_share_token_v1"
+      "create_share_token_v1",
+      "resolve_form_slug_v1",
+      "submit_form_v1"
+    ],
+    "anon_routines": [
+      "resolve_form_slug_v1",
+      "submit_form_v1"
     ],
     "alter_default_privileges": []
   },
@@ -144,5 +180,3 @@
     }
   ]
 }
-
-
