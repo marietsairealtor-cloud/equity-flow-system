@@ -8,7 +8,10 @@
       "build_route_owner": "6.6",
       "input_contract": "CONTRACTS.md §RPC create_deal_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "CONFLICT"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "CONFLICT"
+      ],
       "notes": "CONFLICT on duplicate deal id. No VALIDATION_ERROR — inputs are permissive."
     },
     {
@@ -17,17 +20,23 @@
       "build_route_owner": "6.7",
       "input_contract": "CONTRACTS.md §RPC create_share_token_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND", "CONFLICT"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "CONFLICT"
+      ],
       "notes": "VALIDATION_ERROR on null/past/future>90d expires_at or null deal_id. NOT_FOUND on deal not in tenant. CONFLICT on cardinality limit (50 active tokens)."
     },
-    
     {
       "name": "foundation_log_activity_v1",
       "version": 2,
       "build_route_owner": "6.10",
       "input_contract": "CONTRACTS.md §RPC foundation_log_activity_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "SECURITY DEFINER. Called best-effort by other RPCs. Best-effort — caller catches exceptions."
     },
     {
@@ -36,7 +45,9 @@
       "build_route_owner": "7.4",
       "input_contract": "CONTRACTS.md §RPC get_user_entitlements_v1",
       "response_schema": "docs/truth/rpc_schemas/get_user_entitlements_v1.json",
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "Schema governed by Build Route 10.3."
     },
     {
@@ -45,7 +56,9 @@
       "build_route_owner": "6.6",
       "input_contract": "CONTRACTS.md §RPC list_deals_v1",
       "response_schema": "docs/truth/rpc_schemas/list_deals_v1.json",
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "Schema governed by Build Route 10.3. p_limit clamped [1,100] default 25."
     },
     {
@@ -54,7 +67,11 @@
       "build_route_owner": "6.7",
       "input_contract": "CONTRACTS.md §RPC lookup_share_token_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "NOT_FOUND returned for all failure cases (revoked, expired, nonexistent, bad format) — no existence leak."
     },
     {
@@ -63,7 +80,10 @@
       "build_route_owner": "8.6",
       "input_contract": "CONTRACTS.md §RPC revoke_share_token_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
       "notes": "Idempotent. Revocation of already-revoked or nonexistent token returns OK."
     },
     {
@@ -72,8 +92,34 @@
       "build_route_owner": "6.6",
       "input_contract": "CONTRACTS.md §RPC update_deal_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "CONFLICT"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "CONFLICT"
+      ],
       "notes": "CONFLICT on row version mismatch or deal not found for tenant."
+    },
+    {
+      "name": "resolve_form_slug_v1",
+      "version": 1,
+      "build_route_owner": "10.8.1",
+      "input_contract": "CONTRACTS.md §17 resolve_form_slug_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_FOUND"
+      ],
+      "notes": "Anon-callable per CONTRACTS.md §12 controlled exception. Resolves slug + form_type to tenant_id. NOT_FOUND for invalid slug, invalid form_type, or nonexistent slug — no existence leak between form types."
+    },
+    {
+      "name": "submit_form_v1",
+      "version": 1,
+      "build_route_owner": "10.8.1",
+      "input_contract": "CONTRACTS.md §17 submit_form_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_FOUND",
+        "VALIDATION_ERROR"
+      ],
+      "notes": "Anon-callable per CONTRACTS.md §12 controlled exception. Resolves tenant from slug. VALIDATION_ERROR on missing spam_token, invalid form_type, or null payload. NOT_FOUND on invalid slug. Seller submissions create draft deal with asking_price and repair_estimate pre-filled."
     }
   ]
 }
