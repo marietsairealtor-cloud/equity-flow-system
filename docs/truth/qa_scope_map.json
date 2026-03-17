@@ -391,8 +391,9 @@
     "10.7.1": {
       "proof_pattern": "^docs/proofs/10\\.7\\.1_legacy_gate_promotion_retrofit_"
     },
-    "10.8": {
-      "proof_pattern": "^docs/proofs/10\\.8_authenticated_shell_"
+    "10.8": { "proof_pattern": "^docs/proofs/10\\.8_authenticated_shell_" },
+    "10.8.1": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.1_slug_system_"
     }
   }
 }
