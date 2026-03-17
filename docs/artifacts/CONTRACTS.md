@@ -174,7 +174,7 @@ Snapshot changes require accompanying CONTRACTS.md changes in the same PR (enfor
 
 Note (9.1): EXECUTE on all business RPCs (create_deal_v1, update_deal_v1, list_deals_v1, get_user_entitlements_v1) revoked from PUBLIC/anon. These RPCs require authenticated context only. Only current_tenant_id() remains anon-accessible via PostgREST surface (utility function, reads JWT claims only).
 
-- Core tables (`tenants`, `tenant_memberships`, `tenant_invites`, `deals`, `documents`) **must not have any GRANTs** to `anon` or `authenticated`.
+- Core tables (`tenants`, `tenant_memberships`, `tenant_invites`, `deals`, `documents`, `tenant_subscriptions`) **must not have any GRANTs** to `anon` or `authenticated`.
 - Privilege truth is defined by the **absence of GRANTs**, not the presence of `REVOKE` lines.
 - `user_profiles` is a controlled exception:
   - Allowed: `GRANT SELECT, UPDATE ON public.user_profiles TO authenticated`

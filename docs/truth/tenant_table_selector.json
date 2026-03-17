@@ -4,7 +4,10 @@
     "deal_inputs",
     "deal_outputs",
     "deals",
-    "share_tokens"
+    "draft_deals",
+    "share_tokens",
+    "tenant_slugs",
+    "tenant_subscriptions"
   ],
   "selector": {
     "required": true,
