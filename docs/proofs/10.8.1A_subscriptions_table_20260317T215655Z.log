@@ -1,0 +1,100 @@
+PROOF_HEAD=3f1c57ae6222c920eeacd531f50e054b295c52df
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.1A Subscriptions Table (Billing Data Source) -- Proof Log ===
+Date: 2026-03-17T17:54:55.1030926-04:00
+Branch: feat/10.8.1A-subscriptions-table
+PR HEAD SHA: 3f1c57ae6222c920eeacd531f50e054b295c52df
+
+=== DoD 1: tenant_subscriptions table exists ===
+PASS -- id UUID DEFAULT gen_random_uuid() PRIMARY KEY
+     -- tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE
+     -- status TEXT NOT NULL CHECK (active | expiring | expired | canceled)
+     -- current_period_end TIMESTAMPTZ NOT NULL
+     -- stripe_subscription_id TEXT (nullable)
+     -- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+     -- updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+
+=== DoD 2: Unique constraint on tenant_id ===
+PASS -- CONSTRAINT tenant_subscriptions_tenant_id_unique UNIQUE (tenant_id)
+     -- One active subscription per tenant enforced
+
+=== DoD 3: RLS ON, REVOKE from anon and authenticated ===
+PASS -- ALTER TABLE public.tenant_subscriptions ENABLE ROW LEVEL SECURITY
+     -- REVOKE ALL ON TABLE public.tenant_subscriptions FROM anon, authenticated
+
+=== DoD 4: CONTRACTS §12 core table list updated ===
+PASS -- tenant_subscriptions added to core table list in §12
+
+=== DoD 5: privilege_truth.json -- zero grants ===
+PASS -- table has zero grants to anon or authenticated
+     -- absence from grant query results IS the zero grants proof
+
+=== DoD 6: tenant_table_selector.json updated ===
+PASS -- tenant_subscriptions added to tenant_owned_tables
+     -- Also added tenant_slugs and draft_deals (10.8.1 gap fix)
+
+=== DoD 7: No RPC created ===
+PASS -- schema only, no RPC introduced
+     -- 10.8.2 wires computation into get_user_entitlements_v1
+
+=== DoD 8: pgTAP tests 12/12 PASS ===
+PASS -- table exists
+     -- RLS enabled
+     -- anon has no SELECT, no INSERT
+     -- authenticated has no SELECT, no INSERT
+     -- tenant_id NOT NULL enforced
+     -- status CHECK constraint enforced
+     -- unique constraint on tenant_id enforced
+     -- expiring status accepted (valid status value)
+
+=== DoD 9: completed_items.json -- SKIPPED ===
+SKIP -- file was deleted from repo previously (QA-approved skip)
+
+=== DoD 10: qa_claim.json updated ===
+PASS -- updated to 10.8.1A
+
+=== DoD 11: qa_scope_map.json updated ===
+PASS -- 10.8.1A entry added
+
+=== DoD 12: ci_robot_owned_guard.ps1 updated ===
+PASS -- 10.8.1A proof log path allowlisted
+
+=== DoD 13: CONTRACTS §17 NOT updated ===
+PASS -- no public RPC introduced, §17 unchanged
+
+=== DoD 14: Migration encoding ===
+PASS -- named dollar tags not applicable (no functions in migration)
+     -- UTF-8 no BOM, LF only, no dynamic SQL
+
+=== Gate evidence ===
+PASS -- clean-room-replay: PASS
+PASS -- schema-drift: PASS
+PASS -- pgtap: PASS (12/12)
+PASS -- definer-safety-audit: PASS (no new SD functions)
+PASS -- anon-privilege-audit: PASS (zero grants on new table)
+PASS -- cloud-migration-parity: PASS (tip 20260317000003, count 44)
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR129.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/tenant_table_selector.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260317000003_10_8_1A_subscriptions_table.sql
+supabase/tests/10_8_1A_subscriptions_table_tests.test.sql
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.1A Subscriptions Table (Billing Data Source): PASS (merge-blocking)
