@@ -6558,3 +6558,15 @@ QA findings
 Gate: merge-blocking (existing gates cover new RPCs)
 
 Status: COMPLETE -- merged to main
+
+2026-03-17 — Build Route v2.4 — Build Route Addition: 10.8.12 Automate Migration Parity
+Objective
+Add Build Route item to convert cloud_migration_parity.json from hand-authored to machine-derived. Eliminates manual tip/count bump on every migration PR.
+Changes
+
+10.8.12 added to Build Route Section 10
+
+Proof
+N/A — specification addition. See docs/governance/GOVERNANCE_CHANGE_PR127.md.
+Status
+PASS
