@@ -6570,3 +6570,26 @@ Proof
 N/A — specification addition. See docs/governance/GOVERNANCE_CHANGE_PR127.md.
 Status
 PASS
+
+## 2026-03-17 — Build Route v2.4 — Build Route Addition: 10.8.1A Subscriptions Table
+
+Objective
+Add Build Route item 10.8.1A (Subscriptions Table — Billing Data Source) to close dependency gap blocking 10.8.2 (Entitlements Extension). No subscriptions table exists in current schema; `subscription_status` and `subscription_days_remaining` cannot be computed without one.
+
+Changes
+- BUILD_ROUTE_V2_4.md: item 10.8.1A inserted between 10.8.1 and 10.8.2
+- Execution order: 10.8.1 → 10.8.1A → 10.8.2
+- No existing items modified, no renumbering, no gate changes
+- docs/governance/GOVERNANCE_CHANGE_PR128.md: governance justification
+
+Proof
+N/A — specification addition. See docs/governance/GOVERNANCE_CHANGE_PR128.md.
+
+DoD
+- 10.8.1A appended to Build Route with deliverable, DoD, proof path, gate
+- Dependency chain documented: 10.8.1A prerequisite for 10.8.2
+- No Foundation paths touched
+- No existing items modified
+
+Status
+PASS
