@@ -6429,3 +6429,60 @@ Proof
 See docs/governance/GOVERNANCE_CHANGE_PR124.md.
 Status
 PASS
+
+2026-03-17 — Build Route v2.4 — Item 10.8
+
+Objective
+Authenticated shell + navbar — persistent layout with top nav, mobile bottom
+nav, workspace dropdown, and subscription banner across all authenticated pages.
+
+Changes
+- WeWeb pages created and access rules set:
+  Public: mao-calculator, auth, onboarding, email-verification, change-password,
+  reset-password, forgot-password, deal-viewer, intake-form, error
+  Authenticated: today, acquisition, dispo-dashboard, tc, lead-intake
+- Supabase Auth plugin configured:
+  Redirects: unauthenticated → auth, unauthorized → auth
+  Login component on auth page — on submit navigates to today
+  Sign up tab on auth page — on submit navigates to onboarding
+  Email redirect to email-verification
+  Forgot password redirect to change-password
+- Auth page: Login + Sign Up combined via tab switcher (Log In / Sign Up tabs)
+- Top Nav (desktop): Today | MAO | Acquisition | Dispo | TC | Lead Intake |
+  Bell | Workspace ▾ — all nav items wired to respective pages
+- Workspace ▾ dropdown: Switch workspace (shell only), Workspace settings,
+  Profile settings, Sign out — Sign out wired to Supabase Auth sign out +
+  navigate to auth
+- Bottom Nav (mobile, 767px and below): Facebook-style fixed bottom bar with
+  icons + labels — Today, MAO, Lead Intake, Acq, Dispo, TC + workspace popup
+- Mobile workspace popup: Switch workspace, Workspace settings, Profile settings,
+  Sign out — Sign out wired
+- Subscription banner: two states — expiring (≤5 days, status='expiring') and
+  expired (status='expired'). Status computed server-side by get_user_entitlements_v1.
+  No date math in WeWeb (GUARDRAILS §5). Renew now navigates to onboarding.
+- Global workflow fetch-entitlements: calls get_user_entitlements_v1, stores
+  result in global variable entitlements. Wired to On page load on all
+  authenticated pages via page settings → Trigger page workflows.
+- Global variables created: entitlements (Object), gs_selectedTenantId (Text)
+  per CONTRACTS §4
+- All components saved as multi-page section instances (linked masters) —
+  Sub warning banner, Top Nav, Bottom Nav on all authenticated pages
+- docs/governance/GOVERNANCE_CHANGE_PR125.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8
+- docs/truth/qa_scope_map.json: added 10.8 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.8 proof log path
+- docs/proofs/10.8_authenticated_shell_20260317T013513Z.md
+
+QA findings resolved
+- sign-up page merged into auth page as tab switcher (cleaner UX)
+- Subscription banner amended to two-state model (QA-approved, PR122/123):
+  warning (expiring) + expired. Server-side threshold. No frontend date math.
+- Switch workspace deferred to 10.8.11 — list_user_tenants_v1 RPC does not
+  exist yet. Shell + variable created. QA-approved deferral (PR123).
+- WeWeb Assets vs Components clarified — multi-page section instances used
+  for linked master behavior across all authenticated pages.
+
+Gate
+lane-only until promoted
+
+Status: COMPLETE — pending merge
