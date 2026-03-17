@@ -6485,4 +6485,76 @@ QA findings resolved
 Gate
 lane-only until promoted
 
-Status: COMPLETE — pending merge
+Status: COMPLETE 
+
+2026-03-17 — Build Route v2.4 — Item 10.8.1
+
+Objective
+Slug system backend infrastructure -- tenant_slugs table, resolve_form_slug_v1
+and submit_form_v1 RPCs (anon-callable) for permanent embeddable intake form URLs.
+
+Changes
+- supabase/migrations/20260317000001_10_8_1_slug_system.sql:
+  tenant_slugs table: tenant_id UUID NOT NULL, slug TEXT NOT NULL UNIQUE,
+  slug format validated (^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$), RLS ON,
+  REVOKE from anon/authenticated, FK to tenants(id) ON DELETE CASCADE.
+  draft_deals table: tenant_id, slug, form_type, payload, asking_price,
+  repair_estimate, RLS ON, REVOKE from anon/authenticated, form_type CHECK.
+  resolve_form_slug_v1(p_slug, p_form_type): anon-callable, SECURITY DEFINER,
+  fixed search_path. NOT_FOUND for invalid slug, invalid form_type, nonexistent
+  slug. No existence leak between form types. Returns tenant_id only.
+  submit_form_v1(p_slug, p_form_type, p_payload): anon-callable, SECURITY
+  DEFINER, fixed search_path. Resolves tenant from slug. spam_token required.
+  Seller submissions create draft deal with asking_price + repair_estimate.
+  GRANT EXECUTE to anon + authenticated per CONTRACTS §12 controlled exception.
+- supabase/migrations/20260317000002_10_8_1_fix_comment_encoding.sql:
+  Corrective migration -- replace em dash with ASCII -- in resolve_form_slug_v1
+  comment. Em dash caused schema drift (same issue as 8.9). No interface change.
+- supabase/tests/10_8_1_slug_system_tests.test.sql: 23 pgTAP tests.
+  resolve_form_slug_v1: valid slug resolves, invalid slug NOT_FOUND,
+  invalid/null form_type NOT_FOUND, anon-safe.
+  submit_form_v1: valid seller/buyer, missing spam_token VALIDATION_ERROR,
+  invalid slug NOT_FOUND, invalid form_type VALIDATION_ERROR, null payload
+  VALIDATION_ERROR, draft deal MAO pre-fill verified, anon-safe.
+- docs/artifacts/CONTRACTS.md: §12 controlled exception documented for anon
+  EXECUTE on both RPCs. §17 RPC mapping table updated with both RPCs.
+- docs/truth/definer_allowlist.json: both RPCs added to allow + anon_callable
+- docs/truth/execute_allowlist.json: both RPCs added
+- docs/truth/privilege_truth.json: routine_grants.anon, migration_grant_allowlist
+  updated with both RPCs and anon_routines array
+- docs/truth/rpc_contract_registry.json: both RPCs registered
+- docs/truth/cloud_migration_parity.json: tip 20260317000002, count 43
+- scripts/ci_definer_safety_audit.ps1: anon_callable exemption -- skips tenant
+  membership check for anon-callable RPCs (resolves tenant from slug not JWT)
+- scripts/lint_migration_grants.mjs: allowedAnonRoutine set added -- anon
+  routine grants checked against migration_grant_allowlist.anon_routines
+- docs/governance/GOVERNANCE_CHANGE_PR126.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8.1
+- docs/truth/qa_scope_map.json: added 10.8.1 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.8.1 proof log path
+- docs/proofs/10.8.1_slug_system_<UTC>.log
+
+Issues resolved
+- definer-safety-audit FAIL: anon_callable exemption added to gate script and
+  definer_allowlist.json -- anon RPCs exempt from current_tenant_id() check
+- migration-grant-lint FAIL: anon_routines array added to privilege_truth.json
+  migration_grant_allowlist, gate updated to check against it
+- anon-privilege-audit FAIL: execute_allowlist.json updated with both RPCs
+- schema-drift FAIL: em dash in SQL comment corrupted by pg_dump (same as 8.9).
+  Fixed by corrective migration 20260317000002. Rule: ASCII hyphens only in SQL.
+- cloud-migration-parity FAIL (x2): cloud_migration_parity.json manually updated
+  after each db push (handoff does not auto-update this file)
+- rpc-contract-registry FAIL: both RPCs added to rpc_contract_registry.json
+- plan count mismatch: plan(24) corrected to plan(23) in test file
+
+QA findings
+- draft_deals table not in original DoD but required for submit_form_v1.
+  QA approved -- necessary implementation detail. Will be read by 10.19
+  (intake-to-MAO pre-fill).
+- Two migrations acceptable -- corrective forward migration per GUARDRAILS
+  (no retro-editing historical migrations).
+- No triple-registration triggered -- updates to existing truth files only.
+
+Gate: merge-blocking (existing gates cover new RPCs)
+
+Status: COMPLETE -- merged to main
