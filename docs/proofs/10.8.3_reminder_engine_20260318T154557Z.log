@@ -1,0 +1,128 @@
+PROOF_HEAD=59e2fa7585d6a35a3c9cf6cd8843571d81c51777
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.3 Reminder Engine -- Proof Log ===
+Date: 2026-03-18T11:44:39.8865275-04:00
+Branch: feat/10.8.3-reminder-engine
+PR HEAD SHA: 59e2fa7585d6a35a3c9cf6cd8843571d81c51777
+
+=== DoD 1: deal_reminders table exists ===
+PASS -- id UUID DEFAULT gen_random_uuid() PRIMARY KEY
+     -- deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE
+     -- tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE
+     -- reminder_date TIMESTAMPTZ NOT NULL
+     -- reminder_type TEXT NOT NULL
+     -- completed_at TIMESTAMPTZ (nullable)
+     -- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+     -- row_version BIGINT NOT NULL DEFAULT 1 (added per QA ruling -- GUARDRAILS S8)
+
+=== DoD 2: RLS ON, tenant-scoped, REVOKE ALL ===
+PASS -- RLS enabled, REVOKE ALL from anon, authenticated
+
+=== DoD 3: list_reminders_v1 RPC ===
+PASS -- authenticated, SECURITY DEFINER, SET search_path = public
+     -- Returns overdue and upcoming reminders (completed_at IS NULL)
+     -- tenant isolation via current_tenant_id()
+     -- items always array (COALESCE to [])
+     -- CONTRACTS S17 registered
+
+=== DoD 4: create_reminder_v1 RPC ===
+PASS -- authenticated, SECURITY DEFINER, SET search_path = public
+     -- require_min_role_v1('member') as first executable statement
+     -- Exception caught and returned as JSON envelope (RPC contract consistency)
+     -- VALIDATION_ERROR on null deal_id, reminder_date, reminder_type
+     -- NOT_FOUND if deal not in tenant
+     -- CONTRACTS S17 registered
+
+=== DoD 5: complete_reminder_v1 RPC ===
+PASS -- authenticated, SECURITY DEFINER, SET search_path = public
+     -- require_min_role_v1('member') as first executable statement
+     -- Exception caught and returned as JSON envelope
+     -- Sets completed_at = now(). Idempotent.
+     -- Cross-tenant call is no-op (tenant isolation enforced by WHERE clause)
+     -- CONTRACTS S17 registered
+
+=== DoD 6: CONTRACTS S8 safety rules ===
+PASS -- fixed search_path on all three RPCs
+     -- schema-qualified references throughout
+     -- tenant membership enforcement in list_reminders_v1
+     -- no dynamic SQL
+
+=== DoD 7: REVOKE/GRANT ===
+PASS -- REVOKE ALL FROM PUBLIC on all three RPCs
+     -- GRANT EXECUTE TO authenticated on all three RPCs
+
+=== DoD 8: pgTAP tests 19/19 PASS ===
+PASS -- table exists, RLS enabled
+     -- anon/authenticated zero privileges
+     -- create_reminder_v1: ok=true, code=OK, returns id
+     -- list_reminders_v1: ok=true, code=OK, items present
+     -- list_reminders_v1: excludes completed reminders (RPC called, overdue absent)
+     -- complete_reminder_v1: ok=true, completed_at set after first call
+     -- complete_reminder_v1: idempotent (second + third call ok=true)
+     -- create_reminder_v1: NOT_AUTHORIZED without tenant context (JSON envelope)
+     -- list_reminders_v1: tenant isolation (tenant 2 sees zero tenant 1 reminders)
+     -- cross-tenant isolation: completed_at remains NULL after tenant 2 attempt
+
+=== DoD 9: CONTRACTS S12 updated ===
+PASS -- deal_reminders added to core table list
+
+=== DoD 10: CONTRACTS S17 updated ===
+PASS -- list_reminders_v1, create_reminder_v1, complete_reminder_v1 registered
+
+=== DoD 11-15: Truth files updated ===
+PASS -- privilege_truth.json: three RPCs in routine_grants.authenticated + allowlist
+     -- tenant_table_selector.json: deal_reminders added
+     -- definer_allowlist.json: three RPCs added
+     -- execute_allowlist.json: three RPCs added
+     -- rpc_contract_registry.json: three RPCs registered
+
+=== DoD 16-18: Governance files ===
+PASS -- qa_claim.json: updated to 10.8.3
+     -- qa_scope_map.json: 10.8.3 entry added
+     -- ci_robot_owned_guard.ps1: 10.8.3 proof log path allowlisted
+
+=== DoD 19: Migration encoding ===
+PASS -- named dollar tags only ($) -- no bare pr:preflight
+     -- corrective migration 20260318000002 applied (section sign encoding fix)
+     -- UTF-8 no BOM, LF only, no dynamic SQL
+
+=== DoD 20: Auto-creation out of scope ===
+PASS -- deferred to 10.11 (Acquisition Dashboard + Auto-Advance)
+
+=== QA findings resolved ===
+-- row_version missing from deal_reminders -- added per GUARDRAILS S8
+-- "excludes completed" test bypassed RPC -- fixed to call list_reminders_v1()
+-- idempotency test missing state check -- added completed_at verification
+-- cross-tenant isolation test was insufficient -- fixed to use uncompleted reminder
+-- require_min_role_v1 exception pattern inconsistent -- caught and returned as JSON
+-- section sign in SQL comments caused schema drift -- corrective migration applied
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR132.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/tenant_table_selector.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260318000001_10_8_3_reminder_engine.sql
+supabase/migrations/20260318000002_10_8_3_fix_comment_encoding.sql
+supabase/tests/10_8_3_reminder_engine_tests.test.sql
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.3 Reminder Engine: PASS (merge-blocking)
