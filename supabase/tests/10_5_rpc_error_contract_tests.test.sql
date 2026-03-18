@@ -30,7 +30,7 @@ SELECT set_config('request.jwt.claims',
 SELECT public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 1, '{}'::jsonb);
 
 -- ============================================================
--- create_deal_v1 — CONFLICT (duplicate deal)
+-- create_deal_v1 -- CONFLICT (duplicate deal)
 -- ============================================================
 SELECT is(
   (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'ok',
@@ -54,7 +54,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- update_deal_v1 — CONFLICT (row version mismatch)
+-- update_deal_v1 -- CONFLICT (row version mismatch)
 -- ============================================================
 SELECT is(
   (public.update_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 999)::json)->>'ok',
@@ -78,7 +78,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- create_share_token_v1 — VALIDATION_ERROR (null expires_at)
+-- create_share_token_v1 -- VALIDATION_ERROR (null expires_at)
 -- ============================================================
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, NULL)::json)->>'ok',
@@ -102,7 +102,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- create_share_token_v1 — VALIDATION_ERROR (past expires_at)
+-- create_share_token_v1 -- VALIDATION_ERROR (past expires_at)
 -- ============================================================
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, now() - interval '1 day')::json)->>'code',
@@ -111,7 +111,7 @@ SELECT is(
 );
 
 -- ============================================================
--- create_share_token_v1 — VALIDATION_ERROR (>90 days expires_at)
+-- create_share_token_v1 -- VALIDATION_ERROR (>90 days expires_at)
 -- ============================================================
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, now() + interval '91 days')::json)->>'code',
@@ -125,7 +125,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- create_share_token_v1 — NOT_FOUND (deal not in tenant)
+-- create_share_token_v1 -- NOT_FOUND (deal not in tenant)
 -- ============================================================
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000099'::uuid, now() + interval '1 day')::json)->>'ok',
@@ -149,7 +149,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- create_share_token_v1 — CONFLICT (cardinality — seed 50 tokens)
+-- create_share_token_v1 -- CONFLICT (cardinality -- seed 50 tokens)
 -- ============================================================
 INSERT INTO public.share_tokens (tenant_id, deal_id, token_hash, expires_at)
 SELECT
@@ -181,7 +181,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- revoke_share_token_v1 — VALIDATION_ERROR (null token)
+-- revoke_share_token_v1 -- VALIDATION_ERROR (null token)
 -- ============================================================
 SELECT is(
   (public.revoke_share_token_v1(NULL)::json)->>'ok',
@@ -205,7 +205,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- lookup_share_token_v1 — VALIDATION_ERROR (null deal_id)
+-- lookup_share_token_v1 -- VALIDATION_ERROR (null deal_id)
 -- ============================================================
 SELECT is(
   (public.lookup_share_token_v1('shr_' || repeat('a', 64), NULL)::json)->>'ok',
@@ -229,7 +229,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- lookup_share_token_v1 — NOT_FOUND (invalid format — no existence leak)
+-- lookup_share_token_v1 -- NOT_FOUND (invalid format -- no existence leak)
 -- ============================================================
 SELECT is(
   (public.lookup_share_token_v1('bad_token', 'a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'ok',
@@ -243,7 +243,7 @@ SELECT is(
 );
 
 -- ============================================================
--- lookup_share_token_v1 — NOT_FOUND (valid format, nonexistent token)
+-- lookup_share_token_v1 -- NOT_FOUND (valid format, nonexistent token)
 -- ============================================================
 SELECT is(
   (public.lookup_share_token_v1('shr_' || repeat('b', 64), 'a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'ok',
@@ -257,7 +257,7 @@ SELECT is(
 );
 
 -- ============================================================
--- NOT_AUTHORIZED path — all RPCs (no JWT context)
+-- NOT_AUTHORIZED path -- all RPCs (no JWT context)
 -- ============================================================
 SELECT set_config('request.jwt.claims', '', true);
 

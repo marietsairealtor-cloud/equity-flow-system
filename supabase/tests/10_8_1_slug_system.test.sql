@@ -20,7 +20,7 @@ INSERT INTO public.tenant_slugs (id, tenant_id, slug)
   );
 
 -- ============================================================
--- resolve_form_slug_v1 — valid slug + valid form_type
+-- resolve_form_slug_v1 -- valid slug + valid form_type
 -- ============================================================
 SELECT is(
   (public.resolve_form_slug_v1('test-workspace-01', 'seller')::json)->>'ok',
@@ -49,7 +49,7 @@ SELECT is(
 );
 
 -- ============================================================
--- resolve_form_slug_v1 — invalid slug → NOT_FOUND
+-- resolve_form_slug_v1 -- invalid slug -> NOT_FOUND
 -- ============================================================
 SELECT is(
   (public.resolve_form_slug_v1('nonexistent-slug-99', 'seller')::json)->>'ok',
@@ -68,7 +68,7 @@ SELECT is(
 );
 
 -- ============================================================
--- resolve_form_slug_v1 — invalid form_type → NOT_FOUND (no leak)
+-- resolve_form_slug_v1 -- invalid form_type -> NOT_FOUND (no leak)
 -- ============================================================
 SELECT is(
   (public.resolve_form_slug_v1('test-workspace-01', 'invalid')::json)->>'code',
@@ -82,7 +82,7 @@ SELECT is(
 );
 
 -- ============================================================
--- resolve_form_slug_v1 — null slug → NOT_FOUND
+-- resolve_form_slug_v1 -- null slug -> NOT_FOUND
 -- ============================================================
 SELECT is(
   (public.resolve_form_slug_v1(NULL, 'seller')::json)->>'code',
@@ -91,7 +91,7 @@ SELECT is(
 );
 
 -- ============================================================
--- submit_form_v1 — valid seller submission creates draft deal
+-- submit_form_v1 -- valid seller submission creates draft deal
 -- ============================================================
 SELECT is(
   (public.submit_form_v1(
@@ -122,7 +122,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- submit_form_v1 — valid buyer submission
+-- submit_form_v1 -- valid buyer submission
 -- ============================================================
 SELECT is(
   (public.submit_form_v1(
@@ -135,7 +135,7 @@ SELECT is(
 );
 
 -- ============================================================
--- submit_form_v1 — missing spam token → VALIDATION_ERROR
+-- submit_form_v1 -- missing spam token -> VALIDATION_ERROR
 -- ============================================================
 SELECT is(
   (public.submit_form_v1(
@@ -157,7 +157,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- submit_form_v1 — invalid slug → NOT_FOUND
+-- submit_form_v1 -- invalid slug -> NOT_FOUND
 -- ============================================================
 SELECT is(
   (public.submit_form_v1(
@@ -170,7 +170,7 @@ SELECT is(
 );
 
 -- ============================================================
--- submit_form_v1 — invalid form_type → VALIDATION_ERROR
+-- submit_form_v1 -- invalid form_type -> VALIDATION_ERROR
 -- ============================================================
 SELECT is(
   (public.submit_form_v1(
@@ -183,7 +183,7 @@ SELECT is(
 );
 
 -- ============================================================
--- submit_form_v1 — null payload → VALIDATION_ERROR
+-- submit_form_v1 -- null payload -> VALIDATION_ERROR
 -- ============================================================
 SELECT is(
   (public.submit_form_v1('test-workspace-01', 'seller', NULL)::json)->>'code',
@@ -205,7 +205,7 @@ SELECT is(
 );
 
 -- ============================================================
--- Verify anon privilege — both RPCs callable without auth context
+-- Verify anon privilege -- both RPCs callable without auth context
 -- ============================================================
 SELECT is(
   (public.resolve_form_slug_v1('test-workspace-01', 'seller')::json)->>'ok',

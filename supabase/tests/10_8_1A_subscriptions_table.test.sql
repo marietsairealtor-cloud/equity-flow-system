@@ -2,7 +2,7 @@
 -- Build Route 10.8.1A: Subscriptions Table pgTAP Tests
 
 BEGIN;
-SELECT plan(12);
+SELECT plan(13);
 
 -- ============================================================
 -- Table existence
@@ -112,6 +112,16 @@ SELECT lives_ok(
     VALUES ('b0810000-0000-0000-0000-000000000002'::uuid, 'expiring', now() + interval '3 days');
   $tap$,
   'tenant_subscriptions: expiring status accepted'
+);
+
+-- ============================================================
+-- row_version column exists (B9-F04 remediation)
+-- ============================================================
+SELECT has_column(
+  'public',
+  'tenant_subscriptions',
+  'row_version',
+  'tenant_subscriptions has row_version column'
 );
 
 SELECT * FROM finish();

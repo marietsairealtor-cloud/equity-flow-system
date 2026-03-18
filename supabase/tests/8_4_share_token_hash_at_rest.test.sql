@@ -28,7 +28,7 @@ SELECT has_column('public', 'share_tokens', 'token_hash', 'share_tokens has toke
 -- Test 2: share_tokens table does NOT have raw token column
 SELECT hasnt_column('public', 'share_tokens', 'token', 'share_tokens does not have raw token column');
 
--- Test 3: Raw token cannot be reconstructed — token_hash is bytea, not reversible
+-- Test 3: Raw token cannot be reconstructed -- token_hash is bytea, not reversible
 SELECT ok(
   (SELECT pg_typeof(token_hash)::text = 'bytea' FROM public.share_tokens WHERE id = 'e0000000-0000-0000-0000-000000000084'),
   'token_hash is bytea (not reversible text)'

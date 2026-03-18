@@ -1,4 +1,5 @@
--- 6.4 RLS Structural Audit — Tenant-Owned Table Selector [HARDENED]
+BEGIN;
+-- 6.4 RLS Structural Audit -- Tenant-Owned Table Selector [HARDENED]
 -- GUARDRAILS: SQL-only, no DO blocks, no PL/pgSQL, no \cmds, named dollar tags only
 -- Authority: Build Route v2.4 S6.4, CONTRACTS.md S3
 -- Tests: reject forbidden permissive patterns on tenant-owned tables
@@ -107,3 +108,4 @@ SELECT is(
 );
 
 SELECT finish();
+ROLLBACK;

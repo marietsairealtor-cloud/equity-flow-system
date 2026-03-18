@@ -2,7 +2,7 @@
 -- pgTAP: 8.6 Share Token Revocation
 -- Proves: revoked tokens return NOT_FOUND, identical to nonexistent tokens.
 -- Revocation is idempotent. Revoked token cannot be used even if expires_at in future.
--- GUARDRAILS §25-28: SQL-only, no DO blocks, no backslash lines.
+-- GUARDRAILS S25-28: SQL-only, no DO blocks, no backslash lines.
 BEGIN;
 SELECT plan(10);
 
@@ -30,7 +30,7 @@ VALUES
    'f0000000-0000-0000-0000-000000000001'::uuid,
    'f1000000-0000-0000-0000-000000000001'::uuid,
    extensions.digest('shr_86000000000000000000000000000000000000000000000000000000000000aa', 'sha256'), now() + interval '30 days', NULL),
-  -- revoked token (future expiry — revocation must override)
+  -- revoked token (future expiry -- revocation must override)
   ('f3000000-0000-0000-0000-000000000002'::uuid,
    'f0000000-0000-0000-0000-000000000001'::uuid,
    'f1000000-0000-0000-0000-000000000001'::uuid,
@@ -78,18 +78,18 @@ SELECT is(
   'revoke_share_token_v1 returns OK'
 );
 
--- Test 6: Token is now revoked — lookup returns NOT_FOUND
+-- Test 6: Token is now revoked -- lookup returns NOT_FOUND
 SELECT is(
   (public.lookup_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000aa', 'f1000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'NOT_FOUND',
   'Token is NOT_FOUND after revocation'
 );
 
--- Test 7: Revocation is idempotent — revoking again returns OK
+-- Test 7: Revocation is idempotent -- revoking again returns OK
 SELECT is(
   (public.revoke_share_token_v1('shr_86000000000000000000000000000000000000000000000000000000000000aa')::json ->> 'code'),
   'OK',
-  'Revocation is idempotent — second revoke returns OK'
+  'Revocation is idempotent -- second revoke returns OK'
 );
 
 -- Test 8: Revoking nonexistent token returns OK (silent success)

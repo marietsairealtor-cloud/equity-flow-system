@@ -1,4 +1,4 @@
--- pgTAP: 6.9 Foundation Surface Ready — activity log
+-- pgTAP: 6.9 Foundation Surface Ready -- activity log
 BEGIN;
 SELECT plan(8);
 

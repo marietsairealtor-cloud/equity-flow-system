@@ -1,7 +1,7 @@
 -- supabase/tests/8_10_share_token_scope_enforcement.test.sql
 -- pgTAP: 8.10 Share Token Scope Enforcement
 -- Proves: deal_id scope enforced, cross-resource fails, no existence leak.
--- GUARDRAILS §25-28: SQL-only, no DO blocks, no backslash lines.
+-- GUARDRAILS S25-28: SQL-only, no DO blocks, no backslash lines.
 BEGIN;
 SELECT plan(7);
 

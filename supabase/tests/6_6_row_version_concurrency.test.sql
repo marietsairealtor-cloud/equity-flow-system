@@ -13,7 +13,7 @@ VALUES (
   1, 1, NULL
 );
 
--- Insert deal_inputs snapshot (tenant-match trigger fires — tenant matches deal)
+-- Insert deal_inputs snapshot (tenant-match trigger fires -- tenant matches deal)
 INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, row_version, assumptions)
 VALUES (
   '00000000-0000-0000-0000-000000000010'::uuid,
@@ -34,7 +34,7 @@ SELECT is(
   'deals row_version starts at 1'
 );
 
--- Simulate first concurrent UPDATE (expected row_version = 1) — succeeds
+-- Simulate first concurrent UPDATE (expected row_version = 1) -- succeeds
 UPDATE public.deals
 SET row_version  = row_version + 1,
     calc_version = 2
@@ -83,7 +83,7 @@ SELECT is(
 SELECT is(
   (SELECT calc_version FROM public.deals WHERE id = '00000000-0000-0000-0000-000000000002'::uuid),
   2,
-  'calc_version remains 2 — stale UPDATE never overwrote'
+  'calc_version remains 2 -- stale UPDATE never overwrote'
 );
 
 -- =============================================================
