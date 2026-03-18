@@ -1,0 +1,93 @@
+PROOF_HEAD=64bbb23a63bba6143e1e7eacac0ab135b3ab1113
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.2 Entitlements Extension (Subscription Status) -- Proof Log ===
+Date: 2026-03-17T20:48:52.8262388-04:00
+Branch: feat/10.8.2-entitlements-extension
+PR HEAD SHA: 64bbb23a63bba6143e1e7eacac0ab135b3ab1113
+
+=== DoD: get_user_entitlements_v1 return shape extended ===
+PASS -- subscription_status field added: active | expiring | expired | none
+     -- subscription_days_remaining field added: integer, null when no subscription
+     -- DROP FUNCTION + CREATE FUNCTION per CONTRACTS §2 (return shape change)
+     -- Existing fields unchanged: tenant_id, user_id, is_member, role, entitled
+
+=== DoD: expiring computed server-side ===
+PASS -- status = expiring when active AND <=5 days remain
+     -- Threshold (5 days) in RPC only -- WeWeb performs zero date math (GUARDRAILS §5)
+     -- v_expiring_threshold := 5 in function body
+
+=== DoD: subscription_days_remaining computed server-side ===
+PASS -- EXTRACT(DAY FROM (current_period_end - now()))::integer
+     -- null when subscription_status = none
+     -- 0 or negative when expired
+
+=== DoD: Gate logic derivable from single RPC call ===
+PASS -- no memberships: onboarding Step 1 (is_member=false)
+     -- membership + status none/expired: onboarding Step 3
+     -- membership + status active/expiring: hub
+
+=== DoD: WeWeb performs zero date math ===
+PASS -- UI checks status string only per GUARDRAILS §5
+     -- WEWEB_ARCHITECTURE §6.2 updated in prior QA ruling
+
+=== DoD: Response schema updated ===
+PASS -- docs/truth/rpc_schemas/get_user_entitlements_v1.json version bumped to 2
+     -- subscription_status and subscription_days_remaining documented
+     -- enum values locked: active | expiring | expired | none
+
+=== DoD: Existing pgTAP tests updated (10.4) ===
+PASS -- 10_4_rpc_response_contract_tests.test.sql: plan 25 -> 27
+     -- Added: data.subscription_status present
+     -- Added: data.subscription_status=none (no subscription seeded)
+     -- 27/27 PASS
+
+=== DoD: RPC response contract tests (10.8.2) ===
+PASS -- 10_8_2_entitlements_extension_tests.test.sql: 19/19 PASS
+     -- no subscription: status=none, days_remaining=null
+     -- active >5 days: status=active
+     -- active <=5 days: status=expiring, days_remaining=3
+     -- period end past: status=expired
+     -- canceled: status=expired
+     -- existing fields unchanged (non-breaking)
+     -- NOT_AUTHORIZED path verified
+
+=== DoD: No breaking change to existing callers ===
+PASS -- additive fields only
+     -- envelope unchanged
+     -- all existing data fields present
+
+=== DoD: DROP FUNCTION + CREATE FUNCTION per CONTRACTS §2 ===
+PASS -- DROP FUNCTION IF EXISTS public.get_user_entitlements_v1()
+     -- CREATE FUNCTION public.get_user_entitlements_v1()
+     -- Grants restored after DROP
+
+=== CONTRACTS §24 added ===
+PASS -- Entitlement extension documented in CONTRACTS.md §24
+     -- entitlement-policy-coupling gate satisfied
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR130.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/rpc_schemas/get_user_entitlements_v1.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260317000004_10_8_2_entitlements_extension.sql
+supabase/tests/10_4_rpc_response_contract_tests.test.sql
+supabase/tests/10_8_2_entitlements_extension_tests.test.sql
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.2 Entitlements Extension (Subscription Status): PASS (merge-blocking)
