@@ -6905,3 +6905,82 @@ Gate
 lane-only (governance-only PR -- no DB or schema changes)
 
 Status: COMPLETE -- merged to main
+
+2026-03-18 — Build Route v2.4 — Prerequisite: Test File Rename Normalization
+
+Objective
+Rename all pgTAP test files to conform to GUARDRAILS §29F naming rule:
+strip timestamp prefix from paired migration filename, append .test.sql.
+Rename-only PR -- no content changes.
+
+Changes
+- supabase/tests/ -- 11 files renamed:
+  tenant_isolation.test.sql              -> 6_3_tenant_integrity_suite.test.sql
+  rls_structural_audit.test.sql          -> 6_4_rls_structural_audit.test.sql
+  row_version_concurrency.test.sql       -> 6_6_row_version_concurrency.test.sql
+  share_link_isolation.test.sql          -> 6_7_share_link_isolation.test.sql
+  6.10_activity_log_append_only.pgtap.sql-> 6_10_activity_log_append_only.test.sql
+  7_6_calc_version_protocol.pgtap.sql    -> 7_6_calc_version_protocol.test.sql
+  7_10_tenant_role_ordering_invariant.sql-> 7_10_tenant_role_ordering_invariant.test.sql
+  10_8_1_slug_system_tests.test.sql      -> 10_8_1_slug_system.test.sql
+  10_8_1A_subscriptions_table_tests.test.sql -> 10_8_1A_subscriptions_table.test.sql
+  10_8_2_entitlements_extension_tests.test.sql -> 10_8_2_entitlements_extension.test.sql
+  10_8_3_reminder_engine_tests.test.sql  -> 10_8_3_reminder_engine.test.sql
+- All 30 test files pass after rename: 328/328 PASS
+
+Status: COMPLETE -- merged to main (prerequisite to 10.8.3A)
+
+---
+
+2026-03-18 — Build Route v2.4 — Item 10.8.3A
+
+Objective
+Migration + pgTAP retrospective audit -- discovery only. Enumerate all 46
+migrations and 30 test files merged to main prior to this item. Apply
+GUARDRAILS authoring checklist to every file. QA independently validates
+all findings. No fixes in this item.
+
+Changes
+- docs/proofs/10.8.3A_migration_test_audit_20260318T210227Z.log:
+  Consolidated audit log. 9 batches. 76 files examined. 54 findings recorded.
+  Both coder and QA sign-offs present.
+- docs/governance/GOVERNANCE_CHANGE_PR134.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8.3A
+- docs/truth/qa_scope_map.json: added 10.8.3A entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.8.3A proof log path
+
+Audit summary
+  Total files examined:          76 (46 migrations + 30 test files)
+  Total findings:                54 (32 migration + 22 test)
+  Open findings (10.8.3B scope): 36
+    Non-ASCII in migrations:     19 files
+    Non-ASCII in test files:     17 files
+    M6 row_version missing:      1 (tenant_subscriptions)
+    M10 REVOKE FROM PUBLIC:      4 (2 confirmed + 2 verify-live)
+    T8 BEGIN/ROLLBACK missing:   2 (6_3 HIGH risk, 6_4 LOW risk)
+  Waivers required:              8 (all pre-production retro-edits)
+  Closed/resolved:               18 findings
+
+Key findings by category
+- Non-ASCII (§, —, →) in SQL comments caused schema drift in multiple
+  migrations. Rule already in SOP. 18 migration files require corrective
+  forward migrations in 10.8.3B.
+- REVOKE FROM PUBLIC absent on early RPCs (pre-9.1). 9.1 migration closed
+  most gaps. 2 confirmed remaining + 2 to verify against production DB.
+- T8 violations: 6_3 and 6_4 test files not wrapped in BEGIN/ROLLBACK.
+  6_3 leaves persistent state -- HIGH risk, must fix in 10.8.3B.
+- M4 retro-edits: 8 waivers documented. All pre-production. B4-F01 and
+  B9-F07 were functional changes (REVOKE FROM PUBLIC, row_version) -- both
+  confirmed pre-production and QA-mandated. Waiver files required in 10.8.3B.
+
+10.8.3B scope
+1. Non-ASCII corrective forward migrations (19 migration files)
+2. Test file ASCII fixes (17 test files)
+3. tenant_subscriptions row_version forward migration
+4. Consolidating REVOKE FROM PUBLIC forward migration
+5. 6_3 + 6_4 BEGIN/ROLLBACK wrap
+6. 8 waiver files (docs/waivers/WAIVER_PR<NNN>.md)
+
+Gate: merge-blocking (qa:verify + proof-commit-binding)
+
+Status: COMPLETE -- merged to main
