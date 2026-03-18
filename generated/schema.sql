@@ -1117,6 +1117,7 @@ CREATE TABLE IF NOT EXISTS "public"."tenant_subscriptions" (
     "stripe_subscription_id" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
     CONSTRAINT "tenant_subscriptions_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'expiring'::"text", 'expired'::"text", 'canceled'::"text"])))
 );
 
@@ -1272,6 +1273,8 @@ ALTER TABLE "public"."tenant_subscriptions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON FUNCTION "public"."current_tenant_id"() FROM PUBLIC;
 
 REVOKE ALL ON FUNCTION "public"."get_user_entitlements_v1"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_user_entitlements_v1"() TO "authenticated";
