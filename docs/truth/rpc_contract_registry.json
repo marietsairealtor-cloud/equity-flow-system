@@ -41,7 +41,7 @@
     },
     {
       "name": "get_user_entitlements_v1",
-      "version": 2,
+      "version": 3,
       "build_route_owner": "7.4",
       "input_contract": "CONTRACTS.md §RPC get_user_entitlements_v1",
       "response_schema": "docs/truth/rpc_schemas/get_user_entitlements_v1.json",

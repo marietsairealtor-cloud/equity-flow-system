@@ -395,6 +395,9 @@
     "10.8.1": { "proof_pattern": "^docs/proofs/10\\.8\\.1_slug_system_" },
     "10.8.1A": {
       "proof_pattern": "^docs/proofs/10\\.8\\.1A_subscriptions_table_"
+    },
+    "10.8.2": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.2_entitlements_extension_"
     }
   }
 }
