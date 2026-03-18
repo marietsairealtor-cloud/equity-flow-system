@@ -1,0 +1,159 @@
+PROOF_HEAD=2ec69b68039938a1e9f13c0f1996eae26e07cca3
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.3B Migration + pgTAP Test Remediation -- Proof Log ===
+Date: 2026-03-18T19:49:00.3349526-04:00
+Branch: feat/10.8.3B-migration-test-remediation
+PR HEAD SHA: 2ec69b68039938a1e9f13c0f1996eae26e07cca3
+
+=== DoD 1: Every FAIL finding from 10.8.3A resolved ===
+
+-- Migration Non-ASCII findings (19 files) --
+ACKNOWLEDGED-HISTORICAL: B1-F03, B1-F04, B1-F05, B2-F03, B2-F05, B3-F02,
+  B3-F04, B3-F06, B3-F07, B3-F09, B4-F03, B5-F02, B7-F01, B7-F02,
+  B9-F02, B9-F03, B9-F05, B9-F06, B9-F09
+  Migration files are sealed and applied. Non-ASCII in comments caused no
+  runtime behavior change. SOP pre-check rule prevents recurrence.
+
+-- M6 row_version missing --
+FIXED: B9-F04 -- tenant_subscriptions row_version
+  Migration: 20260318000004_10_8_3B_tenant_subscriptions_row_version.sql
+  Adds row_version bigint NOT NULL DEFAULT 1 to tenant_subscriptions.
+  Test: 10_8_1A_subscriptions_table.test.sql updated -- plan(12) -> plan(13),
+  row_version column assertion added.
+
+-- M10 REVOKE FROM PUBLIC --
+FIXED: B2-F02, B4-F02 -- current_tenant_id() and foundation_log_activity_v1()
+  Migration: 20260318000003_10_8_3B_revoke_from_public.sql
+  REVOKE EXECUTE ON FUNCTION public.current_tenant_id() FROM PUBLIC
+  REVOKE EXECUTE ON FUNCTION public.foundation_log_activity_v1(text, jsonb, uuid) FROM PUBLIC
+CLOSED: B5-F03, B2-F06 -- old signatures confirmed absent from production DB
+  SELECT confirmed: only current signatures live. Old sigs were dropped.
+
+-- T8 BEGIN/ROLLBACK missing --
+FIXED: B1-F06 -- 6_3_tenant_integrity_suite.test.sql
+  HIGH risk -- leaves persistent state. Wrapped in BEGIN/ROLLBACK.
+  Also fixed: direct current_tenant_id() call replaced with list_deals_v1() check
+  (function no longer callable by authenticated per REVOKE FROM PUBLIC migration).
+FIXED: B1-F08 -- 6_4_rls_structural_audit.test.sql
+  LOW risk -- read-only. Wrapped in BEGIN/ROLLBACK.
+
+-- Non-ASCII in test files (19 files) --
+FIXED: B1-F07, B1-F09, B2-F09, B2-F10, B3-F10, B5-F06, B6-F01, B6-F02,
+  B6-F03, B6-F04, B7-F05, B7-F06, B7-F07, B8-F03, B9-F10, B9-F11, B9-F12
+  All em dashes, section signs, arrows replaced with ASCII equivalents.
+FIXED (late findings not in 10.8.3A audit):
+  6_11_role_guard_helper.test.sql -- 1 non-ASCII char fixed
+  7_10_tenant_role_ordering_invariant.test.sql -- 4 non-ASCII chars fixed
+
+-- M4 retro-edit waivers (8 findings) --
+WAIVED: B1-F01, B2-F01, B2-F07, B3-F01, B4-F01, B7-F03, B9-F01, B9-F07
+  Consolidated waiver: docs/waivers/WAIVER_PR417.md
+  All pre-production. Privilege end-state confirmed correct.
+
+=== DoD 2: No finding silently dropped ===
+PASS -- all 36 open findings accounted for above
+
+=== DoD 3: Forward-only migrations ===
+PASS -- 20260318000003 and 20260318000004 are new forward-only migrations
+     -- No retro-editing of previously applied migrations
+
+=== DoD 4: Truth artifacts regenerated ===
+PASS -- npm run handoff + handoff:commit executed
+     -- generated/schema.sql, contracts.snapshot.json, handoff_latest.txt updated
+
+=== DoD 5: Plan counts match actual test calls ===
+PASS -- 10_8_1A: plan(13) matches 13 actual assertions
+     -- All other test files verified via full suite run
+
+=== DoD 6: RPC behavioral assertions call RPCs ===
+PASS -- 6_3 diagnostic replaced: no longer calls current_tenant_id() directly
+     -- All RPC behavioral tests call RPCs and inspect return values
+
+=== DoD 7: Isolation tests prove negative outcome ===
+PASS -- all isolation tests verified in 10.8.3A audit and unchanged
+
+=== DoD 8: State-change RPCs have post-call verification ===
+PASS -- verified in 10.8.3A audit and unchanged
+
+=== DoD 9: Consolidating REVOKE FROM PUBLIC migration ===
+PASS -- 20260318000003_10_8_3B_revoke_from_public.sql
+     -- Covers: current_tenant_id(), foundation_log_activity_v1(text, jsonb, uuid)
+     -- Single atomic file. Not split across PRs.
+     -- anon-privilege-audit: PASS after migration applied
+
+=== DoD 10: tenant_subscriptions row_version ===
+PASS -- 20260318000004_10_8_3B_tenant_subscriptions_row_version.sql
+     -- row_version bigint NOT NULL DEFAULT 1 added
+     -- 10_8_1A_subscriptions_table.test.sql updated with column assertion
+
+=== DoD 11: CI full suite green ===
+PASS -- clean-room-replay: PASS
+PASS -- schema-drift: PASS
+PASS -- pgtap: PASS (30 files, 329 tests)
+PASS -- definer-safety-audit: PASS
+PASS -- anon-privilege-audit: PASS
+PASS -- rpc-response-contract-tests: PASS
+PASS -- cloud-migration-parity: PASS (tip 20260318000004, count 49)
+PASS -- migration-grant-lint: PASS
+PASS -- stop-the-line-xor: PASS (WAIVER_PR417.md present)
+PASS -- waiver-debt-enforcement: PASS (1 waiver in window)
+PASS -- entitlement-policy-coupling: PASS (CONTRACTS §25-26 added)
+
+=== DoD 12: Proof log ===
+This file. Contains every finding ID, original violation, resolution.
+
+=== DoD 13-15: Truth files updated ===
+PASS -- qa_claim.json: updated to 10.8.3B
+     -- qa_scope_map.json: 10.8.3B entry added
+     -- ci_robot_owned_guard.ps1: 10.8.3B proof log path allowlisted
+
+=== DoD 16: Waiver file present ===
+PASS -- docs/waivers/WAIVER_PR417.md
+     -- Contains exact text: QA: NOT AN INCIDENT
+     -- Covers all 8 M4 waiver findings
+     -- Expiry: 2026-04-18
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR136.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+docs/waivers/WAIVER_PR417.md
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260318000003_10_8_3B_revoke_from_public.sql
+supabase/migrations/20260318000004_10_8_3B_tenant_subscriptions_row_version.sql
+supabase/tests/10_4_rpc_response_contract_tests.test.sql
+supabase/tests/10_5_rpc_error_contract_tests.test.sql
+supabase/tests/10_8_1A_subscriptions_table.test.sql
+supabase/tests/10_8_1_slug_system.test.sql
+supabase/tests/6_11_role_guard_helper.test.sql
+supabase/tests/6_3_tenant_integrity_suite.test.sql
+supabase/tests/6_4_rls_structural_audit.test.sql
+supabase/tests/6_6_row_version_concurrency.test.sql
+supabase/tests/6_7_share_link_isolation.test.sql
+supabase/tests/6_9_foundation_surface.test.sql
+supabase/tests/7_10_tenant_role_ordering_invariant.test.sql
+supabase/tests/7_9_tenant_context_integrity.test.sql
+supabase/tests/8_10_share_token_scope_enforcement.test.sql
+supabase/tests/8_4_share_token_hash_at_rest.test.sql
+supabase/tests/8_5_share_surface_abuse_controls.test.sql
+supabase/tests/8_6_share_token_revocation.test.sql
+supabase/tests/8_7_share_token_usage_logging.test.sql
+supabase/tests/8_8_share_token_secure_generation.test.sql
+supabase/tests/8_9_share_token_expiration_invariant.test.sql
+supabase/tests/9_5_token_cardinality_guard.test.sql
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.3B Migration + pgTAP Test Remediation: PASS (merge-blocking)
