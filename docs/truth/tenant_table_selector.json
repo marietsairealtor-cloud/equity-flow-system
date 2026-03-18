@@ -3,6 +3,7 @@
     "activity_log",
     "deal_inputs",
     "deal_outputs",
+    "deal_reminders",
     "deals",
     "draft_deals",
     "share_tokens",
