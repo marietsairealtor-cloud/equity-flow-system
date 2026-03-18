@@ -1,8 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "rpc": "get_user_entitlements_v1",
-  "build_route_item": "10.3",
-  "description": "Returns tenant membership, role, and entitlement state for the calling user.",
+  "build_route_item": "10.8.2",
+  "description": "Returns tenant membership, role, entitlement state, and subscription status for the calling user.",
   "envelope": {
     "ok": { "type": "boolean", "nullable": false },
     "code": { "type": "string", "nullable": false },
@@ -17,7 +17,9 @@
       "user_id": { "type": "uuid", "nullable": false },
       "is_member": { "type": "boolean", "nullable": false },
       "role": { "type": "string", "nullable": true, "enum": ["owner", "admin", "member"], "notes": "null if user has no membership row" },
-      "entitled": { "type": "boolean", "nullable": false }
+      "entitled": { "type": "boolean", "nullable": false },
+      "subscription_status": { "type": "string", "nullable": false, "enum": ["active", "expiring", "expired", "none"], "notes": "expiring = active AND <=5 days remain. Computed server-side. WeWeb checks string only." },
+      "subscription_days_remaining": { "type": "integer", "nullable": true, "notes": "null when subscription_status is none. 0 or negative when expired." }
     },
     "error": null
   },
@@ -32,5 +34,5 @@
       }
     }
   },
-  "notes": "role is null when is_member is false. entitled mirrors is_member in v1 — no seat cap logic yet."
+  "notes": "role is null when is_member is false. entitled mirrors is_member. subscription_status and subscription_days_remaining added in Build Route 10.8.2. Expiring threshold (5 days) lives in RPC -- WeWeb performs zero date math per GUARDRAILS §5."
 }
