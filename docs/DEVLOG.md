@@ -6633,3 +6633,49 @@ QA findings
 Gate: merge-blocking (existing gates cover new table)
 
 Status: COMPLETE -- merged to main
+
+2026-03-18 — Build Route v2.4 — Item 10.8.2
+
+Objective
+Extend get_user_entitlements_v1 with subscription_status and
+subscription_days_remaining fields. Required for onboarding gate logic
+and subscription banner in WeWeb (10.8).
+
+Changes
+- supabase/migrations/20260317000004_10_8_2_entitlements_extension.sql:
+  DROP FUNCTION + CREATE FUNCTION per CONTRACTS §2 (return shape change).
+  New fields in data: subscription_status (active | expiring | expired | none),
+  subscription_days_remaining (integer, null when none).
+  Expiring threshold: 5 days, computed server-side. WeWeb zero date math.
+  Canceled status or period_end <= now() -> expired.
+  No subscription record -> none.
+  Grants restored after DROP: REVOKE ALL, GRANT EXECUTE to authenticated.
+- supabase/tests/10_8_2_entitlements_extension_tests.test.sql: 19 pgTAP tests.
+  no subscription: none/null, active >5d: active, active <=5d: expiring,
+  period end past: expired, canceled: expired, existing fields unchanged,
+  NOT_AUTHORIZED path verified.
+- supabase/tests/10_4_rpc_response_contract_tests.test.sql: updated.
+  plan 25 -> 27. Added subscription_status present + subscription_status=none
+  tests. 27/27 PASS.
+- docs/truth/rpc_schemas/get_user_entitlements_v1.json: version 1 -> 2.
+  subscription_status and subscription_days_remaining documented.
+- docs/truth/rpc_contract_registry.json: get_user_entitlements_v1 version
+  bumped to 3.
+- docs/artifacts/CONTRACTS.md: §24 added -- entitlement extension behavioral
+  change documented (required by entitlement-policy-coupling gate).
+- docs/truth/cloud_migration_parity.json: tip 20260317000004, count 45
+- docs/governance/GOVERNANCE_CHANGE_PR130.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8.2
+- docs/truth/qa_scope_map.json: added 10.8.2 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.8.2 proof log path
+- docs/proofs/10.8.2_entitlements_extension_20260318T005017Z.log
+
+Issues resolved
+- entitlement-policy-coupling FAIL: CONTRACTS §24 added documenting
+  behavioral change to get_user_entitlements_v1.
+- cloud-migration-parity FAIL: db push run before handoff. Manual tip
+  update required (handoff does not auto-update cloud_migration_parity.json).
+
+Gate: merge-blocking (RPC signature change)
+
+Status: COMPLETE -- merged to main
