@@ -367,3 +367,27 @@ Gate logic derivable from single RPC call:
 - Membership + status `active` or `expiring` → hub
 
 Additive change — existing callers unaffected. DROP + CREATE per CONTRACTS §2.
+
+## 25) Privilege Firewall Closure — Historical RPC Gaps (10.8.3B)
+
+Forward migration `20260318000003_10_8_3B_revoke_from_public.sql` closes two historical
+privilege gaps identified in the 10.8.3A audit:
+
+- `public.current_tenant_id()` — `REVOKE EXECUTE FROM PUBLIC` applied. Function was
+  callable by PUBLIC since its original migration. Now restricted to SECURITY DEFINER
+  RPC call chains only, consistent with GUARDRAILS §18.
+
+- `public.foundation_log_activity_v1(text, jsonb, uuid)` — `REVOKE EXECUTE FROM PUBLIC`
+  applied. Same historical gap, same remediation.
+
+All other business RPCs had PUBLIC revoked via migration `20260310000004_9_1_revoke_anon_rpc_execute.sql`.
+These two were not covered by that migration and are now closed.
+
+## 26) tenant_subscriptions Optimistic Concurrency (10.8.3B)
+
+Forward migration `20260318000004_10_8_3B_tenant_subscriptions_row_version.sql` adds
+`row_version bigint NOT NULL DEFAULT 1` to `public.tenant_subscriptions`.
+
+`tenant_subscriptions` is a mutable core record — status and current_period_end are
+updated by billing events. GUARDRAILS §8 requires `row_version` on mutable core records.
+This was identified as finding B9-F04 in the 10.8.3A audit and is now remediated.
