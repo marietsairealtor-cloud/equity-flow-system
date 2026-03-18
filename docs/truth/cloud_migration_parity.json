@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260318000001",
-  "migration_tip_file": "20260318000001_10_8_3_reminder_engine.sql",
-  "migration_count": 46,
+  "migration_tip": "20260318000002",
+  "migration_tip_file": "20260318000002_10_8_3_fix_comment_encoding.sql",
+  "migration_count": 47,
   "pinned_at": "2026-03-11"
 }
