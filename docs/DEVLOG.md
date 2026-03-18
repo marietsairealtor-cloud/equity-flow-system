@@ -7132,3 +7132,77 @@ Gate
 lane-only (governance-only PR -- no DB or schema changes)
 
 Status: COMPLETE -- merged to main
+
+2026-03-18 — Build Route v2.4 — Item 10.8.3B
+
+Objective
+Migration + pgTAP test remediation -- close every FAIL finding from the
+10.8.3A audit. Forward-only migrations first, tests only after migrations
+confirmed CI-green. System exits this item with every audited migration+test
+pair in a clean, verifiable state.
+
+Changes
+
+Migrations:
+- supabase/migrations/20260318000003_10_8_3B_revoke_from_public.sql:
+  Consolidating REVOKE EXECUTE FROM PUBLIC on two functions missing this
+  revoke since their original migrations (identified in 10.8.3A audit):
+  current_tenant_id() and foundation_log_activity_v1(text, jsonb, uuid).
+  Old signatures (create_deal_v1(uuid,bigint,int), lookup_share_token_v1(text))
+  confirmed absent from production DB -- those findings closed.
+- supabase/migrations/20260318000004_10_8_3B_tenant_subscriptions_row_version.sql:
+  Adds row_version bigint NOT NULL DEFAULT 1 to tenant_subscriptions.
+  Table is mutable (status, current_period_end updated by billing events).
+  GUARDRAILS S8 requires row_version on mutable core records.
+  Finding B9-F04 from 10.8.3A audit.
+
+Test file fixes (19 files -- Non-ASCII replacement):
+  6_4, 6_6, 6_7, 6_9, 7_9, 8_4, 8_5, 8_6, 8_7, 8_8, 8_9, 8_10,
+  9_5, 10_4, 10_5, 10_8_1, 10_8_1A, 6_11, 7_10
+  Em dashes, section signs, and arrows replaced with ASCII equivalents.
+  6_11 and 7_10 were late findings not captured in 10.8.3A audit.
+
+Test file structural fixes:
+- 6_3_tenant_integrity_suite.test.sql:
+  HIGH risk T8 finding -- test left persistent state. Wrapped in single
+  BEGIN/ROLLBACK. Inner BEGIN/COMMIT blocks removed. Direct call to
+  current_tenant_id() replaced with list_deals_v1() diagnostic check
+  (function no longer callable by authenticated after 000003 migration).
+- 6_4_rls_structural_audit.test.sql:
+  LOW risk T8 finding -- read-only test, no state risk. Wrapped in
+  BEGIN/ROLLBACK.
+- 10_8_1A_subscriptions_table.test.sql:
+  plan(12) updated to plan(13). row_version column assertion added to
+  verify B9-F04 migration correctness.
+
+Governance:
+- docs/waivers/WAIVER_PR417.md: consolidated waiver covering 8 historical
+  M4 retro-edit findings. All pre-production. Expiry 2026-04-18.
+- docs/artifacts/CONTRACTS.md: S25 (privilege firewall closure for
+  current_tenant_id and foundation_log_activity_v1) and S26
+  (tenant_subscriptions optimistic concurrency) added.
+- docs/governance/GOVERNANCE_CHANGE_PR136.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8.3B
+- docs/truth/qa_scope_map.json: 10.8.3B entry added
+- scripts/ci_robot_owned_guard.ps1: 10.8.3B proof log path allowlisted
+- docs/truth/cloud_migration_parity.json: tip 20260318000004, count 49
+- docs/proofs/10.8.3B_migration_test_remediation_20260318T235007Z.log
+
+Finding resolution summary
+  Total open findings from 10.8.3A:   36
+  ACKNOWLEDGED-HISTORICAL:            19 (migration Non-ASCII -- sealed files)
+  FIXED via forward migration:         2 (M10 REVOKE FROM PUBLIC)
+  FIXED via forward migration:         1 (M6 row_version -- tenant_subscriptions)
+  FIXED via test edit:                21 (Non-ASCII + T8 + plan count + row_version assertion)
+  WAIVED:                              8 (M4 retro-edits -- WAIVER_PR417.md)
+  CLOSED (old sigs not live):          2 (B5-F03, B2-F06)
+  Late findings fixed (not in audit):  2 (6_11, 7_10 Non-ASCII)
+
+CI result
+  Files=30, Tests=329, Result: PASS
+  All gates green including anon-privilege-audit, definer-safety-audit,
+  entitlement-policy-coupling (CONTRACTS S25-26 added), waiver-debt-enforcement.
+
+Gate: merge-blocking -- all required checks passed
+
+Status: COMPLETE -- merged to main
