@@ -6706,3 +6706,68 @@ DoD
 
 Status
 PASS
+
+2026-03-18 — Build Route v2.4 — Item 10.8.3
+
+Objective
+Reminder engine -- deal_reminders table + three authenticated RPCs for
+reminder management. No background jobs, no external extension dependencies.
+
+Changes
+- supabase/migrations/20260318000001_10_8_3_reminder_engine.sql:
+  deal_reminders table: id UUID PK, deal_id UUID NOT NULL FK deals,
+  tenant_id UUID NOT NULL FK tenants, reminder_date TIMESTAMPTZ NOT NULL,
+  reminder_type TEXT NOT NULL, completed_at TIMESTAMPTZ, created_at TIMESTAMPTZ,
+  row_version BIGINT NOT NULL DEFAULT 1. RLS ON. REVOKE ALL from anon/authenticated.
+  list_reminders_v1(): authenticated, SECURITY DEFINER, fixed search_path.
+  Returns overdue + upcoming reminders (completed_at IS NULL) for current tenant.
+  create_reminder_v1(p_deal_id, p_reminder_date, p_reminder_type): authenticated,
+  SECURITY DEFINER, fixed search_path. require_min_role_v1('member') first.
+  Exception caught + returned as JSON envelope (RPC contract consistency).
+  VALIDATION_ERROR on null inputs. NOT_FOUND if deal not in tenant.
+  complete_reminder_v1(p_reminder_id): authenticated, SECURITY DEFINER,
+  fixed search_path. require_min_role_v1('member') first. Idempotent.
+  Cross-tenant call is no-op (WHERE tenant_id = v_tenant enforced).
+- supabase/migrations/20260318000002_10_8_3_fix_comment_encoding.sql:
+  Corrective migration -- replace section sign (S8) with ASCII S8 in
+  create_reminder_v1 and complete_reminder_v1 comments. Schema drift fix.
+  Same pattern as 8.9 (em dash) and 10.8.1 (em dash). Rule: ASCII only in SQL.
+- supabase/tests/10_8_3_reminder_engine_tests.test.sql: 19 pgTAP tests.
+  table exists, RLS enabled, anon/authenticated zero privileges,
+  create_reminder_v1 creates reminder, list_reminders_v1 returns results,
+  list_reminders_v1 excludes completed (RPC called directly),
+  complete_reminder_v1 sets completed_at, idempotent, NOT_AUTHORIZED,
+  tenant isolation, cross-tenant isolation (completed_at remains NULL).
+- docs/artifacts/CONTRACTS.md: S12 deal_reminders added to core table list.
+  S17 three RPCs registered with all 5 required fields.
+- docs/truth/definer_allowlist.json: three RPCs added
+- docs/truth/execute_allowlist.json: three RPCs added
+- docs/truth/privilege_truth.json: three RPCs in routine_grants.authenticated
+  and migration_grant_allowlist.authenticated_routines
+- docs/truth/rpc_contract_registry.json: three RPCs registered
+- docs/truth/tenant_table_selector.json: deal_reminders added
+- docs/truth/cloud_migration_parity.json: tip 20260318000002, count 47
+- docs/governance/GOVERNANCE_CHANGE_PR132.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8.3
+- docs/truth/qa_scope_map.json: added 10.8.3 entry
+- scripts/ci_robot_owned_guard.ps1: allowlisted 10.8.3 proof log path
+- docs/proofs/10.8.3_reminder_engine_20260318T154557Z.log
+
+QA findings resolved
+- row_version missing from deal_reminders -- added per GUARDRAILS S8
+- "excludes completed" test bypassed RPC -- fixed to call list_reminders_v1()
+- idempotency test missing state check -- added completed_at verification
+  after first complete_reminder_v1 call
+- cross-tenant isolation test insufficient -- fixed to use uncompleted reminder,
+  verify completed_at remains NULL after tenant 2 attempt
+- require_min_role_v1 exception pattern inconsistent with RPC contract --
+  exception caught in BEGIN/EXCEPTION block, returned as JSON envelope
+- section sign in SQL comments caused schema drift (same as em dash issue) --
+  corrective migration 20260318000002 applied. ASCII only rule added to SOP.
+
+DoD 20: Auto-creation of reminders on stage transitions out of scope.
+Deferred to 10.11 (Acquisition Dashboard + Auto-Advance).
+
+Gate: merge-blocking (existing gates cover new table + RPCs)
+
+Status: COMPLETE -- merged to main
