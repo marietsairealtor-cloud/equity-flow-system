@@ -120,6 +120,42 @@
         "VALIDATION_ERROR"
       ],
       "notes": "Anon-callable per CONTRACTS.md §12 controlled exception. Resolves tenant from slug. VALIDATION_ERROR on missing spam_token, invalid form_type, or null payload. NOT_FOUND on invalid slug. Seller submissions create draft deal with asking_price and repair_estimate pre-filled."
+    },
+    {
+      "name": "list_reminders_v1",
+      "version": 1,
+      "build_route_owner": "10.8.3",
+      "input_contract": "CONTRACTS.md §17 list_reminders_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
+      "notes": "Returns overdue and upcoming reminders for current tenant. completed_at IS NULL filter. items always array."
+    },
+    {
+      "name": "create_reminder_v1",
+      "version": 1,
+      "build_route_owner": "10.8.3",
+      "input_contract": "CONTRACTS.md §17 create_reminder_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
+      "notes": "Min role: member. VALIDATION_ERROR on null deal_id, reminder_date, or reminder_type. NOT_FOUND if deal not in tenant. require_min_role_v1 exception caught and returned as JSON envelope."
+    },
+    {
+      "name": "complete_reminder_v1",
+      "version": 1,
+      "build_route_owner": "10.8.3",
+      "input_contract": "CONTRACTS.md §17 complete_reminder_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
+      "notes": "Min role: member. Idempotent -- completing already-completed reminder returns OK. Cross-tenant call is no-op (tenant isolation enforced by WHERE clause)."
     }
   ]
 }

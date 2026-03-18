@@ -72,6 +72,63 @@ $$;
 
 ALTER FUNCTION "public"."check_deal_tenant_match"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."complete_reminder_v1"("p_reminder_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+BEGIN
+  -- Role enforcement first (CONTRACTS S8, Build Route 7.8)
+  -- Caught and returned as JSON envelope per RPC contract
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
+  END;
+
+  v_tenant := public.current_tenant_id();
+
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_reminder_id IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  null,
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_id', 'Required'))
+    );
+  END IF;
+
+  UPDATE public.deal_reminders
+  SET completed_at = now()
+  WHERE id = p_reminder_id
+    AND tenant_id = v_tenant
+    AND completed_at IS NULL;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('id', p_reminder_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."complete_reminder_v1"("p_reminder_id" "uuid") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer DEFAULT 1, "p_assumptions" "jsonb" DEFAULT '{}'::"jsonb") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -120,6 +177,92 @@ END;
 $$;
 
 ALTER FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer, "p_assumptions" "jsonb") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."create_reminder_v1"("p_deal_id" "uuid", "p_reminder_date" timestamp with time zone, "p_reminder_type" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant      uuid;
+  v_reminder_id uuid;
+BEGIN
+  -- Role enforcement first (CONTRACTS S8, Build Route 7.8)
+  -- Caught and returned as JSON envelope per RPC contract
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
+  END;
+
+  v_tenant := public.current_tenant_id();
+
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_deal_id IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  null,
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('deal_id', 'Required'))
+    );
+  END IF;
+
+  IF p_reminder_date IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  null,
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_date', 'Required'))
+    );
+  END IF;
+
+  IF p_reminder_type IS NULL OR trim(p_reminder_type) = '' THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  null,
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_type', 'Required'))
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.deals d
+    WHERE d.id = p_deal_id AND d.tenant_id = v_tenant
+  ) THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_FOUND',
+      'data',  null,
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  INSERT INTO public.deal_reminders (deal_id, tenant_id, reminder_date, reminder_type)
+  VALUES (p_deal_id, v_tenant, p_reminder_date, p_reminder_type)
+  RETURNING id INTO v_reminder_id;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('id', v_reminder_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."create_reminder_v1"("p_deal_id" "uuid", "p_reminder_date" timestamp with time zone, "p_reminder_type" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."create_share_token_v1"("p_deal_id" "uuid", "p_expires_at" timestamp with time zone) RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -385,6 +528,69 @@ END;
 $$;
 
 ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer) OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."list_reminders_v1"() RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_user   uuid;
+  v_items  json;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
+    );
+  END IF;
+
+  -- Verify tenant membership
+  IF NOT EXISTS (
+    SELECT 1 FROM public.tenant_memberships tm
+    WHERE tm.tenant_id = v_tenant AND tm.user_id = v_user
+  ) THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  null,
+      'error', json_build_object('message', 'Not a member of this tenant', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT json_agg(
+    json_build_object(
+      'id',            dr.id,
+      'deal_id',       dr.deal_id,
+      'tenant_id',     dr.tenant_id,
+      'reminder_date', dr.reminder_date,
+      'reminder_type', dr.reminder_type,
+      'completed_at',  dr.completed_at,
+      'created_at',    dr.created_at,
+      'overdue',       (dr.reminder_date < now() AND dr.completed_at IS NULL)
+    )
+    ORDER BY dr.reminder_date ASC
+  )
+  INTO v_items
+  FROM public.deal_reminders dr
+  WHERE dr.tenant_id = v_tenant
+    AND dr.completed_at IS NULL;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('items', COALESCE(v_items, '[]'::json)),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_reminders_v1"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
@@ -825,6 +1031,19 @@ CREATE TABLE IF NOT EXISTS "public"."deal_outputs" (
 
 ALTER TABLE "public"."deal_outputs" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."deal_reminders" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "reminder_date" timestamp with time zone NOT NULL,
+    "reminder_type" "text" NOT NULL,
+    "completed_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL
+);
+
+ALTER TABLE "public"."deal_reminders" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."deals" (
     "id" "uuid" NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -927,6 +1146,9 @@ ALTER TABLE ONLY "public"."deal_inputs"
 ALTER TABLE ONLY "public"."deal_outputs"
     ADD CONSTRAINT "deal_outputs_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."deal_reminders"
+    ADD CONSTRAINT "deal_reminders_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_pkey" PRIMARY KEY ("id");
 
@@ -981,6 +1203,12 @@ ALTER TABLE ONLY "public"."deal_inputs"
 ALTER TABLE ONLY "public"."deal_outputs"
     ADD CONSTRAINT "deal_outputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
 
+ALTER TABLE ONLY "public"."deal_reminders"
+    ADD CONSTRAINT "deal_reminders_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."deal_reminders"
+    ADD CONSTRAINT "deal_reminders_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_assumptions_snapshot_fk" FOREIGN KEY ("assumptions_snapshot_id") REFERENCES "public"."deal_inputs"("id") DEFERRABLE INITIALLY DEFERRED;
 
@@ -1010,6 +1238,8 @@ ALTER TABLE "public"."calc_versions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."deal_inputs" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."deal_outputs" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."deal_reminders" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."deals" ENABLE ROW LEVEL SECURITY;
 

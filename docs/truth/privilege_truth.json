@@ -68,6 +68,18 @@
       {
         "routine": "submit_form_v1",
         "privilege": "EXECUTE"
+      },
+      {
+        "routine": "list_reminders_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "create_reminder_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "complete_reminder_v1",
+        "privilege": "EXECUTE"
       }
     ]
   },
@@ -117,7 +129,10 @@
       "revoke_share_token_v1",
       "create_share_token_v1",
       "resolve_form_slug_v1",
-      "submit_form_v1"
+      "submit_form_v1",
+      "list_reminders_v1",
+      "create_reminder_v1",
+      "complete_reminder_v1"
     ],
     "anon_routines": [
       "resolve_form_slug_v1",

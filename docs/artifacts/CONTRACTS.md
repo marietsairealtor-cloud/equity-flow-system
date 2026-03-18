@@ -174,7 +174,7 @@ Snapshot changes require accompanying CONTRACTS.md changes in the same PR (enfor
 
 Note (9.1): EXECUTE on all business RPCs (create_deal_v1, update_deal_v1, list_deals_v1, get_user_entitlements_v1) revoked from PUBLIC/anon. These RPCs require authenticated context only. Only current_tenant_id() remains anon-accessible via PostgREST surface (utility function, reads JWT claims only).
 
-- Core tables (`tenants`, `tenant_memberships`, `tenant_invites`, `deals`, `documents`, `tenant_subscriptions`) **must not have any GRANTs** to `anon` or `authenticated`.
+- Core tables (`tenants`, `tenant_memberships`, `tenant_invites`, `deals`, `documents`, `tenant_subscriptions`, `deal_reminders`) **must not have any GRANTs**
 - Privilege truth is defined by the **absence of GRANTs**, not the presence of `REVOKE` lines.
 - `user_profiles` is a controlled exception:
   - Allowed: `GRANT SELECT, UPDATE ON public.user_profiles TO authenticated`
@@ -269,6 +269,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
 | submit_form_v1 | 10.8.1 | Submit public intake form; creates draft deal with MAO pre-fill for seller submissions | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
+| list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| create_reminder_v1 | 10.8.3 | Create a deal reminder for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| complete_reminder_v1 | 10.8.3 | Mark a reminder as completed (idempotent) | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 
 ### Mapping Rules
 

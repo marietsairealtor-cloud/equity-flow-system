@@ -398,6 +398,9 @@
     },
     "10.8.2": {
       "proof_pattern": "^docs/proofs/10\\.8\\.2_entitlements_extension_"
+    },
+    "10.8.3": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.3_reminder_engine_"
     }
   }
 }

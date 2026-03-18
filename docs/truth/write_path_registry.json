@@ -1,13 +1,31 @@
 {
     "version":  1,
-    "generated":  "2026-03-18T00:38:40Z",
+    "generated":  "2026-03-18T15:37:37Z",
     "write_paths":  [
+                        {
+                            "path_type":  "rpc",
+                            "name":  "complete_reminder_v1",
+                            "tables":  [
+                                           "deal_reminders"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
                         {
                             "path_type":  "rpc",
                             "name":  "create_deal_v1",
                             "tables":  [
                                            "deal_inputs",
                                            "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_reminder_v1",
+                            "tables":  [
+                                           "deal_reminders"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
