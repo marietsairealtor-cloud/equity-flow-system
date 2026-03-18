@@ -5,7 +5,7 @@
 -- Tests run as superuser with JWT claims set to simulate calling context.
 
 BEGIN;
-SELECT plan(25);
+SELECT plan(27);
 
 -- Seed test tenant and user
 INSERT INTO public.tenants (id)
@@ -194,6 +194,18 @@ SELECT isnt(
   (public.get_user_entitlements_v1()::json)->'data'->>'entitled',
   NULL,
   'get_user_entitlements_v1 OK: data.entitled present'
+);
+
+SELECT isnt(
+  (public.get_user_entitlements_v1()::json)->'data'->>'subscription_status',
+  NULL,
+  'get_user_entitlements_v1 OK: data.subscription_status present'
+);
+
+SELECT is(
+  (public.get_user_entitlements_v1()::json)->'data'->>'subscription_status',
+  'none',
+  'get_user_entitlements_v1 OK: data.subscription_status=none (no subscription seeded)'
 );
 
 SELECT * FROM finish();

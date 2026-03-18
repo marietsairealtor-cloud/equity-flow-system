@@ -344,3 +344,23 @@ Violations return `VALIDATION_ERROR` with field-level error:
 - `error.fields.expires_at = 'Maximum token lifetime is 90 days'`
 
 Signature unchanged: `create_share_token_v1(p_deal_id uuid, p_expires_at timestamptz)`.
+
+## 24) Entitlement RPC Extension — Subscription Status (10.8.2)
+
+`get_user_entitlements_v1` return shape extended (Build Route 10.8.2).
+
+New fields in `data`:
+- `subscription_status`: `active | expiring | expired | none` — computed server-side from `tenant_subscriptions`. `expiring` when active AND ≤5 days remain. `none` when no subscription record exists.
+- `subscription_days_remaining`: integer, null when `subscription_status` is `none`. 0 or negative when expired.
+
+Computation rules:
+- Threshold (5 days) lives in RPC only. WeWeb performs zero date math (GUARDRAILS §5).
+- `canceled` status or `current_period_end <= now()` → `expired`.
+- No subscription record → `none`.
+
+Gate logic derivable from single RPC call:
+- No memberships → onboarding Step 1
+- Membership + status `none` or `expired` → onboarding Step 3
+- Membership + status `active` or `expiring` → hub
+
+Additive change — existing callers unaffected. DROP + CREATE per CONTRACTS §2.
