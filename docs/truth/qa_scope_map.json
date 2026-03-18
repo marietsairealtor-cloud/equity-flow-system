@@ -401,6 +401,9 @@
     },
     "10.8.3": {
       "proof_pattern": "^docs/proofs/10\\.8\\.3_reminder_engine_"
+    },
+    "10.8.3A": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.3A_migration_test_audit_"
     }
   }
 }
