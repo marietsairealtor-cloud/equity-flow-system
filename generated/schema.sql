@@ -79,7 +79,7 @@ CREATE OR REPLACE FUNCTION "public"."complete_reminder_v1"("p_reminder_id" "uuid
 DECLARE
   v_tenant uuid;
 BEGIN
-  -- Role enforcement first (CONTRACTS Â§8, Build Route 7.8)
+  -- Role enforcement first (CONTRACTS S8, Build Route 7.8)
   -- Caught and returned as JSON envelope per RPC contract
   BEGIN
     PERFORM public.require_min_role_v1('member');
@@ -112,14 +112,12 @@ BEGIN
     );
   END IF;
 
-  -- Idempotent update -- only update if belongs to tenant and not already completed
   UPDATE public.deal_reminders
   SET completed_at = now()
   WHERE id = p_reminder_id
     AND tenant_id = v_tenant
     AND completed_at IS NULL;
 
-  -- Silently succeed whether or not row was updated (idempotent)
   RETURN json_build_object(
     'ok',   true,
     'code', 'OK',
@@ -188,7 +186,7 @@ DECLARE
   v_tenant      uuid;
   v_reminder_id uuid;
 BEGIN
-  -- Role enforcement first (CONTRACTS Â§8, Build Route 7.8)
+  -- Role enforcement first (CONTRACTS S8, Build Route 7.8)
   -- Caught and returned as JSON envelope per RPC contract
   BEGIN
     PERFORM public.require_min_role_v1('member');
@@ -212,7 +210,6 @@ BEGIN
     );
   END IF;
 
-  -- Validate inputs
   IF p_deal_id IS NULL THEN
     RETURN json_build_object(
       'ok',    false,
@@ -240,7 +237,6 @@ BEGIN
     );
   END IF;
 
-  -- Verify deal belongs to tenant
   IF NOT EXISTS (
     SELECT 1 FROM public.deals d
     WHERE d.id = p_deal_id AND d.tenant_id = v_tenant
