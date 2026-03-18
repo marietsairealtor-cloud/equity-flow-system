@@ -32,13 +32,14 @@ This is the complete step-by-step sequence from starting an objective to closing
 1. Create a PR branch from clean main.
 2. Complete all implementation changes:
    - Code, scripts, workflow changes
-   - If you introduce any NEW file under docs/truth/**, you must ‘triple-register’ it: wire it into (1) robot-owned guard, (2) truth-bootstrap validation, and (3) handoff regeneration.
+   - If you introduce any NEW file under docs/truth/**, you must 'triple-register' it: wire it into (1) robot-owned guard, (2) truth-bootstrap validation, and (3) handoff regeneration.
    - Governance files (`docs/governance/GOVERNANCE_CHANGE_PR*.md`) if governance surface touched
    - Allowlist canonical proof log path in `scripts/ci_robot_owned_guard.ps1`
    - Update `docs/truth/qa_claim.json` and `docs/truth/qa_scope_map.json`  with the claimed Build Route item ID
    - All of the above are implementation changes. Commit them here, not in the proof tail.
    - **Gate pre-check (migrations only):** If the PR adds a migration, scan it for calc-logic tokens (`calc_version`, `calculate_`, `compute_`, etc.). If any match, pre-emptively update `docs/truth/calc_version_registry.json` in the same commit. Do not wait for `ci_calc_version_lint` to fail in CI.
    - **Gate pre-check (schema/contracts):** If the PR adds a migration that changes the schema, pre-emptively add a substantive note to `docs/artifacts/CONTRACTS.md` documenting the behavioral change. Do not wait for `ci_entitlement_policy_coupling` to fail in CI.
+   - **Gate pre-check (migrations only):** If the PR adds or modifies any migration, scan every SQL comment in that file for non-ASCII characters before committing. No `§`, `—`, `→`, or any Unicode punctuation is permitted in SQL comments. ASCII hyphens (`--`) and alphanumeric text only. Fix violations before the first commit — do not wait for schema drift to surface the issue in CI.
 
 ### Phase 2 — Truth Artifacts (only if PR touches DB/contracts/schema)
 
@@ -364,6 +365,7 @@ Waivers must be:
 Expired waivers must fail CI.
 
 Waiver removal requires:
+
 PR opened → CI green → approved → merged
 
 ---
@@ -400,6 +402,7 @@ The following are prohibited:
 * Introduce dynamic SQL in migrations
 * Bypass proof artifact requirements
 * Include DEVLOG in proof tail commit
+* Modify a test to achieve a passing CI run without first correcting the underlying migration
 
 Violation = governance failure.
 

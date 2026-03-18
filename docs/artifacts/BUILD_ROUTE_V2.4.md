@@ -4293,8 +4293,108 @@ One table + three RPCs. Follow-up reminders surface through Today view and Acqui
 **Gate:** merge-blocking (existing gates: clean-room-replay, schema-drift, pgtap, definer-safety-audit, anon-privilege-audit, rpc-response-contract-tests, rpc-mapping-contract)
 
 **Prerequisite:** 10.8.1A merged and main clean.
+
+# Build Route — Items 10.8.3A and 10.8.3B
+# Insert immediately after 10.8.3 in BUILD_ROUTE_V2_4.md
+# Status: BLOCKING — no item after 10.8.3 may merge until 10.8.3B is closed.
+
 ---
 
+### **10.8.3A — Migration + pgTAP Retrospective Audit**
+
+**Deliverable:**
+Proof-backed audit report covering every migration and paired pgTAP test file merged to main prior to this item. Identifies all violations of GUARDRAILS authoring rules and the Authoring Law below. No fixes in this item — discovery only. Coder produces the draft report. QA validates every finding independently and issues signed sign-off before proof log is finalized. Both sign-offs are required. Neither alone is sufficient.
+
+**Authoring Law (LOCKED — governs this audit and all future migration + test work):**
+The migration is truth. The test verifies truth. Order is non-negotiable:
+1. Write the migration. It is the system of record.
+2. Apply the migration to a clean DB. If it fails, fix the migration.
+3. Write the pgTAP test to verify what the migration claims. The test must fail if the migration is absent or wrong.
+4. If a test fails after migration is applied, the migration is wrong. Fix the migration. Do not touch the test until the migration is correct.
+5. A test that passes without the migration present is not a test — it is dead code.
+
+**DoD (all must be true):**
+
+1. Coder enumerates every migration file in `supabase/migrations/**` by filename.
+2. Coder enumerates every pgTAP test file in `supabase/tests/**` by filename.
+3. For each migration+test pair, coder applies the Audit Checklist below and records PASS or FAIL per check.
+4. Unpaired migrations (no test file) are noted as UNPAIRED.
+5. Unpaired tests (no migration) are flagged as ORPHAN.
+6. Every FAIL finding includes: filename, rule violated (GUARDRAILS rule number or Authoring Law step), one-line description of the defect.
+7. Coder commits draft audit log to PR branch as `docs/proofs/10.8.3A_migration_test_audit_<UTC>.log`. No edits after commit.
+8. Coder uploads all migration and test files to QA. QA independently validates every finding in the coder's report and appends a signed QA SIGN-OFF block to the proof log confirming or overriding each finding.
+9. No migration or test file is modified in this PR. Audit only.
+10. Summary counts in proof log: total pairs examined, total PASS, total FAIL, total UNPAIRED migrations, total ORPHAN tests.
+
+**Audit Checklist — Migration (applied to every migration file):**
+
+- M1: No bare `$$` anywhere. Named dollar tags only (`$fn$`, `$tap$`, `$sql$`, etc.). (GUARDRAILS §29)
+- M2: UTF-8 without BOM. LF line endings only. (GUARDRAILS §30–31)
+- M3: No `DO $$ ... EXECUTE ...` or any dynamic SQL. (GUARDRAILS Forbidden: Dynamic SQL in Migrations)
+- M4: No retro-editing of a previously merged migration. (GUARDRAILS Privilege Firewall Guardrail)
+- M5: Every tenant-scoped table has `tenant_id NOT NULL`. (GUARDRAILS §7)
+- M6: Every mutable core table has `row_version` column. (GUARDRAILS §8)
+- M7: RLS enabled on every tenant-scoped table. (GUARDRAILS §11)
+- M8: `REVOKE ALL` on table from `anon` and `authenticated`. (GUARDRAILS §13)
+- M9: Every RPC is `SECURITY DEFINER` with `SET search_path = public`. (GUARDRAILS §15)
+- M10: `REVOKE EXECUTE FROM PUBLIC` and `GRANT EXECUTE TO authenticated` on every RPC. (GUARDRAILS §14)
+- M11: No `service_role` key reference anywhere in migration. (GUARDRAILS §12)
+
+**Audit Checklist — pgTAP Test (applied to every test file):**
+
+- T1: SQL-only. No `DO` blocks. No PL/pgSQL. (GUARDRAILS §25)
+- T2: No lines beginning with `\`. (GUARDRAILS §26)
+- T3: `plan(n)` or `no_plan()` declared. `SELECT * FROM finish()` present. (GUARDRAILS §27)
+- T4: Plan count matches actual test call count exactly. Count every `SELECT is(`, `SELECT isnt(`, `SELECT ok(`, `SELECT has_table(`, `SELECT has_column(`, `SELECT throws_ok(`. Mismatch = FAIL. (GUARDRAILS §27–28)
+- T5: No test directly queries a table to verify an RPC's behavior. Every RPC behavioral test calls the RPC and inspects its return value. A test labelled as verifying an RPC that queries the underlying table instead = FAIL. (Authoring Law §3)
+- T6: Every tenant isolation test uses a distinct second tenant with its own seed data. Cross-tenant isolation must be proven by attempting the action as tenant 2 and verifying the negative outcome — not by asserting a state already set by tenant 1. (Authoring Law §3)
+- T7: Every state-change RPC has a post-call state verification via a read RPC or explicit assertion — not by assuming success based on `ok=true` alone. (Authoring Law §3)
+- T8: Wrapped in `BEGIN` / `ROLLBACK`. No test leaves persistent state.
+
+**Proof:** `docs/proofs/10.8.3A_migration_test_audit_<UTC>.log`
+
+**Gate:** merge-blocking (existing gates: `qa:verify` validates proof log exists and is registered in `qa_scope_map.json`; proof-commit-binding validates log is commit-bound)
+
+**Prerequisite:** 10.8.3 merged and main clean.
+
+---
+
+### **10.8.3B — Migration + pgTAP Test Remediation**
+
+**Deliverable:**
+Every FAIL finding in the 10.8.3A audit log corrected and closed. Migrations corrected first. Tests rewritten only after the corrected migration is confirmed CI-green. System exits this item with every audited migration+test pair in a clean, verifiable state.
+
+**Authoring Law (same as 10.8.3A — standing order):**
+The migration is truth. The test verifies truth. Fix the migration first. Confirm it applies cleanly. Only then rewrite the test. A test modified before its migration is confirmed correct is not a fix — it is the same defect restated.
+
+**DoD (all must be true):**
+
+1. Every FAIL finding from `docs/proofs/10.8.3A_migration_test_audit_<UTC>.log` is resolved. Resolution must be one of:
+   - FIXED: migration corrected, test rewritten, CI green. CI run link required.
+   - WAIVED: waiver file `docs/waivers/WAIVER_PR<NNN>.md` exists with justification, QA sign-off, and expiry date. (AUTOMATION §9)
+2. No finding from the audit log may be silently dropped. Every finding appears in the remediation proof log with its resolution status.
+3. For every FIXED migration: corrected via new forward-only migration if already applied to production. Retro-editing a previously applied migration is FORBIDDEN. (GUARDRAILS Privilege Firewall Guardrail)
+4. For every FIXED migration: `generated/schema.sql`, `generated/contracts.snapshot.json`, and `docs/handoff_latest.txt` regenerated and committed.
+5. For every FIXED test: plan count matches actual test call count exactly.
+6. For every FIXED test: every RPC behavioral assertion calls the RPC and inspects its return value — no direct table queries substituting for RPC calls.
+7. For every FIXED test: every isolation test proves the negative outcome directly.
+8. For every FIXED test: every state-change RPC has post-call state verification via a read RPC or explicit assertion.
+9. CI full suite green on all corrected pairs: `clean-room-replay`, `schema-drift`, `pgtap`, `definer-safety-audit`, `anon-privilege-audit`, `rpc-response-contract-tests`.
+10. docs/proofs/10.8.3B_migration_test_remediation_<UTC>.log exists containing: each finding ID from 10.8.3A, original violation, resolution (FIXED or WAIVED), and for FIXED — migration file corrected, test file rewritten, CI run link.
+
+**Forbidden in this item:**
+- Modifying a test before the migration is confirmed correct and CI-green.
+- Removing a failing test instead of fixing the underlying migration.
+- Closing a finding as FIXED without a CI run link.
+- Merging any remediation PR with a red CI check.
+
+**Proof:** `docs/proofs/10.8.3B_migration_test_remediation_<UTC>.log`
+
+**Gate:** merge-blocking (existing gates: `clean-room-replay`, `schema-drift`, `pgtap`, `definer-safety-audit`, `anon-privilege-audit`, `rpc-response-contract-tests`, `qa:verify`, `proof-commit-binding`)
+
+**Prerequisite:** 10.8.3A merged and main clean. Audit log finalized and committed.
+
+---
 ### **10.8.4 — Deal Health Computation**
 
 **Deliverable:**
