@@ -6679,3 +6679,30 @@ Issues resolved
 Gate: merge-blocking (RPC signature change)
 
 Status: COMPLETE -- merged to main
+
+## 2026-03-17 — Build Route v2.4 — Build Route Modification: 10.8.3 Reminder Engine Rewrite
+
+Objective
+Rewrite 10.8.3 DoD to remove two blockers identified before implementation: pg_cron extension dependency (not in governed deployment path) and stage transition auto-creation (depends on 10.11 which owns stage transition logic).
+
+Changes
+- BUILD_ROUTE_V2_4.md: 10.8.3 DoD replaced
+- pg_cron job removed, replaced with list_reminders_v1 polling RPC
+- Auto-creation on stage transition removed from 10.8.3, deferred to 10.11
+- Three RPCs added: list_reminders_v1, create_reminder_v1, complete_reminder_v1
+- Full truth file registration requirements added to DoD
+- docs/governance/GOVERNANCE_CHANGE_PR131.md: governance justification
+
+Proof
+N/A — specification amendment. See docs/governance/GOVERNANCE_CHANGE_PR131.md.
+
+DoD
+- 10.8.3 DoD rewritten in BUILD_ROUTE_V2_4.md
+- pg_cron dependency eliminated
+- Stage transition hook deferred to 10.11
+- Three RPC contracts specified
+- No existing items modified beyond 10.8.3
+- Alignment verified against all nine governance documents
+
+Status
+PASS

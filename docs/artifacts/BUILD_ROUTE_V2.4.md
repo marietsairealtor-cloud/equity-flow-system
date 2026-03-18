@@ -4263,21 +4263,36 @@ Extend `get_user_entitlements_v1` to include subscription status. Required for o
 ### **10.8.3 — Reminder Engine**
 
 **Deliverable:**
-One table + one pg_cron job. Follow-up reminders surface through notification bell and Today view.
+One table + three RPCs. Follow-up reminders surface through Today view and Acquisition detail. No background jobs. No external extension dependencies.
 
-**DoD:**
+**DoD (all must be true):**
 
-- `deal_reminders` table exists: `id UUID`, `deal_id UUID NOT NULL`, `tenant_id UUID NOT NULL`, `reminder_date TIMESTAMPTZ NOT NULL`, `reminder_type TEXT NOT NULL`, `completed_at TIMESTAMPTZ`, `created_at TIMESTAMPTZ`
-- RLS ON, tenant-scoped, REVOKE ALL from anon/authenticated (per GUARDRAILS §11-13)
-- pg_cron job runs on schedule, identifies overdue reminders (reminder_date < now() AND completed_at IS NULL)
-- Reminder auto-created on stage transitions: Offer Sent → sets follow-up reminder (configurable default: 3 days)
-- Read via existing list RPCs or new `list_reminders_v1` RPC (authenticated, SECURITY DEFINER)
-- pgTAP tests: reminder creation, overdue detection, completion marking, tenant isolation
+1. `deal_reminders` table exists: `id UUID DEFAULT gen_random_uuid() PRIMARY KEY`, `deal_id UUID NOT NULL REFERENCES deals(id)`, `tenant_id UUID NOT NULL REFERENCES tenants(id)`, `reminder_date TIMESTAMPTZ NOT NULL`, `reminder_type TEXT NOT NULL`, `completed_at TIMESTAMPTZ`, `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+2. RLS ON, tenant-scoped, REVOKE ALL from anon/authenticated (per GUARDRAILS §11–13). No direct table access.
+3. `list_reminders_v1()` RPC: authenticated, SECURITY DEFINER, fixed search_path. Returns overdue and upcoming reminders for current tenant. Overdue = `reminder_date < now() AND completed_at IS NULL`. No tenant_id parameter — derived from `current_tenant_id()`. Registered in CONTRACTS §17.
+4. `create_reminder_v1(p_deal_id UUID, p_reminder_date TIMESTAMPTZ, p_reminder_type TEXT)` RPC: authenticated, SECURITY DEFINER, fixed search_path, `require_min_role_v1('member')` as first executable statement. No tenant_id parameter. Registered in CONTRACTS §17.
+5. `complete_reminder_v1(p_reminder_id UUID)` RPC: authenticated, SECURITY DEFINER, fixed search_path, `require_min_role_v1('member')` as first executable statement. Sets `completed_at = now()`. Idempotent — completing an already-completed reminder succeeds silently. No tenant_id parameter. Registered in CONTRACTS §17.
+6. All three RPCs follow CONTRACTS §8 (SECURITY DEFINER safety rules): fixed search_path, schema-qualified references, tenant membership enforcement, no dynamic SQL.
+7. REVOKE EXECUTE from PUBLIC/anon on all three RPCs. GRANT EXECUTE to authenticated only.
+8. pgTAP tests prove: table exists, RLS enabled, anon has zero privileges, authenticated has zero privileges, `list_reminders_v1` returns overdue reminders correctly, `list_reminders_v1` excludes completed reminders, `list_reminders_v1` enforces tenant isolation, `create_reminder_v1` creates reminder, `create_reminder_v1` fails without tenant context (NOT_AUTHORIZED), `complete_reminder_v1` sets completed_at, `complete_reminder_v1` is idempotent, cross-tenant reminder access fails.
+9. CONTRACTS §12 updated — `deal_reminders` added to core table list.
+10. CONTRACTS §17 updated — all three RPCs registered with all five required fields.
+11. `docs/truth/privilege_truth.json` updated — table has zero grants.
+12. `docs/truth/tenant_table_selector.json` updated — table is tenant-scoped.
+13. `docs/truth/definer_allowlist.json` updated — all three RPCs added.
+14. `docs/truth/execute_allowlist.json` updated — all three RPCs added.
+15. `docs/truth/rpc_contract_registry.json` updated — all three RPCs registered.
+16. `docs/truth/qa_claim.json` updated to 10.8.3.
+17. `docs/truth/qa_scope_map.json` updated with 10.8.3 entry.
+18. `scripts/ci_robot_owned_guard.ps1` updated with 10.8.3 proof log path.
+19. Migration uses named dollar tags only (no `$$`). UTF-8 no BOM. LF only. No dynamic SQL.
+20. Auto-creation of reminders on stage transitions is NOT in scope. Wired in 10.11 (Acquisition Dashboard + Auto-Advance) where stage transition enforcement is implemented.
 
 **Proof:** `docs/proofs/10.8.3_reminder_engine_<UTC>.log`
 
-**Gate:** `merge-blocking` (new table)
+**Gate:** merge-blocking (existing gates: clean-room-replay, schema-drift, pgtap, definer-safety-audit, anon-privilege-audit, rpc-response-contract-tests, rpc-mapping-contract)
 
+**Prerequisite:** 10.8.1A merged and main clean.
 ---
 
 ### **10.8.4 — Deal Health Computation**
