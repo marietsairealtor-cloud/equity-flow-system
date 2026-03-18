@@ -2,7 +2,7 @@
 -- Build Route 10.8.3: Reminder Engine pgTAP Tests
 
 BEGIN;
-SELECT plan(18);
+SELECT plan(19);
 
 -- ============================================================
 -- Seed test data
@@ -158,12 +158,11 @@ SELECT public.complete_reminder_v1('a0830000-0000-0000-0000-000000000005'::uuid)
 SELECT is(
   (
     SELECT COUNT(*)::int
-    FROM public.deal_reminders
-    WHERE id = 'a0830000-0000-0000-0000-000000000005'::uuid
-      AND completed_at IS NOT NULL
+    FROM json_array_elements((public.list_reminders_v1()::json)->'data'->'items') item
+    WHERE (item->>'id') = 'a0830000-0000-0000-0000-000000000005'
   ),
-  1,
-  'list_reminders_v1: excludes completed reminders (completed_at set)'
+  0,
+  'list_reminders_v1: excludes completed reminders -- overdue reminder absent from results'
 );
 
 -- ============================================================
@@ -183,6 +182,12 @@ SELECT is(
   (public.complete_reminder_v1('a0830000-0000-0000-0000-000000000006'::uuid)::json)->>'ok',
   'true',
   'complete_reminder_v1: ok=true'
+);
+SELECT isnt(
+  (SELECT completed_at FROM public.deal_reminders
+   WHERE id = 'a0830000-0000-0000-0000-000000000006'::uuid),
+  NULL,
+  'complete_reminder_v1: completed_at set after first call'
 );
 SELECT is(
   (public.complete_reminder_v1('a0830000-0000-0000-0000-000000000006'::uuid)::json)->>'code',
@@ -234,19 +239,30 @@ SELECT is(
 -- ============================================================
 -- DoD 8: cross-tenant reminder access fails
 -- ============================================================
--- Tenant 2 tries to complete tenant 1 reminder -- silently succeeds but no-ops
+-- Seed a new UNCOMPLETED reminder for tenant 1 (so we can prove tenant 2 cannot complete it)
+-- Must use superuser context to bypass RLS for seed
+INSERT INTO public.deal_reminders (id, deal_id, tenant_id, reminder_date, reminder_type)
+  VALUES (
+    'a0830000-0000-0000-0000-000000000007'::uuid,
+    'a0830000-0000-0000-0000-000000000004'::uuid,
+    'a0830000-0000-0000-0000-000000000001'::uuid,
+    now() + interval '2 days',
+    'cross_tenant_test'
+  );
+
+-- Tenant 2 tries to complete tenant 1 reminder -- silently no-ops
 SELECT is(
-  (public.complete_reminder_v1('a0830000-0000-0000-0000-000000000006'::uuid)::json)->>'ok',
+  (public.complete_reminder_v1('a0830000-0000-0000-0000-000000000007'::uuid)::json)->>'ok',
   'true',
-  'complete_reminder_v1: cross-tenant no-op returns ok=true (idempotent, no data leak)'
+  'complete_reminder_v1: cross-tenant no-op returns ok=true (no data leak)'
 );
 
--- Verify reminder still belongs to tenant 1 (completed_at set by tenant 1 earlier)
-SELECT isnt(
+-- Verify completed_at is still NULL -- tenant 2 call was a true no-op
+SELECT is(
   (SELECT completed_at FROM public.deal_reminders
-   WHERE id = 'a0830000-0000-0000-0000-000000000006'::uuid),
+   WHERE id = 'a0830000-0000-0000-0000-000000000007'::uuid),
   NULL,
-  'deal_reminders: completed_at set by tenant 1 -- cross-tenant call was no-op'
+  'deal_reminders: cross-tenant isolation -- completed_at remains NULL after tenant 2 attempt'
 );
 
 SELECT * FROM finish();

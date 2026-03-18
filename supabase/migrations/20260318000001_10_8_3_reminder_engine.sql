@@ -14,6 +14,7 @@ CREATE TABLE public.deal_reminders (
   reminder_type text        NOT NULL,
   completed_at  timestamptz,
   created_at    timestamptz NOT NULL DEFAULT now(),
+  row_version   bigint      NOT NULL DEFAULT 1,
   CONSTRAINT deal_reminders_pkey PRIMARY KEY (id),
   CONSTRAINT deal_reminders_deal_id_fkey FOREIGN KEY (deal_id)
     REFERENCES public.deals (id) ON DELETE CASCADE,
