@@ -6771,3 +6771,137 @@ Deferred to 10.11 (Acquisition Dashboard + Auto-Advance).
 Gate: merge-blocking (existing gates cover new table + RPCs)
 
 Status: COMPLETE -- merged to main
+
+## DEVLOG ENTRIES — 2026-03-18 Session
+## Append these entries to DEVLOG.md after each corresponding PR is merged.
+## Entries are ordered by merge sequence.
+## Replace <NNN> with actual PR number throughout.
+
+---
+
+## 2026-03-18 — Build Route v2.4 — Item 10.8.3
+
+Objective
+Reminder engine -- deal_reminders table + list_reminders_v1, create_reminder_v1,
+complete_reminder_v1 RPCs. Follow-up reminders surface through Today view and
+Acquisition detail.
+
+Changes
+- supabase/migrations/20260318000001_10_8_3_reminder_engine.sql:
+  deal_reminders table: id UUID PK, deal_id UUID NOT NULL FK deals(id) ON DELETE
+  CASCADE, tenant_id UUID NOT NULL FK tenants(id) ON DELETE CASCADE,
+  reminder_date TIMESTAMPTZ NOT NULL, reminder_type TEXT NOT NULL,
+  completed_at TIMESTAMPTZ (nullable), created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  row_version BIGINT NOT NULL DEFAULT 1 (added per GUARDRAILS §8).
+  RLS ON. REVOKE ALL from anon, authenticated.
+  list_reminders_v1(): STABLE, SECURITY DEFINER, fixed search_path. Returns
+  incomplete reminders for current tenant ordered by reminder_date ASC.
+  Overdue = reminder_date < now() AND completed_at IS NULL. COALESCE to [].
+  Tenant membership re-check. CONTRACTS §17 registered.
+  create_reminder_v1(p_deal_id, p_reminder_date, p_reminder_type): SECURITY
+  DEFINER, fixed search_path. require_min_role_v1('member') first. Exception
+  caught and returned as JSON envelope. VALIDATION_ERROR on null inputs.
+  NOT_FOUND if deal not in tenant. CONTRACTS §17 registered.
+  complete_reminder_v1(p_reminder_id): SECURITY DEFINER, fixed search_path.
+  require_min_role_v1('member') first. Sets completed_at = now(). Idempotent.
+  Cross-tenant call is no-op (tenant WHERE clause). CONTRACTS §17 registered.
+  REVOKE ALL FROM PUBLIC + GRANT EXECUTE TO authenticated on all three RPCs.
+- supabase/migrations/20260318000002_10_8_3_fix_comment_encoding.sql:
+  Corrective migration -- section sign in SQL comment caused schema drift.
+  Replaced with ASCII equivalent. No interface change.
+- supabase/tests/10_8_3_reminder_engine_tests.test.sql: 19 pgTAP tests.
+  table exists, RLS enabled, anon/authenticated zero privileges,
+  create_reminder_v1 ok/code/id, list_reminders_v1 ok/code/items,
+  excludes completed (RPC called -- overdue absent from results),
+  complete_reminder_v1 ok + completed_at set after first call,
+  idempotent second + third call, NOT_AUTHORIZED without tenant context,
+  tenant isolation (tenant 2 sees zero), cross-tenant no-op (completed_at NULL).
+- docs/artifacts/CONTRACTS.md: §12 deal_reminders added. §17 three RPCs registered.
+- docs/truth/privilege_truth.json: three RPCs in routine_grants.authenticated.
+- docs/truth/tenant_table_selector.json: deal_reminders added.
+- docs/truth/definer_allowlist.json: three RPCs added.
+- docs/truth/execute_allowlist.json: three RPCs added.
+- docs/truth/rpc_contract_registry.json: three RPCs registered.
+- docs/truth/write_path_registry.json: regenerated (machine-owned).
+- docs/truth/cloud_migration_parity.json: updated.
+- docs/truth/qa_claim.json: updated to 10.8.3.
+- docs/truth/qa_scope_map.json: 10.8.3 entry added.
+- scripts/ci_robot_owned_guard.ps1: 10.8.3 proof log path allowlisted.
+- docs/governance/GOVERNANCE_CHANGE_PR132.md: governance justification.
+- generated/schema.sql, generated/contracts.snapshot.json,
+  docs/handoff_latest.txt: regenerated.
+- docs/proofs/10.8.3_reminder_engine_<UTC>.log
+
+QA findings resolved
+- row_version missing from deal_reminders -- added per GUARDRAILS §8
+- excludes completed test bypassed RPC -- fixed to call list_reminders_v1()
+  and inspect JSON output directly
+- idempotency test missing state check -- completed_at verification added
+  after first complete_reminder_v1 call
+- cross-tenant isolation test insufficient -- fixed to use fresh uncompleted
+  reminder; tenant 2 attempt verified as true no-op (completed_at remains NULL)
+- require_min_role_v1 exception pattern inconsistent -- caught and returned
+  as JSON envelope for RPC contract consistency
+- section sign in SQL comment caused schema drift -- corrective migration applied
+
+Gate
+merge-blocking (existing gates)
+
+Status: COMPLETE -- merged to main
+
+---
+
+## 2026-03-18 — Build Route v2.4 — Governance Update: Migration + pgTAP Test Integrity Discipline
+
+Objective
+Permanently encode migration-first authoring discipline, test file naming rule,
+pgTAP authoring rules, non-ASCII SQL comment prohibition, and violation consequence
+across GUARDRAILS, SOP_WORKFLOW, and BUILD_ROUTE_V2_4. Prompted by systemic pattern
+identified during 10.8.3 QA review: coders modifying tests to pass rather than
+fixing migrations.
+
+Changes
+- docs/artifacts/GUARDRAILS.md: new section ## pgTAP + Migration Authoring
+  Discipline inserted between §28 and §29. Rules 29A–29M added:
+  Authoring Law (29A–29E): migration is truth, test verifies truth, fix
+  migration first, test frozen until migration correct, test passing without
+  migration is dead code.
+  Test file naming rule (29F): test filename = migration filename minus
+  timestamp + .test.sql. Item ID prefix mandatory. .test.sql only.
+  Test authoring rules (29G–29K): RPC behavioral tests must call RPC,
+  isolation tests must prove negative outcome directly, state-change RPCs
+  need post-call state verification, plan count must match exactly,
+  BEGIN/ROLLBACK required.
+  Corrective migration exception (29L): encoding/comment-only migrations
+  are intentionally unpaired -- UNPAIRED-CORRECTIVE acceptable in audit logs.
+  Violation consequence (29M, LOCKED): test modified to pass without fixing
+  migration = PR revert + INCIDENTS.md entry + QA remediation approval required.
+  No existing rules modified. No renumbering.
+- docs/artifacts/SOP_WORKFLOW.md: two additions only.
+  Phase 1 Step 2: new gate pre-check bullet -- scan all migration SQL comments
+  for non-ASCII characters before committing. No §, --, →, or Unicode
+  punctuation. ASCII only. Fix before first commit.
+  §13 Forbidden Actions: new bullet -- modify a test to achieve passing CI
+  run without first correcting the underlying migration.
+- BUILD_ROUTE_V2_4.md: items 10.8.3A and 10.8.3B inserted after 10.8.3.
+  10.8.3A: retrospective audit of all migrations + test files. Coder draft +
+  QA independent validation + signed sign-off. Both required. Discovery only.
+  Checklist: M1–M11 (migration) + T1–T8 (test). Gate: qa:verify +
+  proof-commit-binding.
+  10.8.3B: remediation of all FAIL findings from 10.8.3A. Migration fixed
+  first, CI confirmed, then test rewritten. FIXED requires CI run link.
+  WAIVED requires waiver file + QA sign-off + expiry. Gate: full existing suite.
+  Standing Rule (LOCKED, effective from 10.8.3B merge forward): migration-first
+  authoring permanent requirement. Violation = PR revert + INCIDENTS.md entry.
+  Blocking: no item after 10.8.3 may merge until 10.8.3B closed.
+- docs/governance/GOVERNANCE_CHANGE_PR133.md: governance justification.
+
+Issues resolved
+- Systemic test-bending pattern identified and closed at governance level.
+- Non-ASCII SQL comment schema drift failure class eliminated at authoring time.
+- Test file pairing made deterministic by naming rule.
+
+Gate
+lane-only (governance-only PR -- no DB or schema changes)
+
+Status: COMPLETE -- merged to main
