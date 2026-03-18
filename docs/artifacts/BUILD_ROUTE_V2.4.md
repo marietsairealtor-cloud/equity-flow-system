@@ -4358,42 +4358,96 @@ The migration is truth. The test verifies truth. Order is non-negotiable:
 **Prerequisite:** 10.8.3 merged and main clean.
 
 ---
-
-### **10.8.3B — Migration + pgTAP Test Remediation**
-
-**Deliverable:**
-Every FAIL finding in the 10.8.3A audit log corrected and closed. Migrations corrected first. Tests rewritten only after the corrected migration is confirmed CI-green. System exits this item with every audited migration+test pair in a clean, verifiable state.
-
-**Authoring Law (same as 10.8.3A — standing order):**
+10.8.3B — Migration + pgTAP Test Remediation
+Deliverable:
+Every FAIL finding in the 10.8.3A audit log corrected and closed. Migrations corrected first. Tests rewritten only after the corrected migration is confirmed CI-green. System exits this item with every audited migration+test pair in a clean, verifiable state. Includes one consolidating forward migration closing all REVOKE EXECUTE FROM PUBLIC gaps identified across the audit.
+Authoring Law (same as 10.8.3A — standing order):
 The migration is truth. The test verifies truth. Fix the migration first. Confirm it applies cleanly. Only then rewrite the test. A test modified before its migration is confirmed correct is not a fix — it is the same defect restated.
+DoD (all must be true):
 
-**DoD (all must be true):**
+Every FAIL finding from docs/proofs/10.8.3A_migration_test_audit_<UTC>.log is resolved. Resolution must be one of:
 
-1. Every FAIL finding from `docs/proofs/10.8.3A_migration_test_audit_<UTC>.log` is resolved. Resolution must be one of:
-   - FIXED: migration corrected, test rewritten, CI green. CI run link required.
-   - WAIVED: waiver file `docs/waivers/WAIVER_PR<NNN>.md` exists with justification, QA sign-off, and expiry date. (AUTOMATION §9)
-2. No finding from the audit log may be silently dropped. Every finding appears in the remediation proof log with its resolution status.
-3. For every FIXED migration: corrected via new forward-only migration if already applied to production. Retro-editing a previously applied migration is FORBIDDEN. (GUARDRAILS Privilege Firewall Guardrail)
-4. For every FIXED migration: `generated/schema.sql`, `generated/contracts.snapshot.json`, and `docs/handoff_latest.txt` regenerated and committed.
-5. For every FIXED test: plan count matches actual test call count exactly.
-6. For every FIXED test: every RPC behavioral assertion calls the RPC and inspects its return value — no direct table queries substituting for RPC calls.
-7. For every FIXED test: every isolation test proves the negative outcome directly.
-8. For every FIXED test: every state-change RPC has post-call state verification via a read RPC or explicit assertion.
-9. CI full suite green on all corrected pairs: `clean-room-replay`, `schema-drift`, `pgtap`, `definer-safety-audit`, `anon-privilege-audit`, `rpc-response-contract-tests`.
-10. docs/proofs/10.8.3B_migration_test_remediation_<UTC>.log exists containing: each finding ID from 10.8.3A, original violation, resolution (FIXED or WAIVED), and for FIXED — migration file corrected, test file rewritten, CI run link.
+FIXED: migration corrected, test rewritten, CI green. CI run link required.
+WAIVED: waiver file docs/waivers/WAIVER_PR<NNN>.md exists with justification, QA sign-off, and expiry date. (AUTOMATION §9)
 
-**Forbidden in this item:**
-- Modifying a test before the migration is confirmed correct and CI-green.
-- Removing a failing test instead of fixing the underlying migration.
-- Closing a finding as FIXED without a CI run link.
-- Merging any remediation PR with a red CI check.
 
-**Proof:** `docs/proofs/10.8.3B_migration_test_remediation_<UTC>.log`
+No finding from the audit log may be silently dropped. Every finding appears in the remediation proof log with its resolution status.
+For every FIXED migration: corrected via new forward-only migration if already applied to production. Retro-editing a previously applied migration is FORBIDDEN. (GUARDRAILS Privilege Firewall Guardrail)
+For every FIXED migration: generated/schema.sql, generated/contracts.snapshot.json, and docs/handoff_latest.txt regenerated and committed.
+For every FIXED test: plan count matches actual test call count exactly.
+For every FIXED test: every RPC behavioral assertion calls the RPC and inspects its return value — no direct table queries substituting for RPC calls.
+For every FIXED test: every isolation test proves the negative outcome directly.
+For every FIXED test: every state-change RPC has post-call state verification via a read RPC or explicit assertion.
+One consolidating forward migration exists that issues REVOKE EXECUTE FROM PUBLIC on all RPCs identified as missing this revoke in the audit. This migration must be a single atomic file. It must not be split across multiple PRs. The migration must cover at minimum: current_tenant_id(), foundation_log_activity_v1(text, jsonb, uuid), and any additional signatures confirmed still live in the final schema. CI must confirm anon-privilege-audit passes after this migration is applied.
+tenant_subscriptions table receives row_version bigint NOT NULL DEFAULT 1 via forward migration (B9-F04). Paired test updated to verify column existence.
+CI full suite green on all corrected pairs: clean-room-replay, schema-drift, pgtap, definer-safety-audit, anon-privilege-audit, rpc-response-contract-tests.
+docs/proofs/10.8.3B_migration_test_remediation_<UTC>.log exists containing: each finding ID from 10.8.3A, original violation, resolution (FIXED or WAIVED), and for FIXED — migration file corrected or created, test file rewritten if applicable, CI run link.
+docs/truth/qa_claim.json updated to 10.8.3B.
+docs/truth/qa_scope_map.json updated with 10.8.3B entry mapping to proof log pattern 10.8.3B_migration_test_remediation_*.log.
+scripts/ci_robot_owned_guard.ps1 updated with 10.8.3B proof log path.
+Proof manifest updated via proof:finalize.
 
-**Gate:** merge-blocking (existing gates: `clean-room-replay`, `schema-drift`, `pgtap`, `definer-safety-audit`, `anon-privilege-audit`, `rpc-response-contract-tests`, `qa:verify`, `proof-commit-binding`)
+Forbidden in this item:
 
-**Prerequisite:** 10.8.3A merged and main clean. Audit log finalized and committed.
+Modifying a test before the migration is confirmed correct and CI-green.
+Removing a failing test instead of fixing the underlying migration.
+Closing a finding as FIXED without a CI run link.
+Splitting the consolidating REVOKE FROM PUBLIC migration across multiple PRs.
+Merging any remediation PR with a red CI check.
 
+Proof: docs/proofs/10.8.3B_migration_test_remediation_<UTC>.log
+Gate: merge-blocking (existing gates: clean-room-replay, schema-drift, pgtap, definer-safety-audit, anon-privilege-audit, rpc-response-contract-tests, qa:verify, proof-commit-binding)
+Prerequisite: 10.8.3A merged and main clean. Audit log finalized and committed.
+
+10.8.3C — Security-Critical Design Correctness Audit
+Deliverable:
+QA-independent verification that each security-critical Build Route item's migration implements exactly what its DoD specifies, and that the pgTAP test suite proves each DoD assertion. This item does not fix defects — it produces a signed QA verdict per item. Any failures found become new findings tracked in a separate remediation PR.
+Background:
+Items 10.8.3A and 10.8.3B audit authoring discipline — encoding, structure, privilege wiring. They do not audit whether the RPC or schema does the right thing for the system. This item closes that gap for the highest-risk surface: the share token security chain, the entitlement truth RPC, and the role enforcement mechanism. These items are security controls. A design gap in any of them is a security exposure.
+Scope (12 items — security-critical only):
+
+6.7 — Share-link surface (share_tokens table, lookup_share_token_v1, TOKEN_EXPIRED)
+7.4 — Entitlement truth (get_user_entitlements_v1)
+7.8 — Role guard fix (require_min_role_v1 comparison inversion)
+7.9 — Tenant context integrity (no RPC accepts tenant_id as caller input)
+8.4 — Share token hash-at-rest (SHA-256, no raw token stored)
+8.6 — Share token revocation (revoked_at, revocation overrides expiration)
+8.7 — Share token usage logging (best-effort, hash-only, never raw token)
+8.8 — Share token secure generation (shr_ prefix, 256-bit entropy)
+8.9 — Share token expiration invariant (expires_at NOT NULL, NOT_FOUND on expiry)
+8.10 — Share token scope enforcement (p_deal_id required, cross-resource fails)
+9.4 — Token format validation (format guard before hashing, no format leak)
+9.5 — Token cardinality guard (max 50 active tokens per resource)
+9.7 — Token maximum lifetime invariant (90-day ceiling)
+
+DoD (all must be true):
+
+For each item in scope, QA reads the Build Route DoD for that item and independently verifies:
+
+D1: The migration implements every deliverable stated in the DoD. Every table, column, constraint, RPC, and privilege rule specified in the DoD is present and correct in the migration file.
+D2: The pgTAP test file contains at least one test per DoD assertion. No DoD assertion is untested.
+D3: The test calls the RPC or queries the exact schema element the DoD specifies — no proxy assertions that would pass even if the DoD deliverable were absent.
+
+
+QA uploads all migration and test files for each item. No coder involvement required — QA audits independently against the Build Route DoD.
+For each item QA issues one of three verdicts:
+
+PASS: migration implements DoD, test suite proves DoD, no gaps found.
+PASS-WITH-NOTES: implementation correct, minor test coverage gap that does not represent a security risk. Gap documented.
+FAIL: DoD deliverable missing from migration, or test suite does not prove a security-critical DoD assertion. Each FAIL becomes a numbered finding.
+
+
+All FAIL findings are recorded in docs/proofs/10.8.3C_design_audit_<UTC>.log with: item ID, DoD assertion violated, description of gap, recommended remediation.
+PASS-WITH-NOTES findings are recorded in the same log with their notes.
+A separate remediation PR is required for each FAIL finding. Each such PR follows standard Build Route PR discipline (CI green, QA sign-off, merged). This item does not close until all FAIL findings have a tracking reference (open PR number is sufficient — merge is not required to close 10.8.3C).
+docs/truth/qa_claim.json updated to 10.8.3C.
+docs/truth/qa_scope_map.json updated with 10.8.3C entry mapping to proof log pattern 10.8.3C_design_audit_*.log.
+scripts/ci_robot_owned_guard.ps1 updated with 10.8.3C proof log path.
+Proof manifest updated via proof:finalize.
+
+Proof: docs/proofs/10.8.3C_design_audit_<UTC>.log
+Gate: lane-only — not merge-blocking on subsequent items, but required before Section 10 close verification (SOP §17).
+Prerequisite: 10.8.3B merged and main clean. Build Route uploaded to QA session with all 13 item DoDs accessible.
 ---
 ### **10.8.4 — Deal Health Computation**
 
