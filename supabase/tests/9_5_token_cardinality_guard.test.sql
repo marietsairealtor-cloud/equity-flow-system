@@ -77,7 +77,7 @@ SELECT is(
   'CONFLICT response contains expected message'
 );
 
--- Revoke one active token via subquery (no LIMIT in UPDATE — use ctid trick)
+-- Revoke one active token via subquery (no LIMIT in UPDATE -- use ctid trick)
 RESET ROLE;
 UPDATE public.share_tokens
 SET revoked_at = now()

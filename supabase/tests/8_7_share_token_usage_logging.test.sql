@@ -1,6 +1,6 @@
 -- supabase/tests/8_7_share_token_usage_logging.test.sql
 -- pgTAP: 8.7 Share Token Usage Logging
--- GUARDRAILS §25-28: SQL-only, no DO blocks, no backslash lines.
+-- GUARDRAILS S25-28: SQL-only, no DO blocks, no backslash lines.
 BEGIN;
 SELECT plan(9);
 

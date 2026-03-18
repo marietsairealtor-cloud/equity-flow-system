@@ -2,7 +2,7 @@
 -- pgTAP: 8.8 Share Token Secure Generation Contract
 -- Proves: tokens use approved secure source, contain shr_ prefix,
 -- meet minimum length, and are stored only as hash.
--- GUARDRAILS §25-28: SQL-only, no DO blocks, no backslash lines.
+-- GUARDRAILS S25-28: SQL-only, no DO blocks, no backslash lines.
 BEGIN;
 SELECT plan(8);
 
@@ -52,7 +52,7 @@ SELECT ok(
   'Each token generation call produces unique token'
 );
 
--- Test 5: Token stored only as hash — raw token not in share_tokens
+-- Test 5: Token stored only as hash -- raw token not in share_tokens
 RESET ROLE;
 SELECT is(
   (SELECT count(*)::int FROM public.share_tokens

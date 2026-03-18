@@ -1,9 +1,8 @@
--- 6.3 Tenant Integrity Suite — Negative Isolation Tests (RPC surface)
+-- 6.3 Tenant Integrity Suite -- Negative Isolation Tests (RPC surface)
 -- GUARDRAILS: SQL-only, no DO blocks, no PL/pgSQL, no \cmds, named dollar tags only
 -- Tests use allowlisted RPCs per CONTRACTS.md S7/S12 (no direct table access).
-SELECT plan(13);
-
 BEGIN;
+SELECT plan(13);
 
 -- Cleanup create_deal_v1 ids so repeated runs don't CONFLICT (FK-safe)
 DELETE FROM public.deal_inputs WHERE deal_id IN (
@@ -18,7 +17,6 @@ DELETE FROM public.deals WHERE id IN (
   'b2000000-0000-0000-0000-000000000f99'::uuid
 );
 
-COMMIT;
 DELETE FROM public.deal_inputs WHERE deal_id IN (
   'a2000000-0000-0000-0000-000000000f99'::uuid,
   'a2000000-0000-0000-0000-000000000f98'::uuid,
@@ -27,7 +25,6 @@ DELETE FROM public.deal_inputs WHERE deal_id IN (
 -- ============================================================
 -- Seed as superuser (privileged seeding, not assertion)
 -- ============================================================
-BEGIN;
 
 -- Clean in FK-safe order (by tenant scope)
 DELETE FROM public.deal_inputs
@@ -55,8 +52,6 @@ INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, row_versio
   ('b1000000-0000-0000-0000-000000000001'::uuid, 'b0000000-0000-0000-0000-000000000001'::uuid, 'b2000000-0000-0000-0000-000000000001'::uuid, 1, 1, '{}'::jsonb),
   ('b1000000-0000-0000-0000-000000000002'::uuid, 'b0000000-0000-0000-0000-000000000001'::uuid, 'b2000000-0000-0000-0000-000000000002'::uuid, 1, 1, '{}'::jsonb);
 
-COMMIT;
-
 -- ============================================================
 -- Tenant A session
 -- ============================================================
@@ -64,10 +59,10 @@ RESET ROLE;
 SET ROLE authenticated;
 SET request.jwt.claim.tenant_id = 'a0000000-0000-0000-0000-000000000001';
 
-SELECT isnt(
-  public.current_tenant_id(),
-  NULL::uuid,
-  'Diagnostic: current_tenant_id() resolves for Tenant A'
+SELECT is(
+  (public.list_deals_v1(1)::json)->>'code',
+  'OK',
+  'Diagnostic: tenant context resolves for Tenant A (list_deals_v1 returns OK)'
 );
 
 SELECT is(
@@ -170,7 +165,4 @@ SELECT ok(
 );
 
 SELECT finish();
-
-
-
-
+ROLLBACK;

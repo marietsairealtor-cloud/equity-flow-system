@@ -1,8 +1,8 @@
 -- =============================================================
--- pgTAP: 7.10 — Freeze tenant_role ordering + role-guard semantics
+-- pgTAP: 7.10 -- Freeze tenant_role ordering + role-guard semantics
 -- Build Route v2.4 item 7.10
--- Authority: CONTRACTS.md §9 (enum ordering: owner(0) < admin(1) < member(2))
--- GUARDRAILS §25-28: SQL-only, no DO blocks, no PL/pgSQL, named dollar tags only
+-- Authority: CONTRACTS.md S9 (enum ordering: owner(0) < admin(1) < member(2))
+-- GUARDRAILS S25-28: SQL-only, no DO blocks, no PL/pgSQL, named dollar tags only
 -- =============================================================
 
 BEGIN;
@@ -50,7 +50,7 @@ SELECT ok(
 );
 
 -- -----------------------------------------------------------------
--- SECTION 2: require_min_role_v1() semantics (CONTRACTS.md §9)
+-- SECTION 2: require_min_role_v1() semantics (CONTRACTS.md S9)
 --
 -- Contract: Authorization fails when v_role > p_min
 --   owner satisfies admin requirement  -> PASS (no exception)

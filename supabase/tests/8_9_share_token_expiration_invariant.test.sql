@@ -2,7 +2,7 @@
 -- pgTAP: 8.9 Share Token Expiration Invariant
 -- Proves: expires_at NOT NULL, lookup refuses expired tokens,
 -- expired response identical to invalid token, revocation precedence holds.
--- GUARDRAILS §25-28: SQL-only, no DO blocks, no backslash lines.
+-- GUARDRAILS S25-28: SQL-only, no DO blocks, no backslash lines.
 BEGIN;
 SELECT plan(7);
 
@@ -90,7 +90,7 @@ SELECT is(
   'Revoked token with future expiry returns NOT_FOUND (revocation overrides expiration)'
 );
 
--- Test 7: create_share_token_v1 requires expires_at — returns VALIDATION_ERROR when NULL passed
+-- Test 7: create_share_token_v1 requires expires_at -- returns VALIDATION_ERROR when NULL passed
 SELECT is(
   (public.create_share_token_v1('ea100000-0000-0000-0000-000000000001'::uuid, NULL)::json ->> 'code'),
   'VALIDATION_ERROR',

@@ -48,11 +48,11 @@ SELECT is(
   'Nonexistent token returns NOT_FOUND'
 );
 
--- Test 3: Invalid (random garbage) token returns NOT_FOUND — same shape as nonexistent
+-- Test 3: Invalid (random garbage) token returns NOT_FOUND -- same shape as nonexistent
 SELECT is(
   (public.lookup_share_token_v1('shr_ab850000000000000000000000000000000000000000000000000000000000dd', 'd0000000-0000-0000-0000-000000000085'::uuid)::json ->> 'code'),
   'NOT_FOUND',
-  'Invalid token returns NOT_FOUND — same response shape as nonexistent (anti-enumeration)'
+  'Invalid token returns NOT_FOUND -- same response shape as nonexistent (anti-enumeration)'
 );
 
 -- Test 4: NOT_FOUND response shape matches between nonexistent and invalid tokens
@@ -62,7 +62,7 @@ SELECT is(
   'Nonexistent and invalid tokens produce identical error shape (no existence leak)'
 );
 
--- Test 5: Cross-tenant — Tenant B cannot see Tenant A token
+-- Test 5: Cross-tenant -- Tenant B cannot see Tenant A token
 RESET ROLE;
 SELECT set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-000000000002')::text, true);
 SELECT set_config('request.jwt.claim.tenant_id', 'b0000000-0000-0000-0000-000000000085', true);

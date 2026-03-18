@@ -119,7 +119,7 @@ SELECT is(
 SELECT is(
   (public.foundation_log_activity_v1('jwt_derived_write', '{}'::jsonb, null)::json -> 'code')::text,
   '"OK"',
-  'foundation_log_activity_v1: tenant derived from JWT only — no caller input accepted'
+  'foundation_log_activity_v1: tenant derived from JWT only -- no caller input accepted'
 );
 
 -- ============================================================

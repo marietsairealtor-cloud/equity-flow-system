@@ -46,7 +46,7 @@ SELECT is(
   'Valid token returns correct deal_id'
 );
 
--- Test 3: Cross-tenant isolation — Tenant B JWT cannot see Tenant A token
+-- Test 3: Cross-tenant isolation -- Tenant B JWT cannot see Tenant A token
 SELECT set_config('request.jwt.claim.tenant_id', 'b0000000-0000-0000-0000-000000000001', true);
 SELECT is(
   (public.lookup_share_token_v1('shr_67000000000000000000000000000000000000000000000000000000000000aa', 'd7000000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),

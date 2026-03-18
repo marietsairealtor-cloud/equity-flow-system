@@ -23,7 +23,7 @@ INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
   );
 
 -- ============================================================
--- list_deals_v1 — NOT_AUTHORIZED path (no JWT context)
+-- list_deals_v1 -- NOT_AUTHORIZED path (no JWT context)
 -- ============================================================
 SELECT set_config('request.jwt.claims', '', true);
 
@@ -64,7 +64,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- list_deals_v1 — OK path (authenticated tenant context)
+-- list_deals_v1 -- OK path (authenticated tenant context)
 -- ============================================================
 SELECT set_config('request.jwt.claims',
   '{"sub":"a0400000-0000-0000-0000-000000000002","role":"authenticated","tenant_id":"a0400000-0000-0000-0000-000000000001"}',
@@ -107,7 +107,7 @@ SELECT is(
 );
 
 -- ============================================================
--- get_user_entitlements_v1 — NOT_AUTHORIZED path
+-- get_user_entitlements_v1 -- NOT_AUTHORIZED path
 -- ============================================================
 SELECT set_config('request.jwt.claims', '', true);
 
@@ -148,7 +148,7 @@ SELECT isnt(
 );
 
 -- ============================================================
--- get_user_entitlements_v1 — OK path
+-- get_user_entitlements_v1 -- OK path
 -- ============================================================
 SELECT set_config('request.jwt.claims',
   '{"sub":"a0400000-0000-0000-0000-000000000002","role":"authenticated","tenant_id":"a0400000-0000-0000-0000-000000000001"}',

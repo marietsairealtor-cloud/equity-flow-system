@@ -1,4 +1,4 @@
--- 6.11 Role Guard Helper — pgTAP tests
+-- 6.11 Role Guard Helper -- pgTAP tests
 -- Gate: pgtap (merge-blocking, live)
 -- Proves: authenticated cannot EXECUTE directly; function present in catalog.
 
