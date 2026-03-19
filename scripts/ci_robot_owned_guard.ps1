@@ -135,7 +135,10 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -eq "docs/truth/surface_truth.json"){ return "ALLOW:9.1 surface truth capture" }
   if($pp -match "^docs/proofs/8\.2_clean_room_tests_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.2 proof log" }
   if($pp -match "^docs/proofs/8\.3_cloud_migration_parity_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.3 proof log" }
-  if($pp -eq "docs/truth/cloud_migration_parity.json"){ return "ALLOW:8.3 cloud_migration_parity.json (hand-authored truth)" }
+  if($pp -eq "docs/truth/cloud_migration_parity.json"){ return "ALLOW:10.8.6A cloud_migration_parity.json (robot-owned via sync_truth_registries)" }
+  if($pp -eq "docs/truth/definer_allowlist.json"){ return "ALLOW:10.8.6A definer_allowlist.json (robot-owned via sync_truth_registries)" }
+  if($pp -eq "docs/truth/execute_allowlist.json"){ return "ALLOW:10.8.6A execute_allowlist.json (robot-owned via sync_truth_registries)" }
+  if($pp -eq "docs/truth/tenant_table_selector.json"){ return "ALLOW:10.8.6A tenant_table_selector.json (robot-owned via sync_truth_registries)" }
   if($pp -match "^docs/proofs/8\.4_share_token_hash_at_rest_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.4 proof log" }
   if($pp -match "^docs/proofs/8\.5_share_surface_abuse_controls_\d{8}T\d{6}Z\.log$"){ return "ALLOW:8.5 proof log" }
   if($pp -match "^docs/proofs/7\.10_tenant_role_ordering_invariant_\d{8}T\d{6}Z\.log$"){ return "ALLOW:7.10 proof log" }
