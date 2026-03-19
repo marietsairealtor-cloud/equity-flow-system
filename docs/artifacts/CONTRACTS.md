@@ -416,3 +416,12 @@ is authorized and required. This is a narrow restoration (authenticated only, no
 current_tenant_id() is uthenticated-executable specifically to support RLS evaluation.
 It remains non-executable by non and PUBLIC.
 Migration: 20260319000005_10_8_5_rls_privilege_fix.sql
+
+
+## 29) Farm Areas Table + Deals FK (10.8.6)
+Forward migration 20260319000007 adds public.tenant_farm_areas table (id, tenant_id,
+row_version, area_name, created_at). UNIQUE(tenant_id, area_name). RLS ON. REVOKE ALL
+from anon and authenticated. Three SECURITY DEFINER RPCs: list_farm_areas_v1,
+create_farm_area_v1, delete_farm_area_v1 - all role-gated to admin+ via require_min_role_v1.
+Adds deals.farm_area_id UUID FK (ON DELETE SET NULL) to public.deals. Nullable.
+Deals tagging to farm areas is soft - deleting a farm area nulls the reference on deals.

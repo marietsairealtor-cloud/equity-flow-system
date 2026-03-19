@@ -10,7 +10,8 @@
     "tenant_slugs",
     "tenant_subscriptions",
     "deal_tc",
-    "deal_tc_checklist"
+    "deal_tc_checklist",
+    "tenant_farm_areas"
   ],
   "selector": {
     "required": true,

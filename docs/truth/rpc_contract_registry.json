@@ -146,6 +146,33 @@
       "notes": "Min role: member. VALIDATION_ERROR on null deal_id, reminder_date, or reminder_type. NOT_FOUND if deal not in tenant. require_min_role_v1 exception caught and returned as JSON envelope."
     },
     {
+      "name": "list_farm_areas_v1",
+      "version": 1,
+      "build_route_owner": "10.8.6",
+      "input_contract": "CONTRACTS.md §17 list_farm_areas_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED"],
+      "notes": "Min role: admin. Returns all farm areas for caller tenant ordered by area_name."
+    },
+    {
+      "name": "create_farm_area_v1",
+      "version": 1,
+      "build_route_owner": "10.8.6",
+      "input_contract": "CONTRACTS.md §17 create_farm_area_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED","VALIDATION_ERROR","CONFLICT"],
+      "notes": "Min role: admin. VALIDATION_ERROR on blank area_name. CONFLICT on duplicate (tenant_id, area_name)."
+    },
+    {
+      "name": "delete_farm_area_v1",
+      "version": 1,
+      "build_route_owner": "10.8.6",
+      "input_contract": "CONTRACTS.md §17 delete_farm_area_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED","NOT_FOUND"],
+      "notes": "Min role: admin. NOT_FOUND if farm area does not exist for tenant. ON DELETE SET NULL cascades to deals.farm_area_id."
+    },
+    {
       "name": "current_tenant_id",
       "version": 1,
       "build_route_owner": "10.8.5",
