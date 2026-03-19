@@ -7206,3 +7206,33 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-19 -- Build Route v2.4 -- 10.8.6
+
+Objective
+- Establish tenant_farm_areas lookup table for geographic targeting with CRUD RPCs.
+
+Changes
+- Added public.tenant_farm_areas table (id, tenant_id, row_version, area_name, created_at). UNIQUE(tenant_id, area_name). RLS ON. REVOKE ALL from anon and authenticated.
+- Added deals.farm_area_id UUID FK (ON DELETE SET NULL, nullable) to public.deals.
+- Added three SECURITY DEFINER RPCs: list_farm_areas_v1, create_farm_area_v1, delete_farm_area_v1. All role-gated to admin+ via require_min_role_v1.
+- Registered all three RPCs in definer_allowlist.json, execute_allowlist.json, rpc_contract_registry.json, privilege_truth.json, and CONTRACTS.md mapping table.
+- Added tenant_farm_areas to tenant_table_selector.json.
+- Governance change file docs/governance/GOVERNANCE_CHANGE_PR141.md added.
+
+Proof
+- docs/proofs/10.8.6_farm_areas_20260319T195115Z.log
+
+DoD
+- tenant_farm_areas table with id, tenant_id, area_name, created_at -- PASS
+- Unique constraint on (tenant_id, area_name) -- PASS
+- RLS ON, tenant-scoped -- PASS
+- CRUD via authenticated RPCs (SECURITY DEFINER) -- PASS
+- Deals can reference farm area via FK (ON DELETE SET NULL) -- PASS
+- pgTAP tests: create, delete, tenant isolation, uniqueness, ON DELETE SET NULL -- PASS
+
+Status
+- PASS
