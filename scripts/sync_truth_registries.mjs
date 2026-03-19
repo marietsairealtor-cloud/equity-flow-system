@@ -1,32 +1,47 @@
 #!/usr/bin/env node
 /**
  * sync_truth_registries.mjs
- * Build Route 10.8.6A — Truth Registry & Pipeline Automation
+ * Build Route 10.8.6A - Truth Registry & Pipeline Automation
  *
  * Automatically overwrites four truth files by querying the Postgres system
- * catalog and reading the local migrations directory. Integrated into
- * npm run handoff execution sequence.
+ * catalog via docker exec (matching existing script pattern) and reading the
+ * local migrations directory. Integrated into npm run handoff execution sequence.
  *
- * Gracefully exits 0 if DATABASE_URL is absent (docs-only CI runs).
+ * Gracefully exits 0 if DB container is not running (docs-only CI runs).
  */
 
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 
-const DB_URL = process.env.DATABASE_URL;
+const DB_CONTAINER = "supabase_db_equity-flow-system";
 
-if (!DB_URL) {
-  console.log("SYNC_TRUTH_REGISTRIES_SKIP: DATABASE_URL not set — skipping catalog sync (docs-only run).");
+function isContainerRunning() {
+  try {
+    const result = spawnSync("docker", ["inspect", "--format", "{{.State.Running}}", DB_CONTAINER], {
+      encoding: "utf8"
+    });
+    return result.stdout.trim() === "true";
+  } catch {
+    return false;
+  }
+}
+
+if (!isContainerRunning()) {
+  console.log(`SYNC_TRUTH_REGISTRIES_SKIP: ${DB_CONTAINER} not running - skipping catalog sync (docs-only run).`);
   process.exit(0);
 }
 
 function psql(sql) {
-  const result = execSync(
-    `psql "${DB_URL}" --no-psqlrc -t -A -F "|||" -c "${sql.replace(/"/g, '\\"')}"`,
+  const result = spawnSync(
+    "docker",
+    ["exec", "-i", DB_CONTAINER, "psql", "-U", "postgres", "-d", "postgres", "-At", "-F", "|||", "-c", sql],
     { encoding: "utf8" }
   );
-  return result.trim().split("\n").filter((r) => r.trim() !== "");
+  if (result.status !== 0) {
+    throw new Error(`psql failed: ${result.stderr}`);
+  }
+  return result.stdout.trim().split("\n").filter((r) => r.trim() !== "");
 }
 
 function writeJson(filePath, data) {
@@ -41,7 +56,7 @@ function writeJson(filePath, data) {
 // All tables in public schema with RLS enabled
 // ---------------------------------------------------------------------------
 const rlsRows = psql(
-  "SELECT tablename FROM pg_tables WHERE schemaname = \\'public\\' AND rowsecurity = true ORDER BY tablename;"
+  "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND rowsecurity = true ORDER BY tablename;"
 );
 const tenantTables = rlsRows.map((r) => r.split("|||")[0].trim()).filter(Boolean);
 
@@ -58,7 +73,7 @@ writeJson("docs/truth/tenant_table_selector.json", newSelector);
 // Preserves existing nested structure: { allow: [...], anon_callable: [...] }
 // ---------------------------------------------------------------------------
 const definerRows = psql(
-  "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = \\'public\\' AND p.prosecdef = true ORDER BY p.proname;"
+  "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.prosecdef = true ORDER BY p.proname;"
 );
 const definerNames = definerRows.map((r) => r.split("|||")[0].trim()).filter(Boolean);
 const qualifiedDefiner = definerNames.map((n) => `public.${n}`);
@@ -75,7 +90,7 @@ writeJson("docs/truth/definer_allowlist.json", newDefiner);
 // All functions in public schema where EXECUTE is granted to authenticated or anon
 // ---------------------------------------------------------------------------
 const executeRows = psql(
-  "SELECT DISTINCT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace JOIN information_schema.routine_privileges rp ON rp.routine_name = p.proname AND rp.routine_schema = \\'public\\' WHERE n.nspname = \\'public\\' AND rp.grantee IN (\\'authenticated\\', \\'anon\\') AND rp.privilege_type = \\'EXECUTE\\' ORDER BY p.proname;"
+  "SELECT DISTINCT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace JOIN information_schema.routine_privileges rp ON rp.routine_name = p.proname AND rp.routine_schema = 'public' WHERE n.nspname = 'public' AND rp.grantee IN ('authenticated', 'anon') AND rp.privilege_type = 'EXECUTE' ORDER BY p.proname;"
 );
 const executeNames = executeRows.map((r) => r.split("|||")[0].trim()).filter(Boolean);
 
