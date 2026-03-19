@@ -7206,3 +7206,61 @@ CI result
 Gate: merge-blocking -- all required checks passed
 
 Status: COMPLETE -- merged to main
+
+2026-03-18 — Build Route v2.4 — Item 10.8.3C
+
+Objective
+QA-independent design correctness audit of 13 security-critical Build Route
+items. Verifies each item's migration implements its DoD exactly and each
+pgTAP test suite proves every DoD assertion. Discovery only -- no fixes in
+this item. Any failures become tracked findings in a separate PR.
+
+Background
+10.8.3A and 10.8.3B audited authoring discipline (encoding, structure,
+privilege wiring). 10.8.3C closes the design correctness gap for the
+highest-risk surface: share token security chain, entitlement truth RPC,
+and role enforcement mechanism.
+
+Scope (13 items)
+  6.7  -- Share-link surface
+  7.4  -- Entitlement truth
+  7.8  -- Role guard fix
+  7.9  -- Tenant context integrity
+  8.4  -- Share token hash-at-rest
+  8.6  -- Share token revocation
+  8.7  -- Share token usage logging
+  8.8  -- Share token secure generation
+  8.9  -- Share token expiration invariant
+  8.10 -- Share token scope enforcement
+  9.4  -- Token format validation
+  9.5  -- Token cardinality guard
+  9.7  -- Token maximum lifetime invariant
+
+Changes
+- docs/proofs/10.8.3C_design_audit_20260319T003943Z.log: QA audit log.
+  13 items audited. 12 PASS. 1 FAIL (10.8.3C-F01).
+- docs/governance/GOVERNANCE_CHANGE_PR137.md: governance justification
+- docs/truth/qa_claim.json: updated to 10.8.3C
+- docs/truth/qa_scope_map.json: 10.8.3C entry added
+- scripts/ci_robot_owned_guard.ps1: 10.8.3C proof log path allowlisted
+
+Audit results
+  Total items audited:   13
+  PASS:                  12
+  PASS-WITH-NOTES:        0
+  FAIL:                   1
+
+Finding 10.8.3C-F01
+  Item: 6.7 -- Share-link surface
+  D2 violation: 6_7_share_link_isolation.test.sql asserts NOT_FOUND on
+  expired token lookup. The 6.7 migration implemented TOKEN_EXPIRED as the
+  response code. The test reflects the current (8.9) state where TOKEN_EXPIRED
+  was superseded by NOT_FOUND to prevent existence leaks. Version-skew finding.
+  Remediation: tracking PR required to formally document that 8.9 superseded
+  6.7 TOKEN_EXPIRED behavior, or waive with explicit justification.
+  Status: OPEN -- tracking PR required before Section 10 close verification
+
+Gate: lane-only (not merge-blocking on subsequent items)
+      Required before Section 10 close verification (SOP S17)
+
+Status: COMPLETE -- merged to main
