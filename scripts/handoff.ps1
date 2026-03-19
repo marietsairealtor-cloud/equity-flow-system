@@ -97,6 +97,13 @@ if (-not (Test-Path "docs/truth/calc_version_registry.json")) {
 }
 Write-Host "PASS: docs/truth/calc_version_registry.json exists"
 
+# Triple-registration check: deal_health_thresholds.json must exist (10.8.4)
+if (-not (Test-Path "docs/truth/deal_health_thresholds.json")) {
+  Write-Error "HANDOFF FAIL: docs/truth/deal_health_thresholds.json is missing. Required by Build Route 10.8.4 triple-registration."
+  exit 1
+}
+Write-Host "PASS: docs/truth/deal_health_thresholds.json exists"
+
 # Git state -- exclude robot-owned handoff outputs to achieve idempotency
 # generated/schema.sql, generated/contracts.snapshot.json, docs/handoff_latest.txt
 # are written by this script and must not self-reference

@@ -402,6 +402,27 @@ $$;
 
 ALTER FUNCTION "public"."foundation_log_activity_v1"("p_action" "text", "p_meta" "jsonb", "p_actor_id" "uuid") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."get_deal_health_color"("p_stage" "text", "p_updated_at" timestamp with time zone) RETURNS "text"
+    LANGUAGE "sql" STABLE
+    AS $$
+  SELECT CASE
+    WHEN p_updated_at IS NULL THEN 'yellow'
+    WHEN p_stage = 'New'                 AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 3        THEN 'red'
+    WHEN p_stage = 'New'                 AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 3 * 0.7  THEN 'yellow'
+    WHEN p_stage = 'Analyzing'           AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7        THEN 'red'
+    WHEN p_stage = 'Analyzing'           AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7  THEN 'yellow'
+    WHEN p_stage = 'Offer Sent'          AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5        THEN 'red'
+    WHEN p_stage = 'Offer Sent'          AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5 * 0.7  THEN 'yellow'
+    WHEN p_stage = 'Under Contract (UC)' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14       THEN 'red'
+    WHEN p_stage = 'Under Contract (UC)' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14 * 0.7 THEN 'yellow'
+    WHEN p_stage = 'Dispo'               AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7        THEN 'red'
+    WHEN p_stage = 'Dispo'               AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7  THEN 'yellow'
+    ELSE 'green'
+  END
+$$;
+
+ALTER FUNCTION "public"."get_deal_health_color"("p_stage" "text", "p_updated_at" timestamp with time zone) OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."get_user_entitlements_v1"() RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -487,47 +508,56 @@ $$;
 
 ALTER FUNCTION "public"."get_user_entitlements_v1"() OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25) RETURNS json
+CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25, "p_cursor" "text" DEFAULT NULL::"text") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant uuid;
-  v_items json;
+  v_tenant UUID;
 BEGIN
   v_tenant := public.current_tenant_id();
+
   IF v_tenant IS NULL THEN
     RETURN json_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  NULL,
+      'error', json_build_object('message', 'Not authorized', 'fields', '{}')
     );
   END IF;
 
-  IF p_limit IS NULL OR p_limit < 1 THEN p_limit := 25; END IF;
-  IF p_limit > 100 THEN p_limit := 100; END IF;
-
-  SELECT json_agg(row_to_json(d))
-  INTO v_items
-  FROM (
-    SELECT id, tenant_id, row_version, calc_version
-    FROM public.deals
-    WHERE tenant_id = v_tenant
-    ORDER BY id
-    LIMIT p_limit
-  ) d;
-
   RETURN json_build_object(
-    'ok', true,
+    'ok',   true,
     'code', 'OK',
-    'data', json_build_object('items', COALESCE(v_items, '[]'::json), 'next_cursor', null),
-    'error', null
+    'data', json_build_object(
+      'items', COALESCE(
+        (
+          SELECT json_agg(
+            json_build_object(
+              'id',           d.id,
+              'tenant_id',    d.tenant_id,
+              'row_version',  d.row_version,
+              'calc_version', d.calc_version,
+              'stage',        d.stage,
+              'health_color', public.get_deal_health_color(d.stage, d.updated_at)
+            )
+            ORDER BY d.id
+          )
+          FROM public.deals d
+          WHERE d.tenant_id = v_tenant
+          AND d.deleted_at IS NULL
+          LIMIT LEAST(COALESCE(p_limit, 25), 100)
+        ),
+        '[]'::json
+      ),
+      'next_cursor', NULL
+    ),
+    'error', NULL
   );
 END;
 $$;
 
-ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer) OWNER TO "postgres";
+ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer, "p_cursor" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."list_reminders_v1"() RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
@@ -1049,7 +1079,11 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
     "tenant_id" "uuid" NOT NULL,
     "row_version" bigint DEFAULT 1 NOT NULL,
     "calc_version" integer DEFAULT 1 NOT NULL,
-    "assumptions_snapshot_id" "uuid"
+    "assumptions_snapshot_id" "uuid",
+    "stage" "text" DEFAULT 'New'::"text" NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "deleted_at" timestamp with time zone,
+    CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['New'::"text", 'Analyzing'::"text", 'Offer Sent'::"text", 'Under Contract (UC)'::"text", 'Dispo'::"text", 'Closed'::"text", 'Dead'::"text"])))
 );
 
 ALTER TABLE "public"."deals" OWNER TO "postgres";
@@ -1279,7 +1313,7 @@ REVOKE ALL ON FUNCTION "public"."current_tenant_id"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."get_user_entitlements_v1"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_user_entitlements_v1"() TO "authenticated";
 
-REVOKE ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer) TO "authenticated";
+REVOKE ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer, "p_cursor" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."list_deals_v1"("p_limit" integer, "p_cursor" "text") TO "authenticated";
 
 GRANT SELECT,UPDATE ON TABLE "public"."user_profiles" TO "authenticated";
