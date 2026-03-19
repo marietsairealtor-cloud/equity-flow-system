@@ -413,6 +413,9 @@
     },
     "10.8.4": {
       "proof_pattern": "^docs/proofs/10\\.8\\.4_deal_health_"
+    },
+    "10.8.5": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.5_tc_data_model_"
     }
   }
 }

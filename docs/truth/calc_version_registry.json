@@ -40,6 +40,13 @@
     },
     {
       "calc_version": 1,
+      "label": "10.8.5 TC data model - update_deal_v1 hardening",
+      "description": "10.8.5: update_deal_v1 recreated with immutable close guard. Migration references calc_version incidentally in UPDATE SET and COALESCE - no calc logic changed. Immutable close enforced by stage check only.",
+      "introduced_pr": "PR140",
+      "released_at": "2026-03-19"
+    },
+    {
+      "calc_version": 1,
       "label": "10.8.4 deal health computation",
       "description": "10.8.4: list_deals_v1 recreated with health_color field. Migration references calc_version incidentally in json_build_object return - no calc logic changed. Health computation derives from updated_at and stage only.",
       "introduced_pr": "PR139",

@@ -8,7 +8,9 @@
     "draft_deals",
     "share_tokens",
     "tenant_slugs",
-    "tenant_subscriptions"
+    "tenant_subscriptions",
+    "deal_tc",
+    "deal_tc_checklist"
   ],
   "selector": {
     "required": true,

@@ -180,7 +180,7 @@
     },
     {
       "rule": "authenticated-routines-allowlisted-only",
-      "description": "authenticated routine grants must match execute_allowlist.json exactly",
+      "description": "authenticated routine grants must match execute_allowlist.json exactly. Exception: current_tenant_id() is granted to authenticated to support RLS policy evaluation per QA ruling 2026-03-19 (10.8.5 remediation).",
       "authority": "CONTRACTS.md §12"
     },
     {

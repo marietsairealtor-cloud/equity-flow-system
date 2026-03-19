@@ -405,3 +405,14 @@ REVOKE from PUBLIC/anon/authenticated. Callable only from allowlisted SECURITY D
 New signature: `list_deals_v1(p_limit integer, p_cursor text)`. Now returns `stage` and
 `health_color` (green/yellow/red) per `docs/truth/deal_health_thresholds.json`.
 Tenancy via `public.current_tenant_id()`. Existing callers must handle new fields.
+
+## 28) current_tenant_id() Privilege Exception (10.8.5 RLS Fix)
+Item 10.8.3B applied REVOKE EXECUTE FROM PUBLIC to public.current_tenant_id().
+This was overly broad -- it broke RLS policy evaluation for tenant-scoped tables
+where the policy body calls current_tenant_id() and the query runs as uthenticated.
+
+QA ruling 2026-03-19: GRANT EXECUTE ON FUNCTION public.current_tenant_id() TO authenticated
+is authorized and required. This is a narrow restoration (authenticated only, not PUBLIC).
+current_tenant_id() is uthenticated-executable specifically to support RLS evaluation.
+It remains non-executable by non and PUBLIC.
+Migration: 20260319000005_10_8_5_rls_privilege_fix.sql
