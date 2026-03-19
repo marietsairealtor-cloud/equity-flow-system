@@ -970,8 +970,9 @@ CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant      uuid;
-  v_rows_updated int;
+  v_tenant      UUID;
+  v_stage       TEXT;
+  v_rows_updated INT;
 BEGIN
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
@@ -980,6 +981,20 @@ BEGIN
       'code',  'NOT_AUTHORIZED',
       'data',  null,
       'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  -- Immutable close: reject writes to terminal-stage deals
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_id AND tenant_id = v_tenant;
+
+  IF v_stage IN ('Closed / Dead') THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'DEAL_IMMUTABLE',
+      'data',  null,
+      'error', json_build_object('message', 'Deal is in a terminal stage and cannot be modified', 'fields', json_build_object())
     );
   END IF;
 
@@ -994,19 +1009,18 @@ BEGIN
   GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
 
   IF v_rows_updated = 0 THEN
-    -- Either row does not exist for this tenant, or row_version mismatch
     RETURN json_build_object(
       'ok',    false,
       'code',  'CONFLICT',
       'data',  null,
-      'error', json_build_object('message', 'Row version mismatch or deal not found', 'fields', json_build_object())
+      'error', json_build_object('message', 'Row version mismatch or deal not found for this tenant', 'fields', json_build_object())
     );
   END IF;
 
   RETURN json_build_object(
     'ok',   true,
     'code', 'OK',
-    'data', json_build_object('id', p_id, 'row_version', p_expected_row_version + 1),
+    'data', json_build_object('id', p_id),
     'error', null
   );
 END;
@@ -1074,6 +1088,35 @@ CREATE TABLE IF NOT EXISTS "public"."deal_reminders" (
 
 ALTER TABLE "public"."deal_reminders" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."deal_tc" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    "aps_signed_date" timestamp with time zone,
+    "conditional_deadline" timestamp with time zone,
+    "closing_date" timestamp with time zone,
+    "assignment_fee" numeric,
+    "sell_price" numeric,
+    "actual_assignment_fee" numeric,
+    "buyer_info" "jsonb",
+    "notes" "text"
+);
+
+ALTER TABLE "public"."deal_tc" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."deal_tc_checklist" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    "item_key" "text" NOT NULL,
+    "completed_at" timestamp with time zone,
+    CONSTRAINT "deal_tc_checklist_item_key_check" CHECK (("item_key" = ANY (ARRAY['aps_signed'::"text", 'deposit_received'::"text", 'sold_firm'::"text", 'docs_to_lawyer'::"text", 'closing_confirmed'::"text", 'fee_received'::"text"])))
+);
+
+ALTER TABLE "public"."deal_tc_checklist" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."deals" (
     "id" "uuid" NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -1083,7 +1126,7 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
     "stage" "text" DEFAULT 'New'::"text" NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "deleted_at" timestamp with time zone,
-    CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['New'::"text", 'Analyzing'::"text", 'Offer Sent'::"text", 'Under Contract (UC)'::"text", 'Dispo'::"text", 'Closed'::"text", 'Dead'::"text"])))
+    CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['New'::"text", 'Analyzing'::"text", 'Offer Sent'::"text", 'Under Contract (UC)'::"text", 'Dispo'::"text", 'Closed / Dead'::"text"])))
 );
 
 ALTER TABLE "public"."deals" OWNER TO "postgres";
@@ -1184,6 +1227,18 @@ ALTER TABLE ONLY "public"."deal_outputs"
 ALTER TABLE ONLY "public"."deal_reminders"
     ADD CONSTRAINT "deal_reminders_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."deal_tc_checklist"
+    ADD CONSTRAINT "deal_tc_checklist_deal_item_key" UNIQUE ("deal_id", "item_key");
+
+ALTER TABLE ONLY "public"."deal_tc_checklist"
+    ADD CONSTRAINT "deal_tc_checklist_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."deal_tc"
+    ADD CONSTRAINT "deal_tc_deal_id_key" UNIQUE ("deal_id");
+
+ALTER TABLE ONLY "public"."deal_tc"
+    ADD CONSTRAINT "deal_tc_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_pkey" PRIMARY KEY ("id");
 
@@ -1244,6 +1299,18 @@ ALTER TABLE ONLY "public"."deal_reminders"
 ALTER TABLE ONLY "public"."deal_reminders"
     ADD CONSTRAINT "deal_reminders_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
 
+ALTER TABLE ONLY "public"."deal_tc_checklist"
+    ADD CONSTRAINT "deal_tc_checklist_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."deal_tc_checklist"
+    ADD CONSTRAINT "deal_tc_checklist_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."deal_tc"
+    ADD CONSTRAINT "deal_tc_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."deal_tc"
+    ADD CONSTRAINT "deal_tc_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_assumptions_snapshot_fk" FOREIGN KEY ("assumptions_snapshot_id") REFERENCES "public"."deal_inputs"("id") DEFERRABLE INITIALLY DEFERRED;
 
@@ -1275,6 +1342,26 @@ ALTER TABLE "public"."deal_inputs" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."deal_outputs" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."deal_reminders" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."deal_tc" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."deal_tc_checklist" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "deal_tc_checklist_delete_own" ON "public"."deal_tc_checklist" FOR DELETE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deal_tc_checklist_insert_own" ON "public"."deal_tc_checklist" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deal_tc_checklist_select_own" ON "public"."deal_tc_checklist" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deal_tc_checklist_update_own" ON "public"."deal_tc_checklist" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deal_tc_delete_own" ON "public"."deal_tc" FOR DELETE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deal_tc_insert_own" ON "public"."deal_tc" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deal_tc_select_own" ON "public"."deal_tc" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "deal_tc_update_own" ON "public"."deal_tc" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."deals" ENABLE ROW LEVEL SECURITY;
 
@@ -1309,6 +1396,7 @@ ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON FUNCTION "public"."current_tenant_id"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."current_tenant_id"() TO "authenticated";
 
 REVOKE ALL ON FUNCTION "public"."get_user_entitlements_v1"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_user_entitlements_v1"() TO "authenticated";

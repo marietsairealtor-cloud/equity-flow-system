@@ -146,6 +146,15 @@
       "notes": "Min role: member. VALIDATION_ERROR on null deal_id, reminder_date, or reminder_type. NOT_FOUND if deal not in tenant. require_min_role_v1 exception caught and returned as JSON envelope."
     },
     {
+      "name": "current_tenant_id",
+      "version": 1,
+      "build_route_owner": "10.8.5",
+      "input_contract": "CONTRACTS.md §28 -- internal helper, authenticated-executable for RLS evaluation only",
+      "response_schema": null,
+      "error_codes": [],
+      "notes": "Internal tenant resolution helper. Not a public-facing RPC. Granted to authenticated narrowly per QA ruling 2026-03-19 to support RLS policy evaluation. Not callable by anon or PUBLIC."
+    },
+    {
       "name": "complete_reminder_v1",
       "version": 1,
       "build_route_owner": "10.8.3",
