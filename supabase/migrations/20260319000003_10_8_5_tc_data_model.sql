@@ -40,6 +40,8 @@ CREATE POLICY "deal_tc_delete_own" ON public.deal_tc
   USING (tenant_id = public.current_tenant_id());
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.deal_tc TO authenticated;
+-- Revoked immediately per CONTRACTS.md s12 -- superseded by 20260319000006
+REVOKE ALL ON public.deal_tc FROM anon, authenticated;
 
 -- deal_tc_checklist: checklist items per deal
 CREATE TABLE public.deal_tc_checklist (
@@ -82,6 +84,8 @@ CREATE POLICY "deal_tc_checklist_delete_own" ON public.deal_tc_checklist
   USING (tenant_id = public.current_tenant_id());
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.deal_tc_checklist TO authenticated;
+-- Revoked immediately per CONTRACTS.md s12 -- superseded by 20260319000006
+REVOKE ALL ON public.deal_tc_checklist FROM anon, authenticated;
 
 -- Harden update_deal_v1: reject writes to terminal-stage deals (Immutable Close)
 -- DROP + CREATE per CONTRACTS s2 (behavioral change)
