@@ -407,6 +407,9 @@
     },
     "10.8.3B": {
       "proof_pattern": "^docs/proofs/10\\.8\\.3B_migration_test_remediation_"
+    },
+    "10.8.3C": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.3C_design_audit_"
     }
   }
 }
