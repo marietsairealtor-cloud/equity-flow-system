@@ -7115,3 +7115,25 @@ Gate: lane-only (not merge-blocking on subsequent items)
       Required before Section 10 close verification (SOP S17)
 
 Status: COMPLETE -- merged to main
+
+## 2026-03-18 — Build Route v2.4 — 10.8.3D Security Design Remediation
+
+Objective
+- Formally resolve version-skew audit finding 10.8.3C-F01 by aligning item 6.7 DoD with terminal security posture.
+
+Changes
+- Amended BUILD_ROUTE_V2.4.md item 6.7: Replaced 'TOKEN_EXPIRED' requirement with 'NOT_FOUND' per 8.9/9.4 hardening.
+- Verified CONTRACTS.md reflects removal of TOKEN_EXPIRED code.
+- Added 10.8.3D proof log and updated manifest.
+
+Proof
+- docs/proofs/10.8.3D_design_remediation_20260318T210300Z.log
+
+DoD
+- Documentation Alignment: 6.7 DoD amended to NOT_FOUND.
+- Contract Consistency: TOKEN_EXPIRED confirmed absent from valid response codes.
+- Audit Closure: Finding 10.8.3C-F01 formally closed.
+- Verification: Entire pgTAP suite passes on final intended state.
+
+Status
+- PASS
