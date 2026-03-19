@@ -16,7 +16,9 @@ ALTER TABLE public.deals
   ADD COLUMN deleted_at TIMESTAMPTZ;
 
 -- Internal helper: callable only from SECURITY DEFINER RPCs, not by authenticated.
-CREATE OR REPLACE FUNCTION public.get_deal_health_color(
+DROP FUNCTION IF EXISTS public.get_deal_health_color(TEXT, TIMESTAMPTZ);
+
+CREATE FUNCTION public.get_deal_health_color(
   p_stage      TEXT,
   p_updated_at TIMESTAMPTZ
 )
