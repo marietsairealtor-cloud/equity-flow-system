@@ -7115,3 +7115,26 @@ Gate: lane-only (not merge-blocking on subsequent items)
       Required before Section 10 close verification (SOP S17)
 
 Status: COMPLETE -- merged to main
+
+---
+
+### Devlog Entry: Resolution of Finding 10.8.3C-F01
+
+**Date:** 2026-03-19
+**Finding ID:** 10.8.3C-F01
+**Status:** **RESOLVED** (Closed by Design Invariant)
+
+**Description of Resolution:**
+Finding 10.8.3C-F01 identified a discrepancy where the 6.7 share-link migration expected a `TOKEN_EXPIRED` error code, but the 8.9 test suite asserted `NOT_FOUND`. 
+
+Upon investigation of the commit history:
+* **Initial Implementation (`c6eded4`):** Defined `TOKEN_EXPIRED` as the standard response for expired share tokens.
+* **Superseding Update (`154b36e`):** Introduced the "8.9 share token expiration invariant." This commit intentionally unified expired and non-existent token responses under `NOT_FOUND` to prevent **existence leaks** (anti-enumeration hardening).
+* **Validation (`8a1d509`):** The RPC error contract tests (10.5) confirm `NOT_FOUND` is now the global requirement for all `lookup_share_token_v1` failure paths.
+
+**Conclusion:**
+The behavior observed in the 8.9 buildroute is the intended security posture. The 6.7 requirement for `TOKEN_EXPIRED` is officially deprecated in favor of the 8.9 "no existence leak" policy. No further buildroute items or code changes are required. This entry serves as the formal justification for the 10.8.3C audit.
+
+**Audit Trail:**
+* **Source Commit:** `154b36e0` (feat: 8.9 share token expiration invariant)
+* **Contract Baseline:** `8a1d5097` (feat(10.5): RPC error contract tests)
