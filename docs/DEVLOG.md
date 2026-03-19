@@ -7170,3 +7170,39 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-19 -- Build Route v2.4 -- 10.8.5
+
+Objective
+- Establish TC checklist data model with immutable close enforcement on terminal-stage deals.
+
+Changes
+- Added public.deal_tc table with aps_signed_date, conditional_deadline, closing_date, assignment_fee, sell_price, actual_assignment_fee, buyer_info, notes, row_version. RLS ON, tenant-scoped.
+- Added public.deal_tc_checklist table with deal_id, tenant_id, item_key (CHECK constraint on 6 authoritative keys), completed_at, row_version. Unique constraint on (deal_id, item_key). RLS ON, tenant-scoped.
+- Hardened update_deal_v1 via DROP+CREATE to reject writes to deals in stage 'Closed / Dead' returning DEAL_IMMUTABLE.
+- Corrective migration 20260319000004 updated deals_stage_check constraint to use authoritative 'Closed / Dead' single-value string per WEWEB_ARCHITECTURE s3.
+- Corrective migration 20260319000005 restored GRANT EXECUTE ON current_tenant_id() TO authenticated per QA ruling 2026-03-19 (10.8.3B REVOKE FROM PUBLIC was overly broad).
+- Corrective migration 20260319000006 revoked direct table grants on deal_tc and deal_tc_checklist per CONTRACTS.md s12.
+- Added current_tenant_id to execute_allowlist.json, rpc_contract_registry.json, privilege_truth.json authenticated_routines.
+- Added deal_tc and deal_tc_checklist to tenant_table_selector.json.
+- Added superseded_grants entry for migration 003 in privilege_truth.json.
+- CONTRACTS.md ss27-28 added documenting list_deals_v1 extension and current_tenant_id privilege exception.
+- Governance change file docs/governance/GOVERNANCE_CHANGE_PR140.md added.
+
+Proof
+- docs/proofs/10.8.5_tc_data_model_20260319T155211Z.log
+
+DoD
+- deal_tc table exists with required columns -- PASS
+- deal_tc_checklist table with item_key CHECK constraint and unique (deal_id, item_key) -- PASS
+- Progress derivable: count(completed) / count(total) -- PASS
+- Days to close derivable: closing_date - now() -- PASS
+- Immutable close: update_deal_v1 rejects writes to Closed/Dead deals -- PASS
+- RLS ON, tenant-scoped on all new tables -- PASS
+- pgTAP tests: checklist completion, immutable close, progress computation -- PASS
+
+Status
+- PASS
