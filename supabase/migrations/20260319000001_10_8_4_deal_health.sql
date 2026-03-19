@@ -1,7 +1,19 @@
 -- 10.8.4: Deal health computation
+-- Adds stage, updated_at, deleted_at to public.deals (first item requiring these columns).
 -- Adds internal helper get_deal_health_color (not executable by authenticated).
 -- Replaces list_deals_v1 with DROP/CREATE (return shape change per CONTRACTS s2).
 -- Tenancy via public.current_tenant_id(). No direct tenant_memberships query.
+
+-- Column additions to public.deals
+ALTER TABLE public.deals
+  ADD COLUMN stage TEXT NOT NULL DEFAULT 'New'
+    CONSTRAINT deals_stage_check CHECK (stage IN ('New','Analyzing','Offer Sent','Under Contract (UC)','Dispo','Closed','Dead'));
+
+ALTER TABLE public.deals
+  ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+ALTER TABLE public.deals
+  ADD COLUMN deleted_at TIMESTAMPTZ;
 
 -- Internal helper: callable only from SECURITY DEFINER RPCs, not by authenticated.
 CREATE OR REPLACE FUNCTION public.get_deal_health_color(
@@ -22,8 +34,8 @@ AS $fn$
     WHEN p_stage = 'Analyzing'  AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7  THEN 'yellow'
     WHEN p_stage = 'Offer Sent' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5        THEN 'red'
     WHEN p_stage = 'Offer Sent' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5 * 0.7  THEN 'yellow'
-    WHEN p_stage = 'UC'         AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14       THEN 'red'
-    WHEN p_stage = 'UC'         AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14 * 0.7 THEN 'yellow'
+    WHEN p_stage = 'Under Contract (UC)'         AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14       THEN 'red'
+    WHEN p_stage = 'Under Contract (UC)'         AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14 * 0.7 THEN 'yellow'
     WHEN p_stage = 'Dispo'      AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7        THEN 'red'
     WHEN p_stage = 'Dispo'      AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7  THEN 'yellow'
     ELSE 'green'
