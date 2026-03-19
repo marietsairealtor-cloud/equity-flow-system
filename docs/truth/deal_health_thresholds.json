@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "build_route_item": "10.8.4",
+  "description": "Stage-based activity thresholds for deal health computation. Red/yellow/green derived from deals.updated_at vs stage threshold.",
+  "thresholds": {
+    "New":        { "days": 3  },
+    "Analyzing":  { "days": 7  },
+    "Offer Sent": { "days": 5  },
+    "UC":         { "days": 14 },
+    "Dispo":      { "days": 7  }
+  },
+  "rules": {
+    "green":  "gap <= threshold",
+    "yellow": "gap > threshold * 0.7 AND gap <= threshold",
+    "red":    "gap > threshold"
+  },
+  "fallback": "yellow"
+}

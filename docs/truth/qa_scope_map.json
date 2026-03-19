@@ -410,6 +410,9 @@
     },
     "10.8.3C": {
       "proof_pattern": "^docs/proofs/10\\.8\\.3C_design_audit_"
+    },
+    "10.8.4": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.4_deal_health_"
     }
   }
 }
