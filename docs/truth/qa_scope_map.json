@@ -419,6 +419,9 @@
     },
     "10.8.6": {
       "proof_pattern": "^docs/proofs/10\\.8\\.6_farm_areas_"
+    },
+    "10.8.6A": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.6A_automation_"
     }
   }
 }

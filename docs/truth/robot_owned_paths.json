@@ -1,10 +1,14 @@
 {
-  "version": 1,
+  "version": 2,
   "paths": [
     "docs/handoff_latest.txt",
     "generated/**",
     "docs/proofs/**",
     "docs/truth/calc_version_registry.json",
-    "docs/truth/cloud_migration_parity.json"
-  ]
+    "docs/truth/cloud_migration_parity.json",
+    "docs/truth/tenant_table_selector.json",
+    "docs/truth/definer_allowlist.json",
+    "docs/truth/execute_allowlist.json"
+  ],
+  "notes": "cloud_migration_parity.json, tenant_table_selector.json, definer_allowlist.json, and execute_allowlist.json are machine-derived by sync_truth_registries.mjs during handoff. Manual edits to these files are forbidden after 10.8.6A merges."
 }

@@ -87,6 +87,15 @@ if ($precondExit -ne 0) {
 & (Join-Path $PSScriptRoot "gen_contracts_snapshot.ps1") | Out-String | Out-Null
 & (Join-Path $PSScriptRoot "gen_write_path_registry.ps1") | Out-String | Out-Null
 
+# 10.8.6A: Sync truth registries from Postgres catalog + migrations dir
+Write-Host "Running sync_truth_registries.mjs..."
+$syncOut = node (Join-Path $PSScriptRoot "sync_truth_registries.mjs") 2>&1
+Write-Host $syncOut
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "HANDOFF FAIL: sync_truth_registries.mjs exited $LASTEXITCODE"
+  exit 1
+}
+
 # Lints/guards
 & (Join-Path $PSScriptRoot "contracts_lint.ps1") | Out-String | Out-Null
 & (Join-Path $PSScriptRoot "must_contain.ps1") | Out-String | Out-Null
