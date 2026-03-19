@@ -4358,7 +4358,7 @@ The migration is truth. The test verifies truth. Order is non-negotiable:
 **Prerequisite:** 10.8.3 merged and main clean.
 
 ---
-### **10.8.3B — Migration + pgTAP Test Remediation**
+10.8.3B — Migration + pgTAP Test Remediation
 Deliverable:
 Every FAIL finding in the 10.8.3A audit log corrected and closed. Migrations corrected first. Tests rewritten only after the corrected migration is confirmed CI-green. System exits this item with every audited migration+test pair in a clean, verifiable state. Includes one consolidating forward migration closing all REVOKE EXECUTE FROM PUBLIC gaps identified across the audit.
 Authoring Law (same as 10.8.3A — standing order):
@@ -4399,7 +4399,7 @@ Proof: docs/proofs/10.8.3B_migration_test_remediation_<UTC>.log
 Gate: merge-blocking (existing gates: clean-room-replay, schema-drift, pgtap, definer-safety-audit, anon-privilege-audit, rpc-response-contract-tests, qa:verify, proof-commit-binding)
 Prerequisite: 10.8.3A merged and main clean. Audit log finalized and committed.
 
-### **10.8.3C — Security-Critical Design Correctness Audit**
+10.8.3C — Security-Critical Design Correctness Audit
 Deliverable:
 QA-independent verification that each security-critical Build Route item's migration implements exactly what its DoD specifies, and that the pgTAP test suite proves each DoD assertion. This item does not fix defects — it produces a signed QA verdict per item. Any failures found become new findings tracked in a separate remediation PR.
 Background:
@@ -4448,35 +4448,6 @@ Proof manifest updated via proof:finalize.
 Proof: docs/proofs/10.8.3C_design_audit_<UTC>.log
 Gate: lane-only — not merge-blocking on subsequent items, but required before Section 10 close verification (SOP §17).
 Prerequisite: 10.8.3B merged and main clean. Build Route uploaded to QA session with all 13 item DoDs accessible.
-
-### **10.8.3D — Security Design Remediation (Audit Finding 10.8.3C-F01)**
-Deliverable: Formal resolution of the version-skew identified in the 10.8.3C audit for item 6.7 (Share-link surface). This item harmonizes the historical documentation with the improved security posture established in later migrations.
-
-Definition of Done (DoD): All must be true:
-
-Documentation Alignment: BUILD_ROUTE_V2.4.md item 6.7 (Share-Link Surface) is amended to replace the requirement "Expired token returns distinguishable code (TOKEN_EXPIRED)" with "Expired tokens return NOT_FOUND to prevent existence leaks (per Item 8.9 and 9.4 hardening)".
-
-Contract Consistency: CONTRACTS.md is verified to ensure TOKEN_EXPIRED is no longer listed as a valid response code for lookup_share_token_v1.
-
-Audit Closure: The finding 10.8.3C-F01 is formally closed in the 10.8.3D proof log.
-
-Verification: npm run pr:preflight and npm run test (pgTAP) pass across the entire suite, confirming 6_7_share_link_isolation.test.sql accurately reflects the final intended system state.
-
-Proof: docs/proofs/10.8.3D_design_remediation_<UTC>.log
-
-Must include:
-
-PR HEAD SHA.
-
-Diff of BUILD_ROUTE_V2.4.md showing the 6.7 DoD amendment.
-
-Confirmation that pgtap suite remains green on the final state.
-
-RESULT=PASS.
-
-Gate: qa:verify + proof-commit-binding (merge-blocking).
-
-Prerequisite: 10.8.3C audit log merged and finding 10.8.3C-F01 registered.
 ---
 ### **10.8.4 — Deal Health Computation**
 

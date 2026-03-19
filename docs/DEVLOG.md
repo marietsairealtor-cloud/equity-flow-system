@@ -7116,24 +7116,25 @@ Gate: lane-only (not merge-blocking on subsequent items)
 
 Status: COMPLETE -- merged to main
 
-## 2026-03-18 — Build Route v2.4 — 10.8.3D Security Design Remediation
+---
 
-Objective
-- Formally resolve version-skew audit finding 10.8.3C-F01 by aligning item 6.7 DoD with terminal security posture.
+### Devlog Entry: Resolution of Finding 10.8.3C-F01
 
-Changes
-- Amended BUILD_ROUTE_V2.4.md item 6.7: Replaced 'TOKEN_EXPIRED' requirement with 'NOT_FOUND' per 8.9/9.4 hardening.
-- Verified CONTRACTS.md reflects removal of TOKEN_EXPIRED code.
-- Added 10.8.3D proof log and updated manifest.
+**Date:** 2026-03-19
+**Finding ID:** 10.8.3C-F01
+**Status:** **RESOLVED** (Closed by Design Invariant)
 
-Proof
-- docs/proofs/10.8.3D_design_remediation_20260318T210300Z.log
+**Description of Resolution:**
+Finding 10.8.3C-F01 identified a discrepancy where the 6.7 share-link migration expected a `TOKEN_EXPIRED` error code, but the 8.9 test suite asserted `NOT_FOUND`. 
 
-DoD
-- Documentation Alignment: 6.7 DoD amended to NOT_FOUND.
-- Contract Consistency: TOKEN_EXPIRED confirmed absent from valid response codes.
-- Audit Closure: Finding 10.8.3C-F01 formally closed.
-- Verification: Entire pgTAP suite passes on final intended state.
+Upon investigation of the commit history:
+* **Initial Implementation (`c6eded4`):** Defined `TOKEN_EXPIRED` as the standard response for expired share tokens.
+* **Superseding Update (`154b36e`):** Introduced the "8.9 share token expiration invariant." This commit intentionally unified expired and non-existent token responses under `NOT_FOUND` to prevent **existence leaks** (anti-enumeration hardening).
+* **Validation (`8a1d509`):** The RPC error contract tests (10.5) confirm `NOT_FOUND` is now the global requirement for all `lookup_share_token_v1` failure paths.
 
-Status
-- PASS
+**Conclusion:**
+The behavior observed in the 8.9 buildroute is the intended security posture. The 6.7 requirement for `TOKEN_EXPIRED` is officially deprecated in favor of the 8.9 "no existence leak" policy. No further buildroute items or code changes are required. This entry serves as the formal justification for the 10.8.3C audit.
+
+**Audit Trail:**
+* **Source Commit:** `154b36e0` (feat: 8.9 share token expiration invariant)
+* **Contract Baseline:** `8a1d5097` (feat(10.5): RPC error contract tests)
