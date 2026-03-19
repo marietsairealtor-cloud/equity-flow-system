@@ -1,22 +1,22 @@
 {
   "version": 1,
   "allow": [
+    "complete_reminder_v1",
     "create_deal_v1",
+    "create_farm_area_v1",
+    "create_reminder_v1",
     "create_share_token_v1",
+    "current_tenant_id",
+    "delete_farm_area_v1",
     "foundation_log_activity_v1",
     "get_user_entitlements_v1",
     "list_deals_v1",
+    "list_farm_areas_v1",
+    "list_reminders_v1",
     "lookup_share_token_v1",
     "resolve_form_slug_v1",
     "revoke_share_token_v1",
     "submit_form_v1",
-    "update_deal_v1",
-    "list_reminders_v1",
-    "create_reminder_v1",
-    "complete_reminder_v1",
-    "list_farm_areas_v1",
-    "create_farm_area_v1",
-    "delete_farm_area_v1",
-    "current_tenant_id"
+    "update_deal_v1"
   ]
 }

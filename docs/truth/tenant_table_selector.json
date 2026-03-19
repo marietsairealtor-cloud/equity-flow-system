@@ -1,17 +1,21 @@
 {
   "tenant_owned_tables": [
     "activity_log",
+    "calc_versions",
     "deal_inputs",
     "deal_outputs",
     "deal_reminders",
+    "deal_tc",
+    "deal_tc_checklist",
     "deals",
     "draft_deals",
     "share_tokens",
+    "tenant_farm_areas",
+    "tenant_memberships",
     "tenant_slugs",
     "tenant_subscriptions",
-    "deal_tc",
-    "deal_tc_checklist",
-    "tenant_farm_areas"
+    "tenants",
+    "user_profiles"
   ],
   "selector": {
     "required": true,

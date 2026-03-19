@@ -1,0 +1,201 @@
+PROOF_HEAD=fd31885d408fc5e2f14e18d8f04a621e713ca6d6
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.6A Truth Registry & Pipeline Automation -- Proof Log ===
+Date: 2026-03-19T18:41:38.0779258-04:00
+Branch: feat/10.8.6A-truth-automation
+PR HEAD SHA: fd31885d408fc5e2f14e18d8f04a621e713ca6d6
+
+=== DoD 1: tenant_table_selector.json auto-overwritten from RLS catalog ===
+{
+  "tenant_owned_tables": [
+    "activity_log",
+    "calc_versions",
+    "deal_inputs",
+    "deal_outputs",
+    "deal_reminders",
+    "deal_tc",
+    "deal_tc_checklist",
+    "deals",
+    "draft_deals",
+    "share_tokens",
+    "tenant_farm_areas",
+    "tenant_memberships",
+    "tenant_slugs",
+    "tenant_subscriptions",
+    "tenants",
+    "user_profiles"
+  ],
+  "selector": {
+    "required": true,
+    "tenant_id_column": "tenant_id"
+  },
+  "version": 3,
+  "tenant_tables": [
+    "user_profiles"
+  ]
+}
+
+
+=== DoD 2: definer_allowlist.json auto-overwritten from SECURITY DEFINER catalog ===
+{
+  "version": 1,
+  "allow": [
+    "public.complete_reminder_v1",
+    "public.create_deal_v1",
+    "public.create_farm_area_v1",
+    "public.create_reminder_v1",
+    "public.create_share_token_v1",
+    "public.delete_farm_area_v1",
+    "public.foundation_log_activity_v1",
+    "public.get_user_entitlements_v1",
+    "public.list_deals_v1",
+    "public.list_farm_areas_v1",
+    "public.list_reminders_v1",
+    "public.lookup_share_token_v1",
+    "public.resolve_form_slug_v1",
+    "public.revoke_share_token_v1",
+    "public.submit_form_v1",
+    "public.update_deal_v1"
+  ],
+  "anon_callable": [
+    "public.resolve_form_slug_v1",
+    "public.submit_form_v1"
+  ]
+}
+
+
+=== DoD 3: execute_allowlist.json auto-overwritten from EXECUTE grants catalog ===
+{
+  "version": 1,
+  "allow": [
+    "complete_reminder_v1",
+    "create_deal_v1",
+    "create_farm_area_v1",
+    "create_reminder_v1",
+    "create_share_token_v1",
+    "current_tenant_id",
+    "delete_farm_area_v1",
+    "foundation_log_activity_v1",
+    "get_user_entitlements_v1",
+    "list_deals_v1",
+    "list_farm_areas_v1",
+    "list_reminders_v1",
+    "lookup_share_token_v1",
+    "resolve_form_slug_v1",
+    "revoke_share_token_v1",
+    "submit_form_v1",
+    "update_deal_v1"
+  ]
+}
+
+
+=== DoD 4: cloud_migration_parity.json auto-overwritten from migrations dir ===
+{
+  "schema_version": 1,
+  "cloud_project_ref": "upnelewdvbicxvfgzojg",
+  "migration_tip": "20260319000007",
+  "migration_tip_file": "20260319000007_10_8_6_farm_areas.sql",
+  "migration_count": 56,
+  "pinned_at": "2026-03-19"
+}
+
+
+=== DoD 5: Determinism - run twice, zero diffs between runs ===
+PROVEN: Compare-Object run1 vs run2 produced no output (zero diff)
+
+=== DoD 6: robot_owned_paths.json updated ===
+{
+  "version": 2,
+  "paths": [
+    "docs/handoff_latest.txt",
+    "generated/**",
+    "docs/proofs/**",
+    "docs/truth/calc_version_registry.json",
+    "docs/truth/cloud_migration_parity.json",
+    "docs/truth/tenant_table_selector.json",
+    "docs/truth/definer_allowlist.json",
+    "docs/truth/execute_allowlist.json"
+  ],
+  "notes": "cloud_migration_parity.json, tenant_table_selector.json, definer_allowlist.json, and execute_allowlist.json are machine-derived by sync_truth_registries.mjs during handoff. Manual edits to these files are forbidden after 10.8.6A merges."
+}
+
+
+=== DoD 7: SOP Phase 1 manual-only files defined ===
+
+> docs\artifacts\SOP_WORKFLOW.md:34:- [ ] Author manual-only files (migrations, tests, CONTRACTS.md, governance file)
+  docs\artifacts\SOP_WORKFLOW.md:35:- [ ] Run all Phase 1 gate pre-checks (§1 Phase 1 Step 4) — see §18 for over-trigger behaviors
+  docs\artifacts\SOP_WORKFLOW.md:36:- [ ] Commit all implementation changes
+> docs\artifacts\SOP_WORKFLOW.md:89:**Step 3 — Manual-Only Files (Human Authorship)**
+  docs\artifacts\SOP_WORKFLOW.md:90:
+  docs\artifacts\SOP_WORKFLOW.md:91:Author the files that require human architectural intent. These are never overwritten by robot scripts:
+
+
+
+=== DoD 8: SOP commit sequence defined ===
+
+> docs\artifacts\SOP_WORKFLOW.md:626:### Commit Sequence (LOCKED)
+  docs\artifacts\SOP_WORKFLOW.md:627:
+  docs\artifacts\SOP_WORKFLOW.md:628:```
+  docs\artifacts\SOP_WORKFLOW.md:629:1. Write code/migrations/tests (Phase 1)
+  docs\artifacts\SOP_WORKFLOW.md:630:2. Verify tests pass locally (supabase test db)
+  docs\artifacts\SOP_WORKFLOW.md:631:3. Run npm run handoff (Phase 2)
+
+
+
+=== DoD 9A: ci_governance_change_guard accepts UTC format ===
+gov_touched=True
+
+
+=== DoD 9B: SOP updated with UTC naming convention ===
+
+> docs\artifacts\SOP_WORKFLOW.md:50:- [ ] Rename to `docs/proofs/<ITEM>_<UTC>.log`
+> docs\artifacts\SOP_WORKFLOW.md:51:- [ ] `npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log`
+  docs\artifacts\SOP_WORKFLOW.md:52:- [ ] Commit only: proof log + manifest.json
+> docs\artifacts\SOP_WORKFLOW.md:95:- Governance: `docs/governance/GOVERNANCE_CHANGE_<UTC>.md` — justification for the change
+  docs\artifacts\SOP_WORKFLOW.md:96:- Manual Registries: `calc_version_registry.json`, `rpc_contract_registry.json`, `privilege_truth.json`
+> docs\artifacts\SOP_WORKFLOW.md:167:**Step 14** — Rename to canonical form: `docs/proofs/<ITEM>_<UTC>.log`
+  docs\artifacts\SOP_WORKFLOW.md:168:Filename must exactly match the path allowlisted in Phase 1 Step 4.
+> docs\artifacts\SOP_WORKFLOW.md:170:**Step 15** — Finalize exactly once: `npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log`
+  docs\artifacts\SOP_WORKFLOW.md:171:
+> docs\artifacts\SOP_WORKFLOW.md:173:- `docs/proofs/<ITEM>_<UTC>.log`
+  docs\artifacts\SOP_WORKFLOW.md:174:- `docs/proofs/manifest.json`
+> docs\artifacts\SOP_WORKFLOW.md:266:npm run proof:finalize docs/proofs/<ITEM>_<UTC>.log
+  docs\artifacts\SOP_WORKFLOW.md:267:```
+> docs\artifacts\SOP_WORKFLOW.md:301:4. Generate the proof log again (canonical `<UTC>.log` only).
+  docs\artifacts\SOP_WORKFLOW.md:302:5. Run `npm run proof:finalize docs/proofs/<proof_log>.log` exactly once.
+
+
+
+=== DoD 9C: governance file uses UTC format ===
+
+GOVERNANCE_CHANGE_20260319T204427Z.md
+
+
+
+=== Files changed in PR ===
+docs/artifacts/SOP_WORKFLOW.md
+docs/governance/GOVERNANCE_CHANGE_20260319T204427Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/robot_owned_paths.json
+docs/truth/tenant_table_selector.json
+docs/truth/write_path_registry.json
+scripts/ci_governance_change_guard.ps1
+scripts/ci_robot_owned_guard.ps1
+scripts/handoff.ps1
+scripts/sync_truth_registries.mjs
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.6A Truth Registry and Pipeline Automation: PASS (merge-blocking gate)
