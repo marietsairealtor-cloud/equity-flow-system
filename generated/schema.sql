@@ -178,6 +178,52 @@ $$;
 
 ALTER FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer, "p_assumptions" "jsonb") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."create_farm_area_v1"("p_area_name" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant UUID;
+  v_id     UUID;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  PERFORM public.require_min_role_v1('admin');
+
+  IF p_area_name IS NULL OR trim(p_area_name) = '' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'area_name is required', 'fields', json_build_object('area_name', 'required'))
+    );
+  END IF;
+
+  INSERT INTO public.tenant_farm_areas (tenant_id, area_name)
+  VALUES (v_tenant, trim(p_area_name))
+  RETURNING id INTO v_id;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('id', v_id),
+    'error', null
+  );
+EXCEPTION
+  WHEN unique_violation THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', null,
+      'error', json_build_object('message', 'Farm area name already exists for this tenant', 'fields', json_build_object('area_name', 'conflict'))
+    );
+END;
+$$;
+
+ALTER FUNCTION "public"."create_farm_area_v1"("p_area_name" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."create_reminder_v1"("p_deal_id" "uuid", "p_reminder_date" timestamp with time zone, "p_reminder_type" "text") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -367,6 +413,47 @@ CREATE OR REPLACE FUNCTION "public"."current_tenant_id"() RETURNS "uuid"
 $$;
 
 ALTER FUNCTION "public"."current_tenant_id"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."delete_farm_area_v1"("p_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant      UUID;
+  v_rows_deleted INT;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  PERFORM public.require_min_role_v1('admin');
+
+  DELETE FROM public.tenant_farm_areas
+  WHERE id = p_id AND tenant_id = v_tenant;
+
+  GET DIAGNOSTICS v_rows_deleted = ROW_COUNT;
+
+  IF v_rows_deleted = 0 THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Farm area not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('id', p_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."delete_farm_area_v1"("p_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."foundation_log_activity_v1"("p_action" "text", "p_meta" "jsonb" DEFAULT '{}'::"jsonb", "p_actor_id" "uuid" DEFAULT NULL::"uuid") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -558,6 +645,52 @@ END;
 $$;
 
 ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer, "p_cursor" "text") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."list_farm_areas_v1"() RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant UUID;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  PERFORM public.require_min_role_v1('admin');
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object(
+      'items', COALESCE(
+        (
+          SELECT json_agg(
+            json_build_object(
+              'id',          fa.id,
+              'tenant_id',   fa.tenant_id,
+              'area_name',   fa.area_name,
+              'row_version', fa.row_version,
+              'created_at',  fa.created_at
+            )
+            ORDER BY fa.area_name
+          )
+          FROM public.tenant_farm_areas fa
+          WHERE fa.tenant_id = v_tenant
+        ),
+        '[]'::json
+      )
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_farm_areas_v1"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."list_reminders_v1"() RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
@@ -1126,6 +1259,7 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
     "stage" "text" DEFAULT 'New'::"text" NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "deleted_at" timestamp with time zone,
+    "farm_area_id" "uuid",
     CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['New'::"text", 'Analyzing'::"text", 'Offer Sent'::"text", 'Under Contract (UC)'::"text", 'Dispo'::"text", 'Closed / Dead'::"text"])))
 );
 
@@ -1165,6 +1299,16 @@ CREATE OR REPLACE VIEW "public"."share_token_packet" AS
      JOIN "public"."deals" "d" ON ((("d"."id" = "st"."deal_id") AND ("d"."tenant_id" = "st"."tenant_id"))));
 
 ALTER VIEW "public"."share_token_packet" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."tenant_farm_areas" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    "area_name" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."tenant_farm_areas" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."tenant_memberships" (
     "id" "uuid" NOT NULL,
@@ -1248,6 +1392,12 @@ ALTER TABLE ONLY "public"."draft_deals"
 ALTER TABLE ONLY "public"."share_tokens"
     ADD CONSTRAINT "share_tokens_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."tenant_farm_areas"
+    ADD CONSTRAINT "tenant_farm_areas_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."tenant_farm_areas"
+    ADD CONSTRAINT "tenant_farm_areas_tenant_area_unique" UNIQUE ("tenant_id", "area_name");
+
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_pkey" PRIMARY KEY ("id");
 
@@ -1314,11 +1464,17 @@ ALTER TABLE ONLY "public"."deal_tc"
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_assumptions_snapshot_fk" FOREIGN KEY ("assumptions_snapshot_id") REFERENCES "public"."deal_inputs"("id") DEFERRABLE INITIALLY DEFERRED;
 
+ALTER TABLE ONLY "public"."deals"
+    ADD CONSTRAINT "deals_farm_area_id_fkey" FOREIGN KEY ("farm_area_id") REFERENCES "public"."tenant_farm_areas"("id") ON DELETE SET NULL;
+
 ALTER TABLE ONLY "public"."draft_deals"
     ADD CONSTRAINT "draft_deals_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."share_tokens"
     ADD CONSTRAINT "share_tokens_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
+
+ALTER TABLE ONLY "public"."tenant_farm_areas"
+    ADD CONSTRAINT "tenant_farm_areas_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
 
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
@@ -1376,6 +1532,16 @@ CREATE POLICY "deals_update_own" ON "public"."deals" FOR UPDATE TO "authenticate
 ALTER TABLE "public"."draft_deals" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."share_tokens" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."tenant_farm_areas" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "tenant_farm_areas_delete_own" ON "public"."tenant_farm_areas" FOR DELETE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "tenant_farm_areas_insert_own" ON "public"."tenant_farm_areas" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "tenant_farm_areas_select_own" ON "public"."tenant_farm_areas" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+CREATE POLICY "tenant_farm_areas_update_own" ON "public"."tenant_farm_areas" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."tenant_memberships" ENABLE ROW LEVEL SECURITY;
 

@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-03-19T15:43:06Z",
+    "generated":  "2026-03-19T19:42:30Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -17,6 +17,15 @@
                             "tables":  [
                                            "deal_inputs",
                                            "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_farm_area_v1",
+                            "tables":  [
+                                           "tenant_farm_areas"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

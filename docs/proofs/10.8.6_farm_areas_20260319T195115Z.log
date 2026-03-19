@@ -1,0 +1,164 @@
+PROOF_HEAD=593f4b2d8113f69478cb69dd0d541e951faec751
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.6 Farm Areas Table -- Proof Log ===
+Date: 2026-03-19T15:49:51.1769807-04:00
+Branch: feat/10.8.6-farm-areas
+PR HEAD SHA: 593f4b2d8113f69478cb69dd0d541e951faec751
+
+=== DoD: tenant_farm_areas table exists with required columns ===
+=== DoD: unique constraint on (tenant_id, area_name) ===
+=== DoD: RLS ON, tenant-scoped ===
+=== DoD: CRUD via authenticated RPCs (SECURITY DEFINER) ===
+=== DoD: deals.farm_area_id FK (ON DELETE SET NULL) ===
+
+> equity-flow-system@0.0.0 truth-bootstrap
+> node scripts/truth_bootstrap_check.mjs
+
+=== truth-bootstrap: required paths (existence) ===
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/required_checks.json
+PASS EXISTS docs/truth/lane_checks.json
+PASS EXISTS docs/truth/toolchain.json
+PASS EXISTS docs/truth/qa_requirements.json
+PASS EXISTS docs/truth/expected_surface.json
+PASS EXISTS docs/truth/execute_allowlist.json
+PASS EXISTS docs/truth/definer_allowlist.json
+PASS EXISTS docs/truth/pr_scope_rules.json
+PASS EXISTS docs/truth/robot_owned_paths.json
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/rpc_budget.json
+PASS EXISTS docs/truth/blocked_identifiers.json
+PASS EXISTS docs/truth/tenant_table_selector.json
+PASS EXISTS docs/truth/privilege_truth.json
+PASS EXISTS docs/truth/calc_version_registry.json
+PASS EXISTS docs/truth/ci_execution_surface.json
+PASS EXISTS docs/truth/cloud_migration_parity.json
+PASS EXISTS docs/truth/qa_requirements.schema.json
+PASS EXISTS docs/truth/qa_scope_map.json
+PASS EXISTS docs/truth/qa_claim.json
+PASS EXISTS docs/truth/weweb_endpoints_truth.json
+PASS EXISTS docs/truth/rpc_contract_registry.json
+PASS EXISTS docs/truth/gate_promotion_registry.json
+PASS EXISTS docs/truth/deal_health_thresholds.json
+PASS EXISTS docs/truth/rpc_schemas/list_deals_v1.json
+PASS EXISTS docs/truth/rpc_schemas/get_user_entitlements_v1.json
+PASS EXISTS docs/truth/surface_truth.schema.json
+PASS EXISTS docs/truth/cloud_inventory.schema.json
+PASS EXISTS docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: JSON parse ===
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/required_checks.json
+PASS JSON docs/truth/lane_checks.json
+PASS JSON docs/truth/toolchain.json
+PASS JSON docs/truth/qa_requirements.json
+PASS JSON docs/truth/expected_surface.json
+PASS JSON docs/truth/execute_allowlist.json
+PASS JSON docs/truth/definer_allowlist.json
+PASS JSON docs/truth/pr_scope_rules.json
+PASS JSON docs/truth/robot_owned_paths.json
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/rpc_budget.json
+PASS JSON docs/truth/blocked_identifiers.json
+PASS JSON docs/truth/tenant_table_selector.json
+PASS JSON docs/truth/privilege_truth.json
+PASS JSON docs/truth/calc_version_registry.json
+PASS JSON docs/truth/ci_execution_surface.json
+PASS JSON docs/truth/cloud_migration_parity.json
+PASS JSON docs/truth/qa_requirements.schema.json
+PASS JSON docs/truth/qa_scope_map.json
+PASS JSON docs/truth/qa_claim.json
+PASS JSON docs/truth/weweb_endpoints_truth.json
+PASS JSON docs/truth/rpc_contract_registry.json
+PASS JSON docs/truth/gate_promotion_registry.json
+PASS JSON docs/truth/deal_health_thresholds.json
+PASS JSON docs/truth/rpc_schemas/list_deals_v1.json
+PASS JSON docs/truth/rpc_schemas/get_user_entitlements_v1.json
+PASS JSON docs/truth/surface_truth.schema.json
+PASS JSON docs/truth/cloud_inventory.schema.json
+PASS JSON docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: schema-lite checks (no Ajv) ===
+SCHEMA_LITE_PASS: qa_claim.json
+SCHEMA_LITE_PASS: qa_scope_map.json
+SCHEMA_LITE_PASS: qa_requirements.json
+SCHEMA_LITE_PASS: expected_surface.json
+SCHEMA_LITE_PASS: calc_version_registry.json
+SCHEMA_LITE_PASS: privilege_truth.json
+SCHEMA_LITE_PASS: ci_execution_surface.json
+SCHEMA_LITE_PASS: docs/truth/qa_requirements.schema.json
+SCHEMA_LITE_PASS: docs/truth/surface_truth.schema.json
+SCHEMA_LITE_PASS: docs/truth/cloud_inventory.schema.json
+SCHEMA_LITE_PASS: docs/truth/privilege_truth.schema.json
+STATUS: PASS (truth-bootstrap OK)
+
+
+=== DoD: pgTAP tests pass ===
+Connecting to local database...
+<REPO_ROOT>/supabase/tests/10_4_rpc_response_contract_tests.test.sql ...... ok
+<REPO_ROOT>/supabase/tests/10_5_rpc_error_contract_tests.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/10_8_1A_subscriptions_table.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/10_8_1_slug_system.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/10_8_2_entitlements_extension.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/10_8_3_reminder_engine.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/10_8_4_deal_health.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/10_8_5_tc_data_model.test.sql .................. ok
+<REPO_ROOT>/supabase/tests/10_8_6_farm_areas.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/6_10_activity_log_append_only.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/6_11_role_guard_helper.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/6_3_tenant_integrity_suite.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/6_4_rls_structural_audit.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/6_6_row_version_concurrency.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/6_7_share_link_isolation.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/6_8_seat_role_model.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/6_9_foundation_surface.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/7_10_tenant_role_ordering_invariant.test.sql ... ok
+<REPO_ROOT>/supabase/tests/7_4_entitlement_truth.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/7_5_rls_negative_suite.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/7_6_calc_version_protocol.test.sql ............. ok
+<REPO_ROOT>/supabase/tests/7_8_role_enforcement_rpc.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/7_9_tenant_context_integrity.test.sql .......... ok
+<REPO_ROOT>/supabase/tests/8_10_share_token_scope_enforcement.test.sql .... ok
+<REPO_ROOT>/supabase/tests/8_4_share_token_hash_at_rest.test.sql .......... ok
+<REPO_ROOT>/supabase/tests/8_5_share_surface_abuse_controls.test.sql ...... ok
+<REPO_ROOT>/supabase/tests/8_6_share_token_revocation.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/8_7_share_token_usage_logging.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/8_8_share_token_secure_generation.test.sql ..... ok
+<REPO_ROOT>/supabase/tests/8_9_share_token_expiration_invariant.test.sql .. ok
+<REPO_ROOT>/supabase/tests/9_4_token_format_validation.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/9_5_token_cardinality_guard.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/9_7_token_lifetime_invariant.test.sql .......... ok
+All tests successful.
+Files=33, Tests=361,  1 wallclock secs ( 0.05 usr  0.05 sys +  0.16 cusr  0.12 csys =  0.38 CPU)
+Result: PASS
+A new version of Supabase CLI is available: v2.78.1 (currently installed v2.76.11)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR141.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/tenant_table_selector.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260319000007_10_8_6_farm_areas.sql
+supabase/tests/10_8_6_farm_areas.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.6 Farm Areas Table: PASS (merge-blocking gate)
