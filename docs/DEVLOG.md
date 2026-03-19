@@ -7262,3 +7262,39 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-19 -- Build Route v2.4 -- 10.8.6A
+
+Objective
+- Eliminate manual double-entry by automating four truth registries via handoff pipeline. Absorbs 10.8.12.
+
+Changes
+- Added scripts/sync_truth_registries.mjs - queries Postgres catalog via docker exec to auto-overwrite tenant_table_selector.json (RLS tables), definer_allowlist.json (SECURITY DEFINER functions), execute_allowlist.json (EXECUTE grants). Derives cloud_migration_parity.json from local migrations dir. Exits 0 gracefully when DB container not running.
+- Wired sync_truth_registries.mjs into scripts/handoff.ps1 after existing generators.
+- Updated docs/truth/robot_owned_paths.json to v2 - added tenant_table_selector.json, definer_allowlist.json, execute_allowlist.json as robot-owned paths.
+- Updated scripts/ci_robot_owned_guard.ps1 with exceptions for all four robot-owned truth files.
+- Updated scripts/ci_governance_change_guard.ps1 to accept GOVERNANCE_CHANGE_<UTC>.md format (backward compatible with legacy PR<NNN> format).
+- Rewrote docs/artifacts/SOP_WORKFLOW.md - new Phase 1 table format, quick-reference checklist (s0.1), continuous step numbering 1-23, gate pre-check table with CI gate names, automated vs manual truth files table in s16, commit sequence defined.
+- Build Route 10.8.12 marked SUPERSEDED BY 10.8.6A.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260319T204427Z.md added (first use of UTC format).
+
+Proof
+- docs/proofs/10.8.6A_automation_20260319T224316Z.log
+
+DoD
+- tenant_table_selector.json auto-overwritten from RLS catalog -- PASS
+- definer_allowlist.json auto-overwritten from SECURITY DEFINER catalog -- PASS
+- execute_allowlist.json auto-overwritten from EXECUTE grants catalog -- PASS
+- cloud_migration_parity.json auto-overwritten from migrations dir -- PASS
+- Determinism: zero diffs between back-to-back runs -- PASS
+- robot_owned_paths.json updated with four automated registries -- PASS
+- SOP Phase 1 manual-only files defined -- PASS
+- SOP commit sequence defined in s16 -- PASS
+- ci_governance_change_guard accepts UTC format -- PASS
+- Governance file self-applies UTC format -- PASS
+
+Status
+- PASS
