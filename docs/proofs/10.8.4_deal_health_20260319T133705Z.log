@@ -1,0 +1,424 @@
+PROOF_HEAD=2dd4e1d8cd10d150235c48a67e282a21b81c7e28
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.4 Deal Health Computation -- Proof Log ===
+Date: 2026-03-19T09:33:29.1897051-04:00
+Branch: feat/10.8.4-deal-health
+PR HEAD SHA: 2dd4e1d8cd10d150235c48a67e282a21b81c7e28
+
+=== DoD: stage, updated_at, deleted_at added to public.deals ===
+Creating shadow database...
+Initialising schema...
+Seeding globals from roles.sql...
+Applying migration 20260218000001_ensure_pgcrypto.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+Applying migration 20260219000000_baseline_tenants.sql...
+Applying migration 20260219000001_baseline_tenant_memberships.sql...
+Applying migration 20260219000002_baseline_user_profiles.sql...
+Applying migration 20260219000003_baseline_deals.sql...
+Applying migration 20260219000004_default_acl_lockdown.sql...
+Applying migration 20260219000005_privilege_remediation.sql...
+Applying migration 20260219000006_rls_colocation_corrective.sql...
+Applying migration 20260219000007_tenant_rls_policies.sql...
+NOTICE (00000): policy "deals_select_own" for relation "public.deals" does not exist, skipping
+NOTICE (00000): policy "deals_insert_own" for relation "public.deals" does not exist, skipping
+NOTICE (00000): policy "deals_update_own" for relation "public.deals" does not exist, skipping
+NOTICE (00000): policy "deals_delete_own" for relation "public.deals" does not exist, skipping
+Applying migration 20260219000008_fix_current_tenant_id.sql...
+Applying migration 20260219000009_revoke_deals_direct_grants.sql...
+Applying migration 20260219000010_deals_rpc_surface.sql...
+Applying migration 20260219000011_deals_rpc_grants.sql...
+Applying migration 20260219000012_product_core_tables.sql...
+Applying migration 20260219000013_deals_update_rpc.sql...
+Applying migration 20260219000014_deals_snapshot_reference.sql...
+Applying migration 20260219000015_deals_create_rpc_v2.sql...
+Applying migration 20260219000016_deals_snapshot_trigger_enforcement.sql...
+Applying migration 20260219000017_revoke_core_table_grants.sql...
+Applying migration 20260219000018_share_tokens.sql...
+Applying migration 20260219000019_share_link_rpc.sql...
+Applying migration 20260219000020_6_8_tenant_role_model.sql...
+Applying migration 20260219000021_6_9_activity_log.sql...
+Applying migration 20260219000022_share_tokens_fix_gen_random_bytes.sql...
+Applying migration 20260301000000_activity_log_append_only.sql...
+Applying migration 20260302000000_6_11_role_guard_helper.sql...
+Applying migration 20260304000000_7_4_entitlement_truth.sql...
+Applying migration 20260304000001_7_8_fix_role_guard_comparison.sql...
+Applying migration 20260305000000_7_9_remove_tenant_id_params.sql...
+Applying migration 20260308000000_8_4_share_token_hash_at_rest.sql...
+Applying migration 20260308000001_8_4_share_token_lookup_hash.sql...
+NOTICE (00000): view "share_token_packet" does not exist, skipping
+Applying migration 20260309000000_8_6_share_token_revocation.sql...
+Applying migration 20260309000001_8_7_share_token_usage_logging.sql...
+Applying migration 20260310000000_8_8_share_token_secure_generation.sql...
+Applying migration 20260310000001_8_9_share_token_expiration_invariant.sql...
+Applying migration 20260310000002_8_9_fix_comment_encoding.sql...
+Applying migration 20260310000003_8_10_share_token_scope_enforcement.sql...
+Applying migration 20260310000004_9_1_revoke_anon_rpc_execute.sql...
+Applying migration 20260311000000_9_4_token_format_validation.sql...
+Applying migration 20260311000001_9_5_token_cardinality_guard.sql...
+Applying migration 20260311000002_9_7_token_lifetime_invariant.sql...
+Applying migration 20260317000001_10_8_1_slug_system.sql...
+Applying migration 20260317000002_10_8_1_fix_comment_encoding.sql...
+Applying migration 20260317000003_10_8_1A_subscriptions_table.sql...
+Applying migration 20260317000004_10_8_2_entitlements_extension.sql...
+Applying migration 20260318000001_10_8_3_reminder_engine.sql...
+Applying migration 20260318000002_10_8_3_fix_comment_encoding.sql...
+Applying migration 20260318000003_10_8_3B_revoke_from_public.sql...
+Applying migration 20260318000004_10_8_3B_tenant_subscriptions_row_version.sql...
+Applying migration 20260319000001_10_8_4_deal_health.sql...
+NOTICE (00000): function public.get_deal_health_color(text,timestamptz) does not exist, skipping
+Applying migration 20260319000002_10_8_4_fix_health_color_definer.sql...
+Diffing schemas...
+Finished supabase db diff on branch feat/10.8.4-deal-health.
+
+drop extension if exists "pg_net";
+
+drop extension if exists "pg_stat_statements";
+
+drop extension if exists "uuid-ossp";
+
+revoke delete on table "public"."activity_log" from "service_role";
+
+revoke insert on table "public"."activity_log" from "service_role";
+
+revoke references on table "public"."activity_log" from "service_role";
+
+revoke select on table "public"."activity_log" from "service_role";
+
+revoke trigger on table "public"."activity_log" from "service_role";
+
+revoke truncate on table "public"."activity_log" from "service_role";
+
+revoke update on table "public"."activity_log" from "service_role";
+
+revoke delete on table "public"."calc_versions" from "service_role";
+
+revoke insert on table "public"."calc_versions" from "service_role";
+
+revoke references on table "public"."calc_versions" from "service_role";
+
+revoke select on table "public"."calc_versions" from "service_role";
+
+revoke trigger on table "public"."calc_versions" from "service_role";
+
+revoke truncate on table "public"."calc_versions" from "service_role";
+
+revoke update on table "public"."calc_versions" from "service_role";
+
+revoke delete on table "public"."deal_inputs" from "service_role";
+
+revoke insert on table "public"."deal_inputs" from "service_role";
+
+revoke references on table "public"."deal_inputs" from "service_role";
+
+revoke select on table "public"."deal_inputs" from "service_role";
+
+revoke trigger on table "public"."deal_inputs" from "service_role";
+
+revoke truncate on table "public"."deal_inputs" from "service_role";
+
+revoke update on table "public"."deal_inputs" from "service_role";
+
+revoke delete on table "public"."deal_outputs" from "service_role";
+
+revoke insert on table "public"."deal_outputs" from "service_role";
+
+revoke references on table "public"."deal_outputs" from "service_role";
+
+revoke select on table "public"."deal_outputs" from "service_role";
+
+revoke trigger on table "public"."deal_outputs" from "service_role";
+
+revoke truncate on table "public"."deal_outputs" from "service_role";
+
+revoke update on table "public"."deal_outputs" from "service_role";
+
+revoke delete on table "public"."deal_reminders" from "service_role";
+
+revoke insert on table "public"."deal_reminders" from "service_role";
+
+revoke references on table "public"."deal_reminders" from "service_role";
+
+revoke select on table "public"."deal_reminders" from "service_role";
+
+revoke trigger on table "public"."deal_reminders" from "service_role";
+
+revoke truncate on table "public"."deal_reminders" from "service_role";
+
+revoke update on table "public"."deal_reminders" from "service_role";
+
+revoke delete on table "public"."deals" from "service_role";
+
+revoke insert on table "public"."deals" from "service_role";
+
+revoke references on table "public"."deals" from "service_role";
+
+revoke select on table "public"."deals" from "service_role";
+
+revoke trigger on table "public"."deals" from "service_role";
+
+revoke truncate on table "public"."deals" from "service_role";
+
+revoke update on table "public"."deals" from "service_role";
+
+revoke delete on table "public"."draft_deals" from "service_role";
+
+revoke insert on table "public"."draft_deals" from "service_role";
+
+revoke references on table "public"."draft_deals" from "service_role";
+
+revoke select on table "public"."draft_deals" from "service_role";
+
+revoke trigger on table "public"."draft_deals" from "service_role";
+
+revoke truncate on table "public"."draft_deals" from "service_role";
+
+revoke update on table "public"."draft_deals" from "service_role";
+
+revoke delete on table "public"."share_tokens" from "service_role";
+
+revoke insert on table "public"."share_tokens" from "service_role";
+
+revoke references on table "public"."share_tokens" from "service_role";
+
+revoke select on table "public"."share_tokens" from "service_role";
+
+revoke trigger on table "public"."share_tokens" from "service_role";
+
+revoke truncate on table "public"."share_tokens" from "service_role";
+
+revoke update on table "public"."share_tokens" from "service_role";
+
+revoke delete on table "public"."tenant_memberships" from "service_role";
+
+revoke insert on table "public"."tenant_memberships" from "service_role";
+
+revoke references on table "public"."tenant_memberships" from "service_role";
+
+revoke select on table "public"."tenant_memberships" from "service_role";
+
+revoke trigger on table "public"."tenant_memberships" from "service_role";
+
+revoke truncate on table "public"."tenant_memberships" from "service_role";
+
+revoke update on table "public"."tenant_memberships" from "service_role";
+
+revoke delete on table "public"."tenant_slugs" from "service_role";
+
+revoke insert on table "public"."tenant_slugs" from "service_role";
+
+revoke references on table "public"."tenant_slugs" from "service_role";
+
+revoke select on table "public"."tenant_slugs" from "service_role";
+
+revoke trigger on table "public"."tenant_slugs" from "service_role";
+
+revoke truncate on table "public"."tenant_slugs" from "service_role";
+
+revoke update on table "public"."tenant_slugs" from "service_role";
+
+revoke delete on table "public"."tenant_subscriptions" from "service_role";
+
+revoke insert on table "public"."tenant_subscriptions" from "service_role";
+
+revoke references on table "public"."tenant_subscriptions" from "service_role";
+
+revoke select on table "public"."tenant_subscriptions" from "service_role";
+
+revoke trigger on table "public"."tenant_subscriptions" from "service_role";
+
+revoke truncate on table "public"."tenant_subscriptions" from "service_role";
+
+revoke update on table "public"."tenant_subscriptions" from "service_role";
+
+revoke delete on table "public"."tenants" from "service_role";
+
+revoke insert on table "public"."tenants" from "service_role";
+
+revoke references on table "public"."tenants" from "service_role";
+
+revoke select on table "public"."tenants" from "service_role";
+
+revoke trigger on table "public"."tenants" from "service_role";
+
+revoke truncate on table "public"."tenants" from "service_role";
+
+revoke update on table "public"."tenants" from "service_role";
+
+revoke delete on table "public"."user_profiles" from "service_role";
+
+revoke insert on table "public"."user_profiles" from "service_role";
+
+revoke references on table "public"."user_profiles" from "service_role";
+
+revoke select on table "public"."user_profiles" from "service_role";
+
+revoke trigger on table "public"."user_profiles" from "service_role";
+
+revoke truncate on table "public"."user_profiles" from "service_role";
+
+revoke update on table "public"."user_profiles" from "service_role";
+
+
+
+Found drop statements in schema diff. Please double check if these are expected:
+drop extension if exists "pg_net"            
+drop extension if exists "pg_stat_statements"
+drop extension if exists "uuid-ossp"         
+A new version of Supabase CLI is available: v2.78.1 (currently installed v2.76.11)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+
+
+=== DoD: get_deal_health_color exists, not executable by authenticated ===
+=== DoD: list_deals_v1 returns health_color field ===
+=== DoD: deal_health_thresholds.json triple-registered ===
+
+> equity-flow-system@0.0.0 truth-bootstrap
+> node scripts/truth_bootstrap_check.mjs
+
+=== truth-bootstrap: required paths (existence) ===
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/required_checks.json
+PASS EXISTS docs/truth/lane_checks.json
+PASS EXISTS docs/truth/toolchain.json
+PASS EXISTS docs/truth/qa_requirements.json
+PASS EXISTS docs/truth/expected_surface.json
+PASS EXISTS docs/truth/execute_allowlist.json
+PASS EXISTS docs/truth/definer_allowlist.json
+PASS EXISTS docs/truth/pr_scope_rules.json
+PASS EXISTS docs/truth/robot_owned_paths.json
+PASS EXISTS docs/truth/write_path_registry.json
+PASS EXISTS docs/truth/rpc_budget.json
+PASS EXISTS docs/truth/blocked_identifiers.json
+PASS EXISTS docs/truth/tenant_table_selector.json
+PASS EXISTS docs/truth/privilege_truth.json
+PASS EXISTS docs/truth/calc_version_registry.json
+PASS EXISTS docs/truth/ci_execution_surface.json
+PASS EXISTS docs/truth/cloud_migration_parity.json
+PASS EXISTS docs/truth/qa_requirements.schema.json
+PASS EXISTS docs/truth/qa_scope_map.json
+PASS EXISTS docs/truth/qa_claim.json
+PASS EXISTS docs/truth/weweb_endpoints_truth.json
+PASS EXISTS docs/truth/rpc_contract_registry.json
+PASS EXISTS docs/truth/gate_promotion_registry.json
+PASS EXISTS docs/truth/deal_health_thresholds.json
+PASS EXISTS docs/truth/rpc_schemas/list_deals_v1.json
+PASS EXISTS docs/truth/rpc_schemas/get_user_entitlements_v1.json
+PASS EXISTS docs/truth/surface_truth.schema.json
+PASS EXISTS docs/truth/cloud_inventory.schema.json
+PASS EXISTS docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: JSON parse ===
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/required_checks.json
+PASS JSON docs/truth/lane_checks.json
+PASS JSON docs/truth/toolchain.json
+PASS JSON docs/truth/qa_requirements.json
+PASS JSON docs/truth/expected_surface.json
+PASS JSON docs/truth/execute_allowlist.json
+PASS JSON docs/truth/definer_allowlist.json
+PASS JSON docs/truth/pr_scope_rules.json
+PASS JSON docs/truth/robot_owned_paths.json
+PASS JSON docs/truth/write_path_registry.json
+PASS JSON docs/truth/rpc_budget.json
+PASS JSON docs/truth/blocked_identifiers.json
+PASS JSON docs/truth/tenant_table_selector.json
+PASS JSON docs/truth/privilege_truth.json
+PASS JSON docs/truth/calc_version_registry.json
+PASS JSON docs/truth/ci_execution_surface.json
+PASS JSON docs/truth/cloud_migration_parity.json
+PASS JSON docs/truth/qa_requirements.schema.json
+PASS JSON docs/truth/qa_scope_map.json
+PASS JSON docs/truth/qa_claim.json
+PASS JSON docs/truth/weweb_endpoints_truth.json
+PASS JSON docs/truth/rpc_contract_registry.json
+PASS JSON docs/truth/gate_promotion_registry.json
+PASS JSON docs/truth/deal_health_thresholds.json
+PASS JSON docs/truth/rpc_schemas/list_deals_v1.json
+PASS JSON docs/truth/rpc_schemas/get_user_entitlements_v1.json
+PASS JSON docs/truth/surface_truth.schema.json
+PASS JSON docs/truth/cloud_inventory.schema.json
+PASS JSON docs/truth/privilege_truth.schema.json
+=== truth-bootstrap: schema-lite checks (no Ajv) ===
+SCHEMA_LITE_PASS: qa_claim.json
+SCHEMA_LITE_PASS: qa_scope_map.json
+SCHEMA_LITE_PASS: qa_requirements.json
+SCHEMA_LITE_PASS: expected_surface.json
+SCHEMA_LITE_PASS: calc_version_registry.json
+SCHEMA_LITE_PASS: privilege_truth.json
+SCHEMA_LITE_PASS: ci_execution_surface.json
+SCHEMA_LITE_PASS: docs/truth/qa_requirements.schema.json
+SCHEMA_LITE_PASS: docs/truth/surface_truth.schema.json
+SCHEMA_LITE_PASS: docs/truth/cloud_inventory.schema.json
+SCHEMA_LITE_PASS: docs/truth/privilege_truth.schema.json
+STATUS: PASS (truth-bootstrap OK)
+
+
+=== DoD: pgTAP tests pass ===
+Connecting to local database...
+<REPO_ROOT>/supabase/tests/10_4_rpc_response_contract_tests.test.sql ...... ok
+<REPO_ROOT>/supabase/tests/10_5_rpc_error_contract_tests.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/10_8_1A_subscriptions_table.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/10_8_1_slug_system.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/10_8_2_entitlements_extension.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/10_8_3_reminder_engine.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/10_8_4_deal_health.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/6_10_activity_log_append_only.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/6_11_role_guard_helper.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/6_3_tenant_integrity_suite.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/6_4_rls_structural_audit.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/6_6_row_version_concurrency.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/6_7_share_link_isolation.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/6_8_seat_role_model.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/6_9_foundation_surface.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/7_10_tenant_role_ordering_invariant.test.sql ... ok
+<REPO_ROOT>/supabase/tests/7_4_entitlement_truth.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/7_5_rls_negative_suite.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/7_6_calc_version_protocol.test.sql ............. ok
+<REPO_ROOT>/supabase/tests/7_8_role_enforcement_rpc.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/7_9_tenant_context_integrity.test.sql .......... ok
+<REPO_ROOT>/supabase/tests/8_10_share_token_scope_enforcement.test.sql .... ok
+<REPO_ROOT>/supabase/tests/8_4_share_token_hash_at_rest.test.sql .......... ok
+<REPO_ROOT>/supabase/tests/8_5_share_surface_abuse_controls.test.sql ...... ok
+<REPO_ROOT>/supabase/tests/8_6_share_token_revocation.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/8_7_share_token_usage_logging.test.sql ......... ok
+<REPO_ROOT>/supabase/tests/8_8_share_token_secure_generation.test.sql ..... ok
+<REPO_ROOT>/supabase/tests/8_9_share_token_expiration_invariant.test.sql .. ok
+<REPO_ROOT>/supabase/tests/9_4_token_format_validation.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/9_5_token_cardinality_guard.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/9_7_token_lifetime_invariant.test.sql .......... ok
+All tests successful.
+Files=31, Tests=336,  1 wallclock secs ( 0.05 usr  0.05 sys +  0.14 cusr  0.12 csys =  0.36 CPU)
+Result: PASS
+A new version of Supabase CLI is available: v2.78.1 (currently installed v2.76.11)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_PR139.md
+docs/handoff_latest.txt
+docs/truth/calc_version_registry.json
+docs/truth/cloud_migration_parity.json
+docs/truth/deal_health_thresholds.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_schemas/list_deals_v1.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+scripts/handoff.ps1
+scripts/truth_bootstrap_check.mjs
+supabase/migrations/20260319000001_10_8_4_deal_health.sql
+supabase/migrations/20260319000002_10_8_4_fix_health_color_definer.sql
+supabase/tests/10_8_4_deal_health.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.4 Deal Health Computation: PASS (lane-only gate)
