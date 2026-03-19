@@ -7138,3 +7138,35 @@ The behavior observed in the 8.9 buildroute is the intended security posture. Th
 **Audit Trail:**
 * **Source Commit:** `154b36e0` (feat: 8.9 share token expiration invariant)
 * **Contract Baseline:** `8a1d5097` (feat(10.5): RPC error contract tests)
+
+
+---
+
+## 2026-03-19 -- Build Route v2.4 -- 10.8.4
+
+Objective
+- Establish stage-based deal health computation returning red/yellow/green status from list_deals_v1.
+
+Changes
+- Added stage, updated_at, deleted_at columns to public.deals via migration 20260319000001.
+- Added internal helper public.get_deal_health_color(stage, updated_at) -- plain sql, no SECURITY DEFINER, REVOKE from all roles.
+- Replaced public.list_deals_v1 via DROP+CREATE. New signature: list_deals_v1(p_limit integer, p_cursor text). Returns stage and health_color.
+- Created docs/truth/deal_health_thresholds.json with stage thresholds per WEWEB_ARCHITECTURE s3. Triple-registered.
+- Updated docs/truth/rpc_schemas/list_deals_v1.json to v2 with stage and health_color fields.
+- Corrective migration 20260319000002 strips stale SECURITY DEFINER from cloud (UNPAIRED-CORRECTIVE).
+- Governance change file docs/governance/GOVERNANCE_CHANGE_PR139.md added.
+
+Proof
+- docs/proofs/10.8.4_deal_health_20260319T133705Z.log
+
+DoD
+- Health computed from deals.updated_at vs stage-specific day thresholds -- PASS
+- Thresholds defined in docs/truth/deal_health_thresholds.json -- PASS
+- Red/yellow/green logic per threshold and threshold x 0.7 -- PASS
+- Computation is read-time only, not stored -- PASS
+- No new table needed -- PASS
+- Health status returned as part of list_deals_v1 -- PASS
+- Truth file triple-registered in robot-owned guard + truth-bootstrap + handoff -- PASS
+
+Status
+- PASS
