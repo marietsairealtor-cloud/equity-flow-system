@@ -35,7 +35,7 @@ Use this as a session startup reminder. Full rules for each step are in §1.
 - [ ] Run all Phase 1 gate pre-checks (§1 Phase 1 Step 4) — see §18 for over-trigger behaviors
 - [ ] Commit all implementation changes
 
-**Phase 2 — Truth Artifacts** *(skip if no DB/schema/contracts changes)*
+**Phase 2 — Truth Artifacts *(skip if PR does not touch DB/contracts/schema/handoff pipeline)**
 - [ ] `npm run handoff`
 - [ ] `npm run handoff:commit`
 
@@ -118,7 +118,7 @@ Verify the implementation against automated CI gates before committing. See §18
 
 ---
 
-### Phase 2 — Truth Artifacts *(skip if PR does not touch DB/contracts/schema)*
+### Phase 2 — Truth Artifacts *(skip if PR does not touch DB/contracts/schema/handoff pipeline)*
 
 **Step 6 — Generate Truth Artifacts**
 
