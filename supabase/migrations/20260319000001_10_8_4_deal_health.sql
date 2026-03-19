@@ -23,8 +23,6 @@ CREATE OR REPLACE FUNCTION public.get_deal_health_color(
 RETURNS TEXT
 LANGUAGE sql
 STABLE
-SECURITY DEFINER
-SET search_path = public
 AS $fn$
   SELECT CASE
     WHEN p_updated_at IS NULL THEN 'yellow'

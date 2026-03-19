@@ -37,12 +37,11 @@
       "description": "8.4: share token lookup RPC references calc_version in SELECT/return. No calc logic changed. Hash-at-rest conversion only.",
       "introduced_pr": "PR093",
       "released_at": "2026-03-08"
-    }
-  ],
+    },
     {
       "calc_version": 1,
       "label": "10.8.4 deal health computation",
-      "description": "10.8.4: list_deals_v1 recreated with health_color field. Migration references calc_version incidentally in json_build_object return — no calc logic changed. Health computation derives from updated_at and stage only.",
+      "description": "10.8.4: list_deals_v1 recreated with health_color field. Migration references calc_version incidentally in json_build_object return - no calc logic changed. Health computation derives from updated_at and stage only.",
       "introduced_pr": "PR139",
       "released_at": "2026-03-19"
     }
