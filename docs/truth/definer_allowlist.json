@@ -13,7 +13,8 @@
     "public.submit_form_v1",
     "public.list_reminders_v1",
     "public.create_reminder_v1",
-    "public.complete_reminder_v1"
+    "public.complete_reminder_v1",
+    "public.get_deal_health_color"
   ],
   "anon_callable": [
     "public.resolve_form_slug_v1",

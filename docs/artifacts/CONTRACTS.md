@@ -391,3 +391,17 @@ Forward migration `20260318000004_10_8_3B_tenant_subscriptions_row_version.sql` 
 `tenant_subscriptions` is a mutable core record — status and current_period_end are
 updated by billing events. GUARDRAILS §8 requires `row_version` on mutable core records.
 This was identified as finding B9-F04 in the 10.8.3A audit and is now remediated.
+## 27) Deal Health Computation — list_deals_v1 Extended (10.8.4)
+Forward migration `20260319000001_10_8_4_deal_health.sql` adds three columns to
+`public.deals`: `stage TEXT NOT NULL DEFAULT 'New'` (with CHECK constraint enforcing
+authoritative stages per WEWEB_ARCHITECTURE §3), `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`,
+and `deleted_at TIMESTAMPTZ`. These are the first functional columns on `public.deals`
+beyond the baseline schema.
+
+Adds internal helper `public.get_deal_health_color(stage, updated_at)` — SECURITY DEFINER,
+REVOKE from PUBLIC/anon/authenticated. Callable only from allowlisted SECURITY DEFINER RPCs.
+
+`public.list_deals_v1` is replaced via DROP + CREATE (return shape change per CONTRACTS §2).
+New signature: `list_deals_v1(p_limit integer, p_cursor text)`. Now returns `stage` and
+`health_color` (green/yellow/red) per `docs/truth/deal_health_thresholds.json`.
+Tenancy via `public.current_tenant_id()`. Existing callers must handle new fields.
