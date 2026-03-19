@@ -7236,3 +7236,29 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-19 -- Build Route v2.4 -- 10.8.6A (Governance)
+
+Objective
+- Record addition of Build Route item 10.8.6A and supersession of 10.8.12.
+
+Changes
+- Build Route updated manually to add 10.8.6A (Truth Registry and Pipeline Automation).
+- 10.8.12 (Automate Cloud Migration Parity Registry) marked SUPERSEDED BY 10.8.6A.
+- 10.8.6A absorbs 10.8.12 scope and expands it to cover automated regeneration of tenant_table_selector.json, definer_allowlist.json, execute_allowlist.json, and cloud_migration_parity.json during handoff.
+- docs/governance/GOVERNANCE_CHANGE_PR142.md added.
+- No implementation changes in this PR.
+
+Proof
+- Governance record only. No proof artifact required.
+
+DoD
+- Build Route updated with 10.8.6A item -- PASS
+- 10.8.12 marked superseded -- PASS
+- Governance change file present -- PASS
+
+Status
+- PASS
