@@ -403,8 +403,7 @@ $$;
 ALTER FUNCTION "public"."foundation_log_activity_v1"("p_action" "text", "p_meta" "jsonb", "p_actor_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_deal_health_color"("p_stage" "text", "p_updated_at" timestamp with time zone) RETURNS "text"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
+    LANGUAGE "sql" STABLE
     AS $$
   SELECT CASE
     WHEN p_updated_at IS NULL THEN 'yellow'
