@@ -7351,3 +7351,33 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-20 -- Build Route v2.4 -- 10.8.7A
+
+Objective
+- Establish Supabase Storage bucket for deal photos used by Acquisition and Deal Viewer.
+
+Changes
+- Migration 20260320000001 creates storage bucket deal-photos (public=false, 10MB limit, JPEG and PNG only).
+- Four Storage RLS policies enforce full path contract {tenant_id}/{deal_id}/{photo_id}.jpg|.png: 3 segments, segment[1]=tenant_id via current_tenant_id(), segment[3] ILIKE %.jpg OR %.png.
+- No anon access. Multiple photos per deal supported. No transformations (V1 boundary).
+- CONTRACTS.md s31 added documenting bucket configuration and path contract.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260320T154839Z.md added.
+
+Proof
+- docs/proofs/10.8.7A_deal_photos_storage_20260320T161959Z.log
+
+DoD
+- Storage bucket deal-photos exists -- PASS
+- Path {tenant_id}/{deal_id}/{photo_id}.jpg|.png enforced -- PASS
+- JPEG and PNG only, 10MB max -- PASS
+- No anon access -- PASS
+- RLS policies cover SELECT, INSERT, UPDATE, DELETE -- PASS
+- INSERT WITH CHECK clause proven in proof log -- PASS
+- filename extension .jpg or .png enforced in all policies -- PASS
+
+Status
+- PASS
