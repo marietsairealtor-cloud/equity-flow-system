@@ -422,6 +422,9 @@
     },
     "10.8.6A": {
       "proof_pattern": "^docs/proofs/10\\.8\\.6A_automation_"
+    },
+    "10.8.7": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.7_tc_storage_"
     }
   }
 }
