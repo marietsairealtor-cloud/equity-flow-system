@@ -1,0 +1,52 @@
+PROOF_HEAD=976fd3ea585bd6a2a4511216284e2a2b10b15b4e
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.7 TC Contract Storage Bucket -- Proof Log ===
+Date: 2026-03-20T10:50:21.5753691-04:00
+Branch: feat/10.8.7-tc-storage
+PR HEAD SHA: 976fd3ea585bd6a2a4511216284e2a2b10b15b4e
+
+=== DoD: bucket tc-contracts exists ===
+tc-contracts|tc-contracts|f|10485760|{application/pdf}
+
+
+=== DoD: file_size_limit = 10MB, PDF only ===
+10485760|{application/pdf}
+
+
+=== DoD: Storage RLS policies - USING clauses (SELECT, UPDATE, DELETE) ===
+tc_contracts_delete_own|DELETE|((bucket_id = 'tc-contracts'::text) AND (array_length(string_to_array(name, '/'::text), 1) = 3) AND ((string_to_array(name, '/'::text))[1] = (current_tenant_id())::text) AND ((string_to_array(name, '/'::text))[3] = 'contract.pdf'::text))
+tc_contracts_select_own|SELECT|((bucket_id = 'tc-contracts'::text) AND (array_length(string_to_array(name, '/'::text), 1) = 3) AND ((string_to_array(name, '/'::text))[1] = (current_tenant_id())::text) AND ((string_to_array(name, '/'::text))[3] = 'contract.pdf'::text))
+tc_contracts_update_own|UPDATE|((bucket_id = 'tc-contracts'::text) AND (array_length(string_to_array(name, '/'::text), 1) = 3) AND ((string_to_array(name, '/'::text))[1] = (current_tenant_id())::text) AND ((string_to_array(name, '/'::text))[3] = 'contract.pdf'::text))
+
+
+=== DoD: Storage RLS policies - WITH CHECK clause (INSERT) ===
+tc_contracts_insert_own|INSERT|((bucket_id = 'tc-contracts'::text) AND (array_length(string_to_array(name, '/'::text), 1) = 3) AND ((string_to_array(name, '/'::text))[1] = (current_tenant_id())::text) AND ((string_to_array(name, '/'::text))[3] = 'contract.pdf'::text))
+
+
+=== DoD: no anon access (zero anon policies on storage.objects) ===
+0
+
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260320T142930Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+scripts/ci_robot_owned_guard.ps1
+scripts/handoff_commit.ps1
+supabase/migrations/20260319000008_10_8_7_tc_storage.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.7 TC Contract Storage Bucket: PASS (lane-only gate)
