@@ -7298,3 +7298,33 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-20 -- Build Route v2.4 -- 10.8.7
+
+Objective
+- Establish Supabase Storage bucket for TC contract PDFs with tenant-isolated RLS enforcement.
+
+Changes
+- Migration 20260319000008 creates storage bucket tc-contracts (public=false, 10MB limit, PDF only).
+- Four Storage RLS policies enforce exact path contract {tenant_id}/{deal_id}/contract.pdf: 3 segments, segment[1]=tenant_id via current_tenant_id(), segment[3]=contract.pdf.
+- No anon access. Authenticated tenant-member access only via Supabase Storage client.
+- Fixed scripts/handoff_commit.ps1 to stage all four robot-owned truth files (10.8.6A gap: cloud_migration_parity.json, tenant_table_selector.json, definer_allowlist.json, execute_allowlist.json were missing from handoff:commit staging list).
+- CONTRACTS.md s30 added documenting bucket configuration and path contract.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260320T142930Z.md added.
+
+Proof
+- docs/proofs/10.8.7_tc_storage_20260320T145158Z.log
+
+DoD
+- Storage bucket tc-contracts exists -- PASS
+- Upload path {tenant_id}/{deal_id}/contract.pdf enforced -- PASS
+- Authenticated access only, no anon -- PASS
+- PDF only, 10MB max -- PASS
+- RLS policies cover SELECT, INSERT, UPDATE, DELETE -- PASS
+- INSERT WITH CHECK clause proven in proof log -- PASS
+
+Status
+- PASS
