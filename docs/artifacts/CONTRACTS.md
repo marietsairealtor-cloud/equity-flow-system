@@ -428,3 +428,12 @@ from anon and authenticated. Three SECURITY DEFINER RPCs: list_farm_areas_v1,
 create_farm_area_v1, delete_farm_area_v1 - all role-gated to admin+ via require_min_role_v1.
 Adds deals.farm_area_id UUID FK (ON DELETE SET NULL) to public.deals. Nullable.
 Deals tagging to farm areas is soft - deleting a farm area nulls the reference on deals.
+
+
+## 30) TC Contract Storage Bucket (10.8.7)
+Forward migration 20260319000008 creates Supabase Storage bucket tc-contracts.
+Configuration: public=false, file_size_limit=10MB, allowed_mime_types=PDF only.
+Storage RLS policies enforce exact path contract: {tenant_id}/{deal_id}/contract.pdf
+(3 segments, segment[1]=tenant_id via current_tenant_id(), segment[3]=contract.pdf).
+No anon access. Authenticated tenant-member access only via Storage client.
+No RPC wrapper - access via Supabase Storage client with RLS enforcement.
