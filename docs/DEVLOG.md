@@ -7328,3 +7328,26 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-20 -- Build Route v2.4 -- 10.8.7A (Governance)
+
+Objective
+- Record addition of Build Route item 10.8.7A (Deal Photos Storage Bucket).
+
+Changes
+- Build Route updated manually to add 10.8.7A.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260320T151745Z.md added.
+- No implementation changes in this PR.
+
+Proof
+- Governance record only. No proof artifact required.
+
+DoD
+- Build Route updated with 10.8.7A item -- PASS
+- Governance change file present -- PASS
+
+Status
+- PASS

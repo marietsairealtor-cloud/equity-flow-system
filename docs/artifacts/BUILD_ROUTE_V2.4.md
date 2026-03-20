@@ -4571,6 +4571,47 @@ Supabase Storage bucket for executed contract PDFs. One file per deal.
 
 **Gate:** `lane-only`
 
+### **10.8.7A — Deal Photos Storage Bucket**
+
+**Deliverable**:
+Supabase Storage bucket for deal photos used by Acquisition and Deal Viewer.
+
+**DoD**
+
+Bucket deal-photos exists
+
+Path: {tenant_id}/{deal_id}/{photo_id}.jpg|.png
+
+File types: JPEG, PNG only
+
+Max size: 10MB per file
+
+Access:
+
+authenticated tenant members → upload/read/update/delete (own tenant only)
+
+no anon direct access
+
+Storage RLS enforces:
+
+segment[1] = tenant_id
+
+segment[2] = deal_id
+
+segment count = 3
+
+Upload via Storage client + RLS (no RPC)
+
+Multiple photos per deal supported
+
+No transformations/editing (V1 boundary)
+
+**Proof:**
+docs/proofs/10.8.7A_deal_photos_storage_<UTC>.log
+
+**Gate:**
+lane-only
+
 ---
 
 ### **10.8.8 — Auth Page**
@@ -4741,7 +4782,7 @@ Full pipeline view with authoritative stage tabs, health dots, deal detail, auto
 
 **Gate:** `lane-only`
 
-**Prerequisite:** 10.8, 10.8.4 merged
+**Prerequisite:** 10.8, 10.8.4, 10.8.7A merged
 
 ---
 
@@ -4834,7 +4875,7 @@ Token-gated buyer deal packet with workspace branding and "I'm Interested" butto
 
 **Gate:** `lane-only`
 
-**Prerequisite:** 10.13 merged
+**Prerequisite:** 10.13, 10.8.7A merged
 
 ---
 
