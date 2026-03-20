@@ -425,6 +425,9 @@
     },
     "10.8.7": {
       "proof_pattern": "^docs/proofs/10\\.8\\.7_tc_storage_"
+    },
+    "10.8.7A": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.7A_deal_photos_storage_"
     }
   }
 }

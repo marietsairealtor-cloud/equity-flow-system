@@ -437,3 +437,12 @@ Storage RLS policies enforce exact path contract: {tenant_id}/{deal_id}/contract
 (3 segments, segment[1]=tenant_id via current_tenant_id(), segment[3]=contract.pdf).
 No anon access. Authenticated tenant-member access only via Storage client.
 No RPC wrapper - access via Supabase Storage client with RLS enforcement.
+
+
+## 31) Deal Photos Storage Bucket (10.8.7A)
+Forward migration 20260320000001 creates Supabase Storage bucket deal-photos.
+Configuration: public=false, file_size_limit=10MB, allowed_mime_types=JPEG and PNG only.
+Path contract: {tenant_id}/{deal_id}/{photo_id}.jpg|.png (3 segments, segment[1]=tenant_id).
+Storage RLS policies enforce segment count=3 and segment[1]=current_tenant_id().
+No anon access. Multiple photos per deal supported. No transformations (V1 boundary).
+No RPC wrapper - access via Supabase Storage client with RLS enforcement.
