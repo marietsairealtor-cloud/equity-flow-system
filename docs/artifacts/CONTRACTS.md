@@ -272,6 +272,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_reminder_v1 | 10.8.3 | Create a deal reminder for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | complete_reminder_v1 | 10.8.3 | Mark a reminder as completed (idempotent) | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| accept_invite_v1 | 10.8.7B | Accept app invite token and create tenant membership | SECURITY DEFINER, authenticated only | token lookup — tenant_id derived from tenant_invites row |
 | list_farm_areas_v1 | 10.8.6 | List all farm areas for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | create_farm_area_v1 | 10.8.6 | Create a new farm area for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | delete_farm_area_v1 | 10.8.6 | Delete a farm area for current tenant (SET NULL on deals) | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
