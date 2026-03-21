@@ -4612,6 +4612,121 @@ docs/proofs/10.8.7A_deal_photos_storage_<UTC>.log
 **Gate:**
 lane-only
 
+
+### **10.8.7B — Tenant Invites + Accept Invite RPC**
+
+**Deliverable:**
+Core invite system for tenant membership, including `tenant_invites` table and `accept_invite_v1` RPC used by post-auth routing.
+
+---
+
+## **DoD**
+
+### **Table: `tenant_invites`**
+
+* Exists as tenant-scoped core table
+* Columns:
+
+  * `id UUID PRIMARY KEY`
+  * `tenant_id UUID NOT NULL`
+  * `invited_email TEXT NOT NULL`
+  * `role tenant_role NOT NULL DEFAULT 'member'`
+  * `token TEXT NOT NULL UNIQUE`
+  * `invited_by UUID NOT NULL`
+  * `accepted_at TIMESTAMPTZ NULL`
+  * `expires_at TIMESTAMPTZ NOT NULL`
+  * `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+  * `row_version BIGINT NOT NULL DEFAULT 1`
+* `tenant_id` enforces tenancy (NOT NULL)
+* `row_version` present (GUARDRAILS §8 compliance)
+* RLS enabled
+* No direct access:
+
+  * `REVOKE ALL ON tenant_invites FROM anon, authenticated`
+
+---
+
+### **RLS (table-level)**
+
+* No SELECT/INSERT/UPDATE/DELETE allowed directly by `anon` or `authenticated`
+* Table is **RPC-only access surface**
+
+---
+
+### **RPC: `accept_invite_v1(p_token TEXT)`**
+
+* Exists
+* SECURITY DEFINER
+* Requires authenticated context
+* Behavior:
+
+  1. Read current user from auth context
+  2. Lookup `tenant_invites` by `token`
+  3. Validate:
+
+     * invite exists
+     * not expired (`expires_at > now()`)
+  4. Idempotency:
+
+     * if already accepted → safe no-op
+  5. Insert or upsert into `tenant_memberships`:
+
+     * `(tenant_id, user_id, role)`
+  6. Set `accepted_at = now()` if not already set
+* Returns standard envelope (consistent with repo RPC contract)
+
+---
+
+### **Security / Constraints**
+
+* Token lookup is the only entry path (no tenant_id passed from client)
+* Membership creation derives `tenant_id` and `role` from invite row
+* No reliance on frontend for trust
+* No direct table mutation allowed outside RPC
+
+---
+
+### **Proof**
+
+`docs/proofs/10.8.7B_tenant_invites_<UTC>.log`
+
+Must demonstrate:
+
+* table exists with required columns
+* RLS enabled + no direct grants
+* RPC exists
+* RPC creates membership correctly
+* RPC idempotent (second call does not duplicate)
+* expired token rejected
+
+---
+
+### **Gate**
+
+`lane-only`
+
+---
+
+## **Notes (non-negotiable constraints)**
+
+* This item is a **prerequisite for 10.8.8 (invite acceptance flow)**
+* Routing page depends on this RPC
+* Do not implement invite logic in frontend
+* Do not bypass RPC with direct table access
+
+---
+
+## **Summary**
+
+```yaml
+10.8.7B:
+  purpose: invite system + membership creation
+  required_for: 10.8.8
+  surfaces:
+    - tenant_invites (table)
+    - accept_invite_v1 (RPC)
+```
+
 ---
 
 ### **10.8.8 — Auth Page**
