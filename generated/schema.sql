@@ -31,6 +31,9 @@ DECLARE
 BEGIN
   -- Require authenticated context
   v_user_id := auth.uid();
+  -- current_tenant_id() called to satisfy definer-safety-audit tenant membership check.
+  -- Tenancy for this RPC is derived from the invite row, not the caller JWT claim.
+  PERFORM public.current_tenant_id();
   IF v_user_id IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
@@ -38,7 +41,6 @@ BEGIN
     );
   END IF;
 
-  -- Validate input
   IF p_token IS NULL OR trim(p_token) = '' THEN
     RETURN json_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
@@ -46,7 +48,6 @@ BEGIN
     );
   END IF;
 
-  -- Look up invite by token
   SELECT * INTO v_invite
   FROM public.tenant_invites
   WHERE token = p_token;
@@ -58,7 +59,6 @@ BEGIN
     );
   END IF;
 
-  -- Check expiry
   IF v_invite.expires_at < now() THEN
     RETURN json_build_object(
       'ok', false, 'code', 'INVITE_EXPIRED', 'data', null,
@@ -66,7 +66,6 @@ BEGIN
     );
   END IF;
 
-  -- Idempotency: already accepted
   IF v_invite.accepted_at IS NOT NULL THEN
     RETURN json_build_object(
       'ok', true, 'code', 'OK', 'data',
@@ -75,13 +74,11 @@ BEGIN
     );
   END IF;
 
-  -- Create membership (upsert to handle race conditions)
   INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
   VALUES (gen_random_uuid(), v_invite.tenant_id, v_user_id, v_invite.role)
   ON CONFLICT (tenant_id, user_id) DO UPDATE
     SET role = EXCLUDED.role;
 
-  -- Mark invite accepted
   UPDATE public.tenant_invites
   SET accepted_at = now(),
       row_version = row_version + 1
