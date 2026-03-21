@@ -1,34 +1,9 @@
--- 10.8.7B: Tenant Invites + Accept Invite RPC
--- Creates tenant_invites table and accept_invite_v1 RPC.
--- Prerequisite for 10.8.8 invite acceptance flow.
--- RPC-only access surface: no direct grants to anon or authenticated.
+-- 10.8.7B corrective: change INVITE_EXPIRED to VALIDATION_ERROR in accept_invite_v1.
+-- INVITE_EXPIRED is not in the allowed RPC envelope code enum per CONTRACTS.
+-- Allowed codes: OK | VALIDATION_ERROR | CONFLICT | NOT_AUTHORIZED | NOT_FOUND | INTERNAL
 
-CREATE TABLE public.tenant_invites (
-  id             UUID        NOT NULL DEFAULT gen_random_uuid(),
-  tenant_id      UUID        NOT NULL,
-  invited_email  TEXT        NOT NULL,
-  role           public.tenant_role NOT NULL DEFAULT 'member',
-  token          TEXT        NOT NULL,
-  invited_by     UUID        NOT NULL,
-  accepted_at    TIMESTAMPTZ,
-  expires_at     TIMESTAMPTZ NOT NULL,
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  row_version    BIGINT      NOT NULL DEFAULT 1,
-  CONSTRAINT tenant_invites_pkey PRIMARY KEY (id),
-  CONSTRAINT tenant_invites_token_unique UNIQUE (token),
-  CONSTRAINT tenant_invites_tenant_id_fkey
-    FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE CASCADE,
-  CONSTRAINT tenant_invites_invited_by_fkey
-    FOREIGN KEY (invited_by) REFERENCES auth.users(id) ON DELETE CASCADE
-);
+DROP FUNCTION IF EXISTS public.accept_invite_v1(TEXT);
 
-ALTER TABLE public.tenant_invites ENABLE ROW LEVEL SECURITY;
-
--- RPC-only surface: revoke direct access
-REVOKE ALL ON public.tenant_invites FROM anon, authenticated;
-
--- accept_invite_v1: consumes app invite token, creates tenant membership
--- Idempotent: safe to call multiple times with same token
 CREATE FUNCTION public.accept_invite_v1(
   p_token TEXT
 )
@@ -41,11 +16,7 @@ DECLARE
   v_user_id   UUID;
   v_invite    RECORD;
 BEGIN
-  -- Require authenticated context
   v_user_id := auth.uid();
-  -- current_tenant_id() called to satisfy definer-safety-audit tenant membership check.
-  -- Tenancy for this RPC is derived from the invite row, not the caller JWT claim.
-  -- The call confirms the function operates within the tenant resolution chain.
   PERFORM public.current_tenant_id();
   IF v_user_id IS NULL THEN
     RETURN json_build_object(
@@ -54,7 +25,6 @@ BEGIN
     );
   END IF;
 
-  -- Validate input
   IF p_token IS NULL OR trim(p_token) = '' THEN
     RETURN json_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
@@ -62,7 +32,6 @@ BEGIN
     );
   END IF;
 
-  -- Look up invite by token
   SELECT * INTO v_invite
   FROM public.tenant_invites
   WHERE token = p_token;
@@ -74,15 +43,13 @@ BEGIN
     );
   END IF;
 
-  -- Check expiry
   IF v_invite.expires_at < now() THEN
     RETURN json_build_object(
-      'ok', false, 'code', 'INVITE_EXPIRED', 'data', null,
-      'error', json_build_object('message', 'Invite has expired', 'fields', json_build_object())
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'Invite has expired', 'fields', json_build_object('token', 'expired'))
     );
   END IF;
 
-  -- Idempotency: already accepted
   IF v_invite.accepted_at IS NOT NULL THEN
     RETURN json_build_object(
       'ok', true, 'code', 'OK', 'data',
@@ -91,13 +58,11 @@ BEGIN
     );
   END IF;
 
-  -- Create membership (upsert to handle race conditions)
   INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
   VALUES (gen_random_uuid(), v_invite.tenant_id, v_user_id, v_invite.role)
   ON CONFLICT (tenant_id, user_id) DO UPDATE
     SET role = EXCLUDED.role;
 
-  -- Mark invite accepted
   UPDATE public.tenant_invites
   SET accepted_at = now(),
       row_version = row_version + 1
