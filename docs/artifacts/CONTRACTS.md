@@ -446,3 +446,14 @@ Path contract: {tenant_id}/{deal_id}/{photo_id}.jpg|.png (3 segments, segment[1]
 Storage RLS policies enforce segment count=3 and segment[1]=current_tenant_id().
 No anon access. Multiple photos per deal supported. No transformations (V1 boundary).
 No RPC wrapper - access via Supabase Storage client with RLS enforcement.
+
+
+## 32) Tenant Invites + Accept Invite RPC (10.8.7B)
+Forward migration 20260321000001 creates public.tenant_invites table (id, tenant_id,
+invited_email, role, token, invited_by, accepted_at, expires_at, created_at, row_version).
+RPC-only access surface: REVOKE ALL from anon and authenticated. No RLS policies.
+Token unique constraint. invited_by FK references auth.users(id).
+RPC accept_invite_v1(p_token text): SECURITY DEFINER, requires authenticated context.
+Validates token existence and expiry. Idempotent via accepted_at marker.
+Creates/upserts tenant_memberships row deriving tenant_id and role from invite row.
+Returns standard envelope. Prerequisite for 10.8.8 invite acceptance flow.

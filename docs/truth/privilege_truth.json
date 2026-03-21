@@ -120,6 +120,8 @@
       }
     ],
     "authenticated_routines": [
+      "accept_invite_v1",
+      "accept_invite_v1",
       "create_deal_v1",
       "create_farm_area_v1",
       "current_tenant_id",
