@@ -7381,3 +7381,27 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-20 -- Build Route v2.4 -- 10.8.7B (Governance)
+
+Objective
+- Record addition of Build Route item 10.8.7B (Tenant Invites + Accept Invite RPC).
+
+Changes
+- Build Route updated manually to add 10.8.7B.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260321T164014Z.md added.
+- 10.8.7B is prerequisite for 10.8.8 invite acceptance flow.
+- No implementation changes in this PR.
+
+Proof
+- Governance record only. No proof artifact required.
+
+DoD
+- Build Route updated with 10.8.7B item -- PASS
+- Governance change file present -- PASS
+
+Status
+- PASS
