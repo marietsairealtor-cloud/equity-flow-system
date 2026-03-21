@@ -1,7 +1,17 @@
 {
     "version":  1,
-    "generated":  "2026-03-20T16:01:31Z",
+    "generated":  "2026-03-21T16:57:41Z",
     "write_paths":  [
+                        {
+                            "path_type":  "rpc",
+                            "name":  "accept_invite_v1",
+                            "tables":  [
+                                           "tenant_invites",
+                                           "tenant_memberships"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
                         {
                             "path_type":  "rpc",
                             "name":  "complete_reminder_v1",
