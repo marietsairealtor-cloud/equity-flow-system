@@ -272,6 +272,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_reminder_v1 | 10.8.3 | Create a deal reminder for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | complete_reminder_v1 | 10.8.3 | Mark a reminder as completed (idempotent) | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| accept_invite_v1 | 10.8.7B | Accept app invite token and create tenant membership | SECURITY DEFINER, authenticated only | token lookup — tenant_id derived from tenant_invites row |
 | list_farm_areas_v1 | 10.8.6 | List all farm areas for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | create_farm_area_v1 | 10.8.6 | Create a new farm area for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | delete_farm_area_v1 | 10.8.6 | Delete a farm area for current tenant (SET NULL on deals) | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
@@ -446,3 +447,14 @@ Path contract: {tenant_id}/{deal_id}/{photo_id}.jpg|.png (3 segments, segment[1]
 Storage RLS policies enforce segment count=3 and segment[1]=current_tenant_id().
 No anon access. Multiple photos per deal supported. No transformations (V1 boundary).
 No RPC wrapper - access via Supabase Storage client with RLS enforcement.
+
+
+## 32) Tenant Invites + Accept Invite RPC (10.8.7B)
+Forward migration 20260321000001 creates public.tenant_invites table (id, tenant_id,
+invited_email, role, token, invited_by, accepted_at, expires_at, created_at, row_version).
+RPC-only access surface: REVOKE ALL from anon and authenticated. No RLS policies.
+Token unique constraint. invited_by FK references auth.users(id).
+RPC accept_invite_v1(p_token text): SECURITY DEFINER, requires authenticated context.
+Validates token existence and expiry. Idempotent via accepted_at marker.
+Creates/upserts tenant_memberships row deriving tenant_id and role from invite row.
+Returns standard envelope. Prerequisite for 10.8.8 invite acceptance flow.

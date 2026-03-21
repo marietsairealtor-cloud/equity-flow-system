@@ -11,6 +11,7 @@
     "draft_deals",
     "share_tokens",
     "tenant_farm_areas",
+    "tenant_invites",
     "tenant_memberships",
     "tenant_slugs",
     "tenant_subscriptions",

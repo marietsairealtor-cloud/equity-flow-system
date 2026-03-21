@@ -173,6 +173,15 @@
       "notes": "Min role: admin. NOT_FOUND if farm area does not exist for tenant. ON DELETE SET NULL cascades to deals.farm_area_id."
     },
     {
+      "name": "accept_invite_v1",
+      "version": 1,
+      "build_route_owner": "10.8.7B",
+      "input_contract": "CONTRACTS.md §32 accept_invite_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED","VALIDATION_ERROR","NOT_FOUND","INVITE_EXPIRED"],
+      "notes": "Consumes app invite token. Idempotent via accepted_at. Creates tenant_memberships row. Prerequisite for 10.8.8."
+    },
+    {
       "name": "current_tenant_id",
       "version": 1,
       "build_route_owner": "10.8.5",

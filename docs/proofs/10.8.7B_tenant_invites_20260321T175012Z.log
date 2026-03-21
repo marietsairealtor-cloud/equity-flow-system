@@ -1,0 +1,156 @@
+PROOF_HEAD=51099be9259cbcfb7afe837808c5aededa465f28
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.7B Tenant Invites + Accept Invite RPC -- Proof Log ===
+Date: 2026-03-21T13:49:04.5852808-04:00
+Branch: feat/10.8.7B-tenant-invites
+PR HEAD SHA: 51099be9259cbcfb7afe837808c5aededa465f28
+
+=== DoD: tenant_invites table columns ===
+id|uuid|NO
+tenant_id|uuid|NO
+invited_email|text|NO
+role|USER-DEFINED|NO
+token|text|NO
+invited_by|uuid|NO
+accepted_at|timestamp with time zone|YES
+expires_at|timestamp with time zone|NO
+created_at|timestamp with time zone|NO
+row_version|bigint|NO
+
+
+=== DoD: RLS enabled, zero policies, no direct grants ===
+RLS enabled: t
+
+Policy count: 0
+
+
+=== DoD: accept_invite_v1 is SECURITY DEFINER ===
+accept_invite_v1|t
+
+
+=== DoD: Live RPC execution under authenticated context ===
+BEGIN
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+SET
+SET
+SET
+             test              
+-------------------------------
+ === Test 1: missing token ===
+(1 row)
+
+                                                              accept_invite_v1                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : false, "code" : "VALIDATION_ERROR", "data" : null, "error" : {"message" : "token is required", "fields" : {"token" : "required"}}}
+(1 row)
+
+             test              
+-------------------------------
+ === Test 2: unknown token ===
+(1 row)
+
+                                                accept_invite_v1                                                
+----------------------------------------------------------------------------------------------------------------
+ {"ok" : false, "code" : "NOT_FOUND", "data" : null, "error" : {"message" : "Invite not found", "fields" : {}}}
+(1 row)
+
+             test              
+-------------------------------
+ === Test 3: expired token ===
+(1 row)
+
+                                                              accept_invite_v1                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : false, "code" : "VALIDATION_ERROR", "data" : null, "error" : {"message" : "Invite has expired", "fields" : {"token" : "expired"}}}
+(1 row)
+
+                     test                      
+-----------------------------------------------
+ === Test 4: already accepted (idempotent) ===
+(1 row)
+
+                                                         accept_invite_v1                                                         
+----------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "f0000000-0000-0000-0000-000000000001", "role" : "member"}, "error" : null}
+(1 row)
+
+                  test                  
+----------------------------------------
+ === Test 5: valid token first call ===
+(1 row)
+
+                                                         accept_invite_v1                                                         
+----------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "f0000000-0000-0000-0000-000000000001", "role" : "member"}, "error" : null}
+(1 row)
+
+                         test                         
+------------------------------------------------------
+ === Test 6: valid token second call (idempotent) ===
+(1 row)
+
+                                                         accept_invite_v1                                                         
+----------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "f0000000-0000-0000-0000-000000000001", "role" : "member"}, "error" : null}
+(1 row)
+
+RESET
+RESET
+RESET
+               test               
+----------------------------------
+ === Test 7: membership count ===
+(1 row)
+
+ count 
+-------
+     1
+(1 row)
+
+               test               
+----------------------------------
+ === Test 8: no direct grants ===
+(1 row)
+
+ coalesce 
+----------
+ NONE
+(1 row)
+
+ROLLBACK
+
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260321T165448Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/tenant_table_selector.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260321000001_10_8_7B_tenant_invites.sql
+supabase/migrations/20260321000002_10_8_7B_fix_accept_invite_definer.sql
+supabase/migrations/20260321000003_10_8_7B_fix_envelope_code.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.7B Tenant Invites + Accept Invite RPC: PASS (lane-only gate)

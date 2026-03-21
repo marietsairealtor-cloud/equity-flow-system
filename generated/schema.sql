@@ -21,6 +21,76 @@ CREATE TYPE "public"."tenant_role" AS ENUM (
 
 ALTER TYPE "public"."tenant_role" OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."accept_invite_v1"("p_token" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_user_id   UUID;
+  v_invite    RECORD;
+BEGIN
+  v_user_id := auth.uid();
+  PERFORM public.current_tenant_id();
+  IF v_user_id IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_token IS NULL OR trim(p_token) = '' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'token is required', 'fields', json_build_object('token', 'required'))
+    );
+  END IF;
+
+  SELECT * INTO v_invite
+  FROM public.tenant_invites
+  WHERE token = p_token;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', null,
+      'error', json_build_object('message', 'Invite not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF v_invite.expires_at < now() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'Invite has expired', 'fields', json_build_object('token', 'expired'))
+    );
+  END IF;
+
+  IF v_invite.accepted_at IS NOT NULL THEN
+    RETURN json_build_object(
+      'ok', true, 'code', 'OK', 'data',
+      json_build_object('tenant_id', v_invite.tenant_id, 'role', v_invite.role),
+      'error', null
+    );
+  END IF;
+
+  INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
+  VALUES (gen_random_uuid(), v_invite.tenant_id, v_user_id, v_invite.role)
+  ON CONFLICT (tenant_id, user_id) DO UPDATE
+    SET role = EXCLUDED.role;
+
+  UPDATE public.tenant_invites
+  SET accepted_at = now(),
+      row_version = row_version + 1
+  WHERE token = p_token;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('tenant_id', v_invite.tenant_id, 'role', v_invite.role),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."accept_invite_v1"("p_token" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."activity_log_append_only"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'
@@ -1310,6 +1380,21 @@ CREATE TABLE IF NOT EXISTS "public"."tenant_farm_areas" (
 
 ALTER TABLE "public"."tenant_farm_areas" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."tenant_invites" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "invited_email" "text" NOT NULL,
+    "role" "public"."tenant_role" DEFAULT 'member'::"public"."tenant_role" NOT NULL,
+    "token" "text" NOT NULL,
+    "invited_by" "uuid" NOT NULL,
+    "accepted_at" timestamp with time zone,
+    "expires_at" timestamp with time zone NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL
+);
+
+ALTER TABLE "public"."tenant_invites" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."tenant_memberships" (
     "id" "uuid" NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -1398,6 +1483,12 @@ ALTER TABLE ONLY "public"."tenant_farm_areas"
 ALTER TABLE ONLY "public"."tenant_farm_areas"
     ADD CONSTRAINT "tenant_farm_areas_tenant_area_unique" UNIQUE ("tenant_id", "area_name");
 
+ALTER TABLE ONLY "public"."tenant_invites"
+    ADD CONSTRAINT "tenant_invites_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."tenant_invites"
+    ADD CONSTRAINT "tenant_invites_token_unique" UNIQUE ("token");
+
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_pkey" PRIMARY KEY ("id");
 
@@ -1476,6 +1567,12 @@ ALTER TABLE ONLY "public"."share_tokens"
 ALTER TABLE ONLY "public"."tenant_farm_areas"
     ADD CONSTRAINT "tenant_farm_areas_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
 
+ALTER TABLE ONLY "public"."tenant_invites"
+    ADD CONSTRAINT "tenant_invites_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."tenant_invites"
+    ADD CONSTRAINT "tenant_invites_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
 ALTER TABLE ONLY "public"."tenant_memberships"
     ADD CONSTRAINT "tenant_memberships_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
 
@@ -1542,6 +1639,8 @@ CREATE POLICY "tenant_farm_areas_insert_own" ON "public"."tenant_farm_areas" FOR
 CREATE POLICY "tenant_farm_areas_select_own" ON "public"."tenant_farm_areas" FOR SELECT TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 CREATE POLICY "tenant_farm_areas_update_own" ON "public"."tenant_farm_areas" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
+
+ALTER TABLE "public"."tenant_invites" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."tenant_memberships" ENABLE ROW LEVEL SECURITY;
 
