@@ -7405,3 +7405,35 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-21 -- Build Route v2.4 -- 10.8.7B
+
+Objective
+- Establish tenant invite system with tenant_invites table and accept_invite_v1 RPC. Prerequisite for 10.8.8 invite acceptance flow.
+
+Changes
+- Migration 20260321000001 creates public.tenant_invites table (id, tenant_id, invited_email, role, token, invited_by, accepted_at, expires_at, created_at, row_version). RPC-only surface: RLS enabled, zero policies, REVOKE ALL from anon and authenticated. token UNIQUE constraint. invited_by FK references auth.users(id).
+- Migration 20260321000002 adds current_tenant_id() call to satisfy definer-safety-audit.
+- Migration 20260321000003 changes INVITE_EXPIRED to VALIDATION_ERROR per envelope contract.
+- RPC accept_invite_v1(p_token text): SECURITY DEFINER, requires authenticated context. Validates token existence and expiry. Idempotent via accepted_at marker. Creates/upserts tenant_memberships row deriving tenant_id and role from invite row. Returns standard envelope.
+- Registered in definer_allowlist, execute_allowlist, rpc_contract_registry, privilege_truth, CONTRACTS.md s32.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260321T165448Z.md added.
+
+Proof
+- docs/proofs/10.8.7B_tenant_invites_20260321T175012Z.log
+
+DoD
+- tenant_invites table exists with all required columns -- PASS
+- RLS enabled, zero policies, no direct grants -- PASS
+- accept_invite_v1 exists as SECURITY DEFINER -- PASS
+- missing token returns VALIDATION_ERROR -- PASS
+- unknown token returns NOT_FOUND -- PASS
+- expired token returns VALIDATION_ERROR with token=expired -- PASS
+- valid token returns OK and creates membership -- PASS
+- second call idempotent - returns OK, membership count = 1 -- PASS
+
+Status
+- PASS
