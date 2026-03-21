@@ -1,10 +1,12 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: fbf853f
+HEAD: aac8533
 
 === git status --porcelain=v1 ===
  M docs/truth/cloud_migration_parity.json
  M docs/truth/write_path_registry.json
  M supabase/migrations/20260321000001_10_8_7B_tenant_invites.sql
+?? docs/proofs/10.8.7B_tenant_invites_WORKING.log
+?? supabase/migrations/20260321000003_10_8_7B_fix_envelope_code.sql
 
 === supabase status (sanitized summary) ===
 {
@@ -12,8 +14,6 @@ HEAD: fbf853f
     "stack_running":  false,
     "stopped_services":  [
                              "supabase_imgproxy_equity-flow-system",
-                             "supabase_edge_runtime_equity-flow-system",
-                             "supabase_vector_equity-flow-system",
                              "supabase_pooler_equity-flow-system"
                          ],
     "api_url":  null,
@@ -23,10 +23,10 @@ HEAD: fbf853f
 }
 
 === last applied migration (DB) ===
- 20260321000002
+ 20260321000003
 
 === latest migration file in repo ===
-20260321000002_10_8_7B_fix_accept_invite_definer.sql
+20260321000003_10_8_7B_fix_envelope_code.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes

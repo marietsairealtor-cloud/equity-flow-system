@@ -29,10 +29,7 @@ DECLARE
   v_user_id   UUID;
   v_invite    RECORD;
 BEGIN
-  -- Require authenticated context
   v_user_id := auth.uid();
-  -- current_tenant_id() called to satisfy definer-safety-audit tenant membership check.
-  -- Tenancy for this RPC is derived from the invite row, not the caller JWT claim.
   PERFORM public.current_tenant_id();
   IF v_user_id IS NULL THEN
     RETURN json_build_object(
@@ -61,8 +58,8 @@ BEGIN
 
   IF v_invite.expires_at < now() THEN
     RETURN json_build_object(
-      'ok', false, 'code', 'INVITE_EXPIRED', 'data', null,
-      'error', json_build_object('message', 'Invite has expired', 'fields', json_build_object())
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
+      'error', json_build_object('message', 'Invite has expired', 'fields', json_build_object('token', 'expired'))
     );
   END IF;
 
