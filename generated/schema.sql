@@ -474,9 +474,16 @@ $$;
 ALTER FUNCTION "public"."create_share_token_v1"("p_deal_id" "uuid", "p_expires_at" timestamp with time zone) OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."current_tenant_id"() RETURNS "uuid"
-    LANGUAGE "sql" STABLE
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
   SELECT COALESCE(
+    (
+      SELECT up.current_tenant_id
+      FROM public.user_profiles up
+      WHERE up.id = auth.uid()
+    ),
+    nullif(current_setting('app.tenant_id', true), '')::uuid,
     nullif(current_setting('request.jwt.claim.tenant_id', true), '')::uuid,
     (nullif(current_setting('request.jwt.claims', true), '')::json ->> 'tenant_id')::uuid
   )
@@ -1436,7 +1443,8 @@ CREATE TABLE IF NOT EXISTS "public"."tenants" (
 ALTER TABLE "public"."tenants" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
-    "id" "uuid" NOT NULL
+    "id" "uuid" NOT NULL,
+    "current_tenant_id" "uuid"
 );
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
@@ -1582,6 +1590,9 @@ ALTER TABLE ONLY "public"."tenant_slugs"
 ALTER TABLE ONLY "public"."tenant_subscriptions"
     ADD CONSTRAINT "tenant_subscriptions_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
 
+ALTER TABLE ONLY "public"."user_profiles"
+    ADD CONSTRAINT "user_profiles_current_tenant_id_fkey" FOREIGN KEY ("current_tenant_id") REFERENCES "public"."tenants"("id") ON DELETE SET NULL;
+
 ALTER TABLE "public"."activity_log" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "activity_log_insert_own" ON "public"."activity_log" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
@@ -1659,6 +1670,10 @@ ALTER TABLE "public"."tenant_subscriptions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."tenants" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "user_profiles_select_self" ON "public"."user_profiles" FOR SELECT TO "authenticated" USING (("id" = "auth"."uid"()));
+
+CREATE POLICY "user_profiles_update_self" ON "public"."user_profiles" FOR UPDATE TO "authenticated" USING (("id" = "auth"."uid"())) WITH CHECK (("id" = "auth"."uid"()));
 
 REVOKE ALL ON FUNCTION "public"."current_tenant_id"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."current_tenant_id"() TO "authenticated";
