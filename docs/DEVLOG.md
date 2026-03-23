@@ -7437,3 +7437,34 @@ DoD
 
 Status
 - PASS
+
+2026-03-23 — Build Route v2.4 — Item 10.8.7C Added (QA-Authored)
+
+Objective
+Add Build Route item 10.8.7C — Tenant Context Parity Fixes (user_profiles + current_tenant_id).
+Item captures parity gaps discovered mid-10.8.8 execution between CONTRACTS §3 tenancy resolution
+order and actual cloud database state.
+
+Changes
+- Build Route updated: item 10.8.7C inserted between 10.8.7B and 10.8.8.
+- Item authored by QA; scope constrained to exact gaps discovered:
+    user_profiles.current_tenant_id column (missing entirely)
+    FK to tenants(id) ON DELETE SET NULL
+    current_tenant_id() function correction (was JWT-only; must follow CONTRACTS §3 order)
+    Minimum user_profiles self-read RLS policy (RLS was enabled with no policy, blocking resolution)
+- Explicit out-of-scope boundary recorded in item: no invite flow, no routing, no auth.users changes,
+  no unrelated profile fields.
+- Gate: lane-only (parity fix, not a new merge-blocking contract addition).
+
+Proof
+docs/proofs/10.8.7C_tenant_context_parity_<UTC>.log (to be generated in implementation PR)
+
+DoD
+- user_profiles.current_tenant_id UUID NULL exists with FK to tenants(id) ON DELETE SET NULL
+- current_tenant_id() resolves in CONTRACTS §3 order
+- user_profiles self-read RLS policy exists; no wider access granted
+- get_user_entitlements_v1 works under authenticated context for all three routing states
+- No unrelated schema expansion
+
+Status
+ITEM ADDED — implementation PR pending (mid-10.8.8 session)

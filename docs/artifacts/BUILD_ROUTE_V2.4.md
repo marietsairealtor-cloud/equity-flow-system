@@ -4727,7 +4727,77 @@ Must demonstrate:
     - accept_invite_v1 (RPC)
 ```
 
----
+### **10.8.7C — Tenant Context Parity Fixes (user_profiles + current_tenant_id)**
+
+**Deliverable:**
+Forward migration(s) that make database reality match the locked tenancy contract used by post-auth routing and workspace switching.
+
+### **DoD**
+
+* `public.user_profiles.current_tenant_id UUID NULL` exists
+* `current_tenant_id` has FK to `public.tenants(id)` with `ON DELETE SET NULL`
+* `public.current_tenant_id()` is corrected to resolve tenant context in the contract order:
+
+  1. `user_profiles.current_tenant_id`
+  2. `app.tenant_id` (dev/test)
+  3. JWT tenant claim
+  4. else `NULL` 
+* `public.user_profiles` remains the controlled exception table for authenticated read/update access; add the minimum policy needed so authenticated users can read their own row for tenant resolution
+* RLS on `public.user_profiles` no longer blocks `current_tenant_id()` from returning the user’s selected tenant
+* `get_user_entitlements_v1` works under authenticated context with:
+
+  * no membership → onboarding state
+  * membership + active/expiring sub → today state
+  * membership + none/expired sub → onboarding/billing state
+* No changes to `auth.users`
+* No unrelated schema expansion
+
+### **Proof**
+
+`docs/proofs/10.8.7C_tenant_context_parity_<UTC>.log`
+
+### **Proof must show**
+
+* column exists
+* FK exists
+* `current_tenant_id()` returns `user_profiles.current_tenant_id` under authenticated context
+* `get_user_entitlements_v1` succeeds under authenticated context after fix
+* `user_profiles` RLS/policy state is sufficient for self-read but not widened beyond intended exception
+* post-auth test states route correctly after the DB fix
+
+### **Gate**
+
+`lane-only`
+
+## Why this item is justified
+
+You discovered a real contract drift:
+
+* docs/contracts say tenancy resolution checks `user_profiles.current_tenant_id` first 
+* actual cloud function was JWT-only
+* `user_profiles` had RLS enabled with no policy, which blocked the resolution path
+* `user_profiles.current_tenant_id` column was missing entirely
+
+That is a legitimate **parity-fix item**, not scope creep.
+
+## What belongs in 10.8.7C
+
+Only the fixes we actually discovered:
+
+* `user_profiles.current_tenant_id`
+* FK to `tenants`
+* `current_tenant_id()` correction
+* minimal `user_profiles` self-read policy required for tenant resolution under RLS
+
+## What does **not** belong
+
+* invite flow changes
+* routing page changes
+* auth/users changes
+* random profile fields like email/display_name/preferences
+
+
+
 
 ### **10.8.8 — Auth Page**
 
