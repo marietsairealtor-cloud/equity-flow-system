@@ -3,6 +3,7 @@
   "allow": [
     "public.accept_invite_v1",
     "public.complete_reminder_v1",
+    "public.current_tenant_id",
     "public.create_deal_v1",
     "public.create_farm_area_v1",
     "public.create_reminder_v1",
