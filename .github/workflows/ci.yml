@@ -657,6 +657,8 @@ jobs:
         run: ./scripts/cloud_migration_parity_check.ps1
   cloud-schema-drift:
     name: cloud-schema-drift
+    needs: [changes]
+    if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -916,8 +918,6 @@ jobs:
         shell: pwsh
         run: |
           "required PASS" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
-
- 
 
 
 
