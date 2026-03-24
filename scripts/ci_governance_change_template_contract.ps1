@@ -12,14 +12,14 @@ $files = @($r.ChangedEffective)
 
 $justPath = $null
 foreach($f in $files){
-  if($f -match '^docs/governance/GOVERNANCE_CHANGE_<UTC>.md$'){
+  if($f -match '^docs/governance/GOVERNANCE_CHANGE_(\d{8}T\d{6}Z|PR\d+)\.md$'){
     $justPath = $f
     break
   }
 }
 
 if(-not $justPath){
-  Write-Error "GOV_TEMPLATE_CONTRACT FAIL: governance touched; missing docs/governance/GOVERNANCE_CHANGE_<UTC>.md"
+  Write-Error "GOV_TEMPLATE_CONTRACT FAIL: governance touched; missing docs/governance/GOVERNANCE_CHANGE_<UTC>.md (format: YYYYMMDDTHHMMSSZ or PR<NNN>)"
   exit 1
 }
 
