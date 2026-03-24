@@ -19,7 +19,7 @@ foreach($f in $files){
 }
 
 if(-not $justPath){
-  Write-Error "GOV_TEMPLATE_CONTRACT FAIL: governance touched; missing docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md"
+  Write-Error "GOV_TEMPLATE_CONTRACT FAIL: governance touched; missing docs/governance/GOVERNANCE_CHANGE_<UTC>.md"
   exit 1
 }
 
