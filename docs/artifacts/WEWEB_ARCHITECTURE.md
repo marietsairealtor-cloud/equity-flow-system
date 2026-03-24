@@ -157,7 +157,6 @@ Share tokens (Section 8) = temporary, deal-specific access. Used by Dispo for bu
 Slugs (new) = permanent, tenant-scoped form URLs. Used by Lead Intake for intake forms. No expiration, embeddable on websites. Different mechanism, different use case, no overlap.
 
 ---
-
 ## 5) Authentication and Onboarding
 
 ### 5.1 Auth Page
@@ -166,24 +165,56 @@ Single auth page at /auth handling all states via Supabase Auth plugin:
 - Login (email/password)
 - Signup (new account)
 - Password reset (token in URL hash, handled natively)
-- Invite acceptance (invite token carried through URL, resolved after auth)
+- Invite entry point: invite email link may still land on `/auth` with `?token=...` for context/display, but token is NOT the primary acceptance authority after auth
+- After auth completes, `/post-auth` resolves pending invites server-side via `accept_pending_invites_v1()`
+
+Auth page responsibilities:
+- authenticate the user
+- redirect authenticated user into the post-auth routing flow
+- no direct table calls
+- no invite acceptance logic in WeWeb beyond standard auth entry/redirect behavior
+
+Invite acceptance authority:
+- exact email match only
+- backend reads authenticated email from `auth.users.email` via `auth.uid()` inside `accept_pending_invites_v1()`
+- no frontend-supplied email parameter
+- token in invite URL is optional context only, not the primary post-auth acceptance mechanism
 
 ### 5.2 Onboarding Wizard
 
 Single page at /onboarding with sequential steps:
-- Step 1: Create workspace OR accept invite OR join existing
+- Step 1: Create workspace OR join existing
 - Step 2: Pick workspace slug (lowercase, URL-safe, unique)
 - Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle with 2 months free)
+
+Notes:
+- Invite acceptance is no longer an onboarding action
+- Pending invites are resolved in `/post-auth` before onboarding routing is determined
+- Onboarding is shown only when entitlement state indicates it is required
 
 Resume behavior: wizard detects current state from `get_user_entitlements_v1` and shows correct step. User who closed browser mid-payment returns to Step 3.
 
 ### 5.3 Gate Logic on Authenticated Page Load
 
-1. `get_user_entitlements_v1` → no memberships → onboarding Step 1
-2. `get_user_entitlements_v1` → membership exists, no active sub → onboarding Step 3
-3. `get_user_entitlements_v1` → membership + active sub → Today view (skip entirely)
-4. Subscription lapse mid-session → expired banner overlay (not a redirect)
+Authoritative post-auth order:
 
+1. Auth completes
+2. `/post-auth` calls `accept_pending_invites_v1()`
+3. `/post-auth` calls `get_user_entitlements_v1()`
+4. `get_user_entitlements_v1` → no memberships → onboarding Step 1
+5. `get_user_entitlements_v1` → membership exists, no active sub → onboarding Step 3
+6. `get_user_entitlements_v1` → membership + active/expiring sub → Today view (skip entirely)
+7. Subscription lapse mid-session → expired banner overlay (not a redirect)
+
+Pending invite resolution rules:
+- exact email match only
+- valid pending invites are auto-accepted oldest-first
+- if `current_tenant_id` already exists, do not auto-switch it
+- if `current_tenant_id` is NULL, oldest successfully accepted invite becomes current tenant
+- duplicate/already-member cases are treated as already satisfied
+- partial acceptance is allowed
+- failures are silent to the user
+- routing still comes only from entitlement state after invite resolution
 ---
 
 ## 6) Authenticated Shell
