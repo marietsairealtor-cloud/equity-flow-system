@@ -22,6 +22,7 @@
   ],
   "anon_callable": [
     "public.resolve_form_slug_v1",
-    "public.submit_form_v1"
+    "public.submit_form_v1",
+    "public.current_tenant_id"
   ]
 }

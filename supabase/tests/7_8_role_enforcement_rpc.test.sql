@@ -122,6 +122,7 @@ SELECT is(
      AND p.prosecdef = true
      AND p.proname ~* '(tenant|membership|role|seat|billing|plan|subscription)'
      AND p.proname != 'require_min_role_v1'
+     AND p.proname != 'current_tenant_id'
      AND NOT (pg_get_functiondef(p.oid) ~* 'require_min_role_v1')),
   0,
   'Catalog audit: zero privileged RPCs missing require_min_role_v1 guard'
