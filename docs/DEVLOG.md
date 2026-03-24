@@ -7468,3 +7468,35 @@ DoD
 
 Status
 ITEM ADDED — implementation PR pending (mid-10.8.8 session)
+
+---
+
+## 2026-03-24 -- Build Route v2.4 -- 10.8.7C
+
+Objective
+- Fix tenant context parity: align DB reality with locked tenancy contract required by post-auth routing.
+
+Changes
+- Migration 20260323000001 adds user_profiles.current_tenant_id UUID NULL column with FK to tenants(id) ON DELETE SET NULL.
+- Corrects current_tenant_id() resolution order: user_profiles.current_tenant_id first, then app.tenant_id, then JWT claim, else NULL.
+- Adds user_profiles self-read and self-update RLS policies (authenticated only, id = auth.uid()).
+- Resets user_profiles grants to SELECT+UPDATE for authenticated (controlled exception).
+- Lint fix: ci_rls_strategy_lint.ps1 exempts user_profiles auth.uid() self-reference from forbidden pattern.
+- Test fix: 7_8_role_enforcement_rpc.test.sql excludes current_tenant_id from privileged RPC catalog audit.
+- definer_allowlist.json: current_tenant_id added to anon_callable exemption list.
+- qa_scope_map.json: fixed bad JSON escape in 10.8.7C proof pattern entry.
+
+Proof
+- docs/proofs/10.8.7C_tenant_context_parity_20260324T002317Z.log
+
+DoD
+- user_profiles.current_tenant_id column exists -- PASS
+- FK to tenants ON DELETE SET NULL -- PASS
+- current_tenant_id() resolves user_profiles.current_tenant_id first -- PASS
+- user_profiles self-read works under authenticated context -- PASS
+- get_user_entitlements_v1 succeeds under authenticated context -- PASS
+- user_profiles RLS policies: self-read and self-update only -- PASS
+- No unintended table grants widened -- PASS
+
+Status
+- PASS
