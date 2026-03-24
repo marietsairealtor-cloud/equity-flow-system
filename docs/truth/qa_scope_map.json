@@ -432,6 +432,9 @@
     "10.8.7C": {
       "proof_pattern": "^docs/proofs/10\\.8\\.7C_tenant_context_parity_"
     },
+    "10.8.7D": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.7D_accept_invite_tenant_sync_"
+    },
     "10.8.7B": {
       "proof_pattern": "^docs/proofs/10\\.8\\.7B_tenant_invites_"
     }

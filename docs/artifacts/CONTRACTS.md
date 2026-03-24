@@ -473,3 +473,11 @@ Changes:
   Controlled exception per CONTRACTS §12 — authenticated self-read only.
 
 No RPC signature changes. No new public RPCs. No changes to auth.users.
+
+
+## 33) Accept Invite Tenant Context Sync (10.8.7D)
+Forward migration 20260324000001 modifies accept_invite_v1 to set user_profiles.current_tenant_id
+after successful invite acceptance. No schema changes. Behavioral parity fix only.
+After membership creation, upserts user_profiles.current_tenant_id = tenant_id from invite row.
+Idempotent. Ensures get_user_entitlements_v1 succeeds immediately after invite acceptance.
+Required to complete tenancy contract established in 10.8.7C.
