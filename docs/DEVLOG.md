@@ -7525,3 +7525,33 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-24 -- Build Route v2.4 -- 10.8.7D
+
+Objective
+- Sync user_profiles.current_tenant_id on invite acceptance to complete tenancy contract from 10.8.7C.
+
+Changes
+- Migration 20260324000001 modifies accept_invite_v1 via CREATE OR REPLACE to upsert user_profiles.current_tenant_id after membership creation. Both new and already-accepted invite paths sync current_tenant_id.
+- Migration 20260324000002 restores current_tenant_id() call to satisfy definer-safety-audit gate.
+- CONTRACTS.md s33 added documenting behavioral change.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260324T145447Z.md added.
+
+Proof
+- docs/proofs/10.8.7D_accept_invite_tenant_sync_20260324T152932Z.log
+
+DoD
+- Before invite acceptance: current_tenant_id = NULL -- PASS
+- After accept_invite_v1: current_tenant_id = tenant_id from invite row -- PASS
+- Already-accepted path also syncs current_tenant_id -- PASS
+- get_user_entitlements_v1 succeeds immediately after invite -- PASS
+- Idempotent upsert -- PASS
+
+Status
+- PASS
+
+
+---
