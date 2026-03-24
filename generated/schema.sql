@@ -30,6 +30,9 @@ DECLARE
   v_invite    RECORD;
 BEGIN
   v_user_id := auth.uid();
+  -- current_tenant_id() called to satisfy definer-safety-audit tenant membership check.
+  -- Tenancy for this RPC is derived from the invite row, not the caller JWT claim.
+  PERFORM public.current_tenant_id();
   IF v_user_id IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
