@@ -1,0 +1,112 @@
+PROOF_HEAD=0d3370a8ab71533ff7bd9ae220748ea5a36d930d
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.7D Accept Invite Tenant Context Sync -- Proof Log ===
+Date: 2026-03-24T11:27:30.4651948-04:00
+Branch: feat/10.8.7D-accept-invite-tenant-sync
+PR HEAD SHA: 0d3370a8ab71533ff7bd9ae220748ea5a36d930d
+
+=== Migration applied ===
+
+docs/truth/cloud_migration_parity.json
+supabase/migrations/20260324000001_10_8_7D_accept_invite_tenant_sync.sql
+supabase/migrations/20260324000002_10_8_7D_fix_definer_audit.sql
+
+
+
+=== Live DB verification ===
+BEGIN
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+SET
+SET
+                   test                    
+-------------------------------------------
+ === Before: current_tenant_id is NULL ===
+(1 row)
+
+ current_tenant_id 
+-------------------
+ 
+(1 row)
+
+                      test                      
+------------------------------------------------
+ === Call accept_invite_v1 with valid token ===
+(1 row)
+
+                                                         accept_invite_v1                                                         
+----------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "dd000000-0000-0000-0000-000000000001", "role" : "member"}, "error" : null}
+(1 row)
+
+                  test                   
+-----------------------------------------
+ === After: current_tenant_id is set ===
+(1 row)
+
+          current_tenant_id           
+--------------------------------------
+ dd000000-0000-0000-0000-000000000001
+(1 row)
+
+                          test                          
+--------------------------------------------------------
+ === get_user_entitlements_v1 succeeds after invite ===
+(1 row)
+
+                                                                                                                                     get_user_entitlements_v1                                                                                                                                      
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "dd000000-0000-0000-0000-000000000001", "user_id" : "dd900000-0000-0000-0000-000000000001", "is_member" : true, "role" : "member", "entitled" : true, "subscription_status" : "none", "subscription_days_remaining" : null}, "error" : null}
+(1 row)
+
+                            test                            
+------------------------------------------------------------
+ === Already-accepted path also syncs current_tenant_id ===
+(1 row)
+
+UPDATE 1
+                                                         accept_invite_v1                                                         
+----------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "dd000000-0000-0000-0000-000000000001", "role" : "member"}, "error" : null}
+(1 row)
+
+          current_tenant_id           
+--------------------------------------
+ dd000000-0000-0000-0000-000000000001
+(1 row)
+
+RESET
+RESET
+RESET
+ROLLBACK
+
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260324T145447Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260324000001_10_8_7D_accept_invite_tenant_sync.sql
+supabase/migrations/20260324000002_10_8_7D_fix_definer_audit.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.7D Accept Invite Tenant Context Sync: PASS (lane-only gate)

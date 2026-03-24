@@ -179,6 +179,7 @@
     "docs/proofs/10.8.7_tc_storage_20260320T145158Z.log": "7772eaf843af2346cb6136781dde4b75b304f22b463e6206171de228b1d41cc1",
     "docs/proofs/10.8.7A_deal_photos_storage_20260320T161959Z.log": "60ea3b8df8e29d48b83889516e14bba0047ca5f98063daa570fb41399f69a0a0",
     "docs/proofs/10.8.7B_tenant_invites_20260321T175012Z.log": "e7b1574b4e65a0cce5ed06f00a4ef6d9b0f8b03981e03f3cfc8c39db57d636dd",
-    "docs/proofs/10.8.7C_tenant_context_parity_20260324T002317Z.log": "d783bbe60583a6a063cf46a3ba884e62a1287be07d7b19f17a6fd2a9fc7b01e5"
+    "docs/proofs/10.8.7C_tenant_context_parity_20260324T002317Z.log": "d783bbe60583a6a063cf46a3ba884e62a1287be07d7b19f17a6fd2a9fc7b01e5",
+    "docs/proofs/10.8.7D_accept_invite_tenant_sync_20260324T152932Z.log": "c10fc5c9083db56e31c546b2b2bae1218ab77aba835272e5c27f80fc4c21cde8"
   }
 }
