@@ -12,7 +12,7 @@ $files = @($r.ChangedEffective)
 
 $justPath = $null
 foreach($f in $files){
-  if($f -match '^docs/governance/GOVERNANCE_CHANGE_PR\d+\.md$'){
+  if($f -match '^docs/governance/GOVERNANCE_CHANGE_<UTC>.md$'){
     $justPath = $f
     break
   }

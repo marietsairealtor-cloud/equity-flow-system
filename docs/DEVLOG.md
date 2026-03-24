@@ -7555,3 +7555,45 @@ Status
 
 
 ---
+## 2026-03-24 -- Build Route v2.4 -- 
+Redesigned invite acceptance flow from token-carry-through after auth to post-auth pending invite resolution using `accept_pending_invites_v1()`.
+
+## Work completed
+- Updated WEWEB_ARCHITECTURE Section 5 (Auth, Onboarding, Gate Logic)
+- Added CONTRACTS section for `accept_pending_invites_v1` (10.8.7E)
+- Updated Build Route:
+  - Added 10.8.7E (Pending Invite Resolution RPC)
+  - Added 10.8.7F (Invariants / hardening)
+  - Revised 10.8.7B deliverable wording
+  - Replaced 10.8.8 (Auth Page)
+  - Replaced 10.8.9 (Onboarding Wizard)
+  - Updated 10.8.11 (Workspace Switcher behavior)
+- Created governance change file
+
+## Key decisions
+- Invite acceptance authority = authenticated email (`auth.uid() -> auth.users.email`)
+- Exact email match only
+- `accept_pending_invites_v1()` is primary post-auth path
+- `accept_invite_v1(p_token)` retained as legacy/fallback
+- Auto-accept all valid pending invites (oldest-first)
+- Partial acceptance with silent failure
+- Do not auto-switch `current_tenant_id`
+- If NULL, assign oldest accepted invite tenant
+
+## Current status
+- Design complete
+- Contracts updated
+- Build Route updated
+- Governance recorded
+- No implementation started yet
+
+## Next steps
+- Implement `accept_pending_invites_v1()` (10.8.7E)
+- Add pgTAP tests for invite resolution logic
+- Update CONTRACTS §17 mapping table in same PR
+- Produce proof logs for 10.8.7E and 10.8.7F
+- Validate post-auth flow end-to-end in deployed environment
+
+## Notes
+- Token in invite URL retained for future context/display only
+- No frontend token plumbing required for acceptance

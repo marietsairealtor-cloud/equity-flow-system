@@ -4616,7 +4616,7 @@ lane-only
 ### **10.8.7B — Tenant Invites + Accept Invite RPC**
 
 **Deliverable:**
-Core invite system for tenant membership, including `tenant_invites` table and `accept_invite_v1` RPC used by post-auth routing.
+Backend invite acceptance capability via `tenant_invites` + `accept_invite_v1` for token-based invite acceptance. Retained as legacy/fallback path; not the primary `/post-auth` flow after 10.8.7E / revised 10.8.8.
 
 ---
 
@@ -4891,23 +4891,83 @@ Must show:
 lane-only: TRUE
 ```
 
----
+### **10.8.7E — Pending Invite Resolution RPC**
+
+**Deliverable:**
+`accept_pending_invites_v1()` RPC that resolves pending invites after auth using exact authenticated email match.
+
+**DoD:**
+
+- RPC `accept_pending_invites_v1()` exists
+- SECURITY DEFINER + authenticated-only
+- Accepts NO frontend parameters
+- Reads email from `auth.uid() -> auth.users.email`
+- Exact email match only against `tenant_invites.invited_email`
+- Valid pending invites filtered:
+  - `accepted_at IS NULL`
+  - `expires_at > now()`
+  - not revoked/cancelled (if applicable)
+- Processes invites oldest-first (`created_at ASC`)
+- Auto-accepts all valid pending invites
+- Creates missing `tenant_memberships`
+- Existing membership treated as already satisfied (no duplicate)
+- Partial acceptance allowed
+- Silent per-invite failure (no hard fail)
+- Returns:
+  - `accepted_count`
+  - `accepted_tenant_ids` (only tenants satisfied in this call)
+  - `default_tenant_id`
+- `accept_invite_v1` remains unchanged and callable
+- If `current_tenant_id` is NULL, set it to the oldest successfully accepted invite tenant
+- If `current_tenant_id` already exists, do NOT change it
+
+**Proof:** `docs/proofs/10.8.7E_accept_pending_invites_<UTC>.log`
+
+**Gate:** `lane-only`
+
+
+### **10.8.7F — Pending Invite Resolution Invariants**
+
+**Deliverable:**
+Hardened behavior of `accept_pending_invites_v1()` to ensure deterministic, idempotent, and safe invite resolution.
+
+**DoD:**
+
+- If `current_tenant_id` exists → do NOT change it
+- If `current_tenant_id` is NULL → set to oldest successfully accepted invite
+- Duplicate membership/race → treated as already satisfied (no failure)
+- Already-member invite does NOT create extra seat
+- Multiple invites → all valid ones accepted
+- `accepted_tenant_ids` contains ONLY tenants satisfied in this call
+- Partial acceptance does NOT break flow
+- Routing still depends ONLY on `get_user_entitlements_v1()`
+
+**Proof:** `docs/proofs/10.8.7F_pending_invite_invariants_<UTC>.log`
+
+**Gate:** `lane-only`
 
 
 ### **10.8.8 — Auth Page**
 
 **Deliverable:**
-WeWeb auth page handling login, signup, password reset, and invite acceptance via Supabase Auth plugin.
+WeWeb auth page handling login, signup, password reset, and post-auth invite resolution via Supabase Auth plugin.
 
 **DoD:**
 
-- Auth page exists at /auth
-- Login (email/password) functional via Supabase Auth plugin
-- Signup (new account) functional
-- Password reset: Supabase Auth handles token in URL hash, page handles redirect state
-- Invite acceptance: invite token carried through URL, resolved after auth completes
-- Post-auth redirect: routes to onboarding (if new user) or Today view (if returning)
+- Auth page exists at `/auth`
+- Login (email/password) functional
+- Signup functional
+- Password reset functional (Supabase handles token in URL hash)
+- Invite email link may include `?token=...` (context only)
+- After auth completes, `/post-auth` calls `accept_pending_invites_v1()`
+- Then `/post-auth` calls `get_user_entitlements_v1()`
+- Routing is entitlement-driven:
+  - no memberships → onboarding
+  - membership + no active sub → onboarding
+  - membership + active/expiring sub → Today
 - No direct table calls
+- No frontend-supplied email parameter
+- `accept_invite_v1` remains available (not primary path)
 
 **Proof:** `docs/proofs/10.8.8_auth_page_<UTC>.md`
 
@@ -4918,24 +4978,24 @@ WeWeb auth page handling login, signup, password reset, and invite acceptance vi
 ### **10.8.9 — Onboarding Wizard**
 
 **Deliverable:**
-Single onboarding page with sequential steps: create/join workspace, pick slug, subscribe via Stripe.
+WeWeb onboarding page at `/onboarding` with sequential steps for workspace creation, workspace joining (non-invite), and subscription setup.
 
 **DoD:**
 
-- Onboarding page exists at /onboarding
-- Step 1: Create workspace OR accept invite (token from URL) OR join existing workspace
-- Step 2: Pick workspace slug (validated: lowercase, URL-safe, unique via tenant_slugs)
-- Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle with 2 months free)
-- Resume behavior: wizard detects current state from `get_user_entitlements_v1` and shows correct step. User who closed browser mid-payment returns to Step 3.
-- Gate logic: no memberships → Step 1 | membership + no active sub → Step 3 | active sub → skip to Today
-- Stripe webhook confirms subscription activation, updates entitlement state
+- Onboarding page exists at `/onboarding`
+- Step 1: Create workspace OR join existing workspace (non-invite flow only)
+- Invite acceptance is NOT handled in onboarding (handled in `/post-auth` via `accept_pending_invites_v1()`)
+- Step 2: Pick workspace slug (lowercase, URL-safe, unique)
+- Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle)
+- Onboarding step is determined by `get_user_entitlements_v1()`
+- Resume behavior:
+  - user returning mid-flow resumes at correct step
 - No direct table calls
+- No invite token logic in onboarding
 
-**Proof:** `docs/proofs/10.8.9_onboarding_wizard_<UTC>.md`
+**Proof:** `docs/proofs/10.8.9_onboarding_<UTC>.md`
 
 **Gate:** `lane-only`
-
-**Prerequisite:** 10.8, 10.8.2 merged
 
 ---
 
@@ -4959,32 +5019,28 @@ Today view page shell with layout structure. Default authenticated landing page.
 
 **Prerequisite:** 10.8 merged
 
-### **10.8.11 — List User Tenants RPC + Workspace Switcher Wiring**
+### **10.8.11 — Workspace Switcher Wiring**
 
 **Deliverable:**
-`list_user_tenants_v1` RPC returning all tenant memberships for the authenticated user, plus WeWeb workspace switcher wired end-to-end.
+WeWeb workspace switcher that allows users to view and switch between all workspaces (tenants) they belong to.
 
 **DoD:**
 
-- `list_user_tenants_v1()` RPC exists: authenticated-only, SECURITY DEFINER, fixed search_path
-- No `tenant_id` parameter — reads user from JWT context (`auth.uid()`)
-- Returns array of: `tenant_id`, `tenant_name`, `slug`, `role`, `subscription_status`
-- Current active tenant flagged in response (matches `current_tenant_id()`)
-- CONTRACTS §17 RPC mapping table updated
-- CONTRACTS snapshot updated
-- REVOKE EXECUTE from anon (authenticated only)
-- pgTAP tests: returns correct tenants for user, excludes other users' tenants, role correct per membership, current tenant flagged
-- WeWeb workspace switcher dropdown populated from `list_user_tenants_v1` response
-- Current active tenant highlighted in dropdown
-- On select: writes `gs_selectedTenantId` (CONTRACTS §4), calls backend to update `user_profiles.current_tenant_id` (CONTRACTS §3), refetches `get_user_entitlements_v1`, page data reloads in place
-- No page navigation on workspace switch
+- Workspace switcher component exists in authenticated UI
+- Lists all workspaces from `get_user_entitlements_v1()`
+- Displays current workspace based on `current_tenant_id`
+- Allows user to switch workspace explicitly (updates `current_tenant_id`)
+- Does NOT auto-switch workspace when new memberships are created
+- If user is added to new workspace(s) via `accept_pending_invites_v1()`:
+  - optional UI notification (toast) may show:
+    - “You were added to X workspace(s)”
+  - no automatic tenant switching occurs
+- Switcher reflects newly joined workspaces after post-auth flow completes
 - No direct table calls
 
-**Proof:** `docs/proofs/10.8.11_list_user_tenants_<UTC>.log`
+**Proof:** `docs/proofs/10.8.11_workspace_switcher_<UTC>.md`
 
-**Gate:** `merge-blocking` (new public RPC)
-
-**Prerequisite:** 10.8 merged (shell + dropdown popup must exist)
+**Gate:** `lane-only`
 
 ---
 

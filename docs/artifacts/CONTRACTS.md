@@ -276,6 +276,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_farm_areas_v1 | 10.8.6 | List all farm areas for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | create_farm_area_v1 | 10.8.6 | Create a new farm area for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | delete_farm_area_v1 | 10.8.6 | Delete a farm area for current tenant (SET NULL on deals) | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
+| accept_pending_invites_v1 | 10.8.7E | Resolve pending invites for authenticated user by exact email match after auth; auto-accept valid invites oldest-first | SECURITY DEFINER, authenticated only | authenticated email derived via auth.uid() -> auth.users.email; no caller email or tenant_id param |
+
 
 ### Mapping Rules
 
@@ -481,3 +483,48 @@ after successful invite acceptance. No schema changes. Behavioral parity fix onl
 After membership creation, upserts user_profiles.current_tenant_id = tenant_id from invite row.
 Idempotent. Ensures get_user_entitlements_v1 succeeds immediately after invite acceptance.
 Required to complete tenancy contract established in 10.8.7C.
+
+
+## 34) Pending Invite Resolution RPC (10.8.7E)
+
+Forward migration `TBD_10_8_7E_accept_pending_invites.sql` adds
+`public.accept_pending_invites_v1()` as the primary post-auth invite-resolution RPC.
+
+Behavior:
+- SECURITY DEFINER
+- Requires authenticated context
+- Accepts no frontend parameters
+- Reads authenticated user email from `auth.users.email` via `auth.uid()`
+- Does NOT read email from `public.user_profiles`
+- Does NOT accept email as caller input
+- Resolves pending invites by exact email match only against `public.tenant_invites.invited_email`
+
+Valid pending invite filter:
+- `accepted_at IS NULL`
+- `expires_at > now()`
+- any revoked / cancelled flag, if present, must indicate active invite only
+
+Processing rules:
+- Process valid pending invites oldest-first (`created_at ASC`)
+- Auto-accept all valid pending invites for the authenticated email
+- Create missing `tenant_memberships` rows using tenant_id and role from invite row
+- If membership already exists, treat invite as already satisfied
+- Duplicate/race conflicts are treated as already satisfied, not hard failure
+- Mark accepted/satisfied invites with `accepted_at`
+- Partial acceptance is allowed
+- Failures are silent to the caller at invite-row level; the RPC should still return `OK` if at least the overall call completed safely
+
+Tenant selection rules:
+- If `public.user_profiles.current_tenant_id` already exists, do NOT switch it
+- If `current_tenant_id` is NULL, set it to the oldest successfully accepted invite tenant
+
+Return contract:
+- Standard RPC envelope
+- `data.accepted_count` = number of invites satisfied by this call
+- `data.accepted_tenant_ids` = tenant IDs limited only to tenants where membership was created in this call or already existed and the invite was satisfied in this call
+- `data.default_tenant_id` = tenant selected as current tenant in this call, or existing current tenant if unchanged, or NULL if none
+
+Relationship to `accept_invite_v1(p_token text)`:
+- `accept_invite_v1` remains valid and is NOT removed
+- `accept_pending_invites_v1()` becomes the primary `/post-auth` invite-resolution path
+- Token-based invite acceptance remains available as legacy/fallback capability
