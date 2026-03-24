@@ -28,7 +28,8 @@ foreach ($file in $files) {
         # Only check inside policy bodies
         if ($inPolicy) {
             # Pattern 1: raw auth.uid() used directly for tenant resolution
-            if ($line -match "\bauth\.uid\(\)") {
+            # Exception: user_profiles self-reference policies are identity-based, not tenant resolution
+            if ($line -match "\bauth\.uid\(\)" -and $policyName -notmatch "user_profiles") {
                 Write-Host "FAIL: forbidden pattern 'raw auth.uid()' — file=$($file.Name) policy=$policyName line=$lineNum — CONTRACTS.md §3"
                 $fail = $true
             }
