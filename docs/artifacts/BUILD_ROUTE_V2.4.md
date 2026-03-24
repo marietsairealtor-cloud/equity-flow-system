@@ -4797,6 +4797,101 @@ Only the fixes we actually discovered:
 * random profile fields like email/display_name/preferences
 
 
+---
+
+### **10.8.7D — Accept Invite Tenant Context Sync**
+
+### **Purpose**
+
+Ensure invite acceptance fully establishes tenant context by synchronizing `user_profiles.current_tenant_id` with the accepted tenant.
+
+---
+
+### **Problem**
+
+Current `accept_invite_v1`:
+
+* creates `tenant_memberships` ✅
+* marks invite accepted ✅
+* **does NOT set `user_profiles.current_tenant_id` ❌**
+
+Result:
+
+* `get_user_entitlements_v1` returns `NOT_AUTHORIZED`
+* post-auth routing fails
+* user incorrectly sent to onboarding
+
+---
+
+### **Scope**
+
+Modify `accept_invite_v1` only.
+No schema changes.
+
+---
+
+### **Implementation**
+
+After successful invite validation and membership creation, add:
+
+```sql
+insert into public.user_profiles (id, current_tenant_id)
+values (v_user_id, v_invite.tenant_id)
+on conflict (id) do update
+set current_tenant_id = excluded.current_tenant_id;
+```
+
+---
+
+### **Constraints**
+
+```yaml
+idempotent: REQUIRED
+no_schema_changes: TRUE
+no_auth_users_changes: TRUE
+tenant_source: MUST come from tenant_invites row
+```
+
+---
+
+### **DoD**
+
+* Invite acceptance:
+
+  * creates/ensures membership
+  * sets `user_profiles.current_tenant_id`
+* Works for:
+
+  * first-time user (no profile row)
+  * existing user (updates tenant)
+* `get_user_entitlements_v1` succeeds immediately after invite
+* Post-auth routing lands correctly:
+
+  * active sub → `/today`
+  * none/expired → `/onboarding`
+
+---
+
+### **Proof**
+
+`docs/proofs/10.8.7D_accept_invite_tenant_sync_<UTC>.log`
+
+Must show:
+
+* before: `current_tenant_id = NULL`
+* after RPC: `current_tenant_id = tenant_id`
+* entitlements returns `ok: true`
+* routing path correct
+
+---
+
+### **Gate**
+
+```yaml
+lane-only: TRUE
+```
+
+---
 
 
 ### **10.8.8 — Auth Page**
