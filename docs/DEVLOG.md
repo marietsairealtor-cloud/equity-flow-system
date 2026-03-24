@@ -7500,3 +7500,28 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-24 -- Build Route v2.4 -- 10.8.7D (Governance)
+
+Objective
+- Record addition of Build Route item 10.8.7D (Accept Invite Tenant Context Sync).
+
+Changes
+- Build Route updated manually to add 10.8.7D.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260324T015008Z.md added.
+- 10.8.7D modifies accept_invite_v1 to set user_profiles.current_tenant_id after invite acceptance.
+- Required to complete tenancy contract established in 10.8.7C.
+- No implementation changes in this PR.
+
+Proof
+- Governance record only. No proof artifact required.
+
+DoD
+- Build Route updated with 10.8.7D item -- PASS
+- Governance change file present -- PASS
+
+Status
+- PASS
