@@ -458,3 +458,18 @@ RPC accept_invite_v1(p_token text): SECURITY DEFINER, requires authenticated con
 Validates token existence and expiry. Idempotent via accepted_at marker.
 Creates/upserts tenant_memberships row deriving tenant_id and role from invite row.
 Returns standard envelope. Prerequisite for 10.8.8 invite acceptance flow.
+
+## 33) Tenant Context Parity Fix (10.8.7C)
+
+Forward migration `20260323T203400Z_10_8_7C_tenant_context_parity.sql` closes parity gap
+between CONTRACTS §3 tenancy resolution order and actual database state.
+
+Changes:
+- `public.user_profiles.current_tenant_id UUID NULL` added with FK to `public.tenants(id) ON DELETE SET NULL`.
+- `public.current_tenant_id()` corrected via DROP + CREATE to resolve in §3 order:
+  (1) user_profiles.current_tenant_id, (2) app.tenant_id, (3) JWT tenant claim, (4) NULL.
+- RLS policy `user_profiles_select_self` added to `public.user_profiles` (FOR SELECT TO authenticated USING id = auth.uid()).
+  This is the minimum policy required for tenant resolution under RLS.
+  Controlled exception per CONTRACTS §12 — authenticated self-read only.
+
+No RPC signature changes. No new public RPCs. No changes to auth.users.

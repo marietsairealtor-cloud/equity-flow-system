@@ -1,0 +1,160 @@
+PROOF_HEAD=89a10a01caae5da423d4cb4947d753772ef8af0a
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.7C Tenant Context Parity Fixes -- Proof Log ===
+Date: 2026-03-23T20:21:44.0613104-04:00
+Branch: feat/10.8.7C-tenant-context-parity-migration
+PR HEAD SHA: 89a10a01caae5da423d4cb4947d753772ef8af0a
+
+=== Migration applied ===
+
+docs/truth/cloud_migration_parity.json
+supabase/migrations/20260323000001_10_8_7C_tenant_context_parity.sql
+
+
+
+=== Live DB verification ===
+BEGIN
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
+                     test                     
+----------------------------------------------
+ === DoD: current_tenant_id column exists ===
+(1 row)
+
+    column_name    | data_type | is_nullable 
+-------------------+-----------+-------------
+ current_tenant_id | uuid      | YES
+(1 row)
+
+                     test                      
+-----------------------------------------------
+ === DoD: FK to tenants ON DELETE SET NULL ===
+(1 row)
+
+               conname                | confdeltype 
+--------------------------------------+-------------
+ user_profiles_current_tenant_id_fkey | n
+(1 row)
+
+                       test                        
+---------------------------------------------------
+ === DoD: current_tenant_id() resolution order ===
+(1 row)
+
+                                    pg_get_functiondef                                     
+-------------------------------------------------------------------------------------------
+ CREATE OR REPLACE FUNCTION public.current_tenant_id()                                    +
+  RETURNS uuid                                                                            +
+  LANGUAGE sql                                                                            +
+  STABLE SECURITY DEFINER                                                                 +
+  SET search_path TO 'public'                                                             +
+ AS $function$                                                                            +
+   SELECT COALESCE(                                                                       +
+     (                                                                                    +
+       SELECT up.current_tenant_id                                                        +
+       FROM public.user_profiles up                                                       +
+       WHERE up.id = auth.uid()                                                           +
+     ),                                                                                   +
+     nullif(current_setting('app.tenant_id', true), '')::uuid,                            +
+     nullif(current_setting('request.jwt.claim.tenant_id', true), '')::uuid,              +
+     (nullif(current_setting('request.jwt.claims', true), '')::json ->> 'tenant_id')::uuid+
+   )                                                                                      +
+ $function$                                                                               +
+ 
+(1 row)
+
+SET
+SET
+SET
+                                   test                                   
+--------------------------------------------------------------------------
+ === DoD: current_tenant_id() returns user_profiles.current_tenant_id ===
+(1 row)
+
+          current_tenant_id           
+--------------------------------------
+ cc000000-0000-0000-0000-000000000001
+(1 row)
+
+                                  test                                  
+------------------------------------------------------------------------
+ === DoD: user_profiles self-read works under authenticated context ===
+(1 row)
+
+                  id                  |          current_tenant_id           
+--------------------------------------+--------------------------------------
+ cc900000-0000-0000-0000-000000000001 | cc000000-0000-0000-0000-000000000001
+(1 row)
+
+                                      test                                      
+--------------------------------------------------------------------------------
+ === DoD: get_user_entitlements_v1 succeeds - membership + active sub state ===
+(1 row)
+
+                                                                                                                                     get_user_entitlements_v1                                                                                                                                     
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "cc000000-0000-0000-0000-000000000001", "user_id" : "cc900000-0000-0000-0000-000000000001", "is_member" : true, "role" : "owner", "entitled" : true, "subscription_status" : "none", "subscription_days_remaining" : null}, "error" : null}
+(1 row)
+
+RESET
+RESET
+RESET
+                           test                           
+----------------------------------------------------------
+ === DoD: user_profiles RLS policies - self-read only ===
+(1 row)
+
+        policyname         |  cmd   |       qual        
+---------------------------+--------+-------------------
+ user_profiles_select_self | SELECT | (id = auth.uid())
+ user_profiles_update_self | UPDATE | (id = auth.uid())
+(2 rows)
+
+                      test                       
+-------------------------------------------------
+ === DoD: no unintended table grants widened ===
+(1 row)
+
+    grantee    | privilege_type 
+---------------+----------------
+ authenticated | SELECT
+ authenticated | UPDATE
+(2 rows)
+
+ROLLBACK
+
+
+=== Lint fixes applied ===
+- ci_rls_strategy_lint.ps1: user_profiles auth.uid() self-reference exempted
+- 7_8_role_enforcement_rpc.test.sql: current_tenant_id excluded from privileged RPC audit
+- definer_allowlist.json: current_tenant_id added to anon_callable exemption
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260323T231210Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_rls_strategy_lint.ps1
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260323000001_10_8_7C_tenant_context_parity.sql
+supabase/tests/7_8_role_enforcement_rpc.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.7C Tenant Context Parity Fixes: PASS (lane-only gate)
