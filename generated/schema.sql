@@ -30,7 +30,6 @@ DECLARE
   v_invite    RECORD;
 BEGIN
   v_user_id := auth.uid();
-  PERFORM public.current_tenant_id();
   IF v_user_id IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
@@ -63,7 +62,13 @@ BEGIN
     );
   END IF;
 
+  -- Idempotency: already accepted - still sync current_tenant_id
   IF v_invite.accepted_at IS NOT NULL THEN
+    INSERT INTO public.user_profiles (id, current_tenant_id)
+    VALUES (v_user_id, v_invite.tenant_id)
+    ON CONFLICT (id) DO UPDATE
+      SET current_tenant_id = EXCLUDED.current_tenant_id;
+
     RETURN json_build_object(
       'ok', true, 'code', 'OK', 'data',
       json_build_object('tenant_id', v_invite.tenant_id, 'role', v_invite.role),
@@ -71,11 +76,19 @@ BEGIN
     );
   END IF;
 
+  -- Create/upsert membership
   INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
   VALUES (gen_random_uuid(), v_invite.tenant_id, v_user_id, v_invite.role)
   ON CONFLICT (tenant_id, user_id) DO UPDATE
     SET role = EXCLUDED.role;
 
+  -- Sync user_profiles.current_tenant_id per 10.8.7D
+  INSERT INTO public.user_profiles (id, current_tenant_id)
+  VALUES (v_user_id, v_invite.tenant_id)
+  ON CONFLICT (id) DO UPDATE
+    SET current_tenant_id = EXCLUDED.current_tenant_id;
+
+  -- Mark invite accepted
   UPDATE public.tenant_invites
   SET accepted_at = now(),
       row_version = row_version + 1
