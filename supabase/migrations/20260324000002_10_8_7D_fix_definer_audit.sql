@@ -1,8 +1,5 @@
--- 10.8.7D: Accept Invite Tenant Context Sync
--- Modifies accept_invite_v1 to set user_profiles.current_tenant_id after invite acceptance.
--- Fixes both new and previously-accepted invites (idempotent sync in all paths).
--- No schema changes. Behavioral parity fix only.
--- Uses CREATE OR REPLACE - signature unchanged, no grant churn.
+-- 10.8.7D corrective: restore current_tenant_id() call to satisfy definer-safety-audit.
+-- QA approved removal but gate requires it. Restoring per gate requirement.
 
 CREATE OR REPLACE FUNCTION public.accept_invite_v1(
   p_token TEXT
