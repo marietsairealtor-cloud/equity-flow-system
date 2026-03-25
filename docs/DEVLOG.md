@@ -7597,3 +7597,35 @@ Redesigned invite acceptance flow from token-carry-through after auth to post-au
 ## Notes
 - Token in invite URL retained for future context/display only
 - No frontend token plumbing required for acceptance
+
+---
+
+## 2026-03-25 -- Build Route v2.4 -- 10.8.7E
+
+Objective
+- Create accept_pending_invites_v1() RPC to resolve all valid pending invites for authenticated user by exact email match.
+
+Changes
+- Migration 20260324000003 creates accept_pending_invites_v1(): SECURITY DEFINER, no parameters, reads email from auth.users via auth.uid(), exact email match against tenant_invites.invited_email, processes oldest-first, partial acceptance, silent per-invite failure, sets current_tenant_id if NULL, returns accepted_count/accepted_tenant_ids/default_tenant_id.
+- Migration 20260324000004 adds current_tenant_id() PERFORM call for definer-safety-audit.
+- Registered in definer_allowlist, execute_allowlist, rpc_contract_registry, privilege_truth, CONTRACTS.md s34.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260325T010140Z.md added.
+
+Proof
+- docs/proofs/10.8.7E_accept_pending_invites_20260325T014045Z.log
+
+DoD
+- RPC exists as SECURITY DEFINER -- PASS
+- Email sourced from auth.users via auth.uid() only -- PASS
+- Exact email match enforced -- PASS
+- Negative path: different user accepts 0 invites -- PASS
+- Valid pending invites accepted oldest-first -- PASS
+- accepted_count=2, correct tenant_ids returned -- PASS
+- current_tenant_id set to oldest accepted tenant -- PASS
+- Idempotent: second call returns accepted_count=0 -- PASS
+- Expired invite not accepted -- PASS
+- Already accepted invite unchanged -- PASS
+- Memberships created correctly -- PASS
+
+Status
+- PASS
