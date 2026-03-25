@@ -528,3 +528,12 @@ Relationship to `accept_invite_v1(p_token text)`:
 - `accept_invite_v1` remains valid and is NOT removed
 - `accept_pending_invites_v1()` becomes the primary `/post-auth` invite-resolution path
 - Token-based invite acceptance remains available as legacy/fallback capability
+
+## 34) Pending Invite Resolution RPC (10.8.7E)
+RPC accept_pending_invites_v1(): SECURITY DEFINER, authenticated only, no parameters.
+Reads email from auth.users via auth.uid(). Exact email match against tenant_invites.invited_email.
+Processes valid pending invites (accepted_at IS NULL, expires_at > now()) oldest-first.
+Creates tenant_memberships via INSERT ON CONFLICT DO NOTHING.
+Sets user_profiles.current_tenant_id only if currently NULL.
+Returns: accepted_count, accepted_tenant_ids, default_tenant_id (COALESCE existing or first accepted).
+Partial acceptance allowed. Silent per-invite failure. accept_invite_v1 remains unchanged.

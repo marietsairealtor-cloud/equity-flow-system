@@ -173,6 +173,15 @@
       "notes": "Min role: admin. NOT_FOUND if farm area does not exist for tenant. ON DELETE SET NULL cascades to deals.farm_area_id."
     },
     {
+      "name": "accept_pending_invites_v1",
+      "version": 1,
+      "build_route_owner": "10.8.7E",
+      "input_contract": "CONTRACTS.md §34 accept_pending_invites_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED"],
+      "notes": "Resolves all valid pending invites by exact email match. No parameters. Oldest-first. Partial acceptance. Silent per-invite failure. Sets current_tenant_id if NULL."
+    },
+    {
       "name": "accept_invite_v1",
       "version": 1,
       "build_route_owner": "10.8.7B",
