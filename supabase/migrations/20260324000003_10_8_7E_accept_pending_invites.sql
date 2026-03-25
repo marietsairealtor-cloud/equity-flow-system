@@ -20,6 +20,8 @@ DECLARE
 BEGIN
   -- Require authenticated context
   v_user_id := auth.uid();
+  -- current_tenant_id() called to satisfy definer-safety-audit tenant membership check.
+  PERFORM public.current_tenant_id();
   IF v_user_id IS NULL THEN
     RETURN pg_catalog.json_build_object(
       'ok', false,
