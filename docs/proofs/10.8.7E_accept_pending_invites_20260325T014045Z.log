@@ -1,0 +1,165 @@
+PROOF_HEAD=645220a638aa80cb4ec728b4d23dd03f41542bc3
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.7E Accept Pending Invites RPC -- Proof Log ===
+Date: 2026-03-24T21:37:36.2855665-04:00
+Branch: feat/10.8.7E-accept-pending-invites
+PR HEAD SHA: 645220a638aa80cb4ec728b4d23dd03f41542bc3
+
+=== RPC exists as SECURITY DEFINER ===
+accept_pending_invites_v1|t
+
+
+=== Live DB verification ===
+BEGIN
+INSERT 0 2
+INSERT 0 2
+INSERT 0 2
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+SET
+SET
+SET
+                                 test                                 
+----------------------------------------------------------------------
+ === Negative: different user calls RPC - should accept 0 invites ===
+(1 row)
+
+                                                       accept_pending_invites_v1                                                       
+---------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 0, "accepted_tenant_ids" : [], "default_tenant_id" : null}, "error" : null}
+(1 row)
+
+RESET
+RESET
+RESET
+                             test                              
+---------------------------------------------------------------
+ === Negative: invites for pending_test@ remain unaccepted ===
+(1 row)
+
+       token       | accepted_at 
+-------------------+-------------
+ pending-token-001 | 
+ pending-token-002 | 
+(2 rows)
+
+                            test                            
+------------------------------------------------------------
+ === Negative: no membership created for different user ===
+(1 row)
+
+ count 
+-------
+     0
+(1 row)
+
+SET
+SET
+SET
+                   test                    
+-------------------------------------------
+ === Before: current_tenant_id is NULL ===
+(1 row)
+
+ current_tenant_id 
+-------------------
+ 
+(1 row)
+
+                  test                  
+----------------------------------------
+ === Call accept_pending_invites_v1 ===
+(1 row)
+
+                                                                                                              accept_pending_invites_v1                                                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 2, "accepted_tenant_ids" : ["ee000000-0000-0000-0000-000000000001","ee000000-0000-0000-0000-000000000002"], "default_tenant_id" : "ee000000-0000-0000-0000-000000000001"}, "error" : null}
+(1 row)
+
+                          test                           
+---------------------------------------------------------
+ === After: current_tenant_id set to oldest accepted ===
+(1 row)
+
+          current_tenant_id           
+--------------------------------------
+ ee000000-0000-0000-0000-000000000001
+(1 row)
+
+                           test                           
+----------------------------------------------------------
+ === Idempotent: second call returns accepted_count=0 ===
+(1 row)
+
+                                                                        accept_pending_invites_v1                                                                        
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 0, "accepted_tenant_ids" : [], "default_tenant_id" : "ee000000-0000-0000-0000-000000000001"}, "error" : null}
+(1 row)
+
+RESET
+RESET
+RESET
+                   test                    
+-------------------------------------------
+ === Memberships created (should be 2) ===
+(1 row)
+
+              tenant_id               | role  
+--------------------------------------+-------
+ ee000000-0000-0000-0000-000000000001 | owner
+ ee000000-0000-0000-0000-000000000002 | admin
+(2 rows)
+
+                test                 
+-------------------------------------
+ === Expired invite NOT accepted ===
+(1 row)
+
+       token       | accepted_at 
+-------------------+-------------
+ expired-token-001 | 
+(1 row)
+
+                   test                    
+-------------------------------------------
+ === Already accepted invite unchanged ===
+(1 row)
+
+       token        | was_accepted 
+--------------------+--------------
+ accepted-token-001 | t
+(1 row)
+
+ROLLBACK
+
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260325T010140Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260324000003_10_8_7E_accept_pending_invites.sql
+supabase/migrations/20260324000004_10_8_7E_fix_definer_audit.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.7E Accept Pending Invites RPC: PASS (lane-only gate)
