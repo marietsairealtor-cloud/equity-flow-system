@@ -477,7 +477,7 @@ Changes:
 No RPC signature changes. No new public RPCs. No changes to auth.users.
 
 
-## 33) Accept Invite Tenant Context Sync (10.8.7D)
+## 34) Accept Invite Tenant Context Sync (10.8.7D)
 Forward migration 20260324000001 modifies accept_invite_v1 to set user_profiles.current_tenant_id
 after successful invite acceptance. No schema changes. Behavioral parity fix only.
 After membership creation, upserts user_profiles.current_tenant_id = tenant_id from invite row.
@@ -485,9 +485,9 @@ Idempotent. Ensures get_user_entitlements_v1 succeeds immediately after invite a
 Required to complete tenancy contract established in 10.8.7C.
 
 
-## 34) Pending Invite Resolution RPC (10.8.7E)
+## 35) Pending Invite Resolution RPC (10.8.7E)
 
-Forward migration `TBD_10_8_7E_accept_pending_invites.sql` adds
+Forward migration `20260324000003_10_8_7E_accept_pending_invites.sql` adds
 `public.accept_pending_invites_v1()` as the primary post-auth invite-resolution RPC.
 
 Behavior:
@@ -529,7 +529,7 @@ Relationship to `accept_invite_v1(p_token text)`:
 - `accept_pending_invites_v1()` becomes the primary `/post-auth` invite-resolution path
 - Token-based invite acceptance remains available as legacy/fallback capability
 
-## 34) Pending Invite Resolution RPC (10.8.7E)
+## 36) Pending Invite Resolution RPC (10.8.7E)
 RPC accept_pending_invites_v1(): SECURITY DEFINER, authenticated only, no parameters.
 Reads email from auth.users via auth.uid(). Exact email match against tenant_invites.invited_email.
 Processes valid pending invites (accepted_at IS NULL, expires_at > now()) oldest-first.

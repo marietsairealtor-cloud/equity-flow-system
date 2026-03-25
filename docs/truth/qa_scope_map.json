@@ -438,6 +438,9 @@
     "10.8.7E": {
       "proof_pattern": "^docs/proofs/10\\.8\\.7E_accept_pending_invites_"
     },
+    "10.8.7F": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.7F_pending_invite_invariants_"
+    },
     "10.8.7B": {
       "proof_pattern": "^docs/proofs/10\\.8\\.7B_tenant_invites_"
     }
