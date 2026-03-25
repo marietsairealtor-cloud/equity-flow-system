@@ -7629,3 +7629,31 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-25 -- Build Route v2.4 -- 10.8.7F
+
+Objective
+- Prove behavioral invariants of accept_pending_invites_v1() created in 10.8.7E. Proof-only item - no migration changes.
+
+Changes
+- Proof-only: no migration, no schema changes, no RPC modifications.
+- Fixed CONTRACTS.md TBD migration reference to actual 10.8.7E migration filename (20260324000003).
+- Phase 1 registrations: qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260325T193604Z.md added.
+
+Proof
+- docs/proofs/10.8.7F_pending_invite_invariants_20260325T201816Z.log
+
+DoD
+- Invariant 1: existing current_tenant_id preserved -- PASS
+- Invariant 2: NULL current_tenant_id set to oldest accepted invite -- PASS
+- Invariant 3: idempotent - no duplicate memberships on second call -- PASS
+- Invariant 4: accepted_tenant_ids contains only newly satisfied tenants -- PASS
+- Invariant 5: partial acceptance - expired invite ignored, valid accepted -- PASS
+- Invariant 6: get_user_entitlements_v1 succeeds after invite resolution -- PASS
+
+Status
+- PASS
