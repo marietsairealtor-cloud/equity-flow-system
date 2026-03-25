@@ -1,0 +1,150 @@
+PROOF_HEAD=fc8b2920a5d801d1e0bed10c5d69c033483d932e
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.7F Pending Invite Resolution Invariants -- Proof Log ===
+Date: 2026-03-25T15:37:13.9248919-04:00
+Branch: feat/10.8.7F-pending-invite-invariants
+PR HEAD SHA: 77b97390640508a35509131a0d691c4f4048c3fe
+
+=== Proof-only item: no migration changes ===
+
+=== Live invariant verification ===
+BEGIN
+INSERT 0 3
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+SET
+SET
+RESET
+UPDATE 1
+INSERT 0 1
+SET
+SET
+                           test                            
+-----------------------------------------------------------
+ === Invariant 1: existing current_tenant_id preserved ===
+(1 row)
+
+                                                                                           accept_pending_invites_v1                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 1, "accepted_tenant_ids" : ["ff000000-0000-0000-0000-000000000002"], "default_tenant_id" : "ff000000-0000-0000-0000-000000000001"}, "error" : null}
+(1 row)
+
+RESET
+          current_tenant_id           
+--------------------------------------
+ ff000000-0000-0000-0000-000000000001
+(1 row)
+
+UPDATE 1
+UPDATE 1
+INSERT 0 1
+UPDATE 1
+UPDATE 1
+SET
+SET
+                                test                                
+--------------------------------------------------------------------
+ === Invariant 2: NULL current_tenant_id set to oldest accepted ===
+(1 row)
+
+                                                                                                              accept_pending_invites_v1                                                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 2, "accepted_tenant_ids" : ["ff000000-0000-0000-0000-000000000002","ff000000-0000-0000-0000-000000000003"], "default_tenant_id" : "ff000000-0000-0000-0000-000000000002"}, "error" : null}
+(1 row)
+
+RESET
+                           test                           
+----------------------------------------------------------
+ === current_tenant_id should be ff000...002 (oldest accepted tenant) ===
+(1 row)
+
+          current_tenant_id           
+--------------------------------------
+ ff000000-0000-0000-0000-000000000002
+(1 row)
+
+SET
+SET
+                            test                             
+-------------------------------------------------------------
+ === Invariant 3: second call - no duplicate memberships ===
+(1 row)
+
+                                                                        accept_pending_invites_v1                                                                        
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 0, "accepted_tenant_ids" : [], "default_tenant_id" : "ff000000-0000-0000-0000-000000000002"}, "error" : null}
+(1 row)
+
+RESET
+ membership_count 
+------------------
+                3
+(1 row)
+
+UPDATE 1
+SET
+SET
+                             test                              
+---------------------------------------------------------------
+ === Invariant 4: accepted_tenant_ids only newly satisfied ===
+(1 row)
+
+                                                                                           accept_pending_invites_v1                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 1, "accepted_tenant_ids" : ["ff000000-0000-0000-0000-000000000002"], "default_tenant_id" : "ff000000-0000-0000-0000-000000000002"}, "error" : null}
+(1 row)
+
+RESET
+UPDATE 2
+UPDATE 1
+SET
+SET
+                                 test                                 
+----------------------------------------------------------------------
+ === Invariant 5: partial acceptance - only valid invite accepted ===
+(1 row)
+
+                                                                                           accept_pending_invites_v1                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"accepted_count" : 1, "accepted_tenant_ids" : ["ff000000-0000-0000-0000-000000000002"], "default_tenant_id" : "ff000000-0000-0000-0000-000000000002"}, "error" : null}
+(1 row)
+
+RESET
+     token      | accepted 
+----------------+----------
+ inv1-token-001 | t
+ inv2-token-001 | f
+(2 rows)
+
+SET
+SET
+                                      test                                      
+--------------------------------------------------------------------------------
+ === Invariant 6: get_user_entitlements_v1 succeeds after invite resolution ===
+(1 row)
+
+                                                                                                                                     get_user_entitlements_v1                                                                                                                                      
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok" : true, "code" : "OK", "data" : {"tenant_id" : "ff000000-0000-0000-0000-000000000002", "user_id" : "ff900000-0000-0000-0000-000000000001", "is_member" : true, "role" : "member", "entitled" : true, "subscription_status" : "none", "subscription_days_remaining" : null}, "error" : null}
+(1 row)
+
+RESET
+RESET
+RESET
+ROLLBACK
+
+
+=== Files changed in PR ===
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.7F Pending Invite Resolution Invariants: PASS (lane-only gate)
