@@ -2,6 +2,7 @@
   "version": 1,
   "allow": [
     "accept_invite_v1",
+    "accept_pending_invites_v1",
     "complete_reminder_v1",
     "create_deal_v1",
     "create_farm_area_v1",
