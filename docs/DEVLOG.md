@@ -7657,3 +7657,39 @@ DoD
 
 Status
 - PASS
+
+
+---
+
+## 2026-03-26 -- Build Route v2.4 -- 10.8.8
+
+Objective
+- Implement WeWeb auth page handling login, signup, password reset, and post-auth invite resolution + entitlement-driven routing.
+
+Changes
+- /auth page: Sign In (email/password) + Sign Up tabs wired via Supabase Auth plugin. Forgot password text navigates to /reset-password.
+- /reset-password page: custom JS calls publicInstance.auth.resetPasswordForEmail with redirectTo=/change-password. Confirmation message shown via reset_email_sent boolean variable.
+- /change-password page: Supabase Auth plugin Change Password action. Routes to /post-auth on success.
+- /post-auth page: On page load - AUTH CHECK -> accept_pending_invites_v1() (no params) -> fetch-entitlements -> WORKSPACE CHECK -> SUBSCRIPTION CHECK -> routing.
+- Routing: no membership -> /onboarding; membership + none/expired sub -> /onboarding; membership + active/expiring sub -> /today.
+- Error messages: sign_in_error variable shown on failed login; sign_up_error variable shown on failed signup.
+- Supabase URL Configuration: Site URL set to preview root; Redirect URLs include /change-password and wildcard.
+- No DB migrations. No direct table calls. All auth via Supabase Auth plugin.
+
+Proof
+- docs/proofs/10.8.8_auth_page_20260326T210516Z.md
+
+DoD
+- Auth page at /auth -- PASS
+- Login functional -- PASS
+- Signup functional -- PASS
+- Password reset functional -- PASS
+- /post-auth calls accept_pending_invites_v1() -- PASS
+- /post-auth calls get_user_entitlements_v1() -- PASS
+- Entitlement-driven routing (3 paths verified) -- PASS
+- No direct table calls -- PASS
+- No frontend-supplied email parameter -- PASS
+
+Status
+- PASS
+
