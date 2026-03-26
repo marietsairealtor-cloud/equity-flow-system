@@ -7710,7 +7710,7 @@ Scoped onboarding to create-workspace-only model. Removed non-invite join flow. 
   - Step 3: Subscribe via Stripe
 - Updated WEWEB_ARCHITECTURE:
   - Auth page responsibilities clarified
-  - Post-auth flow: accept_pending_invites_v1 → get_user_entitlements_v1 → route
+  - Post-auth flow: accept_pending_invites_v1 then get_user_entitlements_v1 then route
   - Onboarding no longer handles invites or join
 - Updated CONTRACTS:
   - Added sections for create_tenant_v1 (10.8.8A) and set_tenant_slug_v1 (10.8.8B)
