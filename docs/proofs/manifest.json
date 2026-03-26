@@ -182,6 +182,7 @@
     "docs/proofs/10.8.7C_tenant_context_parity_20260324T002317Z.log": "d783bbe60583a6a063cf46a3ba884e62a1287be07d7b19f17a6fd2a9fc7b01e5",
     "docs/proofs/10.8.7D_accept_invite_tenant_sync_20260324T152932Z.log": "c10fc5c9083db56e31c546b2b2bae1218ab77aba835272e5c27f80fc4c21cde8",
     "docs/proofs/10.8.7E_accept_pending_invites_20260325T014045Z.log": "5d4b194f611389ee23c2d2e953050ecfcdc35b09f19a0a6972d0d475c361a9be",
-    "docs/proofs/10.8.7F_pending_invite_invariants_20260325T201816Z.log": "bc5ba386b848b9adcab95ff9eddf9efd1d1fa7118176aebe6cf6f45c0668f9bf"
+    "docs/proofs/10.8.7F_pending_invite_invariants_20260325T201816Z.log": "bc5ba386b848b9adcab95ff9eddf9efd1d1fa7118176aebe6cf6f45c0668f9bf",
+    "docs/proofs/10.8.8_auth_page_20260326T210516Z.md": "4809ffd968e76ef3fcac889a93299cd01e6396ac5de8aba5add8e49f05ab6932"
   }
 }
