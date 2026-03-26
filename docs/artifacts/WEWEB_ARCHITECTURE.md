@@ -183,13 +183,13 @@ Invite acceptance authority:
 ### 5.2 Onboarding Wizard
 
 Single page at /onboarding with sequential steps:
-- Step 1: Create workspace OR join existing
+- Step 1: Create workspace
 - Step 2: Pick workspace slug (lowercase, URL-safe, unique)
 - Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle with 2 months free)
 
 Notes:
-- Invite acceptance is no longer an onboarding action
-- Pending invites are resolved in `/post-auth` before onboarding routing is determined
+- Joining an existing workspace is handled via email invite, resolved in `/post-auth` before onboarding is reached
+- Invite acceptance is not an onboarding action
 - Onboarding is shown only when entitlement state indicates it is required
 
 Resume behavior: wizard detects current state from `get_user_entitlements_v1` and shows correct step. User who closed browser mid-payment returns to Step 3.

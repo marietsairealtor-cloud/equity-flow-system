@@ -7693,3 +7693,53 @@ DoD
 Status
 - PASS
 
+
+## 2026-03-26 -- Build Route v2.4 -- 
+## Summary
+Scoped onboarding to create-workspace-only model. Removed non-invite join flow. Added backend RPC plan for workspace creation and slug, plus Stripe billing foundation. Aligned WEWEB_ARCHITECTURE, CONTRACTS, and Build Route.
+
+## Work completed
+- Added Build Route items:
+  - 10.8.8A — create_tenant_v1
+  - 10.8.8B — set_tenant_slug_v1
+  - 10.8.8C — Stripe/billing foundation
+- Removed join flow scope (no join_tenant_v1; no slug/code join)
+- Replaced 10.8.9 (Onboarding Wizard) to:
+  - Step 1: Create workspace
+  - Step 2: Set slug
+  - Step 3: Subscribe via Stripe
+- Updated WEWEB_ARCHITECTURE:
+  - Auth page responsibilities clarified
+  - Post-auth flow: accept_pending_invites_v1 → get_user_entitlements_v1 → route
+  - Onboarding no longer handles invites or join
+- Updated CONTRACTS:
+  - Added sections for create_tenant_v1 (10.8.8A) and set_tenant_slug_v1 (10.8.8B)
+  - Updated §17 mapping table with new RPCs
+
+## Key decisions
+- Joining existing workspaces is invite-only (email), resolved post-auth
+- No non-invite join path (no join code / slug join)
+- Invite acceptance authority = authenticated email (auth.uid → auth.users.email)
+- Onboarding owns only:
+  - workspace creation
+  - slug selection
+  - billing
+- Backend-only logic for tenancy and billing; no frontend truth
+
+## Current status
+- Design + contracts + build route aligned
+- No RPCs implemented yet for 10.8.8A/B/C
+- Stripe not wired yet (test mode planned)
+- Ready for implementation of 10.8.8A
+
+## Next steps
+- Implement 10.8.8A (create_tenant_v1) + proof
+- Implement 10.8.8B (set_tenant_slug_v1) + proof
+- Implement 10.8.8C (Stripe test setup, webhook, tenant_subscriptions updates) + proof
+- Complete 10.8.9 UI after backend RPCs exist
+- Update CONTRACTS §17 mapping rows in same PRs as RPCs
+
+## Notes
+- accept_invite_v1 retained as legacy/fallback
+- accept_pending_invites_v1 remains primary post-auth path
+- No changes to existing invite system required

@@ -1,0 +1,8 @@
+## What changed
+Onboarding model simplified to create-workspace-only flow. Removed non-invite join capability and defined invite-only membership model resolved via accept_pending_invites_v1() in post-auth. Added new backend scope for create_tenant_v1 (10.8.8A), set_tenant_slug_v1 (10.8.8B), and Stripe billing foundation (10.8.8C). Replaced 10.8.9 onboarding to Step 1 create workspace, Step 2 slug, Step 3 subscription. Updated WEWEB_ARCHITECTURE and CONTRACTS to reflect removal of join path and new RPC requirements.
+## Why safe
+Authorization remains strictly backend-controlled via authenticated identity and current_tenant_id() rules. Removing non-invite join reduces attack surface and ambiguity. Invite system already proven via 10.8.7E/F and handles all membership creation. Onboarding remains driven entirely by get_user_entitlements_v1(), preserving system invariants and routing contract.
+## Risk
+Primary risk is missing RPC implementation causing onboarding to stall if create_tenant_v1 or set_tenant_slug_v1 are not delivered correctly. Secondary risk is Stripe integration complexity, particularly webhook reliability and subscription state sync. No regression risk to existing invite system, but onboarding flow depends on correct sequencing of new RPCs.
+## Rollback
+Revert governance and design changes restoring join flow and previous 10.8.9 definition. No database schema changes are required for rollback at this stage. Existing invite system remains unaffected and can continue operating under previous onboarding assumptions if needed.
