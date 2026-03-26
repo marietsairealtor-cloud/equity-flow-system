@@ -441,6 +441,9 @@
     "10.8.7F": {
       "proof_pattern": "^docs/proofs/10\\.8\\.7F_pending_invite_invariants_"
     },
+    "10.8.8": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.8_auth_page_"
+    },
     "10.8.7B": {
       "proof_pattern": "^docs/proofs/10\\.8\\.7B_tenant_invites_"
     }
