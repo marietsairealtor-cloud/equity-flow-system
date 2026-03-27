@@ -213,6 +213,19 @@
       "notes": "Creates new workspace and owner membership for authenticated user. Requires p_idempotency_key. Atomic idempotency via rpc_idempotency_log unique constraint. Same key returns stored result verbatim. Does not overwrite existing current_tenant_id."
     },
     {
+      "name": "set_tenant_slug_v1",
+      "version": 1,
+      "build_route_owner": "10.8.8B",
+      "input_contract": "CONTRACTS.md §37 set_tenant_slug_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "CONFLICT"
+      ],
+      "notes": "Min role: owner/admin. VALIDATION_ERROR on blank or invalid slug format. CONFLICT on duplicate slug (global uniqueness). One slug per tenant enforced via UNIQUE(tenant_id) + upsert. Tenant context from current_tenant_id() only."
+    },
+    {
       "name": "complete_reminder_v1",
       "version": 1,
       "build_route_owner": "10.8.3",

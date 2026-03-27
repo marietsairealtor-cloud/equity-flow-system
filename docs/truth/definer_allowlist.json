@@ -19,6 +19,7 @@
     "public.lookup_share_token_v1",
     "public.resolve_form_slug_v1",
     "public.revoke_share_token_v1",
+    "public.set_tenant_slug_v1",
     "public.submit_form_v1",
     "public.update_deal_v1"
   ],

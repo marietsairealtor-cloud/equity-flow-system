@@ -4931,7 +4931,10 @@ WeWeb auth page handling login, signup, password reset, and post-auth invite res
 
 **DoD:**
 
-- RPC `set_tenant_slug_v1()` exists
+- RPC `set_tenant_slug_v1(p_slug text)` exists
+- UNIQUE (tenant_id) constraint added to public.tenant_slugs
+- Upsert: INSERT ... ON CONFLICT (tenant_id) DO UPDATE
+- Standard RPC envelope; data always an object, never null
 - SECURITY DEFINER + authenticated-only
 - Accepts no frontend tenant_id parameter
 - Slug must be lowercase and URL-safe
