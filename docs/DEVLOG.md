@@ -7699,3 +7699,40 @@ Notes
 - Token-based invite RPC retained as legacy fallback
 - Email-based pending invite RPC remains primary post-auth path
 - No changes to existing invite system required
+
+---
+
+## 2026-03-27 -- Build Route v2.4 -- 10.8.8A
+
+Objective
+- Create create_tenant_v1(p_idempotency_key text) RPC for workspace creation in onboarding Step 1.
+
+Changes
+- Migration 20260326000001 creates create_tenant_v1(p_idempotency_key text): SECURITY DEFINER, authenticated-only, no caller-supplied tenant_id, atomic idempotency via rpc_idempotency_log unique constraint, sets current_tenant_id if NULL via upsert on user_profiles.
+- Migration 20260327000001 creates public.rpc_idempotency_log table: primary key, UNIQUE(user_id, idempotency_key, rpc_name), RLS ON, REVOKE ALL from anon and authenticated.
+- Migration 20260327000002 corrects tenants and tenant_memberships INSERT column references to match cloud schema (no row_version).
+- Migration 20260327000003 supplies explicit gen_random_uuid() for tenant_memberships.id (no default on cloud).
+- CONTRACTS.md section 36 updated: governed signature, migration filename, idempotency behavior, atomic replay.
+- RPC mapping table updated: create_tenant_v1 row with idempotency note.
+- Build Route 10.8.8A DoD updated: parameterized signature, atomic idempotency, envelope rule.
+- Registered in: definer_allowlist.json, execute_allowlist.json, privilege_truth.json, rpc_contract_registry.json, qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1.
+- Catalog audit exclusion added in 7_8_role_enforcement_rpc.test.sql for create_tenant_v1.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260327T115802Z.md added.
+
+Proof
+- docs/proofs/10.8.8A_create_workspace_20260327T125113Z.log
+
+DoD
+- RPC create_tenant_v1(p_idempotency_key text) exists -- PASS
+- SECURITY DEFINER + authenticated-only -- PASS
+- No caller-supplied tenant_id -- PASS
+- Creates public.tenants row -- PASS
+- Creates owner public.tenant_memberships row for auth.uid() -- PASS
+- current_tenant_id set if NULL, not overwritten if exists -- PASS
+- Standard RPC envelope; data always an object never null -- PASS
+- Same key returns stored result verbatim -- PASS
+- Different key creates new workspace -- PASS
+- Idempotency claim is atomic via INSERT ON CONFLICT -- PASS
+
+Status
+- PASS
