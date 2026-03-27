@@ -1,0 +1,144 @@
+PROOF_HEAD=6d230eb8939b9d08a639a33d316e0235c8b1f047
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.8A Create Workspace RPC -- Proof Log ===
+Date: 2026-03-27T08:58:57.2518779-04:00
+Branch: feat/10.8.8A-create-tenant-rpc
+PR HEAD SHA: 6d230eb8939b9d08a639a33d316e0235c8b1f047
+
+=== RPC exists as SECURITY DEFINER ===
+create_tenant_v1|t
+
+
+=== rpc_idempotency_log table exists ===
+rpc_idempotency_log
+
+
+=== Live DB verification ===
+BEGIN
+INSERT 0 1
+INSERT 0 1
+SET
+SET
+                       test                       
+--------------------------------------------------
+ === Call 1: valid key - should create tenant ===
+(1 row)
+
+                                             create_tenant_v1                                             
+----------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": "48cfbe19-8a4a-468e-9abb-4436d7f8ed20"}, "error": null}
+(1 row)
+
+                               test                               
+------------------------------------------------------------------
+ === Call 2: replay same key - should return identical result ===
+(1 row)
+
+                                             create_tenant_v1                                             
+----------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": "48cfbe19-8a4a-468e-9abb-4436d7f8ed20"}, "error": null}
+(1 row)
+
+                              test                              
+----------------------------------------------------------------
+ === Call 3: different key - should create different tenant ===
+(1 row)
+
+                                             create_tenant_v1                                             
+----------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": "e2605950-f7b3-4c09-b193-dc3adfcf9821"}, "error": null}
+(1 row)
+
+                        test                        
+----------------------------------------------------
+ === current_tenant_id set to first tenant only ===
+(1 row)
+
+ tenant_set 
+------------
+ t
+(1 row)
+
+                   test                    
+-------------------------------------------
+ === NULL key returns VALIDATION_ERROR ===
+(1 row)
+
+       code       
+------------------
+ VALIDATION_ERROR
+(1 row)
+
+                    test                    
+--------------------------------------------
+ === Empty key returns VALIDATION_ERROR ===
+(1 row)
+
+       code       
+------------------
+ VALIDATION_ERROR
+(1 row)
+
+RESET
+RESET
+                              test                               
+-----------------------------------------------------------------
+ === Idempotency log: 2 rows expected (queried as superuser) ===
+(1 row)
+
+     rpc_name     | idempotency_key 
+------------------+-----------------
+ create_tenant_v1 | proof-key-001
+ create_tenant_v1 | proof-key-002
+(2 rows)
+
+                              test                               
+-----------------------------------------------------------------
+ === tenant_memberships: 2 owner rows (queried as superuser) ===
+(1 row)
+
+ membership_count 
+------------------
+                2
+(1 row)
+
+ROLLBACK
+
+
+=== Files changed in PR ===
+docs/artifacts/BUILD_ROUTE_V2.4.md
+docs/artifacts/CONTRACTS.md
+docs/artifacts/GUARDRAILS.md
+docs/governance/GOVERNANCE_CHANGE_20260327T115802Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/gate_promotion_registry.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/tenant_table_selector.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_governance_change_guard.ps1
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260326000001_10_8_8A_create_tenant.sql
+supabase/migrations/20260327000001_10_8_8A_rpc_idempotency_log.sql
+supabase/migrations/20260327000002_10_8_8A_fix_create_tenant_columns.sql
+supabase/migrations/20260327000003_10_8_8A_fix_membership_id.sql
+supabase/tests/10_8_8A_create_tenant.test.sql
+supabase/tests/7_8_role_enforcement_rpc.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.8A Create Workspace RPC: PASS (lane-only gate)
