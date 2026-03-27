@@ -598,7 +598,6 @@ DECLARE
   v_result         jsonb;
   v_claimed        boolean := false;
 BEGIN
-  -- Validate idempotency key first (testable without auth context)
   IF p_idempotency_key IS NULL OR length(trim(p_idempotency_key)) = 0 THEN
     RETURN jsonb_build_object(
       'ok',    false,
@@ -608,7 +607,6 @@ BEGIN
     );
   END IF;
 
-  -- Require authenticated context
   v_user_id := auth.uid();
   IF v_user_id IS NULL THEN
     RETURN jsonb_build_object(
@@ -630,7 +628,6 @@ BEGIN
     'error', null
   );
 
-  -- Atomic idempotency claim
   INSERT INTO public.rpc_idempotency_log
     (user_id, idempotency_key, rpc_name, result_json)
   VALUES
@@ -639,7 +636,6 @@ BEGIN
     DO UPDATE SET result_json = public.rpc_idempotency_log.result_json
   RETURNING (xmax = 0) INTO v_claimed;
 
-  -- Replay path
   IF NOT v_claimed THEN
     SELECT result_json INTO v_result
     FROM public.rpc_idempotency_log
@@ -649,12 +645,11 @@ BEGIN
     RETURN v_result;
   END IF;
 
-  -- First-time execution path
-  INSERT INTO public.tenants (id, row_version)
-  VALUES (v_new_tenant_id, 1);
+  INSERT INTO public.tenants (id)
+  VALUES (v_new_tenant_id);
 
-  INSERT INTO public.tenant_memberships (tenant_id, user_id, role, row_version)
-  VALUES (v_new_tenant_id, v_user_id, 'owner', 1);
+  INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
+  VALUES (gen_random_uuid(), v_new_tenant_id, v_user_id, 'owner');
 
   INSERT INTO public.user_profiles (id, current_tenant_id)
   VALUES (v_user_id, v_new_tenant_id)
@@ -1559,6 +1554,17 @@ CREATE TABLE IF NOT EXISTS "public"."draft_deals" (
 
 ALTER TABLE "public"."draft_deals" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."rpc_idempotency_log" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "idempotency_key" "text" NOT NULL,
+    "rpc_name" "text" NOT NULL,
+    "result_json" "jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."rpc_idempotency_log" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."share_tokens" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -1684,6 +1690,12 @@ ALTER TABLE ONLY "public"."deals"
 
 ALTER TABLE ONLY "public"."draft_deals"
     ADD CONSTRAINT "draft_deals_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."rpc_idempotency_log"
+    ADD CONSTRAINT "rpc_idempotency_log_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."rpc_idempotency_log"
+    ADD CONSTRAINT "rpc_idempotency_log_user_id_idempotency_key_rpc_name_key" UNIQUE ("user_id", "idempotency_key", "rpc_name");
 
 ALTER TABLE ONLY "public"."share_tokens"
     ADD CONSTRAINT "share_tokens_pkey" PRIMARY KEY ("id");
@@ -1841,6 +1853,8 @@ CREATE POLICY "deals_select_own" ON "public"."deals" FOR SELECT TO "authenticate
 CREATE POLICY "deals_update_own" ON "public"."deals" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."draft_deals" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."rpc_idempotency_log" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."share_tokens" ENABLE ROW LEVEL SECURITY;
 

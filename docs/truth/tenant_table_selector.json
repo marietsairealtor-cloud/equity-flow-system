@@ -9,6 +9,7 @@
     "deal_tc_checklist",
     "deals",
     "draft_deals",
+    "rpc_idempotency_log",
     "share_tokens",
     "tenant_farm_areas",
     "tenant_invites",
