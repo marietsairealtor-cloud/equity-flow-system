@@ -277,7 +277,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_farm_area_v1 | 10.8.6 | Create a new farm area for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | delete_farm_area_v1 | 10.8.6 | Delete a farm area for current tenant (SET NULL on deals) | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | accept_pending_invites_v1 | 10.8.7E | Resolve pending invites for authenticated user by exact email match after auth; auto-accept valid invites oldest-first | SECURITY DEFINER, authenticated only | authenticated email derived via auth.uid() -> auth.users.email; no caller email or tenant_id param |
-| create_tenant_v1 | 10.8.8A | Create a new workspace and owner membership for the authenticated user | SECURITY DEFINER, authenticated only | tenant created server-side; no caller tenant_id param |
+| create_tenant_v1 | 10.8.8A | Create a new workspace and owner membership for the authenticated user; requires p_idempotency_key replay protection | SECURITY DEFINER, authenticated only | tenant created server-side; no caller tenant_id param; idempotency key required; atomic replay via unique constraint |
 | set_tenant_slug_v1 | 10.8.8B | Set or update workspace slug for current tenant | SECURITY DEFINER, authenticated only | current_tenant_id() — no tenant_id param |
 
 ### Mapping Rules
@@ -532,24 +532,28 @@ Relationship to `accept_invite_v1(p_token text)`:
 
 ## 36) Create Workspace RPC Contract (10.8.8A)
 
-Forward migration `TBD_10_8_8A_create_tenant.sql` adds
-`public.create_tenant_v1()` as the workspace-creation RPC.
+Forward migration `20260326000001_10_8_8A_create_tenant.sql` adds
+`public.create_tenant_v1(p_idempotency_key text)` as the workspace-creation RPC.
 
 Behavior:
 - SECURITY DEFINER
 - Requires authenticated context
 - Accepts no frontend tenant_id parameter
-- Creates one `public.tenants` row
+- Accepts one caller-supplied idempotency key (`p_idempotency_key text`)
+- Same key → returns stored result verbatim (replay)
+- Different key → may create a new workspace
+- Creates one `public.tenants` row per unique idempotency key
 - Creates one owner `public.tenant_memberships` row for `auth.uid()`
 - If `public.user_profiles.current_tenant_id` is NULL, sets it to the new tenant
 - If `current_tenant_id` already exists, does NOT overwrite it
-- Standard RPC envelope
+- Standard RPC envelope; `data` is always an object, never null
 
 Constraints:
 - No caller-supplied tenant_id
 - No direct table calls from WeWeb
 - Tenant ownership derives from authenticated user only
-- Duplicate/retry behavior must be deterministic and idempotent at the envelope level
+- Idempotency claim is atomic via unique constraint + INSERT ON CONFLICT
+- Replay is envelope-identical to the original call
 
 Relationship to onboarding:
 - This RPC is the Step 1 backend for `/onboarding`

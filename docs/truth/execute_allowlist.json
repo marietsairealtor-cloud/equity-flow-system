@@ -8,6 +8,7 @@
     "create_farm_area_v1",
     "create_reminder_v1",
     "create_share_token_v1",
+    "create_tenant_v1",
     "current_tenant_id",
     "delete_farm_area_v1",
     "foundation_log_activity_v1",

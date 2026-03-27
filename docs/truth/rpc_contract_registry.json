@@ -200,6 +200,19 @@
       "notes": "Internal tenant resolution helper. Not a public-facing RPC. Granted to authenticated narrowly per QA ruling 2026-03-19 to support RLS policy evaluation. Not callable by anon or PUBLIC."
     },
     {
+      "name": "create_tenant_v1",
+      "version": 1,
+      "build_route_owner": "10.8.8A",
+      "input_contract": "CONTRACTS.md §36 create_tenant_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "INTERNAL"
+      ],
+      "notes": "Creates new workspace and owner membership for authenticated user. Requires p_idempotency_key. Atomic idempotency via rpc_idempotency_log unique constraint. Same key returns stored result verbatim. Does not overwrite existing current_tenant_id."
+    },
+    {
       "name": "complete_reminder_v1",
       "version": 1,
       "build_route_owner": "10.8.3",

@@ -588,6 +588,89 @@ $$;
 
 ALTER FUNCTION "public"."create_share_token_v1"("p_deal_id" "uuid", "p_expires_at" timestamp with time zone) OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."create_tenant_v1"("p_idempotency_key" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_user_id        uuid;
+  v_new_tenant_id  uuid;
+  v_result         jsonb;
+  v_claimed        boolean := false;
+BEGIN
+  IF p_idempotency_key IS NULL OR length(trim(p_idempotency_key)) = 0 THEN
+    RETURN jsonb_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::jsonb,
+      'error', jsonb_build_object('message', 'p_idempotency_key is required.', 'fields', jsonb_build_object('p_idempotency_key', 'required'))
+    );
+  END IF;
+
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Authentication required.', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  PERFORM public.current_tenant_id();
+
+  v_new_tenant_id := gen_random_uuid();
+
+  v_result := jsonb_build_object(
+    'ok',    true,
+    'code',  'OK',
+    'data',  jsonb_build_object('tenant_id', v_new_tenant_id),
+    'error', null
+  );
+
+  INSERT INTO public.rpc_idempotency_log
+    (user_id, idempotency_key, rpc_name, result_json)
+  VALUES
+    (v_user_id, p_idempotency_key, 'create_tenant_v1', v_result)
+  ON CONFLICT (user_id, idempotency_key, rpc_name)
+    DO UPDATE SET result_json = public.rpc_idempotency_log.result_json
+  RETURNING (xmax = 0) INTO v_claimed;
+
+  IF NOT v_claimed THEN
+    SELECT result_json INTO v_result
+    FROM public.rpc_idempotency_log
+    WHERE user_id = v_user_id
+      AND idempotency_key = p_idempotency_key
+      AND rpc_name = 'create_tenant_v1';
+    RETURN v_result;
+  END IF;
+
+  INSERT INTO public.tenants (id)
+  VALUES (v_new_tenant_id);
+
+  INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
+  VALUES (gen_random_uuid(), v_new_tenant_id, v_user_id, 'owner');
+
+  INSERT INTO public.user_profiles (id, current_tenant_id)
+  VALUES (v_user_id, v_new_tenant_id)
+  ON CONFLICT (id) DO UPDATE
+    SET current_tenant_id = v_new_tenant_id
+    WHERE public.user_profiles.current_tenant_id IS NULL;
+
+  RETURN v_result;
+
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object(
+    'ok',    false,
+    'code',  'INTERNAL',
+    'data',  '{}'::jsonb,
+    'error', jsonb_build_object('message', SQLERRM, 'fields', '{}'::jsonb)
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."create_tenant_v1"("p_idempotency_key" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."current_tenant_id"() RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1471,6 +1554,17 @@ CREATE TABLE IF NOT EXISTS "public"."draft_deals" (
 
 ALTER TABLE "public"."draft_deals" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."rpc_idempotency_log" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "idempotency_key" "text" NOT NULL,
+    "rpc_name" "text" NOT NULL,
+    "result_json" "jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."rpc_idempotency_log" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."share_tokens" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -1596,6 +1690,12 @@ ALTER TABLE ONLY "public"."deals"
 
 ALTER TABLE ONLY "public"."draft_deals"
     ADD CONSTRAINT "draft_deals_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."rpc_idempotency_log"
+    ADD CONSTRAINT "rpc_idempotency_log_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."rpc_idempotency_log"
+    ADD CONSTRAINT "rpc_idempotency_log_user_id_idempotency_key_rpc_name_key" UNIQUE ("user_id", "idempotency_key", "rpc_name");
 
 ALTER TABLE ONLY "public"."share_tokens"
     ADD CONSTRAINT "share_tokens_pkey" PRIMARY KEY ("id");
@@ -1753,6 +1853,8 @@ CREATE POLICY "deals_select_own" ON "public"."deals" FOR SELECT TO "authenticate
 CREATE POLICY "deals_update_own" ON "public"."deals" FOR UPDATE TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."draft_deals" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."rpc_idempotency_log" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."share_tokens" ENABLE ROW LEVEL SECURITY;
 

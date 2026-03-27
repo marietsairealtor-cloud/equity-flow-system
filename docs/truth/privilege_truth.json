@@ -42,6 +42,10 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "create_tenant_v1",
+        "privilege": "EXECUTE"
+      },
+      {
         "routine": "foundation_log_activity_v1",
         "privilege": "EXECUTE"
       },
@@ -126,6 +130,7 @@
       "accept_pending_invites_v1",
       "create_deal_v1",
       "create_farm_area_v1",
+      "create_tenant_v1",
       "current_tenant_id",
       "delete_farm_area_v1",
       "foundation_log_activity_v1",
