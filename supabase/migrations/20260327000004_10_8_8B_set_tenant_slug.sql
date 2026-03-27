@@ -19,7 +19,7 @@ AS $fn$
 DECLARE
   v_tenant_id uuid;
 BEGIN
-  -- Role guard must be first executable statement per CONTRACTS §9
+  -- Role guard must be first executable statement per CONTRACTS S9
   PERFORM public.require_min_role_v1('admin'::public.tenant_role);
 
   -- Validate slug input
