@@ -449,6 +449,9 @@
     },
     "10.8.8A": {
       "proof_pattern": "^docs/proofs/10\\.8\\.8A_create_workspace_"
+    },
+    "10.8.8B": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.8B_set_tenant_slug_"
     }
   }
 }

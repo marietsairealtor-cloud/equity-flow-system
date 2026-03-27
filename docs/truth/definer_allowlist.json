@@ -9,6 +9,7 @@
     "public.create_reminder_v1",
     "public.create_share_token_v1",
     "public.create_tenant_v1",
+    "public.set_tenant_slug_v1",
     "public.current_tenant_id",
     "public.delete_farm_area_v1",
     "public.foundation_log_activity_v1",

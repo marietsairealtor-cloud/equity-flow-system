@@ -278,7 +278,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | delete_farm_area_v1 | 10.8.6 | Delete a farm area for current tenant (SET NULL on deals) | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | accept_pending_invites_v1 | 10.8.7E | Resolve pending invites for authenticated user by exact email match after auth; auto-accept valid invites oldest-first | SECURITY DEFINER, authenticated only | authenticated email derived via auth.uid() -> auth.users.email; no caller email or tenant_id param |
 | create_tenant_v1 | 10.8.8A | Create a new workspace and owner membership for the authenticated user; requires p_idempotency_key replay protection | SECURITY DEFINER, authenticated only | tenant created server-side; no caller tenant_id param; idempotency key required; atomic replay via unique constraint |
-| set_tenant_slug_v1 | 10.8.8B | Set or update workspace slug for current tenant | SECURITY DEFINER, authenticated only | current_tenant_id() — no tenant_id param |
+| set_tenant_slug_v1 | 10.8.8B | Set or update workspace slug for current tenant; enforces one slug per tenant via UNIQUE(tenant_id) + upsert | SECURITY DEFINER, authenticated only, min role owner/admin | current_tenant_id() — no tenant_id param; slug validated server-side; CONFLICT on duplicate slug |
 
 ### Mapping Rules
 
@@ -561,8 +561,9 @@ Relationship to onboarding:
 
 ## 37) Set Workspace Slug RPC Contract (10.8.8B)
 
-Forward migration `TBD_10_8_8B_set_tenant_slug.sql` adds
-`public.set_tenant_slug_v1()` as the workspace-slug RPC.
+Forward migration `20260327000004_10_8_8B_set_tenant_slug.sql` adds
+`public.set_tenant_slug_v1(p_slug text)` as the workspace-slug RPC.
+Also adds `UNIQUE (tenant_id)` constraint to `public.tenant_slugs` enforcing one slug per tenant at schema level.
 
 Behavior:
 - SECURITY DEFINER
@@ -570,8 +571,10 @@ Behavior:
 - Accepts no frontend tenant_id parameter
 - Sets or updates slug for the current tenant context
 - Slug must be lowercase and URL-safe
-- Slug uniqueness enforced
-- Standard RPC envelope
+- Slug uniqueness enforced (UNIQUE on slug column, existing constraint)
+- One slug per tenant enforced (UNIQUE on tenant_id column, added in this migration)
+- Upsert: INSERT ... ON CONFLICT (tenant_id) DO UPDATE
+- Standard RPC envelope; data always an object, never null
 
 Authorization:
 - Caller must be authorized workspace role (owner/admin per implementation contract)
