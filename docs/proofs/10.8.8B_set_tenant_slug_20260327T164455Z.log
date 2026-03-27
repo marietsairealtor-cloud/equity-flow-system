@@ -1,0 +1,143 @@
+PROOF_HEAD=92a236672944916fb9e235298a835c3ea641c6db
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.8B Set Workspace Slug RPC -- Proof Log ===
+Date: 2026-03-27T12:41:34.7879067-04:00
+Branch: feat/10.8.8B-set-tenant-slug-rpc
+PR HEAD SHA: 92a236672944916fb9e235298a835c3ea641c6db
+
+=== RPC exists as SECURITY DEFINER ===
+set_tenant_slug_v1|t
+
+
+=== UNIQUE(tenant_id) constraint exists ===
+tenant_slugs_tenant_id_unique
+
+
+=== Live DB verification ===
+BEGIN
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+SET
+            test            
+----------------------------
+ === Call 1: valid slug ===
+(1 row)
+
+                                                        set_tenant_slug_v1                                                        
+----------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"slug": "my-workspace", "tenant_id": "dd100000-0001-0001-0001-000000000001"}, "error": null}
+(1 row)
+
+                 test                 
+--------------------------------------
+ === Call 2: update slug (upsert) ===
+(1 row)
+
+                                                            set_tenant_slug_v1                                                            
+------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"slug": "my-workspace-updated", "tenant_id": "dd100000-0001-0001-0001-000000000001"}, "error": null}
+(1 row)
+
+                test                 
+-------------------------------------
+ === Call 3: invalid slug format ===
+(1 row)
+
+                                                                                    set_tenant_slug_v1                                                                                     
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "VALIDATION_ERROR", "data": {}, "error": {"fields": {"p_slug": "invalid_format"}, "message": "Slug must be lowercase, URL-safe, and between 3 and 63 characters."}}
+(1 row)
+
+           test            
+---------------------------
+ === Call 4: NULL slug ===
+(1 row)
+
+                                                          set_tenant_slug_v1                                                          
+--------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "VALIDATION_ERROR", "data": {}, "error": {"fields": {"p_slug": "required"}, "message": "p_slug is required."}}
+(1 row)
+
+RESET
+RESET
+SET
+SET
+                       test                       
+--------------------------------------------------
+ === Call 5: member denied - role enforcement ===
+(1 row)
+
+                                            set_tenant_slug_v1                                             
+-----------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "NOT_AUTHORIZED", "data": {}, "error": {"fields": {}, "message": "NOT_AUTHORIZED"}}
+(1 row)
+
+RESET
+RESET
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+SET
+SET
+                                   test                                    
+---------------------------------------------------------------------------
+ === Call 6: slug collision - another tenant owns my-workspace-updated ===
+(1 row)
+
+                                                      set_tenant_slug_v1                                                      
+------------------------------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "CONFLICT", "data": {}, "error": {"fields": {"p_slug": "taken"}, "message": "Slug is already taken."}}
+(1 row)
+
+RESET
+RESET
+                             test                              
+---------------------------------------------------------------
+ === tenant_slugs: one row for tenant A (upsert confirmed) ===
+(1 row)
+
+         slug         
+----------------------
+ my-workspace-updated
+(1 row)
+
+ROLLBACK
+
+
+=== Files changed in PR ===
+docs/artifacts/BUILD_ROUTE_V2.4.md
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260327T161439Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260327000004_10_8_8B_set_tenant_slug.sql
+supabase/tests/10_8_8B_set_tenant_slug.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.8B Set Workspace Slug RPC: PASS (lane-only gate)
