@@ -4105,58 +4105,6 @@ These apply to ALL items in Section 10. Violation = scope creep = reject.
 
 ---
 
-## Execution Order + Dependency Map
-
-### P0 — Ship the free hook first
-
-| Item | Title | Type | Prereq |
-|---|---|---|---|
-| 10.8.1 | Slug system (forms infrastructure) | DB + RPC | None |
-| 10.8.2 | Entitlements extension (subscription status) | DB + RPC | None |
-| 10.8 | Authenticated shell + navbar | WeWeb | 10.7.1 |
-| 10.9 | MAO calculator (dual-route) | WeWeb | 10.8 |
-| 10.10 | MAO golden-path smoke | Proof | 10.9 |
-| 10.8.8 | Auth page | WeWeb | 10.8 |
-| 10.8.9 | Onboarding wizard | WeWeb + Stripe | 10.8, 10.8.2 |
-| 10.8.10 | Today view (shell) | WeWeb | 10.8 |
-
-### P1 — Core product
-
-| Item | Title | Type | Prereq |
-|---|---|---|---|
-| 10.8.3 | Reminder engine | DB + pg_cron | None |
-| 10.8.4 | Deal health computation | Logic | None |
-| 10.8.5 | TC checklist data model | DB | None |
-| 10.8.6 | Farm areas table | DB | None |
-| 10.8.7 | TC contract storage bucket | Storage | None |
-| 10.11 | Acquisition + auto-advance | WeWeb | 10.8, 10.8.4 |
-| 10.12 | Offer generator + PDF + expiration | WeWeb | 10.9, 10.11 |
-| 10.13 | Dispo dashboard (share links) | WeWeb | 10.11 |
-| 10.14 | Save deal + reopen deal | WeWeb | 10.9 |
-| 10.15 | Deal viewer + branding + buyer CTA | WeWeb | 10.13 |
-| 10.16 | Deal packet share-link smoke | Proof | 10.15 |
-| 10.17 | TC + checklist + upload + immutable close | WeWeb | 10.11, 10.8.5, 10.8.7 |
-| 10.18 | Lead intake (slug forms + management) | WeWeb | 10.8.1 |
-| 10.19 | Intake-to-MAO pre-fill | WeWeb | 10.18, 10.9 |
-| 10.25 | Today view: task synthesis + optimistic UI | WeWeb + RPC | 10.8.10, 10.8.3, 10.8.4 |
-
-### P2 — Polish + settings + gates
-
-| Item | Title | Type | Prereq |
-|---|---|---|---|
-| 10.26 | Micro-friction bundle | WeWeb + API | 10.9, 10.18 |
-| 10.27 | Workspace settings (general + members + billing) | WeWeb | 10.8, 10.8.6 |
-| 10.28 | Profile settings | WeWeb | 10.8 |
-| 10.29 | Error pages + friendly expired-token | WeWeb | 10.8 |
-| 10.30 | Quick-copy deal summary + context links | WeWeb | 10.11 |
-| 10.22 | Seat enforcement UX + API | WeWeb | 10.8.9 |
-| 10.23 | E2E wiring verification | Proof | All pages |
-| 10.20 | Frontend RPC contract guard | CI gate | 10.23 |
-| 10.21 | Frontend surface enumeration guard | CI gate | 10.23 |
-| 10.24 | UI gate promotion execution | Governance | 10.23 |
-
----
-
 ## Item Specifications
 
 ---
@@ -4707,26 +4655,6 @@ Must demonstrate:
 
 ---
 
-## **Notes (non-negotiable constraints)**
-
-* This item is a **prerequisite for 10.8.8 (invite acceptance flow)**
-* Routing page depends on this RPC
-* Do not implement invite logic in frontend
-* Do not bypass RPC with direct table access
-
----
-
-## **Summary**
-
-```yaml
-10.8.7B:
-  purpose: invite system + membership creation
-  required_for: 10.8.8
-  surfaces:
-    - tenant_invites (table)
-    - accept_invite_v1 (RPC)
-```
-
 ### **10.8.7C — Tenant Context Parity Fixes (user_profiles + current_tenant_id)**
 
 **Deliverable:**
@@ -4973,18 +4901,79 @@ WeWeb auth page handling login, signup, password reset, and post-auth invite res
 
 **Gate:** `lane-only`
 
----
+### **10.8.8A — Create Workspace RPC**
 
+**Deliverable:**
+`create_tenant_v1()` RPC that creates a new workspace and owner membership for the authenticated user.
+
+**DoD:**
+
+- RPC `create_tenant_v1()` exists
+- SECURITY DEFINER + authenticated-only
+- Accepts NO frontend tenant_id parameter
+- Creates `public.tenants` row
+- Creates owner `public.tenant_memberships` row for `auth.uid()`
+- If `user_profiles.current_tenant_id` is NULL, sets it to the new tenant
+- If `current_tenant_id` already exists, does NOT overwrite it
+- Standard RPC envelope
+- No direct table calls from WeWeb
+
+**Proof:** `docs/proofs/10.8.8A_create_tenant_<UTC>.log`
+
+**Gate:** `lane-only`
+
+### **10.8.8B — Set Workspace Slug RPC**
+
+**Deliverable:**
+`set_tenant_slug_v1()` RPC that sets or updates the workspace slug for the current tenant.
+
+**DoD:**
+
+- RPC `set_tenant_slug_v1()` exists
+- SECURITY DEFINER + authenticated-only
+- Accepts no frontend tenant_id parameter
+- Slug must be lowercase and URL-safe
+- Slug uniqueness enforced
+- Only authorized workspace role may update slug
+- Standard RPC envelope
+- No direct table calls from WeWeb
+
+**Proof:** `docs/proofs/10.8.8B_set_tenant_slug_<UTC>.log`
+
+**Gate:** `lane-only`
+
+### **10.8.8C — Stripe / Billing Foundation**
+
+**Deliverable:**
+Stripe test-mode setup and backend billing foundation sufficient to support onboarding subscription step.
+
+**DoD:**
+
+- Stripe account created
+- Test mode enabled
+- Test API keys configured
+- Webhook endpoint configured in test mode
+- Test webhook delivery proven
+- Backend writes/updates `tenant_subscriptions`
+- `get_user_entitlements_v1()` reflects subscription state correctly
+- No frontend-only billing truth
+- No live charges required
+
+**Proof:** `docs/proofs/10.8.8C_stripe_billing_foundation_<UTC>.log`
+
+**Gate:** `lane-only`
+
+---
 ### **10.8.9 — Onboarding Wizard**
 
 **Deliverable:**
-WeWeb onboarding page at `/onboarding` with sequential steps for workspace creation, workspace joining (non-invite), and subscription setup.
+WeWeb onboarding page at `/onboarding` with sequential steps for workspace creation, slug setup, and subscription setup.
 
 **DoD:**
 
 - Onboarding page exists at `/onboarding`
-- Step 1: Create workspace OR join existing workspace (non-invite flow only)
-- Invite acceptance is NOT handled in onboarding (handled in `/post-auth` via `accept_pending_invites_v1()`)
+- Step 1: Create workspace
+- Joining existing workspace is handled via email invite, resolved in `/post-auth` before onboarding is reached
 - Step 2: Pick workspace slug (lowercase, URL-safe, unique)
 - Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle)
 - Onboarding step is determined by `get_user_entitlements_v1()`
@@ -4992,6 +4981,7 @@ WeWeb onboarding page at `/onboarding` with sequential steps for workspace creat
   - user returning mid-flow resumes at correct step
 - No direct table calls
 - No invite token logic in onboarding
+- No non-invite “join existing workspace” flow
 
 **Proof:** `docs/proofs/10.8.9_onboarding_<UTC>.md`
 

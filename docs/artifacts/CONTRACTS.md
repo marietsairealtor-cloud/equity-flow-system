@@ -277,7 +277,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_farm_area_v1 | 10.8.6 | Create a new farm area for current tenant | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | delete_farm_area_v1 | 10.8.6 | Delete a farm area for current tenant (SET NULL on deals) | SECURITY DEFINER, min role: admin | current_tenant_id() — no tenant_id param |
 | accept_pending_invites_v1 | 10.8.7E | Resolve pending invites for authenticated user by exact email match after auth; auto-accept valid invites oldest-first | SECURITY DEFINER, authenticated only | authenticated email derived via auth.uid() -> auth.users.email; no caller email or tenant_id param |
-
+| create_tenant_v1 | 10.8.8A | Create a new workspace and owner membership for the authenticated user | SECURITY DEFINER, authenticated only | tenant created server-side; no caller tenant_id param |
+| set_tenant_slug_v1 | 10.8.8B | Set or update workspace slug for current tenant | SECURITY DEFINER, authenticated only | current_tenant_id() — no tenant_id param |
 
 ### Mapping Rules
 
@@ -529,11 +530,50 @@ Relationship to `accept_invite_v1(p_token text)`:
 - `accept_pending_invites_v1()` becomes the primary `/post-auth` invite-resolution path
 - Token-based invite acceptance remains available as legacy/fallback capability
 
-## 36) Pending Invite Resolution RPC (10.8.7E)
-RPC accept_pending_invites_v1(): SECURITY DEFINER, authenticated only, no parameters.
-Reads email from auth.users via auth.uid(). Exact email match against tenant_invites.invited_email.
-Processes valid pending invites (accepted_at IS NULL, expires_at > now()) oldest-first.
-Creates tenant_memberships via INSERT ON CONFLICT DO NOTHING.
-Sets user_profiles.current_tenant_id only if currently NULL.
-Returns: accepted_count, accepted_tenant_ids, default_tenant_id (COALESCE existing or first accepted).
-Partial acceptance allowed. Silent per-invite failure. accept_invite_v1 remains unchanged.
+## 36) Create Workspace RPC Contract (10.8.8A)
+
+Forward migration `TBD_10_8_8A_create_tenant.sql` adds
+`public.create_tenant_v1()` as the workspace-creation RPC.
+
+Behavior:
+- SECURITY DEFINER
+- Requires authenticated context
+- Accepts no frontend tenant_id parameter
+- Creates one `public.tenants` row
+- Creates one owner `public.tenant_memberships` row for `auth.uid()`
+- If `public.user_profiles.current_tenant_id` is NULL, sets it to the new tenant
+- If `current_tenant_id` already exists, does NOT overwrite it
+- Standard RPC envelope
+
+Constraints:
+- No caller-supplied tenant_id
+- No direct table calls from WeWeb
+- Tenant ownership derives from authenticated user only
+- Duplicate/retry behavior must be deterministic and idempotent at the envelope level
+
+Relationship to onboarding:
+- This RPC is the Step 1 backend for `/onboarding`
+- Joining an existing workspace is NOT part of onboarding; existing workspaces are joined by email invite and resolved in `/post-auth`
+
+## 37) Set Workspace Slug RPC Contract (10.8.8B)
+
+Forward migration `TBD_10_8_8B_set_tenant_slug.sql` adds
+`public.set_tenant_slug_v1()` as the workspace-slug RPC.
+
+Behavior:
+- SECURITY DEFINER
+- Requires authenticated context
+- Accepts no frontend tenant_id parameter
+- Sets or updates slug for the current tenant context
+- Slug must be lowercase and URL-safe
+- Slug uniqueness enforced
+- Standard RPC envelope
+
+Authorization:
+- Caller must be authorized workspace role (owner/admin per implementation contract)
+- Tenant context derives from current tenant resolution rules; no caller-supplied tenant_id allowed
+
+Constraints:
+- No direct table calls from WeWeb
+- Slug must be validated server-side
+- Slug collisions must return contract-valid error envelope
