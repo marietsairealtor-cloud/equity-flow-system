@@ -1269,7 +1269,7 @@ CREATE OR REPLACE FUNCTION "public"."set_tenant_slug_v1"("p_slug" "text") RETURN
 DECLARE
   v_tenant_id uuid;
 BEGIN
-  -- Role guard must be first executable statement per CONTRACTS Â§9
+  -- Role guard must be first executable statement per CONTRACTS S9
   PERFORM public.require_min_role_v1('admin'::public.tenant_role);
 
   -- Validate slug input
