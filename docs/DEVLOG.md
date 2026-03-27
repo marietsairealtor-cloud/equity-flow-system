@@ -7736,3 +7736,36 @@ DoD
 
 Status
 - PASS
+---
+
+## 2026-03-27 -- Build Route v2.4 -- 10.8.8B
+
+Objective
+- Create set_tenant_slug_v1(p_slug text) RPC for workspace slug management in onboarding Step 2.
+
+Changes
+- Migration 20260327000004 adds UNIQUE(tenant_id) constraint to public.tenant_slugs and creates set_tenant_slug_v1(p_slug text): SECURITY DEFINER, authenticated-only, require_min_role_v1(admin) as first executable statement, slug validated server-side, upsert via INSERT ON CONFLICT (tenant_id) DO UPDATE, CONFLICT on duplicate slug (global uniqueness), raise_exception handler surfaces NOT_AUTHORIZED from role guard correctly.
+- CONTRACTS.md section 37 updated: migration filename, parameterized signature, UNIQUE(tenant_id) note, upsert behavior, envelope rule.
+- RPC mapping table updated: set_tenant_slug_v1 row with role and collision notes.
+- Build Route 10.8.8B DoD updated: UNIQUE(tenant_id) constraint, upsert, envelope rule.
+- Registered in: definer_allowlist.json, execute_allowlist.json, privilege_truth.json, rpc_contract_registry.json, qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260327T161439Z.md added.
+
+Proof
+- docs/proofs/10.8.8B_set_tenant_slug_20260327T164455Z.log
+
+DoD
+- RPC set_tenant_slug_v1(p_slug text) exists -- PASS
+- SECURITY DEFINER + authenticated-only -- PASS
+- No caller-supplied tenant_id -- PASS
+- Slug must be lowercase and URL-safe -- PASS
+- Slug uniqueness enforced (global UNIQUE on slug) -- PASS
+- One slug per tenant enforced (UNIQUE on tenant_id) -- PASS
+- Only authorized workspace role may update slug (owner/admin) -- PASS
+- Member denied -- PASS
+- Cross-tenant slug collision returns CONFLICT -- PASS
+- Standard RPC envelope; data always an object never null -- PASS
+- No direct table calls from WeWeb -- PASS
+
+Status
+- PASS
