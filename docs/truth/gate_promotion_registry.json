@@ -6,7 +6,7 @@
     "Gate wired into required.needs in .github/workflows/ci.yml",
     "docs/truth/required_checks.json regenerated via truth:sync",
     "gate_promotion_registry.json entry updated: status -> merge-blocking, promoted-by -> PR number",
-    "Governance file docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md required",
+    "Governance file docs/governance/GOVERNANCE_CHANGE_PR<UTC>.md required",
     "DEVLOG entry required after merge"
   ],
   "gates": [
