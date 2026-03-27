@@ -4908,14 +4908,16 @@ WeWeb auth page handling login, signup, password reset, and post-auth invite res
 
 **DoD:**
 
-- RPC `create_tenant_v1()` exists
+- RPC `create_tenant_v1(p_idempotency_key text)` exists
 - SECURITY DEFINER + authenticated-only
 - Accepts NO frontend tenant_id parameter
 - Creates `public.tenants` row
 - Creates owner `public.tenant_memberships` row for `auth.uid()`
 - If `user_profiles.current_tenant_id` is NULL, sets it to the new tenant
 - If `current_tenant_id` already exists, does NOT overwrite it
-- Standard RPC envelope
+- Standard RPC envelope; `data` always an object, never null
+- Idempotency: same key returns stored result; different key may create new workspace
+- Idempotency claim is atomic (INSERT ON CONFLICT, not SELECT-then-insert)
 - No direct table calls from WeWeb
 
 **Proof:** `docs/proofs/10.8.8A_create_tenant_<UTC>.log`
