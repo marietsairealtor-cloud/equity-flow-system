@@ -84,6 +84,13 @@ EXCEPTION
       'data',  '{}'::jsonb,
       'error', jsonb_build_object('message', 'Slug is already taken.', 'fields', jsonb_build_object('p_slug', 'taken'))
     );
+  WHEN raise_exception THEN
+    RETURN jsonb_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::jsonb,
+      'error', jsonb_build_object('message', SQLERRM, 'fields', '{}'::jsonb)
+    );
   WHEN OTHERS THEN
     RETURN jsonb_build_object(
       'ok',    false,
