@@ -588,6 +588,94 @@ $$;
 
 ALTER FUNCTION "public"."create_share_token_v1"("p_deal_id" "uuid", "p_expires_at" timestamp with time zone) OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."create_tenant_v1"("p_idempotency_key" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_user_id        uuid;
+  v_new_tenant_id  uuid;
+  v_result         jsonb;
+  v_claimed        boolean := false;
+BEGIN
+  -- Validate idempotency key first (testable without auth context)
+  IF p_idempotency_key IS NULL OR length(trim(p_idempotency_key)) = 0 THEN
+    RETURN jsonb_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::jsonb,
+      'error', jsonb_build_object('message', 'p_idempotency_key is required.', 'fields', jsonb_build_object('p_idempotency_key', 'required'))
+    );
+  END IF;
+
+  -- Require authenticated context
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Authentication required.', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  PERFORM public.current_tenant_id();
+
+  v_new_tenant_id := gen_random_uuid();
+
+  v_result := jsonb_build_object(
+    'ok',    true,
+    'code',  'OK',
+    'data',  jsonb_build_object('tenant_id', v_new_tenant_id),
+    'error', null
+  );
+
+  -- Atomic idempotency claim
+  INSERT INTO public.rpc_idempotency_log
+    (user_id, idempotency_key, rpc_name, result_json)
+  VALUES
+    (v_user_id, p_idempotency_key, 'create_tenant_v1', v_result)
+  ON CONFLICT (user_id, idempotency_key, rpc_name)
+    DO UPDATE SET result_json = public.rpc_idempotency_log.result_json
+  RETURNING (xmax = 0) INTO v_claimed;
+
+  -- Replay path
+  IF NOT v_claimed THEN
+    SELECT result_json INTO v_result
+    FROM public.rpc_idempotency_log
+    WHERE user_id = v_user_id
+      AND idempotency_key = p_idempotency_key
+      AND rpc_name = 'create_tenant_v1';
+    RETURN v_result;
+  END IF;
+
+  -- First-time execution path
+  INSERT INTO public.tenants (id, row_version)
+  VALUES (v_new_tenant_id, 1);
+
+  INSERT INTO public.tenant_memberships (tenant_id, user_id, role, row_version)
+  VALUES (v_new_tenant_id, v_user_id, 'owner', 1);
+
+  INSERT INTO public.user_profiles (id, current_tenant_id)
+  VALUES (v_user_id, v_new_tenant_id)
+  ON CONFLICT (id) DO UPDATE
+    SET current_tenant_id = v_new_tenant_id
+    WHERE public.user_profiles.current_tenant_id IS NULL;
+
+  RETURN v_result;
+
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object(
+    'ok',    false,
+    'code',  'INTERNAL',
+    'data',  '{}'::jsonb,
+    'error', jsonb_build_object('message', SQLERRM, 'fields', '{}'::jsonb)
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."create_tenant_v1"("p_idempotency_key" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."current_tenant_id"() RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'

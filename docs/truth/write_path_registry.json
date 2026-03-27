@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-03-26T23:31:43Z",
+    "generated":  "2026-03-27T11:47:50Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -66,6 +66,18 @@
                             "name":  "create_share_token_v1",
                             "tables":  [
                                            "share_tokens"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_tenant_v1",
+                            "tables":  [
+                                           "rpc_idempotency_log",
+                                           "tenant_memberships",
+                                           "tenants",
+                                           "user_profiles"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
