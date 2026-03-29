@@ -1,0 +1,169 @@
+PROOF_HEAD=1d3487b6525c6f048ed93c888f12d2f96f562261
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.8C Stripe Billing Foundation -- Proof Log ===
+Date: 2026-03-29T14:12:41.7580677-04:00
+Branch: feat/10.8.8C-stripe-billing-foundation
+PR HEAD SHA: 1d3487b6525c6f048ed93c888f12d2f96f562261
+
+=== Stripe Account ===
+Account: EQUITY FLOW SYSTEMS sandbox
+Mode: Test (Sandbox)
+Status: Active
+
+=== Webhook Endpoint ===
+Name: Equity Flow stripe billing webhook
+URL: https://upnelewdvbicxvfgzojg.supabase.co/functions/v1/stripe-webhook
+Status: Active
+Listening to: customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
+
+=== Edge Function Deployed ===
+stripe-webhook -- deployed, calls upsert_subscription_v1 RPC only
+
+=== Live Stripe Test ===
+Subscription ID: sub_1TGLnLFfCKU7GNPRAd4LkB35
+Status: active
+Tenant ID in metadata: 11111111-1111-1111-1111-111111111111
+Edge Function log: upsert_subscription_v1 result: ok=true, code=OK -- confirmed in dashboard logs
+
+=== RPC Behavioral Verification ===
+BEGIN
+                  test                  
+----------------------------------------
+ === RPC exists as SECURITY DEFINER ===
+(1 row)
+
+        proname         | prosecdef 
+------------------------+-----------
+ upsert_subscription_v1 | t
+(1 row)
+
+                 test                 
+--------------------------------------
+ === authenticated cannot execute ===
+(1 row)
+
+ has_function_privilege 
+------------------------
+ f
+(1 row)
+
+INSERT 0 1
+             test             
+------------------------------
+ === Call 1: valid upsert ===
+(1 row)
+
+                                                    upsert_subscription_v1                                                    
+------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"status": "active", "tenant_id": "11111111-1111-1111-1111-111111111111"}, "error": null}
+(1 row)
+
+                         test                         
+------------------------------------------------------
+ === Call 2: second upsert increments row_version ===
+(1 row)
+
+                                                     upsert_subscription_v1                                                     
+--------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"status": "expiring", "tenant_id": "11111111-1111-1111-1111-111111111111"}, "error": null}
+(1 row)
+
+                 test                  
+---------------------------------------
+ === row_version after two upserts ===
+(1 row)
+
+ row_version |  status  
+-------------+----------
+           2 | expiring
+(1 row)
+
+                          test                           
+---------------------------------------------------------
+ === Call 3: invalid status returns VALIDATION_ERROR ===
+(1 row)
+
+                                                                             upsert_subscription_v1                                                                              
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "VALIDATION_ERROR", "data": {}, "error": {"fields": {"p_status": "invalid"}, "message": "p_status must be one of: active, expiring, expired, canceled."}}
+(1 row)
+
+                                 test                                 
+----------------------------------------------------------------------
+ === Call 4: NULL stripe_subscription_id returns VALIDATION_ERROR ===
+(1 row)
+
+                                                                          upsert_subscription_v1                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "VALIDATION_ERROR", "data": {}, "error": {"fields": {"p_stripe_subscription_id": "required"}, "message": "p_stripe_subscription_id is required."}}
+(1 row)
+
+                       test                       
+--------------------------------------------------
+ === Call 5: unknown tenant returns NOT_FOUND ===
+(1 row)
+
+                                                      upsert_subscription_v1                                                       
+-----------------------------------------------------------------------------------------------------------------------------------
+ {"ok": false, "code": "NOT_FOUND", "data": {}, "error": {"fields": {"p_tenant_id": "not_found"}, "message": "Tenant not found."}}
+(1 row)
+
+              test               
+---------------------------------
+ === Call 6: canceled status ===
+(1 row)
+
+                                                     upsert_subscription_v1                                                     
+--------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"status": "canceled", "tenant_id": "11111111-1111-1111-1111-111111111111"}, "error": null}
+(1 row)
+
+ROLLBACK
+
+
+=== get_user_entitlements_v1 reflects subscription state ===
+Existing pgTAP suite passes -- entitlements gate green
+tenant_subscriptions row confirmed present with status=active and correct stripe_subscription_id
+
+=== Files changed in PR ===
+docs/artifacts/BUILD_ROUTE_V2.4.md
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260329T163428Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/functions/stripe-webhook/index.ts
+supabase/migrations/20260329000001_10_8_8C_upsert_subscription.sql
+supabase/tests/7_8_role_enforcement_rpc.test.sql
+supabase/tests/7_9_tenant_context_integrity.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== DoD Checklist ===
+Stripe account created                          -- PASS
+Test mode enabled                               -- PASS
+Test API keys configured                        -- PASS
+Webhook endpoint configured in test mode        -- PASS
+Test webhook delivery proven                    -- PASS
+Backend writes tenant_subscriptions via RPC     -- PASS
+get_user_entitlements_v1 reflects subscription  -- PASS
+No frontend-only billing truth                  -- PASS
+No live charges required                        -- PASS
+Edge Function calls RPC not direct table        -- PASS
+Write path registered in write_path_registry    -- PASS
+
+=== RESULT ===
+10.8.8C Stripe Billing Foundation: PASS (lane-only gate)

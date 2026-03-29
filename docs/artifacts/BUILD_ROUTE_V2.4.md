@@ -4963,6 +4963,9 @@ Stripe test-mode setup and backend billing foundation sufficient to support onbo
 - `get_user_entitlements_v1()` reflects subscription state correctly
 - No frontend-only billing truth
 - No live charges required
+- upsert_subscription_v1 RPC exists as SECURITY DEFINER, service_role only
+- Edge Function calls RPC, not direct table write
+- Stripe webhook write path registered in write_path_registry.json
 
 **Proof:** `docs/proofs/10.8.8C_stripe_billing_foundation_<UTC>.log`
 

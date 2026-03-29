@@ -279,6 +279,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | accept_pending_invites_v1 | 10.8.7E | Resolve pending invites for authenticated user by exact email match after auth; auto-accept valid invites oldest-first | SECURITY DEFINER, authenticated only | authenticated email derived via auth.uid() -> auth.users.email; no caller email or tenant_id param |
 | create_tenant_v1 | 10.8.8A | Create a new workspace and owner membership for the authenticated user; requires p_idempotency_key replay protection | SECURITY DEFINER, authenticated only | tenant created server-side; no caller tenant_id param; idempotency key required; atomic replay via unique constraint |
 | set_tenant_slug_v1 | 10.8.8B | Set or update workspace slug for current tenant; enforces one slug per tenant via UNIQUE(tenant_id) + upsert | SECURITY DEFINER, authenticated only, min role owner/admin | current_tenant_id() — no tenant_id param; slug validated server-side; CONFLICT on duplicate slug |
+| upsert_subscription_v1 | 10.8.8C | Upsert tenant subscription state from Stripe webhook; service_role only | SECURITY DEFINER, service_role only | tenant_id supplied by Edge Function from verified Stripe metadata; not app-user callable |
 
 ### Mapping Rules
 
@@ -584,3 +585,22 @@ Constraints:
 - No direct table calls from WeWeb
 - Slug must be validated server-side
 - Slug collisions must return contract-valid error envelope
+
+## 38) Upsert Subscription RPC Contract (10.8.8C)
+
+Forward migration `20260329000001_10_8_8C_upsert_subscription.sql` adds
+`public.upsert_subscription_v1(p_tenant_id uuid, p_stripe_subscription_id text, p_status text, p_current_period_end timestamptz)` as the billing write RPC.
+
+Behavior:
+- SECURITY DEFINER
+- Callable by service_role only -- not authenticated, not anon
+- Accepts tenant_id as parameter (server-side integration path, not app-user path)
+- Validates p_status against allowed values: active, expiring, expired, canceled
+- Upserts public.tenant_subscriptions on conflict (tenant_id)
+- Standard RPC envelope; data always an object, never null
+
+Constraints:
+- No direct table calls from Edge Function
+- tenant_id must reference existing tenant (FK enforced)
+- Called exclusively by stripe-webhook Edge Function
+- Not callable from WeWeb

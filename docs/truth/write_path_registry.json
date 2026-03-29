@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-03-27T16:25:44Z",
+    "generated":  "2026-03-29T17:33:40Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -126,6 +126,15 @@
                                        ],
                             "row_version_enforced":  true,
                             "optimistic_concurrency":  true
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "upsert_subscription_v1",
+                            "tables":  [
+                                           "tenant_subscriptions"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
                         },
                         {
                             "path_type":  "trigger",
