@@ -4,5 +4,5 @@
   "migration_tip": "20260327000004",
   "migration_tip_file": "20260327000004_10_8_8B_set_tenant_slug.sql",
   "migration_count": 71,
-  "pinned_at": "2026-03-27"
+  "pinned_at": "2026-03-29"
 }
