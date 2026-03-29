@@ -7769,3 +7769,42 @@ DoD
 
 Status
 - PASS
+---
+
+## 2026-03-29 -- Build Route v2.4 -- 10.8.8C
+
+Objective
+- Establish Stripe test-mode billing foundation with Edge Function webhook handler and governed write path via upsert_subscription_v1 RPC.
+
+Changes
+- Stripe sandbox account created. Test mode enabled. Webhook endpoint configured at https://upnelewdvbicxvfgzojg.supabase.co/functions/v1/stripe-webhook listening to customer.subscription.created, customer.subscription.updated, customer.subscription.deleted.
+- supabase/functions/stripe-webhook/index.ts deployed: verifies Stripe signature, resolves status, calls upsert_subscription_v1 RPC only -- no direct table writes.
+- Migration 20260329000001 adds upsert_subscription_v1(p_tenant_id uuid, p_stripe_subscription_id text, p_status text, p_current_period_end timestamptz): SECURITY DEFINER, fixed search_path, authenticated explicitly revoked, integration path only. Validates all inputs. Upserts tenant_subscriptions with row_version increment on conflict.
+- CONTRACTS.md section 38 added governing upsert_subscription_v1 signature, behavior, and constraints.
+- RPC mapping table updated: upsert_subscription_v1 row added.
+- Build Route 10.8.8C DoD updated: RPC path, write path registration, edge function governance.
+- Registered in: definer_allowlist.json (allow + anon_callable exemption), rpc_contract_registry.json, write_path_registry.json.
+- Catalog audit exclusions added in 7_8_role_enforcement_rpc.test.sql and 7_9_tenant_context_integrity.test.sql.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260329T163428Z.md added.
+- STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET set in Supabase secrets.
+
+Proof
+- docs/proofs/10.8.8C_stripe_billing_20260329T181414Z.log
+
+DoD
+- Stripe account created -- PASS
+- Test mode enabled -- PASS
+- Test API keys configured -- PASS
+- Webhook endpoint configured in test mode -- PASS
+- Test webhook delivery proven -- PASS
+- Backend writes tenant_subscriptions via RPC only -- PASS
+- get_user_entitlements_v1 reflects subscription state -- PASS
+- No frontend-only billing truth -- PASS
+- No live charges required -- PASS
+- Edge Function calls RPC not direct table -- PASS
+- Write path registered in write_path_registry.json -- PASS
+- authenticated cannot execute upsert_subscription_v1 -- PASS
+- row_version increments on update -- PASS
+
+Status
+- PASS
