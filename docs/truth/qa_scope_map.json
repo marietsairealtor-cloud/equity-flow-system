@@ -452,6 +452,9 @@
     },
     "10.8.8B": {
       "proof_pattern": "^docs/proofs/10\\.8\\.8B_set_tenant_slug_"
+    },
+    "10.8.8C": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.8C_stripe_billing_"
     }
   }
 }
