@@ -1,7 +1,7 @@
 // stripe-webhook/index.ts
 // 10.8.8C -- Stripe Billing Foundation
 // Handles Stripe webhook events in test mode.
-// Writes/updates tenant_subscriptions on subscription lifecycle events.
+// Writes tenant_subscriptions via upsert_subscription_v1 RPC only.
 
 import Stripe from 'https://esm.sh/stripe@13.11.0'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -49,7 +49,6 @@ Deno.serve(async (req: Request) => {
 
         const status = resolveStatus(sub)
 
-        // current_period_end may be on the subscription or on the first item
         const periodEnd = sub.current_period_end
           ?? (sub as any).items?.data?.[0]?.current_period_end
           ?? null
@@ -58,26 +57,22 @@ Deno.serve(async (req: Request) => {
           ? new Date(periodEnd * 1000).toISOString()
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
-        const { error } = await supabase
-          .from('tenant_subscriptions')
-          .upsert({
-            tenant_id: tenantId,
-            stripe_subscription_id: sub.id,
-            status,
-            current_period_end: currentPeriodEnd,
-            updated_at: new Date().toISOString(),
-            row_version: 1,
-          }, { onConflict: 'tenant_id' })
+        const { data, error } = await supabase.rpc('upsert_subscription_v1', {
+          p_tenant_id:              tenantId,
+          p_stripe_subscription_id: sub.id,
+          p_status:                 status,
+          p_current_period_end:     currentPeriodEnd,
+        })
 
         if (error) {
-          console.error('Failed to upsert tenant_subscriptions:', error)
-          return new Response(JSON.stringify({ error: 'DB write failed' }), {
+          console.error('upsert_subscription_v1 error:', error)
+          return new Response(JSON.stringify({ error: 'RPC call failed' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           })
         }
 
-        console.log('tenant_subscriptions updated for tenant:', tenantId, 'status:', status)
+        console.log('upsert_subscription_v1 result:', JSON.stringify(data))
         break
       }
 
@@ -90,23 +85,30 @@ Deno.serve(async (req: Request) => {
           break
         }
 
-        const { error } = await supabase
-          .from('tenant_subscriptions')
-          .update({
-            status: 'canceled',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('tenant_id', tenantId)
+        const periodEnd = sub.current_period_end
+          ?? (sub as any).items?.data?.[0]?.current_period_end
+          ?? null
+
+        const currentPeriodEnd = periodEnd
+          ? new Date(periodEnd * 1000).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+        const { data, error } = await supabase.rpc('upsert_subscription_v1', {
+          p_tenant_id:              tenantId,
+          p_stripe_subscription_id: sub.id,
+          p_status:                 'canceled',
+          p_current_period_end:     currentPeriodEnd,
+        })
 
         if (error) {
-          console.error('Failed to cancel tenant_subscriptions:', error)
-          return new Response(JSON.stringify({ error: 'DB write failed' }), {
+          console.error('upsert_subscription_v1 error on delete:', error)
+          return new Response(JSON.stringify({ error: 'RPC call failed' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           })
         }
 
-        console.log('tenant_subscriptions canceled for tenant:', tenantId)
+        console.log('upsert_subscription_v1 canceled result:', JSON.stringify(data))
         break
       }
 
