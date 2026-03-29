@@ -1,6 +1,6 @@
 -- Migration: 10.8.8C -- Upsert Subscription RPC
 -- Adds upsert_subscription_v1() for Stripe webhook billing writes.
--- SECURITY DEFINER; service_role only; not app-user callable.
+-- SECURITY DEFINER; integration path only; not app-user callable.
 
 DROP FUNCTION IF EXISTS public.upsert_subscription_v1(uuid, text, text, timestamptz);
 
