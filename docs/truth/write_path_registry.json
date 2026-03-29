@@ -171,6 +171,18 @@
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "edge_function",
+                            "name":  "stripe-webhook",
+                            "source":  "stripe_webhook",
+                            "tables":  [
+                                           "tenant_subscriptions"
+                                       ],
+                            "auth_model":  "stripe_signature_verified",
+                            "invokes":  "upsert_subscription_v1",
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
                         }
                     ]
 }

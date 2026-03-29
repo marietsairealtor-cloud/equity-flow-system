@@ -226,6 +226,19 @@
       "notes": "Min role: owner/admin. VALIDATION_ERROR on blank or invalid slug format. CONFLICT on duplicate slug (global uniqueness). One slug per tenant enforced via UNIQUE(tenant_id) + upsert. Tenant context from current_tenant_id() only."
     },
     {
+      "name": "upsert_subscription_v1",
+      "version": 1,
+      "build_route_owner": "10.8.8C",
+      "input_contract": "CONTRACTS.md §38 upsert_subscription_v1",
+      "response_schema": null,
+      "error_codes": [
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "INTERNAL"
+      ],
+      "notes": "Integration RPC only. Callable by service_role exclusively. Called by stripe-webhook Edge Function after signature verification. Upserts tenant_subscriptions on conflict tenant_id. Not app-user callable. Not in execute_allowlist."
+    },
+    {
       "name": "complete_reminder_v1",
       "version": 1,
       "build_route_owner": "10.8.3",
