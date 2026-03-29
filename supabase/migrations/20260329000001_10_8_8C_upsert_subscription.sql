@@ -129,4 +129,3 @@ $fn$;
 
 REVOKE ALL ON FUNCTION public.upsert_subscription_v1(uuid, text, text, timestamptz) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.upsert_subscription_v1(uuid, text, text, timestamptz) FROM authenticated;
-GRANT EXECUTE ON FUNCTION public.upsert_subscription_v1(uuid, text, text, timestamptz) TO service_role;
