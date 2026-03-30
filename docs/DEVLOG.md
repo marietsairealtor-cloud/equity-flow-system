@@ -7808,3 +7808,38 @@ DoD
 
 Status
 - PASS
+---
+
+## 2026-03-30 -- Build Route v2.4 -- 10.8.8D
+
+Objective
+- Create check_slug_access_v1(p_slug text) RPC to check slug availability and caller ownership before onboarding workspace creation.
+
+Changes
+- Migration 20260330000001 adds check_slug_access_v1(p_slug text): SECURITY DEFINER, authenticated-only, no caller-supplied tenant_id. Validates slug format. Returns slug_taken, is_owner_or_admin, and tenant_id only when caller is owner or admin of that slug's tenant. No tenant_id leak when not authorized. LIMIT 1 on slug lookup.
+- CONTRACTS.md section 39 added governing RPC signature, behavior, and no-leak constraint.
+- RPC mapping table updated: check_slug_access_v1 row added.
+- Build Route 10.8.8D added as new item between 10.8.8C and 10.8.9.
+- WEWEB_ARCHITECTURE updated to reflect slug-first onboarding check.
+- Registered in: definer_allowlist.json (allow + anon_callable exemption), execute_allowlist.json, privilege_truth.json, rpc_contract_registry.json, qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260330T221248Z.md added.
+
+Proof
+- docs/proofs/10.8.8D_check_slug_access_20260330T225631Z.log
+
+DoD
+- RPC check_slug_access_v1(p_slug text) exists -- PASS
+- SECURITY DEFINER + authenticated-only -- PASS
+- No caller-supplied tenant_id -- PASS
+- p_slug required and format validated -- PASS
+- slug not found: slug_taken=false, is_owner_or_admin=false -- PASS
+- slug found + owner: slug_taken=true, is_owner_or_admin=true, tenant_id returned -- PASS
+- slug found + admin: slug_taken=true, is_owner_or_admin=true, tenant_id returned -- PASS
+- slug found + member: is_owner_or_admin=false, no tenant_id leak -- PASS
+- slug found + unrelated user: is_owner_or_admin=false, no tenant_id leak -- PASS
+- Standard RPC envelope; data always an object never null -- PASS
+- anon cannot execute -- PASS
+- authenticated can execute -- PASS
+
+Status
+- PASS
