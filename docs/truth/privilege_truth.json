@@ -42,6 +42,10 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "check_slug_access_v1",
+        "privilege": "EXECUTE"
+      },
+      {
         "routine": "create_tenant_v1",
         "privilege": "EXECUTE"
       },
@@ -134,6 +138,7 @@
       "accept_pending_invites_v1",
       "create_deal_v1",
       "create_farm_area_v1",
+      "check_slug_access_v1",
       "create_tenant_v1",
       "set_tenant_slug_v1",
       "current_tenant_id",
