@@ -4971,6 +4971,61 @@ Stripe test-mode setup and backend billing foundation sufficient to support onbo
 
 **Gate:** `lane-only`
 
+### **10.8.8D — Slug Ownership Check RPC**
+
+**Deliverable:**
+Authenticated RPC that checks whether a workspace slug is already taken and whether the current user is owner/admin of the workspace that owns that slug. Used by onboarding to prevent duplicate workspace creation and to resume checkout for the correct existing workspace.
+
+**DoD:**
+
+1. public.check_slug_access_v1(p_slug text) RPC exists
+2. RPC is SECURITY DEFINER
+3. fixed search_path = public
+4. authenticated-only
+5. no caller-supplied tenant_id
+6. input validation:
+p_slug required
+slug format must be lowercase and URL-safe
+7. RPC returns standard envelope
+8. data always object, never null
+9. data.slug_taken boolean returned
+10. data.is_owner_or_admin boolean returned
+11. data.tenant_id returned only when:
+slug exists
+and current user is owner/admin of that tenant
+12. if slug does not exist:
+slug_taken = false
+is_owner_or_admin = false
+13. if slug exists and current user is owner/admin:
+slug_taken = true
+is_owner_or_admin = true
+tenant_id included
+14. if slug exists and current user is not owner/admin:
+slug_taken = true
+is_owner_or_admin = false
+no tenant_id leak
+15. owner/admin determination enforced at DB layer from tenant_memberships
+16. no direct table calls from WeWeb
+17. REVOKE EXECUTE from PUBLIC
+18. GRANT EXECUTE to authenticated only
+19. CONTRACTS updated with new RPC section
+20. CONTRACTS §17 mapping table updated
+21. rpc_contract_registry.json updated
+22. execute_allowlist.json updated
+23. definer_allowlist.json updated
+24. privilege_truth.json updated if required by current governance
+25. pgTAP tests prove:
+slug not found
+slug found + owner
+slug found + admin
+slug found + member denied owner/admin result
+slug found + unrelated user denied
+no tenant_id leak when unauthorized
+invalid slug returns VALIDATION_ERROR
+
+**Proof:** docs/proofs/10.8.8D_check_slug_access_<UTC>.log
+
+**Gate:** merge-blocking
 ---
 ### **10.8.9 — Onboarding Wizard**
 
@@ -4983,7 +5038,7 @@ WeWeb onboarding page at `/onboarding` with sequential steps for workspace creat
 - Step 1: Create workspace
 - Joining existing workspace is handled via email invite, resolved in `/post-auth` before onboarding is reached
 - Step 2: Pick workspace slug (lowercase, URL-safe, unique)
-- Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle)
+- Step 3: Subscribe via Stripe ($39 USD/seat/month), redirect to "Today".
 - Onboarding step is determined by `get_user_entitlements_v1()`
 - Resume behavior:
   - user returning mid-flow resumes at correct step
@@ -5040,7 +5095,66 @@ WeWeb workspace switcher that allows users to view and switch between all worksp
 
 **Gate:** `lane-only`
 
+### **10.8.12 — 1-Month Free Trial (One-Time, User-Scoped)**
+
+**Deliverable:**
+System supports a one-time 30-day free trial per user using Stripe’s native trial mechanism, with correct entitlement behavior and no impact to onboarding flow.
+
+**DoD:**
+
+1. user_profiles includes:
+has_used_trial boolean default false
+trial_started_at timestamptz null
+2. Subscription creation logic:
+If has_used_trial = false → Stripe subscription created with trial_period_days = 30
+Else → subscription created without trial
+3. After successful subscription creation:
+has_used_trial = true
+trial_started_at = now()
+4. Stripe webhook (customer.subscription.updated) correctly reflects trial state in tenant_subscriptions
+5. get_user_entitlements_v1() returns:
+trialing when subscription is in trial
+trialing is treated the same as active for routing and access
+6. Trial is enforced as:
+one-time per user
+not reusable after cancellation or expiration
+not tied to tenant (user-scoped)
+7. No frontend-only trial logic
+8. No coupons or promo codes used (Stripe native trial only)
+9. No direct table writes from frontend
+
+**Proof:** docs/proofs/10.8.12_free_trial_<UTC>.md
+
+**Gate:** lane-only
 ---
+
+### **10.8.13 — Subscription Lifecycle & Renewal Handling**
+
+**Deliverable:**
+System reflects Stripe subscription lifecycle correctly after onboarding, including auto-renewal, cancellation, expiration, and entitlement updates.
+
+**DoD:**
+
+1. Stripe webhook events (customer.subscription.updated, deleted) correctly update tenant_subscriptions
+2. current_period_end is persisted and updated on renewal
+3. Auto-renewed subscriptions remain active
+4. Canceled subscriptions transition correctly based on Stripe status
+5. Expired subscriptions transition to expired
+6. get_user_entitlements_v1() reflects:
+active
+trialing (future item)
+expiring (if implemented)
+expired
+none
+7. trialing (when implemented) is treated as equivalent to active
+8. Entitlements remain consistent with Stripe (no drift)
+9. No direct table writes from frontend
+10. Billing truth flows only through:
+Stripe → Edge Function → RPC → DB
+
+**Proof:** docs/proofs/10.8.13_subscription_lifecycle_<UTC>.md
+
+**Gate:** lane-only
 
 ### **10.9 — MAO Calculator (Dual-Route)**
 

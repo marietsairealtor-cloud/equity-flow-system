@@ -3,6 +3,7 @@
   "allow": [
     "public.accept_invite_v1",
     "public.accept_pending_invites_v1",
+    "public.check_slug_access_v1",
     "public.complete_reminder_v1",
     "public.create_deal_v1",
     "public.create_farm_area_v1",
@@ -25,6 +26,7 @@
     "public.upsert_subscription_v1"
   ],
   "anon_callable": [
+    "public.check_slug_access_v1",
     "public.resolve_form_slug_v1",
     "public.submit_form_v1",
     "public.current_tenant_id",

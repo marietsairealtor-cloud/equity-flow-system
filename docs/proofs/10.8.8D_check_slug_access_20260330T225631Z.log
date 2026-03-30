@@ -1,0 +1,126 @@
+PROOF_HEAD=22e802995815c2d32ee406bf5c99e0a0ea50a2e5
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.8D Slug Ownership Check RPC -- Proof Log ===
+Date: 2026-03-30T18:52:34.3031806-04:00
+Branch: feat/10.8.8D-check-slug-access-rpc
+PR HEAD SHA: 22e802995815c2d32ee406bf5c99e0a0ea50a2e5
+
+=== RPC exists as SECURITY DEFINER ===
+check_slug_access_v1|t
+
+
+=== Live DB verification ===
+BEGIN
+INSERT 0 1
+INSERT 0 1
+INSERT 0 3
+SET
+SET
+          test          
+------------------------
+ === Slug not found ===
+(1 row)
+
+                                                  check_slug_access_v1                                                   
+-------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": null, "slug_taken": false, "is_owner_or_admin": false}, "error": null}
+(1 row)
+
+            test            
+----------------------------
+ === Slug found + owner ===
+(1 row)
+
+                                                                  check_slug_access_v1                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": "ee880000-0001-0001-0001-000000000001", "slug_taken": true, "is_owner_or_admin": true}, "error": null}
+(1 row)
+
+RESET
+RESET
+SET
+SET
+            test            
+----------------------------
+ === Slug found + admin ===
+(1 row)
+
+                                                                  check_slug_access_v1                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": "ee880000-0001-0001-0001-000000000001", "slug_taken": true, "is_owner_or_admin": true}, "error": null}
+(1 row)
+
+RESET
+RESET
+SET
+SET
+                     test                      
+-----------------------------------------------
+ === Slug found + member (not owner/admin) ===
+(1 row)
+
+                                                  check_slug_access_v1                                                  
+------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": null, "slug_taken": true, "is_owner_or_admin": false}, "error": null}
+(1 row)
+
+RESET
+RESET
+SET
+SET
+                test                 
+-------------------------------------
+ === Slug found + unrelated user ===
+(1 row)
+
+                                                  check_slug_access_v1                                                  
+------------------------------------------------------------------------------------------------------------------------
+ {"ok": true, "code": "OK", "data": {"tenant_id": null, "slug_taken": true, "is_owner_or_admin": false}, "error": null}
+(1 row)
+
+RESET
+RESET
+                    test                    
+--------------------------------------------
+ === NULL slug returns VALIDATION_ERROR ===
+(1 row)
+
+       code       
+------------------
+ VALIDATION_ERROR
+(1 row)
+
+ROLLBACK
+
+
+=== Files changed in PR ===
+docs/artifacts/BUILD_ROUTE_V2.4.md
+docs/artifacts/CONTRACTS.md
+docs/artifacts/WEWEB_ARCHITECTURE.md
+docs/governance/GOVERNANCE_CHANGE_20260330T221248Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/functions/create-checkout-session/index.ts
+supabase/migrations/20260330000001_10_8_8D_check_slug_access.sql
+supabase/tests/10_8_8D_check_slug_access.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.8D Slug Ownership Check RPC: PASS (merge-blocking gate)

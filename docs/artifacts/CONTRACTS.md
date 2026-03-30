@@ -280,6 +280,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_tenant_v1 | 10.8.8A | Create a new workspace and owner membership for the authenticated user; requires p_idempotency_key replay protection | SECURITY DEFINER, authenticated only | tenant created server-side; no caller tenant_id param; idempotency key required; atomic replay via unique constraint |
 | set_tenant_slug_v1 | 10.8.8B | Set or update workspace slug for current tenant; enforces one slug per tenant via UNIQUE(tenant_id) + upsert | SECURITY DEFINER, authenticated only, min role owner/admin | current_tenant_id() — no tenant_id param; slug validated server-side; CONFLICT on duplicate slug |
 | upsert_subscription_v1 | 10.8.8C | Upsert tenant subscription state from Stripe webhook; service_role only | SECURITY DEFINER, service_role only | tenant_id supplied by Edge Function from verified Stripe metadata; not app-user callable |
+| check_slug_access_v1 | 10.8.8D | Check if workspace slug is taken and whether current user is owner/admin of that slug's tenant | SECURITY DEFINER, authenticated only | no caller tenant_id; tenant_id returned only when caller is owner/admin of that slug |
+
 
 ### Mapping Rules
 
@@ -604,3 +606,20 @@ Constraints:
 - tenant_id must reference existing tenant (FK enforced)
 - Called exclusively by stripe-webhook Edge Function
 - Not callable from WeWeb
+
+## 39) Slug Ownership Check RPC Contract (10.8.8D)
+
+Forward migration adds `public.check_slug_access_v1(p_slug text)`.
+
+Behavior:
+- SECURITY DEFINER
+- Requires authenticated context
+- Accepts p_slug text only — no caller-supplied tenant_id
+- Validates slug format server-side
+- Returns slug_taken, is_owner_or_admin, and tenant_id (only when caller is owner/admin)
+- No tenant_id leak when caller is not owner/admin
+
+Return contract:
+- data.slug_taken: boolean
+- data.is_owner_or_admin: boolean
+- data.tenant_id: uuid or null

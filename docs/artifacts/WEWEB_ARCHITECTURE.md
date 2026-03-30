@@ -183,16 +183,30 @@ Invite acceptance authority:
 ### 5.2 Onboarding Wizard
 
 Single page at /onboarding with sequential steps:
-- Step 1: Create workspace
-- Step 2: Pick workspace slug (lowercase, URL-safe, unique)
-- Step 3: Subscribe via Stripe ($39 USD/seat/month, minimum 2 seats, optional annual toggle with 2 months free)
+
+- Step 1: Enter workspace slug
+- Step 2: Resolve slug and branch
+- Step 3: Subscribe via Stripe ($39 USD/seat/month), redirect to "Today"
+
+**Slug Resolution Behavior (Authoritative):**
+
+- On submit, system calls `check_slug_access_v1(p_slug)`
+- Branching rules:
+  - slug not taken → create tenant → set slug → proceed to subscription
+  - slug taken + user is owner/admin → resume subscription for that workspace (no tenant creation)
+  - slug taken + user not owner/admin → show "Workspace URL is already taken"
+- Slug check occurs **before any tenant creation**
+- Onboarding must not create duplicate tenants for the same slug
+- Slug ownership is enforced server-side only (no frontend inference)
 
 Notes:
 - Joining an existing workspace is handled via email invite, resolved in `/post-auth` before onboarding is reached
 - Invite acceptance is not an onboarding action
 - Onboarding is shown only when entitlement state indicates it is required
 
-Resume behavior: wizard detects current state from `get_user_entitlements_v1` and shows correct step. User who closed browser mid-payment returns to Step 3.
+Resume behavior:
+- If user returns mid-payment, Step 3 resumes using the same workspace (no new tenant created)
+- Routing is determined by `get_user_entitlements_v1`
 
 ### 5.3 Gate Logic on Authenticated Page Load
 
@@ -384,7 +398,7 @@ Tenant-scoped. Accessible via Workspace ▾ dropdown.
 |---|---|---|---|
 | General | Admin+ | Name, slug, country, currency, measurement unit, farm areas | Text-based farm areas (no map polygons). Tenant-level international support. |
 | Members | Admin+ | Invite, remove, change roles | Owner / Admin / Member only. Flat roles. |
-| Billing | Owner | Plan, payment method, cancel | Stripe. $39 USD/seat/month, min 2 seats, annual toggle. |
+| Billing | Owner | Plan, payment method, cancel | Stripe. $39 USD/seat/month|
 
 Timezone: tenant-level setting (single dropdown).
 

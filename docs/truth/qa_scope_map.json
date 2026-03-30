@@ -455,6 +455,9 @@
     },
     "10.8.8C": {
       "proof_pattern": "^docs/proofs/10\\.8\\.8C_stripe_billing_"
+    },
+    "10.8.8D": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.8D_check_slug_access_"
     }
   }
 }
