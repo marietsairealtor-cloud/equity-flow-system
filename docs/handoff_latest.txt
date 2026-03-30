@@ -1,12 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 299d44b
+HEAD: 17eafb8
 
 === git status --porcelain=v1 ===
- M docs/truth/cloud_migration_parity.json
- M docs/truth/definer_allowlist.json
- M docs/truth/execute_allowlist.json
  M docs/truth/write_path_registry.json
-?? supabase/functions/create-checkout-session/
 
 === supabase status (sanitized summary) ===
 {
