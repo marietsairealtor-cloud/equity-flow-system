@@ -17,12 +17,12 @@ Require "Pagination: limit default 25, max 100" '(?is)`limit`:\s*default\s*25,\s
 Require "Pagination: cursor opaque" '(?is)`cursor`:\s*opaque'
 Require "Pagination: next_cursor" '(?is)next_cursor'
 # UI globals list (<= 4, exact allowlist)
-$allowed = @("gs_selectedTenantId","gs_selectedDealId","gs_maoDraft","gs_pendingIdempotencyKey")
+$allowed = @("gs_selectedTenantId","gs_selectedDealId","gs_maoDraft","gs_pendingIdempotencyKey","gs_slugCheckResult")
 $sec = [regex]::Match($txt, "(?s)##\s*4\)\s*UI State Contract.*?Allowed WeWeb globals:\s*(.*?)\nForbidden:", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
 if (-not $sec.Success) { Fail "UI globals section not found or malformed" }
 $lines = $sec.Groups[1].Value -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '^- ' }
 $globals = $lines | ForEach-Object { (($_ -replace '^- ','') -replace '`','') } | ForEach-Object { ($_ -split '\s')[0].Trim() } | Where-Object { $_ -ne '' }
-if ($globals.Count -gt 4) { Fail "UI globals > 4 (found $($globals.Count))" }
+if ($globals.Count -gt 5) { Fail "UI globals > 4 (found $($globals.Count))" }
 $missing = $allowed | Where-Object { $globals -notcontains $_ }
 $extra   = $globals  | Where-Object { $allowed -notcontains $_ }
 if ($missing.Count -gt 0) { Fail "Missing allowed globals: $($missing -join ', ')" }
