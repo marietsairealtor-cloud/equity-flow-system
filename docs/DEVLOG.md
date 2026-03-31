@@ -7843,3 +7843,40 @@ DoD
 
 Status
 - PASS
+---
+
+## 2026-03-31 -- Build Route v2.4 -- 10.8.9
+
+Objective
+- Build onboarding wizard page at /onboarding with workspace creation, slug setup, and Stripe subscription checkout.
+
+Changes
+- WeWeb /onboarding page created: authenticated-only, single page, one CTA.
+- Button workflow implements three cases: Case A new slug (create_tenant_v1 + set_tenant_slug_v1 + Stripe checkout), Case B slug taken by owner/admin (resume checkout), Case C slug taken by other (show error).
+- check_slug_access_v1 called via fetch-slug-check-result project workflow before any workspace creation.
+- create-checkout-session Edge Function deployed: verifies JWT via service role client, reads current_tenant_id from user_profiles, creates Stripe Checkout session with backend-controlled price_id and quantity=1, redirects to /today on success.
+- stripe-webhook Edge Function updated: calls upsert_subscription_v1 RPC on subscription events.
+- gs_slugCheckResult global variable added to CONTRACTS §4.
+- contracts_lint.ps1 updated: allowlist expanded to include gs_slugCheckResult, count limit updated to 5.
+- Registered in: qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1.
+- Governance file docs/governance/GOVERNANCE_CHANGE_20260331T163607Z.md added.
+
+Proof
+- docs/proofs/10.8.9_onboarding_20260331T155832Z.md
+
+DoD
+- Onboarding page exists at /onboarding -- PASS
+- Case A: new slug creates workspace + sets slug + Stripe checkout -- PASS
+- Case B: existing owner/admin resumes checkout -- PASS
+- Case C: slug taken by other shows error -- PASS
+- No direct table calls from WeWeb -- PASS
+- No invite token logic in onboarding -- PASS
+- No non-invite join flow -- PASS
+- Stripe Checkout redirect working -- PASS
+- Webhook fires and updates tenant_subscriptions -- PASS
+- get_user_entitlements_v1 reflects subscription state -- PASS
+- is_loading prevents double-submit -- PASS
+- error_message shown on failure -- PASS
+
+Status
+- PASS
