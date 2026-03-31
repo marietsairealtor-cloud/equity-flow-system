@@ -58,6 +58,7 @@ Allowed WeWeb globals:
 - `gs_selectedDealId` (UI selection only)
 - `gs_maoDraft` (local draft)
 - `gs_pendingIdempotencyKey` (one per write)
+- `gs_slugCheckResult` (onboarding slug check result cache; never authorization)
 
 Forbidden:
 - New globals without editing this contract.
