@@ -467,6 +467,9 @@
     },
     "10.8.11A": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11A_list_user_tenants_"
+    },
+    "10.8.11B": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11B_set_current_tenant_"
     }
   }
 }

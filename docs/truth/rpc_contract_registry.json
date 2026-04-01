@@ -273,6 +273,19 @@
         "VALIDATION_ERROR"
       ],
       "notes": "Min role: member. Idempotent -- completing already-completed reminder returns OK. Cross-tenant call is no-op (tenant isolation enforced by WHERE clause)."
+    },
+    {
+      "name": "set_current_tenant_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11B",
+      "input_contract": "p_tenant_id uuid — must be a tenant the caller is a member of",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "INTERNAL"
+      ],
+      "notes": "Updates user_profiles.current_tenant_id via upsert. Validates caller is a member of the target tenant. No caller-supplied user_id."
     }
   ]
 }
