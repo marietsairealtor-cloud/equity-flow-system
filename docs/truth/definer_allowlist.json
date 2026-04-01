@@ -31,6 +31,7 @@
     "public.resolve_form_slug_v1",
     "public.submit_form_v1",
     "public.current_tenant_id",
+    "public.list_user_tenants_v1",
     "public.upsert_subscription_v1"
   ]
 }
