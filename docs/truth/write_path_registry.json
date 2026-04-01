@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-01T20:33:41Z",
+    "generated":  "2026-04-01T23:48:57Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -96,6 +96,15 @@
                             "name":  "revoke_share_token_v1",
                             "tables":  [
                                            "share_tokens"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "set_current_tenant_v1",
+                            "tables":  [
+                                           "user_profiles"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
