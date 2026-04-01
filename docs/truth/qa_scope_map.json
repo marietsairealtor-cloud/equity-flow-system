@@ -461,6 +461,9 @@
     },
     "10.8.9": {
       "proof_pattern": "^docs/proofs/10\\.8\\.9_onboarding_"
+    },
+    "10.8.10": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.10_today_view_"
     }
   }
 }
