@@ -26,7 +26,7 @@
     "public.update_deal_v1",
     "public.upsert_subscription_v1"
   ],
-  "anon_callable": [
+  "tenant_context_exempt": [
     "public.check_slug_access_v1",
     "public.resolve_form_slug_v1",
     "public.submit_form_v1",
