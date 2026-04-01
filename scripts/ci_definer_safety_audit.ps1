@@ -21,9 +21,9 @@ $allowlistPath = "docs/truth/definer_allowlist.json"
 if (-not (Test-Path $allowlistPath)) { throw "definer-safety-audit: $allowlistPath not found" }
 $allowlistData = Get-Content $allowlistPath -Raw | ConvertFrom-Json
 $allowlist = $allowlistData.allow
-$anonCallable = if ($allowlistData.anon_callable) { $allowlistData.anon_callable } else { @() }
+$tenantcontextexempt = if ($allowlistData.tenant_context_exempt) { $allowlistData.tenant_context_exempt } else { @() }
 Write-Host "definer-safety-audit: allowlist has $($allowlist.Count) entries"
-Write-Host "definer-safety-audit: anon_callable exemptions: $($anonCallable.Count)"
+Write-Host "definer-safety-audit: tenant_context_exempt exemptions: $($tenantcontextexempt.Count)"
 
 # --- Query all SD functions in public + rpc schemas ---
 $query = @"
@@ -77,9 +77,9 @@ if ($rows -and $rows.Trim() -ne "") {
         }
 
         # DoD 2: Tenant membership check in prosrc
-        # anon_callable RPCs are exempt — they resolve tenant from slug, not JWT
-        if ($anonCallable -contains $fname) {
-            Write-Host "  tenant membership: PASS (anon_callable exemption)"
+        # tenant_context_exempt RPCs are exempt — they resolve tenant from slug, not JWT
+        if ($tenantcontextexempt -contains $fname) {
+            Write-Host "  tenant membership: PASS (tenant_context_exempt exemption)"
         } elseif ($src -notmatch '(public\.)?current_tenant_id\(\)') {
             $bad += "FAIL [$fname]: no current_tenant_id() call found in prosrc — tenant membership not enforced"
             Write-Host "  tenant membership: FAIL"

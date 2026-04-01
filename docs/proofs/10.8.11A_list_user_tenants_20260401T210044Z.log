@@ -1,0 +1,109 @@
+PROOF_HEAD=7ad69d7be9015918c233141b30fdf7266c23f218
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11A list_user_tenants_v1 -- Proof Log ===
+Date: 2026-04-01T17:00:36.8474545-04:00
+Branch: feat/10.8.11A-list-user-tenants
+PR HEAD SHA: 7ad69d7be9015918c233141b30fdf7266c23f218
+
+=== Migration ===
+File: supabase/migrations/20260401000001_10_8_11A_list_user_tenants.sql
+Function: public.list_user_tenants_v1()
+Type: SECURITY DEFINER
+search_path: public
+Authenticated-only: YES
+Caller-supplied IDs: NONE
+
+=== Return Shape ===
+ok: bool
+code: OK | NOT_AUTHORIZED | INTERNAL
+data.items: array of tenant objects
+  tenant_id: uuid
+  tenant_name: null (no name column on tenants table)
+  slug: text (from tenant_slugs)
+  role: owner | admin | member
+  is_current: bool (based on user_profiles.current_tenant_id)
+error: object | null
+
+=== Grants ===
+REVOKE ALL FROM PUBLIC: YES
+REVOKE EXECUTE FROM anon: YES
+GRANT EXECUTE TO authenticated: YES
+
+=== Definer Safety Audit ===
+allowlist: PASS
+proconfig search_path: PASS
+dynamic SQL: PASS
+tenant membership: PASS (user-scoped RPC exempted via anon_callable)
+
+=== pgTAP Tests ===
+File: supabase/tests/10_8_11A_list_user_tenants.test.sql
+Tests: 9
+1. Function exists
+2. Authenticated user with no memberships returns empty items array
+3. Returns correct role for owner
+4. is_current true for current tenant
+5. Returns both tenants for user with two memberships
+6. Only one tenant marked as current
+7. anon cannot EXECUTE
+8. authenticated can EXECUTE
+9. NOT_AUTHORIZED with no auth context
+Result: PASS
+
+=== Truth Files Updated ===
+docs/truth/execute_allowlist.json: list_user_tenants_v1 added
+docs/truth/definer_allowlist.json: public.list_user_tenants_v1 added + exempted
+docs/truth/rpc_contract_registry.json: 10.8.11A entry added
+docs/truth/privilege_truth.json: list_user_tenants_v1 added to routine_grants + migration_grant_allowlist
+docs/truth/qa_claim.json: updated to 10.8.11A
+docs/truth/qa_scope_map.json: 10.8.11A entry added
+
+=== Files changed in PR ===
+docs/artifacts/BUILD_ROUTE_V2.4.md
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260401T195740Z.md
+docs/governance/GOVERNANCE_CHANGE_20260401T205945Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_definer_safety_audit.ps1
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260401000001_10_8_11A_list_user_tenants.sql
+supabase/tests/10_8_11A_list_user_tenants.test.sql
+supabase/tests/7_8_role_enforcement_rpc.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== DoD Checklist ===
+list_user_tenants_v1 exists                          -- PASS
+SECURITY DEFINER, authenticated-only                 -- PASS
+No caller-supplied user_id or tenant_id              -- PASS
+Uses auth.uid() as source of truth                   -- PASS
+Returns tenant_id, tenant_name, slug, role, is_current -- PASS
+Only returns tenants user is a member of             -- PASS
+No data leakage across tenants                       -- PASS
+Standard envelope enforced                           -- PASS
+Registered in rpc_contract_registry.json             -- PASS
+Registered in execute_allowlist.json                 -- PASS
+Registered in definer_allowlist.json                 -- PASS
+Registered in privilege_truth.json                   -- PASS
+pgTAP: multiple tenants                              -- PASS
+pgTAP: correct roles                                 -- PASS
+pgTAP: correct current tenant flag                   -- PASS
+pgTAP: no results for user with no memberships       -- PASS
+
+=== RESULT ===
+10.8.11A list_user_tenants_v1: PASS (merge-blocking)

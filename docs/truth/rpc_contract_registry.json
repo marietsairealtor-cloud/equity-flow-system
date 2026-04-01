@@ -251,6 +251,18 @@
       "notes": "Returns slug_taken, is_owner_or_admin, and tenant_id only when caller is owner/admin of that slug's tenant. No tenant_id leak when not authorized. No caller-supplied tenant_id."
     },
     {
+      "name": "list_user_tenants_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11A",
+      "input_contract": "No parameters. auth.uid() used as source of truth.",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "INTERNAL"
+      ],
+      "notes": "Returns all tenants the current user is a member of. Includes slug, role, and is_current flag. tenant_name is null (no name column on tenants table). No caller-supplied IDs."
+    },
+      {
       "name": "complete_reminder_v1",
       "version": 1,
       "build_route_owner": "10.8.3",
