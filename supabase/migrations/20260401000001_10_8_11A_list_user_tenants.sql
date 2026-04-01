@@ -12,6 +12,7 @@ DECLARE
   v_items jsonb;
 BEGIN
   v_user_id := auth.uid();
+  PERFORM public.current_tenant_id();
   IF v_user_id IS NULL THEN
     RETURN jsonb_build_object(
       'ok', false,

@@ -86,6 +86,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "role": "authenticated",
+        "routine": "list_user_tenants_v1",
+        "grant_type": "EXECUTE"
+      },
+      {
         "routine": "create_reminder_v1",
         "privilege": "EXECUTE"
       },
@@ -154,6 +159,7 @@
       "resolve_form_slug_v1",
       "submit_form_v1",
       "list_reminders_v1",
+      "list_user_tenants_v1",
       "create_reminder_v1",
       "complete_reminder_v1"
     ],
