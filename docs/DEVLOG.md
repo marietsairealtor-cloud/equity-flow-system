@@ -7880,3 +7880,36 @@ DoD
 
 Status
 - PASS
+
+
+## 2026-03-31 -- Build Route v2.4 -- 10.8.10 Today View Shell
+
+Objective
+Establish the Today view page shell as the default authenticated landing page with placeholder layout structure. No live data, no business logic, no RPCs.
+
+Changes
+- WeWeb /today page created as default post-auth landing
+- Authenticated shell wired (Top Nav, Bottom Nav, Sub warning banner)
+- Summary strip: 4 placeholder stat cards (Pipeline Deals, Total Profit, New Leads, Closing Soon)
+- Pipeline pills: 6 authoritative stage pills (New, Analyzing, Offer Sent, Under Contract, Dispo, TC)
+- Task list: 3 placeholder rows each with health dot, address, context line, action button
+- docs/governance/GOVERNANCE_CHANGE_20260401T004607Z.md added
+- docs/truth/qa_claim.json updated to 10.8.10
+- docs/truth/qa_scope_map.json updated with 10.8.10 entry
+- scripts/ci_robot_owned_guard.ps1 updated with 10.8.10 proof log pattern
+
+Proof
+docs/proofs/10.8.10_today_view_shell_20260401T005914Z.md
+
+DoD
+- Today view exists at /today -- PASS
+- Set as default landing after auth -- PASS
+- Renders inside authenticated shell/navbar -- PASS
+- Summary strip: 4 placeholder cards -- PASS
+- Task list: 3 placeholder rows with dot/address/context/button -- PASS
+- Pipeline pills: 6 authoritative stages (Closed/Dead excluded) -- PASS
+- Shell only -- no live data, no business logic -- PASS
+- No direct table calls -- PASS
+
+Status
+PASS
