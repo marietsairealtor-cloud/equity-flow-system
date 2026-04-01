@@ -5073,28 +5073,117 @@ Today view page shell with layout structure. Default authenticated landing page.
 
 **Prerequisite:** 10.8 merged
 
-### **10.8.11 — Workspace Switcher Wiring**
+### **10.8.11A — Workspace List RPC**
 
 **Deliverable:**
-WeWeb workspace switcher that allows users to view and switch between all workspaces (tenants) they belong to.
+Authenticated RPC that returns all workspaces (tenants) the current user belongs to.
 
 **DoD:**
 
-- Workspace switcher component exists in authenticated UI
-- Lists all workspaces from `get_user_entitlements_v1()`
-- Displays current workspace based on `current_tenant_id`
-- Allows user to switch workspace explicitly (updates `current_tenant_id`)
-- Does NOT auto-switch workspace when new memberships are created
-- If user is added to new workspace(s) via `accept_pending_invites_v1()`:
-  - optional UI notification (toast) may show:
-    - “You were added to X workspace(s)”
-  - no automatic tenant switching occurs
-- Switcher reflects newly joined workspaces after post-auth flow completes
-- No direct table calls
+* `public.list_user_tenants_v1()` exists
+* SECURITY DEFINER, authenticated-only
+* No caller-supplied user_id or tenant_id
+* Uses `auth.uid()` as source of truth
+* Returns:
 
-**Proof:** `docs/proofs/10.8.11_workspace_switcher_<UTC>.md`
+  * `tenant_id`
+  * `tenant_name` (if exists)
+  * `slug`
+  * `role` (owner/admin/member)
+  * `is_current` (based on `user_profiles.current_tenant_id`)
+* Only returns tenants the user is a member of
+* No data leakage across tenants
+* Output uses standard envelope (`ok`, `code`, `data`, `error`)
+* Registered in:
 
+  * `rpc_contract_registry.json`
+  * `execute_allowlist.json`
+  * `definer_allowlist.json`
+  * `privilege_truth.json` (if required)
+* pgTAP tests cover:
+
+  * multiple tenants
+  * correct roles
+  * correct current tenant flag
+  * no results for user with no memberships
+
+**Proof:** `docs/proofs/10.8.11A_list_user_tenants_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11B — Set Current Workspace RPC**
+
+**Deliverable:**
+Authenticated RPC to explicitly switch the current workspace by updating `user_profiles.current_tenant_id`.
+
+**DoD:**
+
+* `public.set_current_tenant_v1(p_tenant_id uuid)` exists
+* SECURITY DEFINER, authenticated-only
+* No caller-supplied user_id
+* Validates:
+
+  * `p_tenant_id` is not null
+  * current user is a member of the tenant
+* Updates:
+
+  * `user_profiles.current_tenant_id`
+* Returns:
+
+  * `tenant_id`
+* Rejects:
+
+  * non-member tenant → `NOT_AUTHORIZED`
+* Standard envelope enforced
+* No direct table access from frontend required
+* Registered in:
+
+  * `rpc_contract_registry.json`
+  * `execute_allowlist.json`
+  * `definer_allowlist.json`
+  * `privilege_truth.json`
+* pgTAP tests cover:
+
+  * valid switch
+  * invalid tenant
+  * non-member rejection
+
+**Proof:** `docs/proofs/10.8.11B_set_current_tenant_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11C — Workspace Switcher UI Wiring**
+
+**Deliverable:**
+WeWeb workspace switcher that lists all user workspaces and allows explicit switching.
+
+**DoD:**
+
+* Workspace switcher component exists in authenticated UI
+* Calls `list_user_tenants_v1()` to populate list
+* Displays:
+
+  * workspace name or slug
+  * user role (optional)
+  * current workspace indicator
+* On selection:
+
+  * calls `set_current_tenant_v1`
+  * updates UI state immediately
+* No automatic switching when new memberships are created
+* Reflects newly joined workspaces after post-auth flow
+* Optional toast:
+
+  * “You were added to X workspace(s)”
+* No direct table calls
+* No frontend mutation of `current_tenant_id` (RPC only)
+
+**Proof:** `docs/proofs/10.8.11C_workspace_switcher_<UTC>.md`
 **Gate:** `lane-only`
+
+---
 
 ### **10.8.12 — 1-Month Free Trial (One-Time, User-Scoped)**
 

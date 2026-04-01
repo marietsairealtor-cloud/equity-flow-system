@@ -17,6 +17,7 @@
     "list_deals_v1",
     "list_farm_areas_v1",
     "list_reminders_v1",
+    "list_user_tenants_v1",
     "lookup_share_token_v1",
     "resolve_form_slug_v1",
     "revoke_share_token_v1",

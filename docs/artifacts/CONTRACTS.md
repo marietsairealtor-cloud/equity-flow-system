@@ -282,7 +282,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | set_tenant_slug_v1 | 10.8.8B | Set or update workspace slug for current tenant; enforces one slug per tenant via UNIQUE(tenant_id) + upsert | SECURITY DEFINER, authenticated only, min role owner/admin | current_tenant_id() — no tenant_id param; slug validated server-side; CONFLICT on duplicate slug |
 | upsert_subscription_v1 | 10.8.8C | Upsert tenant subscription state from Stripe webhook; service_role only | SECURITY DEFINER, service_role only | tenant_id supplied by Edge Function from verified Stripe metadata; not app-user callable |
 | check_slug_access_v1 | 10.8.8D | Check if workspace slug is taken and whether current user is owner/admin of that slug's tenant | SECURITY DEFINER, authenticated only | no caller tenant_id; tenant_id returned only when caller is owner/admin of that slug |
-
+| list_user_tenants_v1 | 10.8.11A | Return all tenants the current user belongs to, with slug, role, and is_current flag | SECURITY DEFINER, authenticated only | current_tenant_id() — no tenant_id param |
 
 ### Mapping Rules
 
