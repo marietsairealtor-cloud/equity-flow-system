@@ -7913,3 +7913,40 @@ DoD
 
 Status
 PASS
+
+## 2026-04-01 -- Build Route v2.4 -- 10.8.11A list_user_tenants_v1
+
+Objective
+Establish authenticated RPC returning all workspaces the current user belongs to, with slug, role, and is_current flag. Required by 10.8.11C workspace switcher UI.
+
+Changes
+- supabase/migrations/20260401000001_10_8_11A_list_user_tenants.sql: list_user_tenants_v1() SECURITY DEFINER RPC
+- supabase/tests/10_8_11A_list_user_tenants.test.sql: 9 pgTAP tests
+- supabase/tests/7_8_role_enforcement_rpc.test.sql: list_user_tenants_v1 excluded from privileged RPC catalog audit
+- docs/artifacts/CONTRACTS.md: list_user_tenants_v1 added to §17 RPC mapping table
+- docs/truth/execute_allowlist.json: list_user_tenants_v1 added
+- docs/truth/definer_allowlist.json: public.list_user_tenants_v1 added + exempted from tenant membership check (user-scoped RPC)
+- docs/truth/rpc_contract_registry.json: 10.8.11A entry added
+- docs/truth/privilege_truth.json: list_user_tenants_v1 added to routine_grants + migration_grant_allowlist
+- docs/truth/qa_claim.json: updated to 10.8.11A
+- docs/truth/qa_scope_map.json: 10.8.11A entry added
+- scripts/ci_robot_owned_guard.ps1: 10.8.11A proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_20260401T195740Z.md: governance justification
+
+Proof
+docs/proofs/10.8.11A_list_user_tenants_20260401T204622Z.log
+
+DoD
+- list_user_tenants_v1 exists -- PASS
+- SECURITY DEFINER, authenticated-only -- PASS
+- No caller-supplied user_id or tenant_id -- PASS
+- Uses auth.uid() as source of truth -- PASS
+- Returns tenant_id, tenant_name, slug, role, is_current -- PASS
+- Only returns tenants user is a member of -- PASS
+- No data leakage across tenants -- PASS
+- Standard envelope enforced -- PASS
+- Registered in all required truth files -- PASS
+- pgTAP: multiple tenants, correct roles, current flag, no memberships -- PASS
+
+Status
+PASS
