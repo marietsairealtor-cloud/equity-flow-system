@@ -5059,12 +5059,13 @@ Today view page shell with layout structure. Default authenticated landing page.
 
 **DoD:**
 
-- Today view exists at /today, set as default landing after auth
-- Compact summary strip renders: pipeline deal count, total value, new leads, closing this week (placeholder data acceptable until RPCs wired)
-- Task list area with layout for: health dot, deal address, context line, one-tap action button
-- Pipeline snapshot: compact stage count pills (New: N, Analyzing: N, etc.)
-- Layout shell only for this item — live data wired in 10.25
-- No direct table calls
+1. Today view exists at /today, set as default landing after auth
+2. Today view renders inside the authenticated shell/navbar
+3. Compact summary strip renders four placeholder cards: pipeline deal count, total value, new leads, closing this week
+4. Task list shell renders at least 3 placeholder task rows, each with: health dot, deal address, context line, one-tap action button
+5. Pipeline snapshot renders placeholder stage pills for authoritative stages only: New, Analyzing, Offer Sent, Under Contract, Dispo, Closed, Dead
+6. Layout shell only for this item — no live task synthesis, no live calculations, no business logic in WeWeb
+7. No direct table calls
 
 **Proof:** `docs/proofs/10.8.10_today_view_shell_<UTC>.md`
 
@@ -5529,25 +5530,106 @@ Promote frontend gates to merge-blocking via 10.7 protocol.
 
 ---
 
-### **10.25 — Today View: Task Synthesis + Optimistic UI**
+### **10.25 — Today View: Data Contract + RPC**
 
 **Deliverable:**
-Wire Today view to live data. Task synthesis RPC aggregates from 4 sources. Optimistic UI on actions.
+Backend RPC(s) that provide all data required for Today view: summary strip, pipeline stage counts, and synthesized tasks. No UI wiring in this item.
 
 **DoD:**
 
-- Task synthesis RPC (or client-side aggregation) returns tasks from: overdue reminders (10.8.3), pending offers (Analyzing + MAO done + no offer), closing deadlines (UC/Dispo near close), new intake submissions (draft deals from 10.8.1)
-- Tasks sorted by urgency (overdue first, then approaching, then pending)
-- Each task displays: health dot (from 10.8.4), deal address, context line, one-tap action button
-- One-tap actions wired: Follow up → native sms:/mailto: with pre-written copy, Send offer → pre-filled offer gen (auto-advances stage), Open TC → /tc/:deal_id, Analyze → MAO pre-filled from intake
-- Optimistic UI: task disappears instantly on action click, server processes in background
-- Summary strip wired to live data: pipeline count, value, new leads, closing this week
+* RPC exists: `get_today_view_v1()` (single source of truth for Today view)
+* RPC returns:
 
-**Proof:** `docs/proofs/10.25_today_task_synthesis_<UTC>.md`
+  * summary:
+
+    * pipeline deal count (active)
+    * total profit (pipeline)
+    * new leads (this week)
+    * closing soon (this week)
+  * pipeline stage counts:
+
+    * New, Analyzing, Offer Sent, Under Contract, Dispo, TC
+  * tasks array synthesized from:
+
+    * overdue reminders (10.8.3)
+    * pending offers (Analyzing + MAO done + no offer)
+    * closing deadlines (UC/Dispo near close)
+    * new intake submissions (draft deals from 10.8.1)
+* Tasks sorted by urgency (overdue → approaching → pending)
+* Each task object includes:
+
+  * health status (precomputed, not frontend)
+  * deal address
+  * context line
+  * action type (Follow up, Send offer, Open TC, Analyze)
+* No frontend business logic required to interpret data
+* No direct table access required by frontend
+* RPC registered in:
+
+  * `rpc_contract_registry.json`
+  * `execute_allowlist.json`
+  * `definer_allowlist.json`
+  * `privilege_truth.json` (if required)
+* pgTAP tests cover:
+
+  * empty state
+  * multiple task sources
+  * correct sorting order
+  * no null fields in task rows
+  * correct summary aggregation
+
+**Proof:** `docs/proofs/10.25_today_data_contract_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
+---
+
+### **10.25.1 — Today View: UI Wiring + Optimistic UI**
+
+**Deliverable:**
+Today view UI is fully wired to `get_today_view_v1()` and renders live data. Optimistic UI behavior implemented for task actions.
+
+**DoD:**
+
+* Today view calls `get_today_view_v1()` only (single RPC source)
+* No hardcoded values remain in UI
+* Summary strip renders:
+
+  * pipeline deals
+  * total profit
+  * new leads
+  * closing soon
+* Pipeline strip renders:
+
+  * New, Analyzing, Offer Sent, Under Contract, Dispo, TC
+  * counts match RPC response exactly
+* Task list renders:
+
+  * health dot (from backend)
+  * deal address
+  * context line
+  * action button (label from backend action type)
+* One-tap actions wired:
+
+  * Follow up → sms:/mailto: with prewritten copy
+  * Send offer → pre-filled offer generation
+  * Open TC → `/tc/:deal_id`
+  * Analyze → MAO pre-filled from intake
+* Optimistic UI:
+
+  * task disappears immediately on click
+  * backend call runs after UI update
+  * rollback on failure (task reappears)
+* Empty states handled:
+
+  * no tasks
+  * no deals
+* No frontend-derived business logic
+* No direct table queries
+
+**Proof:** `docs/proofs/10.25.1_today_ui_wiring_<UTC>.md`
 
 **Gate:** `lane-only`
-
-**Prerequisite:** 10.8.10, 10.8.3, 10.8.4 merged
 
 ---
 
