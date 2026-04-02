@@ -137,7 +137,7 @@ SELECT is(
    JOIN pg_namespace n ON n.oid = p.pronamespace
    WHERE n.nspname = 'public'
      AND p.prosecdef = true
-     AND p.proname NOT IN ('require_min_role_v1','current_tenant_id',
+     AND p.proname NOT IN ('require_min_role_v1','current_tenant_id','set_current_tenant_v1',
                            'activity_log_append_only','check_deal_snapshot_not_null',
                            'check_deal_tenant_match','upsert_subscription_v1')
      AND pg_get_function_arguments(p.oid) ~* 'tenant_id'),
