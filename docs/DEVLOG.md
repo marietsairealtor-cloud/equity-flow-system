@@ -7950,3 +7950,45 @@ DoD
 
 Status
 PASS
+
+## 2026-04-01 -- Build Route v2.4 -- 10.8.11B set_current_tenant_v1
+
+Objective
+Establish authenticated RPC to explicitly switch the current workspace
+by upserting user_profiles.current_tenant_id. Validates caller membership
+before any write. Required by 10.8.11C workspace switcher UI.
+
+Changes
+- supabase/migrations/20260401000003_10_8_11B_set_current_tenant.sql: set_current_tenant_v1(p_tenant_id uuid) SECURITY DEFINER RPC
+- supabase/tests/10_8_11B_set_current_tenant.test.sql: 9 pgTAP tests including DB-state verification
+- supabase/tests/7_8_role_enforcement_rpc.test.sql: set_current_tenant_v1 excluded from privileged RPC catalog audit
+- supabase/tests/7_9_tenant_context_integrity.test.sql: set_current_tenant_v1 excluded from tenant_id param audit
+- docs/artifacts/CONTRACTS.md: set_current_tenant_v1 added to §17 RPC mapping table
+- docs/truth/execute_allowlist.json: set_current_tenant_v1 added
+- docs/truth/definer_allowlist.json: public.set_current_tenant_v1 added + tenant_context_exempt
+- docs/truth/rpc_contract_registry.json: 10.8.11B entry added
+- docs/truth/privilege_truth.json: set_current_tenant_v1 added to routine_grants + migration_grant_allowlist
+- docs/truth/qa_claim.json: updated to 10.8.11B
+- docs/truth/qa_scope_map.json: 10.8.11B entry added
+- scripts/ci_robot_owned_guard.ps1: 10.8.11B proof log pattern allowlisted
+- docs/governance/GOVERNANCE_CHANGE_20260401T234710Z.md: governance justification
+
+Proof
+docs/proofs/10.8.11B_set_current_tenant_20260401T235811Z.log
+
+DoD
+- set_current_tenant_v1 exists -- PASS
+- SECURITY DEFINER, authenticated-only -- PASS
+- No caller-supplied user_id -- PASS
+- Validates p_tenant_id not null -- PASS
+- Validates caller is member of target tenant -- PASS
+- Updates user_profiles.current_tenant_id via upsert -- PASS
+- Returns tenant_id in data -- PASS
+- Non-member returns NOT_AUTHORIZED -- PASS
+- Standard envelope enforced -- PASS
+- Registered in all required truth files -- PASS
+- pgTAP: valid switch + DB state verified -- PASS
+- pgTAP: invalid + non-member rejected -- PASS
+
+Status
+PASS
