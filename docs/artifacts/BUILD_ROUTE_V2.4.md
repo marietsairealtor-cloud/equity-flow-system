@@ -5183,6 +5183,268 @@ WeWeb workspace switcher that lists all user workspaces and allows explicit swit
 **Proof:** `docs/proofs/10.8.11C_workspace_switcher_<UTC>.md`
 **Gate:** `lane-only`
 
+### **10.8.11D — Profile Settings RPC + UI**
+
+**Deliverable:**
+Authenticated Profile Settings surface for the current user, rendered inside the authenticated shell, using governed RPC data only.
+
+**DoD:**
+
+- `public.get_profile_settings_v1()` exists
+- SECURITY DEFINER, authenticated-only
+- No caller-supplied user_id
+- Uses `auth.uid()` as source of truth
+- Returns standard envelope (`ok`, `code`, `data`, `error`)
+- `data` includes:
+  - `user_id`
+  - `email`
+  - `display_name` (nullable if not implemented)
+- No cross-user data leakage
+- Registered in:
+  - `rpc_contract_registry.json`
+  - `execute_allowlist.json`
+  - `definer_allowlist.json`
+  - `privilege_truth.json` (if required)
+- pgTAP tests cover:
+  - authenticated success
+  - correct user returned
+  - NOT_AUTHORIZED with no auth context
+- Profile Settings page exists in authenticated UI
+- Page reachable from Workspace ▾ dropdown
+- Calls `get_profile_settings_v1()`
+- Displays:
+  - email
+  - display name (if implemented; otherwise omitted cleanly)
+- Includes:
+  - password change entry point (Supabase/native auth flow)
+  - sign-out action
+- No direct table calls
+- No workspace controls on this page
+- No billing controls on this page
+- No farm areas on this page
+
+**Proof:** `docs/proofs/10.8.11D_profile_settings_<UTC>.md`
+
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11E — Workspace Settings Read RPC**
+
+**Deliverable:**
+Authenticated RPC returning the current workspace settings context required by the Workspace Settings page.
+
+**DoD:**
+
+- `public.get_workspace_settings_v1()` exists
+- SECURITY DEFINER, authenticated-only
+- No caller-supplied tenant_id
+- Uses `public.current_tenant_id()` as source of truth
+- Returns standard envelope (`ok`, `code`, `data`, `error`)
+- `data` includes:
+  - `tenant_id`
+  - `workspace_name` (nullable if not implemented)
+  - `slug`
+  - `role`
+  - `country` (nullable if not implemented)
+  - `currency` (nullable if not implemented)
+  - `measurement_unit` (nullable if not implemented)
+- Returns `NOT_AUTHORIZED` when no current tenant context exists
+- No cross-tenant data leakage
+- Registered in:
+  - `rpc_contract_registry.json`
+  - `execute_allowlist.json`
+  - `definer_allowlist.json`
+  - `privilege_truth.json` (if required)
+- pgTAP tests cover:
+  - authenticated success with tenant context
+  - correct slug returned
+  - correct role returned
+  - NOT_AUTHORIZED with no tenant context
+
+**Proof:** `docs/proofs/10.8.11E_workspace_settings_read_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11F — Workspace Settings General RPCs**
+
+**Deliverable:**
+Authenticated RPC surface for the General tab of Workspace Settings, covering workspace identity and tenant-level configuration.
+
+**DoD:**
+
+- `public.update_workspace_settings_v1(...)` exists
+- SECURITY DEFINER, authenticated-only
+- No caller-supplied tenant_id
+- Uses `public.current_tenant_id()` as source of truth
+- Enforces `require_min_role_v1('admin')` as first executable statement
+- Supports updating:
+  - `workspace_name` (if implemented)
+  - `slug`
+  - `country`
+  - `currency`
+  - `measurement_unit`
+- Slug update enforces:
+  - lowercase, URL-safe format
+  - uniqueness
+  - no tenant_id leak on conflict
+- Returns standard envelope (`ok`, `code`, `data`, `error`)
+- No direct table access required by frontend
+- Registered in:
+  - `rpc_contract_registry.json`
+  - `execute_allowlist.json`
+  - `definer_allowlist.json`
+  - `privilege_truth.json` (if required)
+- pgTAP tests cover:
+  - admin/owner success
+  - member denied
+  - slug conflict
+  - null/invalid field validation
+  - current tenant only updated
+
+**Proof:** `docs/proofs/10.8.11F_workspace_settings_general_rpcs_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11G — Workspace Members RPCs**
+
+**Deliverable:**
+Authenticated RPC surface for the Members tab of Workspace Settings, covering member list, invite, role update, and removal.
+
+**DoD:**
+
+- `public.list_workspace_members_v1()` exists
+- `public.invite_workspace_member_v1(p_email text, p_role public.tenant_role)` exists
+- `public.update_member_role_v1(p_user_id uuid, p_role public.tenant_role)` exists
+- `public.remove_member_v1(p_user_id uuid)` exists
+- All four RPCs are SECURITY DEFINER, authenticated-only
+- No caller-supplied tenant_id
+- All four derive workspace from `public.current_tenant_id()`
+- All mutation RPCs enforce `require_min_role_v1('admin')` as first executable statement
+- `list_workspace_members_v1()` returns:
+  - `user_id`
+  - `email`
+  - `role`
+- `invite_workspace_member_v1()`:
+  - creates invite for current tenant
+  - rejects duplicate pending invites
+  - rejects already-member email
+- `update_member_role_v1()`:
+  - updates role for existing member
+  - rejects invalid transitions per role model
+- `remove_member_v1()`:
+  - removes member from current tenant
+  - rejects unauthorized removal attempts
+- No direct table access required by frontend
+- Registered in:
+  - `rpc_contract_registry.json`
+  - `execute_allowlist.json`
+  - `definer_allowlist.json`
+  - `privilege_truth.json` (if required)
+- pgTAP tests cover:
+  - list members success
+  - invite success
+  - duplicate invite rejection
+  - already-member rejection
+  - role update success
+  - member denied on mutations
+  - remove member success
+  - cross-tenant protection
+
+**Proof:** `docs/proofs/10.8.11G_workspace_members_rpcs_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11H — Workspace Farm Areas RPCs**
+
+**Deliverable:**
+Authenticated RPC surface for the farm areas portion of Workspace Settings General tab.
+
+**DoD:**
+
+- `public.list_farm_areas_v1()` exists
+- `public.create_farm_area_v1(p_area_name text)` exists
+- `public.delete_farm_area_v1(p_farm_area_id uuid)` exists
+- All three RPCs are SECURITY DEFINER, authenticated-only
+- No caller-supplied tenant_id
+- All derive workspace from `public.current_tenant_id()`
+- Mutation RPCs enforce `require_min_role_v1('admin')` as first executable statement
+- `list_farm_areas_v1()` returns farm areas for current tenant only
+- `create_farm_area_v1()` enforces uniqueness within current tenant
+- `delete_farm_area_v1()` removes farm area for current tenant only
+- No map or polygon support
+- No direct table access required by frontend
+- Registered in:
+  - `rpc_contract_registry.json`
+  - `execute_allowlist.json`
+  - `definer_allowlist.json`
+  - `privilege_truth.json` (if required)
+- pgTAP tests cover:
+  - list success
+  - create success
+  - duplicate rejection
+  - delete success
+  - member denied on mutations
+  - cross-tenant protection
+
+**Proof:** `docs/proofs/10.8.11H_workspace_farm_areas_rpcs_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11I — Workspace Settings UI**
+
+**Deliverable:**
+WeWeb Workspace Settings page rendered inside authenticated shell, with role-gated tabs aligned to architecture: General, Members, Billing.
+
+**DoD:**
+
+- Workspace Settings page exists in authenticated UI
+- Page reachable from Workspace ▾ dropdown
+- Uses governed RPCs only
+- Page has role-gated tabs aligned to architecture:
+  - General
+  - Members
+  - Billing
+- General tab:
+  - visible to Admin+
+  - calls `get_workspace_settings_v1()`
+  - displays/edit fields for:
+    - workspace name (if implemented)
+    - slug
+    - country
+    - currency
+    - measurement unit
+  - displays farm areas list
+  - uses `update_workspace_settings_v1(...)`
+  - uses farm area RPCs for add/delete
+- Members tab:
+  - visible to Admin+
+  - calls `list_workspace_members_v1()`
+  - displays member list with role
+  - supports invite member
+  - supports role update
+  - supports remove member
+- Billing tab:
+  - visible to Owner only
+  - placeholder or link-out is acceptable in this item
+  - no custom billing logic in WeWeb
+- Members cannot edit workspace settings
+- Members may see a read-only limited workspace context view if desired, but no mutation controls
+- No direct table calls
+- No frontend permission logic beyond visibility; authority remains server-side
+
+**Proof:** `docs/proofs/10.8.11I_workspace_settings_ui_<UTC>.md`
+
+**Gate:** `lane-only`
+
 ---
 
 ### **10.8.12 — 1-Month Free Trial (One-Time, User-Scoped)**
