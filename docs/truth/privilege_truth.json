@@ -67,6 +67,10 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "get_profile_settings_v1",
+        "privilege": "EXECUTE"
+      },
+      {
         "routine": "list_deals_v1",
         "privilege": "EXECUTE"
       },
@@ -144,12 +148,11 @@
     "authenticated_routines": [
       "accept_invite_v1",
       "accept_pending_invites_v1",
-      "accept_invite_v1",
-      "accept_pending_invites_v1",
       "create_deal_v1",
       "create_farm_area_v1",
       "check_slug_access_v1",
       "create_tenant_v1",
+      "get_profile_settings_v1",
       "set_current_tenant_v1",
       "set_tenant_slug_v1",
       "current_tenant_id",
