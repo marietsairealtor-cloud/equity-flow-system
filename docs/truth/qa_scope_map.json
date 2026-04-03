@@ -470,6 +470,9 @@
     },
     "10.8.11B": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11B_set_current_tenant_"
+    },
+    "10.8.11C": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11C_workspace_switcher_"
     }
   }
 }
