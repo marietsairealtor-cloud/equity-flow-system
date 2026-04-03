@@ -7992,3 +7992,25 @@ DoD
 
 Status
 PASS
+
+2026-04-03 — Build Route v2.4 — 10.8.11C
+
+Objective
+Wire workspace switcher UI in authenticated shell hamburger popup.
+
+Changes
+- Switch Workspace on-click workflow: fetch-workspace-list + showWorkspaceList = true
+- fetch-workspace-list project workflow: calls list_user_tenants_v1, stores result in workspaceList
+- List item on-click workflow: set_current_tenant_v1 -> fetch-workspace-list -> gs_selectedTenantId -> fetch-entitlements -> showWorkspaceList = false
+- Current workspace header text bound to workspaceList find(is_current) slug + role
+- Hamburger popup On mounted: fetch-workspace-list (replaced erroneous fetch-slug-check-result)
+- Onboarding bug fix: create_tenant_v1 -> set_current_tenant_v1 -> set_tenant_slug_v1
+
+Proof
+docs/proofs/10.8.11C_workspace_switcher_20260403T193230Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
