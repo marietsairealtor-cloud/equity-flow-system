@@ -284,6 +284,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | check_slug_access_v1 | 10.8.8D | Check if workspace slug is taken and whether current user is owner/admin of that slug's tenant | SECURITY DEFINER, authenticated only | no caller tenant_id; tenant_id returned only when caller is owner/admin of that slug |
 | list_user_tenants_v1 | 10.8.11A | Return all tenants the current user belongs to, with slug, role, and is_current flag | SECURITY DEFINER, authenticated only | current_tenant_id() — no tenant_id param |
 | set_current_tenant_v1 | 10.8.11B | Update current workspace for authenticated user | SECURITY DEFINER, authenticated only | p_tenant_id validated against caller membership — no user_id param |
+| get_profile_settings_v1 | 10.8.11D | Return current authenticated user's profile data (user_id, email, display_name) | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 
 ### Mapping Rules
 
@@ -625,3 +626,21 @@ Return contract:
 - data.slug_taken: boolean
 - data.is_owner_or_admin: boolean
 - data.tenant_id: uuid or null
+
+## 40) Profile Settings RPC Contract (10.8.11D)
+
+`public.get_profile_settings_v1()` returns the current authenticated user's profile data.
+
+Behavior:
+- SECURITY DEFINER
+- Requires authenticated context
+- No caller-supplied user_id
+- Derives user from auth.uid() only
+- Returns user_id, email, display_name (null until implemented)
+- Returns NOT_AUTHORIZED when auth.uid() is null
+- data is always an object, never null
+
+Constraints:
+- No direct table calls from WeWeb
+- No cross-user data leakage
+- anon cannot execute

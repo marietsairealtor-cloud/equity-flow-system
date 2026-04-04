@@ -286,6 +286,17 @@
         "INTERNAL"
       ],
       "notes": "Updates user_profiles.current_tenant_id via upsert. Validates caller is a member of the target tenant. No caller-supplied user_id."
+    },
+    {
+      "name": "get_profile_settings_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11D",
+      "input_contract": "CONTRACTS.md §17 get_profile_settings_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
+      "notes": "Returns the current user's profile settings. No caller-supplied user_id."
     }
   ]
 }

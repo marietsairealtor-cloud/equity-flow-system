@@ -13,6 +13,7 @@
     "public.current_tenant_id",
     "public.delete_farm_area_v1",
     "public.foundation_log_activity_v1",
+    "public.get_profile_settings_v1",
     "public.get_user_entitlements_v1",
     "public.list_deals_v1",
     "public.list_farm_areas_v1",
@@ -29,6 +30,7 @@
   ],
   "tenant_context_exempt": [
     "public.check_slug_access_v1",
+    "public.get_profile_settings_v1",
     "public.resolve_form_slug_v1",
     "public.submit_form_v1",
     "public.current_tenant_id",

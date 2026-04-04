@@ -13,6 +13,7 @@
     "current_tenant_id",
     "delete_farm_area_v1",
     "foundation_log_activity_v1",
+    "get_profile_settings_v1",
     "get_user_entitlements_v1",
     "list_deals_v1",
     "list_farm_areas_v1",

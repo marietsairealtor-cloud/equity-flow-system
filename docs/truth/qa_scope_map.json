@@ -473,6 +473,9 @@
     },
     "10.8.11C": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11C_workspace_switcher_"
+    },
+    "10.8.11D": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11D_profile_settings_"
     }
   }
 }

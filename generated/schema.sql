@@ -895,6 +895,45 @@ $$;
 
 ALTER FUNCTION "public"."get_deal_health_color"("p_stage" "text", "p_updated_at" timestamp with time zone) OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."get_profile_settings_v1"() RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_user_id uuid;
+  v_email text;
+BEGIN
+  v_user_id := auth.uid();
+
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Not authenticated', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  SELECT u.email
+  INTO v_email
+  FROM auth.users u
+  WHERE u.id = v_user_id;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'code', 'OK',
+    'data', jsonb_build_object(
+      'user_id', v_user_id,
+      'email', v_email,
+      'display_name', null
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."get_profile_settings_v1"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."get_user_entitlements_v1"() RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
