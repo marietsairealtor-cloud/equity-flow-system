@@ -8014,3 +8014,27 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-04 — Build Route v2.4 — 10.8.11D
+
+Objective
+Profile Settings RPC and UI for authenticated users.
+
+Changes
+- Migration 20260403000001: get_profile_settings_v1() SECURITY DEFINER RPC
+- Returns user_id, email, display_name (null until implemented)
+- pgTAP tests: 5 tests passing (function exists, privilege checks, auth success, NOT_AUTHORIZED)
+- Registered in rpc_contract_registry, execute_allowlist, definer_allowlist, privilege_truth
+- CONTRACTS.md §17 and §40 updated
+- WeWeb: /profile-settings page with avatar, email, display name, change password, sign out
+- fetch-profile-settings project workflow created
+- Change password error handling via On error workflow
+- Page template saved for future authenticated pages
+
+Proof
+docs/proofs/10.8.11D_profile_settings_<UTC>.md
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
