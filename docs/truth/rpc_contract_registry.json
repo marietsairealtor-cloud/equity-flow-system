@@ -322,6 +322,42 @@
         "CONFLICT"
       ],
       "notes": "Updates workspace settings for current tenant. No caller-supplied tenant_id. Enforces admin role. Slug conflict returns CONFLICT without tenant_id leak."
+    },
+    {
+      "name": "list_workspace_members_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11G",
+      "input_contract": "CONTRACTS.md §17 list_workspace_members_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED"],
+      "notes": "Returns all members of current workspace. Min role: member. No caller-supplied tenant_id."
+    },
+    {
+      "name": "invite_workspace_member_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11G",
+      "input_contract": "CONTRACTS.md §17 invite_workspace_member_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT"],
+      "notes": "Invites new member to current workspace. Min role: admin. Rejects duplicates and existing members."
+    },
+    {
+      "name": "update_member_role_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11G",
+      "input_contract": "CONTRACTS.md §17 update_member_role_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "Updates role of existing workspace member. Min role: admin. No caller-supplied tenant_id."
+    },
+    {
+      "name": "remove_member_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11G",
+      "input_contract": "CONTRACTS.md §17 remove_member_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "Removes member from current workspace. Min role: admin. No caller-supplied tenant_id."
     }
   ]
 }
