@@ -15,6 +15,7 @@
     "public.foundation_log_activity_v1",
     "public.get_profile_settings_v1",
     "public.get_user_entitlements_v1",
+    "public.get_workspace_settings_v1",
     "public.list_deals_v1",
     "public.list_farm_areas_v1",
     "public.list_reminders_v1",

@@ -5266,6 +5266,29 @@ Authenticated RPC returning the current workspace settings context required by t
 
 **Gate:** `merge-blocking`
 
+### **10.8.11E1 — Workspace Slug Invariant Enforcement**
+
+**Deliverable:**
+Database-level and test-level enforcement that each tenant may have at most one slug row, with defensive read-path protection.
+
+**DoD:**
+
+- `public.tenant_slugs` enforces one-row-per-tenant via `UNIQUE (tenant_id)`
+- Migration fails safely if duplicate `tenant_id` rows exist and are not resolved first
+- `get_workspace_settings_v1()` reads slug with `LIMIT 1`
+- Any other RPC reading from `tenant_slugs` by `tenant_id` also uses defensive single-row read pattern
+- pgTAP tests prove:
+  - unique constraint exists on `tenant_slugs(tenant_id)`
+  - second insert for same `tenant_id` fails
+  - existing read RPC returns exactly one slug for valid tenant context
+- CONTRACTS updated if this invariant is documented there
+- `generated/schema.sql` reflects the invariant
+- No direct table calls from WeWeb
+
+**Proof:** `docs/proofs/10.8.11E1_workspace_slug_invariant_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
 ---
 
 ### **10.8.11F — Workspace Settings General RPCs**

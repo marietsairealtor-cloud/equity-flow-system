@@ -476,6 +476,9 @@
     },
     "10.8.11D": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11D_profile_settings_"
+    },
+    "10.8.11E": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11E_workspace_settings_"
     }
   }
 }

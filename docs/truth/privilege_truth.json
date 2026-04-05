@@ -71,6 +71,10 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "get_workspace_settings_v1",
+        "privilege": "EXECUTE"
+      },
+      {
         "routine": "list_deals_v1",
         "privilege": "EXECUTE"
       },
@@ -153,6 +157,7 @@
       "check_slug_access_v1",
       "create_tenant_v1",
       "get_profile_settings_v1",
+      "get_workspace_settings_v1",
       "set_current_tenant_v1",
       "set_tenant_slug_v1",
       "current_tenant_id",
