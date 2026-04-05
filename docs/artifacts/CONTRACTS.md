@@ -286,6 +286,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | set_current_tenant_v1 | 10.8.11B | Update current workspace for authenticated user | SECURITY DEFINER, authenticated only | p_tenant_id validated against caller membership — no user_id param |
 | get_profile_settings_v1 | 10.8.11D | Return current authenticated user's profile data (user_id, email, display_name) | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 | get_workspace_settings_v1 | 10.8.11E | Return current workspace settings (slug, role, tenant_id) for authenticated user | SECURITY DEFINER, authenticated only | current_tenant_id() — no caller tenant_id param |
+| update_workspace_settings_v1 | 10.8.11F | Update workspace name, slug, country, currency, measurement_unit for current tenant | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param; slug conflict returns CONFLICT without tenant leak |
 
 ### Mapping Rules
 
@@ -664,3 +665,26 @@ Constraints:
 - No direct table calls from WeWeb
 - No cross-tenant data leakage
 - anon cannot execute
+
+## 42) Workspace Settings General RPCs Contract (10.8.11F)
+
+`public.update_workspace_settings_v1(p_workspace_name, p_slug, p_country, p_currency, p_measurement_unit)` updates workspace settings for the current tenant.
+
+Behavior:
+- SECURITY DEFINER
+- Requires authenticated context
+- No caller-supplied tenant_id
+- Derives tenant from current_tenant_id() only
+- require_min_role_v1('admin') is first executable statement
+- Supports partial updates via DEFAULT NULL parameters
+- Blank string values rejected with VALIDATION_ERROR
+- Slug enforces lowercase URL-safe format (3-50 chars)
+- Slug conflict returns CONFLICT without leaking tenant_id
+- Returns updated workspace state in data object
+- data is always an object, never null
+
+Constraints:
+- No direct table calls from WeWeb
+- No cross-tenant updates possible
+- anon cannot execute
+- member role cannot execute

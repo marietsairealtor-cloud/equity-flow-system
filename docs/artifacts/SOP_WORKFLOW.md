@@ -79,6 +79,8 @@ This is the complete step-by-step sequence from starting an objective to closing
 
 Complete all technical and functional changes defined in the Build Route objective:
 - Logic/Scripts: Author or modify any required scripts, backend logic, or application code.
+- QA checks and passes all the required scripts, backend logic, or application code.
+- Run DB reset and pass test db on migration files before DB push. 
 - Pipeline Wiring: Update `scripts/handoff.ps1` or relevant workflow files to integrate the new functionality.
 - CI/Enforcement: Apply any required fixes to CI guard scripts (e.g., `ci_governance_change_guard.ps1`) to ensure the new state is valid.
 - Triple-Registration: If introducing a NEW file under `docs/truth/**`, it must be registered in:

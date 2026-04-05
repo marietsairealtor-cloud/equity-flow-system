@@ -308,6 +308,20 @@
         "NOT_AUTHORIZED"
       ],
       "notes": "Returns the current workspace settings. No caller-supplied tenant_id. Uses current_tenant_id() as source of truth."
+    },
+    {
+      "name": "update_workspace_settings_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11F",
+      "input_contract": "CONTRACTS.md §17 update_workspace_settings_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR",
+        "CONFLICT"
+      ],
+      "notes": "Updates workspace settings for current tenant. No caller-supplied tenant_id. Enforces admin role. Slug conflict returns CONFLICT without tenant_id leak."
     }
   ]
 }
