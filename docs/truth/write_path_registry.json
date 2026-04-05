@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-05T01:41:05Z",
+    "generated":  "2026-04-05T18:38:58Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -135,6 +135,16 @@
                                        ],
                             "row_version_enforced":  true,
                             "optimistic_concurrency":  true
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_workspace_settings_v1",
+                            "tables":  [
+                                           "tenant_slugs",
+                                           "tenants"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
                         },
                         {
                             "path_type":  "rpc",
