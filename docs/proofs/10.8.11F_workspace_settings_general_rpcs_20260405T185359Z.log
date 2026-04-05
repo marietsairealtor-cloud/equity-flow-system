@@ -1,0 +1,102 @@
+PROOF_HEAD=de44ba0347141c6054c1718cba6fd59ea347c383
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11F Workspace Settings General RPCs -- Proof Log ===
+Date: 2026-04-05T14:50:22.1107008-04:00
+Branch: feature/10.8.11F-workspace-settings-general-rpcs
+PR HEAD SHA: de44ba0347141c6054c1718cba6fd59ea347c383
+
+=== Backend ===
+Migration: 20260405000001_10_8_11F_workspace_settings_general_rpcs.sql
+Schema changes: ALTER TABLE public.tenants ADD COLUMN name, country, currency, measurement_unit (all text, nullable)
+RPC: public.update_workspace_settings_v1(p_workspace_name, p_slug, p_country, p_currency, p_measurement_unit)
+Security: SECURITY DEFINER, authenticated only, search_path = public
+Role enforcement: require_min_role_v1('admin') as first executable statement
+Tenant context: current_tenant_id() only — no caller-supplied tenant_id
+Slug: lowercase URL-safe format enforced, conflict returns CONFLICT without tenant_id leak
+Blank string validation: all fields validated, returns VALIDATION_ERROR
+NOT_FOUND guard: IF NOT FOUND after UPDATE returns NOT_FOUND
+REVOKE ALL FROM PUBLIC: YES
+GRANT EXECUTE TO authenticated: YES
+
+=== pgTAP Tests ===
+Test file: 10_8_11F_workspace_settings_general_rpcs.test.sql
+Plan: 13
+1. function exists -- PASS
+2. authenticated can execute -- PASS
+3. anon cannot execute -- PASS
+4. admin success returns ok=true -- PASS
+5. post-call state: tenant name updated in DB -- PASS
+6. post-call state: other tenant name unchanged -- PASS
+7. blank workspace_name returns VALIDATION_ERROR -- PASS
+8. invalid slug format returns VALIDATION_ERROR -- PASS
+9. slug conflict returns CONFLICT -- PASS
+10. correct workspace_name returned in response -- PASS
+11. tenant 1 country updated in DB -- PASS
+12. tenant 2 country unchanged (isolation) -- PASS
+13. member denied throws exception -- PASS
+
+=== Registration ===
+rpc_contract_registry.json -- PASS
+execute_allowlist.json -- PASS
+definer_allowlist.json -- PASS
+privilege_truth.json (authenticated only, not anon, not exempt) -- PASS
+CONTRACTS.md §17 mapping row added -- PASS
+CONTRACTS.md §42 contract section added -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260405T183518Z.md -- PASS
+
+=== Constraints ===
+Direct table calls: NONE
+Business logic in WeWeb: NONE
+All data via allowlisted RPCs: YES
+No caller-supplied tenant_id: YES
+No cross-tenant updates possible: YES
+anon cannot execute: YES
+member role cannot execute: YES
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/artifacts/SOP_WORKFLOW.md
+docs/governance/GOVERNANCE_CHANGE_20260405T183518Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260405000001_10_8_11F_workspace_settings_general_rpcs.sql
+supabase/tests/10_8_11F_workspace_settings_general_rpcs.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== DoD Checklist ===
+update_workspace_settings_v1 exists                         -- PASS
+SECURITY DEFINER authenticated-only                         -- PASS
+No caller-supplied tenant_id                                -- PASS
+Uses current_tenant_id() as source of truth                 -- PASS
+require_min_role_v1('admin') as first executable statement  -- PASS
+Supports updating workspace_name, slug, country, currency, measurement_unit -- PASS
+Slug enforces lowercase URL-safe format                     -- PASS
+Slug conflict returns CONFLICT without tenant_id leak       -- PASS
+Blank string validation for all fields                      -- PASS
+Returns standard envelope, data always object               -- PASS
+No direct table calls from WeWeb                            -- PASS
+Registered in all required truth files                      -- PASS
+pgTAP tests pass                                            -- PASS
+
+=== RESULT ===
+10.8.11F Workspace Settings General RPCs: PASS (merge-blocking gate)
