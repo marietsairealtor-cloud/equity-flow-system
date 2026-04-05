@@ -8080,3 +8080,28 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-05 — Build Route v2.4 — 10.8.11F
+
+Objective
+Workspace Settings General RPCs — update workspace name, slug, country, currency, measurement unit.
+
+Changes
+- Migration 20260405000001: ALTER TABLE tenants ADD COLUMN name, country, currency, measurement_unit
+- Migration 20260405000001: update_workspace_settings_v1() SECURITY DEFINER RPC
+- require_min_role_v1('admin') enforced as first executable statement
+- Blank string validation for all fields
+- Slug format enforcement + conflict returns CONFLICT without tenant_id leak
+- NOT_FOUND guard after UPDATE
+- Returns updated workspace state in response
+- pgTAP tests: 13 tests passing including post-call state and cross-tenant isolation
+- Registered in rpc_contract_registry, execute_allowlist, definer_allowlist, privilege_truth
+- CONTRACTS.md §17 and §42 updated
+
+Proof
+docs/proofs/10.8.11F_workspace_settings_general_rpcs_20260405T185359Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
