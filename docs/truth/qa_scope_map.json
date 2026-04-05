@@ -482,6 +482,9 @@
     },
     "10.8.11E1": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11E1_workspace_slug_invariant_"
+    },
+    "10.8.11F": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11F_workspace_settings_general_rpcs_"
     }
   }
 }

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260403000002",
-  "migration_tip_file": "20260403000002_10_8_11E_workspace_settings_read.sql",
-  "migration_count": 77,
+  "migration_tip": "20260405000001",
+  "migration_tip_file": "20260405000001_10_8_11F_workspace_settings_general_rpcs.sql",
+  "migration_count": 78,
   "pinned_at": "2026-04-05"
 }
