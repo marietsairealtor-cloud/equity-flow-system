@@ -1,0 +1,116 @@
+PROOF_HEAD=7cad0ae0cddbf9790ca7c8f8bf978d16c883872b
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11G Workspace Members RPCs -- Proof Log ===
+Date: 2026-04-05T16:16:05.5148874-04:00
+Branch: feature/10.8.11G-workspace-members-rpcs
+PR HEAD SHA: 7cad0ae0cddbf9790ca7c8f8bf978d16c883872b
+
+=== Backend ===
+Migration: 20260405000002_10_8_11G_workspace_members_rpcs.sql
+Schema changes: ALTER TABLE public.user_profiles ADD COLUMN display_name text (nullable)
+RPCs added:
+  - public.list_workspace_members_v1() — min role: member
+  - public.invite_workspace_member_v1(p_email text, p_role tenant_role) — min role: admin
+  - public.update_member_role_v1(p_user_id uuid, p_role tenant_role) — min role: admin
+  - public.remove_member_v1(p_user_id uuid) — min role: admin
+Security: all SECURITY DEFINER, search_path = public, authenticated only
+Tenant context: current_tenant_id() only — no caller-supplied tenant_id
+Token generation: gen_random_uuid() — no pgcrypto dependency
+REVOKE ALL FROM PUBLIC: YES on all four RPCs
+GRANT EXECUTE TO authenticated: YES on all four RPCs
+
+=== pgTAP Tests ===
+Test file: 10_8_11G_workspace_members_rpcs.test.sql
+Plan: 22
+1. list_workspace_members_v1 exists -- PASS
+2. invite_workspace_member_v1 exists -- PASS
+3. update_member_role_v1 exists -- PASS
+4. remove_member_v1 exists -- PASS
+5. authenticated can execute list -- PASS
+6. anon cannot execute list -- PASS
+7. list returns ok=true for member -- PASS
+8. list returns correct member count -- PASS
+9. admin can invite new member -- PASS
+10. duplicate pending invite returns CONFLICT -- PASS
+11. inviting existing member returns CONFLICT -- PASS
+12. blank email returns VALIDATION_ERROR -- PASS
+13. admin can update member role -- PASS
+14. post-call state: role updated in DB -- PASS
+15. admin can remove member -- PASS
+16. post-call state: member removed from DB -- PASS
+17. cross-tenant: only current tenant members returned -- PASS
+18. member cannot invite — throws exception -- PASS
+19. member cannot update role — throws exception -- PASS
+20. member cannot remove — throws exception -- PASS
+21. null role on invite returns VALIDATION_ERROR -- PASS
+22. null role on update returns VALIDATION_ERROR -- PASS
+
+=== Registration ===
+rpc_contract_registry.json (all four RPCs) -- PASS
+execute_allowlist.json (all four RPCs) -- PASS
+definer_allowlist.json (all four RPCs) -- PASS
+privilege_truth.json (authenticated only, not anon, not exempt) -- PASS
+CONTRACTS.md §17 four mapping rows added -- PASS
+CONTRACTS.md §43 contract section added -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260405T200321Z.md -- PASS
+
+=== Constraints ===
+Direct table calls: NONE
+Business logic in WeWeb: NONE
+All data via allowlisted RPCs: YES
+No caller-supplied tenant_id: YES
+No cross-tenant updates possible: YES
+anon cannot execute: YES
+member role cannot execute mutations: YES
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260405T200321Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/definer_allowlist.json
+docs/truth/execute_allowlist.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/rpc_contract_registry.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260405000002_10_8_11G_workspace_members_rpcs.sql
+supabase/tests/10_8_11G_workspace_members_rpcs.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== DoD Checklist ===
+list_workspace_members_v1 exists -- PASS
+invite_workspace_member_v1 exists -- PASS
+update_member_role_v1 exists -- PASS
+remove_member_v1 exists -- PASS
+All four SECURITY DEFINER authenticated-only -- PASS
+No caller-supplied tenant_id on any RPC -- PASS
+All derive workspace from current_tenant_id() -- PASS
+Mutation RPCs enforce require_min_role_v1('admin') -- PASS
+list enforces require_min_role_v1('member') -- PASS
+list returns user_id, email, display_name, role -- PASS
+invite rejects duplicate pending invites -- PASS
+invite rejects already-member email -- PASS
+role update rejects invalid transitions -- PASS
+remove rejects unauthorized attempts -- PASS
+No direct table access from WeWeb required -- PASS
+Registered in all required truth files -- PASS
+pgTAP tests pass -- PASS
+display_name column added to user_profiles -- PASS
+
+=== RESULT ===
+10.8.11G Workspace Members RPCs: PASS (merge-blocking gate)

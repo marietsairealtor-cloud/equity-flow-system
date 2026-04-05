@@ -485,6 +485,9 @@
     },
     "10.8.11F": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11F_workspace_settings_general_rpcs_"
+    },
+    "10.8.11G": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11G_workspace_members_rpcs_"
     }
   }
 }

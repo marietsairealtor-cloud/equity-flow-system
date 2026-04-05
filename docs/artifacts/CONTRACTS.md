@@ -287,6 +287,11 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | get_profile_settings_v1 | 10.8.11D | Return current authenticated user's profile data (user_id, email, display_name) | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 | get_workspace_settings_v1 | 10.8.11E | Return current workspace settings (slug, role, tenant_id) for authenticated user | SECURITY DEFINER, authenticated only | current_tenant_id() — no caller tenant_id param |
 | update_workspace_settings_v1 | 10.8.11F | Update workspace name, slug, country, currency, measurement_unit for current tenant | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param; slug conflict returns CONFLICT without tenant leak |
+| list_workspace_members_v1 | 10.8.11G | List all members of current workspace with email, display_name, and role | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — no caller tenant_id param |
+| invite_workspace_member_v1 | 10.8.11G | Invite a new member to current workspace by email; rejects duplicates and existing members | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+| update_member_role_v1 | 10.8.11G | Update role of existing workspace member | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+| remove_member_v1 | 10.8.11G | Remove a member from current workspace | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+
 
 ### Mapping Rules
 
@@ -688,3 +693,42 @@ Constraints:
 - No cross-tenant updates possible
 - anon cannot execute
 - member role cannot execute
+
+## 43) Workspace Members RPCs Contract (10.8.11G)
+
+`public.list_workspace_members_v1()` returns all members of the current workspace.
+`public.invite_workspace_member_v1(p_email, p_role)` creates an invite for current workspace.
+`public.update_member_role_v1(p_user_id, p_role)` updates role of existing member.
+`public.remove_member_v1(p_user_id)` removes a member from current workspace.
+
+Behavior (all four):
+- SECURITY DEFINER, search_path = public
+- Requires authenticated context
+- No caller-supplied tenant_id
+- Derives workspace from current_tenant_id() only
+
+Role enforcement:
+- list_workspace_members_v1: require_min_role_v1('member')
+- invite, update, remove: require_min_role_v1('admin')
+
+invite_workspace_member_v1 constraints:
+- Rejects blank email with VALIDATION_ERROR
+- Rejects null role with VALIDATION_ERROR
+- Rejects existing member with CONFLICT
+- Rejects duplicate pending invite with CONFLICT
+- Token generated via gen_random_uuid()
+- Invite expires in 7 days
+
+update_member_role_v1 constraints:
+- Rejects null user_id or role with VALIDATION_ERROR
+- Returns NOT_FOUND if member not in current tenant
+
+remove_member_v1 constraints:
+- Rejects null user_id with VALIDATION_ERROR
+- Returns NOT_FOUND if member not in current tenant
+
+Schema changes:
+- public.user_profiles.display_name text column added
+
+data is always an object, never null.
+anon cannot execute any of these RPCs.

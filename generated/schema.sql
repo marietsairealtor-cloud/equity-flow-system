@@ -1079,6 +1079,102 @@ $$;
 
 ALTER FUNCTION "public"."get_workspace_settings_v1"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."invite_workspace_member_v1"("p_email" "text", "p_role" "public"."tenant_role") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant_id uuid;
+  v_existing_member uuid;
+  v_existing_invite uuid;
+BEGIN
+  PERFORM public.require_min_role_v1('admin');
+
+  v_tenant_id := public.current_tenant_id();
+
+  IF v_tenant_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  IF p_email IS NULL OR btrim(p_email) = '' THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Email is required', 'fields', jsonb_build_object('email', 'Must not be blank'))
+    );
+  END IF;
+
+  IF p_role IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Role is required', 'fields', jsonb_build_object('role', 'Must not be null'))
+    );
+  END IF;
+
+  SELECT tm.user_id INTO v_existing_member
+  FROM public.tenant_memberships tm
+  JOIN auth.users u ON u.id = tm.user_id
+  WHERE tm.tenant_id = v_tenant_id
+    AND lower(u.email) = lower(btrim(p_email));
+
+  IF v_existing_member IS NOT NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'CONFLICT',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'User is already a member', 'fields', jsonb_build_object('email', 'Already a member of this workspace'))
+    );
+  END IF;
+
+  SELECT id INTO v_existing_invite
+  FROM public.tenant_invites
+  WHERE tenant_id = v_tenant_id
+    AND lower(invited_email) = lower(btrim(p_email))
+    AND accepted_at IS NULL
+    AND expires_at > now();
+
+  IF v_existing_invite IS NOT NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'CONFLICT',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Pending invite already exists', 'fields', jsonb_build_object('email', 'Already has a pending invite'))
+    );
+  END IF;
+
+  INSERT INTO public.tenant_invites (
+    tenant_id, invited_email, role, token, invited_by, expires_at
+  ) VALUES (
+    v_tenant_id,
+    lower(btrim(p_email)),
+    p_role,
+    gen_random_uuid()::text,
+    auth.uid(),
+    now() + interval '7 days'
+  );
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'code', 'OK',
+    'data', jsonb_build_object(
+      'invited_email', lower(btrim(p_email)),
+      'role', p_role
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."invite_workspace_member_v1"("p_email" "text", "p_role" "public"."tenant_role") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25, "p_cursor" "text" DEFAULT NULL::"text") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1295,6 +1391,52 @@ $$;
 
 ALTER FUNCTION "public"."list_user_tenants_v1"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."list_workspace_members_v1"() RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant_id uuid;
+  v_members jsonb;
+BEGIN
+  PERFORM public.require_min_role_v1('member');
+
+  v_tenant_id := public.current_tenant_id();
+
+  IF v_tenant_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  SELECT jsonb_agg(jsonb_build_object(
+    'user_id', tm.user_id,
+    'email', u.email,
+    'display_name', up.display_name,
+    'role', tm.role
+  ) ORDER BY tm.created_at ASC)
+  INTO v_members
+  FROM public.tenant_memberships tm
+  JOIN auth.users u ON u.id = tm.user_id
+  LEFT JOIN public.user_profiles up ON up.id = tm.user_id
+  WHERE tm.tenant_id = v_tenant_id;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'code', 'OK',
+    'data', jsonb_build_object(
+      'items', COALESCE(v_members, '[]'::jsonb)
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_workspace_members_v1"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1414,6 +1556,61 @@ END;
 $_$;
 
 ALTER FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."remove_member_v1"("p_user_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant_id uuid;
+BEGIN
+  PERFORM public.require_min_role_v1('admin');
+
+  v_tenant_id := public.current_tenant_id();
+
+  IF v_tenant_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  IF p_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'user_id is required', 'fields', jsonb_build_object('user_id', 'Must not be null'))
+    );
+  END IF;
+
+  DELETE FROM public.tenant_memberships
+  WHERE tenant_id = v_tenant_id
+    AND user_id = p_user_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_FOUND',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Member not found', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'code', 'OK',
+    'data', jsonb_build_object(
+      'user_id', p_user_id
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."remove_member_v1"("p_user_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."require_min_role_v1"("p_min" "public"."tenant_role") RETURNS "void"
     LANGUAGE "plpgsql"
@@ -1857,6 +2054,72 @@ END;
 $$;
 
 ALTER FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer) OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."update_member_role_v1"("p_user_id" "uuid", "p_role" "public"."tenant_role") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant_id uuid;
+BEGIN
+  PERFORM public.require_min_role_v1('admin');
+
+  v_tenant_id := public.current_tenant_id();
+
+  IF v_tenant_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  IF p_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'user_id is required', 'fields', jsonb_build_object('user_id', 'Must not be null'))
+    );
+  END IF;
+
+  IF p_role IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message','Role is required', 'fields', jsonb_build_object('role', 'Must not be null'))
+    );
+  END IF;
+
+  UPDATE public.tenant_memberships
+  SET role = p_role
+  WHERE tenant_id = v_tenant_id
+    AND user_id = p_user_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_FOUND',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Member not found', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'code', 'OK',
+    'data', jsonb_build_object(
+      'user_id', p_user_id,
+      'role', p_role
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."update_member_role_v1"("p_user_id" "uuid", "p_role" "public"."tenant_role") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."update_workspace_settings_v1"("p_workspace_name" "text" DEFAULT NULL::"text", "p_slug" "text" DEFAULT NULL::"text", "p_country" "text" DEFAULT NULL::"text", "p_currency" "text" DEFAULT NULL::"text", "p_measurement_unit" "text" DEFAULT NULL::"text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -2312,7 +2575,8 @@ ALTER TABLE "public"."tenants" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
     "id" "uuid" NOT NULL,
-    "current_tenant_id" "uuid"
+    "current_tenant_id" "uuid",
+    "display_name" "text"
 );
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";

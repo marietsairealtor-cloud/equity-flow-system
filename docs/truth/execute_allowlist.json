@@ -16,17 +16,21 @@
     "get_profile_settings_v1",
     "get_user_entitlements_v1",
     "get_workspace_settings_v1",
+    "invite_workspace_member_v1",
     "list_deals_v1",
     "list_farm_areas_v1",
     "list_reminders_v1",
     "list_user_tenants_v1",
+    "list_workspace_members_v1",
     "lookup_share_token_v1",
+    "remove_member_v1",
     "resolve_form_slug_v1",
     "revoke_share_token_v1",
     "set_current_tenant_v1",
     "set_tenant_slug_v1",
     "submit_form_v1",
     "update_deal_v1",
+    "update_member_role_v1",
     "update_workspace_settings_v1"
   ]
 }

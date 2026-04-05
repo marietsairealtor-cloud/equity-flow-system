@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-05T18:38:58Z",
+    "generated":  "2026-04-05T20:06:58Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -93,6 +93,15 @@
                         },
                         {
                             "path_type":  "rpc",
+                            "name":  "invite_workspace_member_v1",
+                            "tables":  [
+                                           "tenant_invites"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
                             "name":  "revoke_share_token_v1",
                             "tables":  [
                                            "share_tokens"
@@ -135,6 +144,15 @@
                                        ],
                             "row_version_enforced":  true,
                             "optimistic_concurrency":  true
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_member_role_v1",
+                            "tables":  [
+                                           "tenant_memberships"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
                         },
                         {
                             "path_type":  "rpc",

@@ -1,9 +1,8 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: ede4156
+HEAD: 49c3e32
 
 === git status --porcelain=v1 ===
  M docs/truth/cloud_migration_parity.json
- M docs/truth/definer_allowlist.json
  M docs/truth/write_path_registry.json
 
 === supabase status (sanitized summary) ===
@@ -12,7 +11,6 @@ HEAD: ede4156
     "stack_running":  false,
     "stopped_services":  [
                              "supabase_imgproxy_equity-flow-system",
-                             "supabase_edge_runtime_equity-flow-system",
                              "supabase_vector_equity-flow-system",
                              "supabase_pooler_equity-flow-system"
                          ],
@@ -23,10 +21,10 @@ HEAD: ede4156
 }
 
 === last applied migration (DB) ===
- 20260405000001
+ 20260405000002
 
 === latest migration file in repo ===
-20260405000001_10_8_11F_workspace_settings_general_rpcs.sql
+20260405000002_10_8_11G_workspace_members_rpcs.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
