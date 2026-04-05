@@ -8038,3 +8038,26 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+
+2026-04-05 — Build Route v2.4 — 10.8.11E
+
+Objective
+Workspace Settings Read RPC for authenticated users.
+
+Changes
+- Migration 20260403000002: get_workspace_settings_v1() SECURITY DEFINER RPC
+- Returns tenant_id, workspace_name (null), slug, role, country/currency/measurement_unit (null)
+- Tenant context derived from current_tenant_id() only
+- Membership validated server-side before returning data
+- pgTAP tests: 6 tests passing (function exists, privilege checks, NOT_AUTHORIZED, auth success, correct slug)
+- Registered in rpc_contract_registry, execute_allowlist, definer_allowlist, privilege_truth
+- CONTRACTS.md §17 and §41 updated
+
+Proof
+docs/proofs/10.8.11E_workspace_settings_read_20260405T004720Z.md
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
