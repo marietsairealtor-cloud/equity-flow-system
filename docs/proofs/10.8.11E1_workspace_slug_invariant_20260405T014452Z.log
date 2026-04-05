@@ -1,0 +1,67 @@
+PROOF_HEAD=a53ac0d50d04ba574367397314879e6911187c18
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11E1 Workspace Slug Invariant Enforcement -- Proof Log ===
+Date: 2026-04-04T21:44:40.9705498-04:00
+Branch: feature/10.8.11E1-workspace-slug-invariant
+PR HEAD SHA: a53ac0d50d04ba574367397314879e6911187c18
+
+=== Invariant Verification ===
+Confirmed via SQL query against pg_indexes:
+- tenant_slugs_tenant_id_unique: UNIQUE INDEX on tenant_id -- EXISTS
+- tenant_slugs_slug_unique: UNIQUE INDEX on slug -- EXISTS
+- tenant_slugs_pkey: PRIMARY KEY on id -- EXISTS
+No migration required. Constraints already enforced from 10.8.8B.
+
+=== pgTAP Tests ===
+Test file: 10_8_11E1_workspace_slug_invariant.test.sql
+Plan: 4
+1. tenant_slugs has unique index on tenant_id -- PASS
+2. second insert for same slug violates unique constraint (behavioral) -- PASS
+3. second insert for same tenant_id violates unique constraint (behavioral) -- PASS
+4. get_workspace_settings_v1 returns expected slug for valid tenant -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md §37 invariant note added -- PASS
+Governance file: GOVERNANCE_CHANGE_20260405T012030Z.md -- PASS
+
+=== Constraints ===
+No migration: CORRECT — constraints already exist from 10.8.8B
+No new RPCs: CORRECT
+No privilege changes: CORRECT
+No direct table calls from WeWeb: N/A
+Tests wrapped in BEGIN/ROLLBACK: YES — no persistent state
+
+=== Files changed in PR ===
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260405T012030Z.md
+docs/handoff_latest.txt
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+scripts/ci_robot_owned_guard.ps1
+supabase/tests/10_8_11E1_workspace_slug_invariant.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== DoD Checklist ===
+tenant_slugs enforces UNIQUE(tenant_id) -- PASS
+Migration fails safely if duplicate tenant_id rows exist -- PASS (constraint already present)
+get_workspace_settings_v1 reads slug with LIMIT 1 -- PASS (confirmed in 10.8.11E)
+pgTAP: unique constraint exists on tenant_slugs(tenant_id) -- PASS
+pgTAP: second insert for same tenant_id fails -- PASS
+pgTAP: existing read RPC returns correct slug for valid tenant -- PASS
+CONTRACTS updated with invariant note -- PASS
+No direct table calls from WeWeb -- PASS
+
+=== RESULT ===
+10.8.11E1 Workspace Slug Invariant Enforcement: PASS (merge-blocking gate)
