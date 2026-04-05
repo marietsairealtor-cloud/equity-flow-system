@@ -5470,6 +5470,42 @@ WeWeb Workspace Settings page rendered inside authenticated shell, with role-gat
 
 ---
 
+## **10.8.11J — Update Display Name RPC + UI**
+
+**Deliverable**
+
+* `public.update_display_name_v1(p_display_name text)` RPC
+* Profile Settings page:
+
+  * Display name shown + editable
+  * Save calls RPC
+
+**DoD**
+
+* RPC exists, `SECURITY DEFINER`, `search_path = public`
+* `require_min_role_v1('member')` first statement
+* Uses `auth.uid()` only (no caller user_id)
+* Updates `public.user_profiles.display_name`
+* Blank → `VALIDATION_ERROR`
+* Returns standard envelope with `display_name`
+* authenticated-only, anon denied
+* No cross-user updates
+* UI uses RPC only (no direct table access)
+* Registered in all required truth files
+* pgTAP:
+
+  * exists
+  * auth/anon permissions
+  * success + DB state updated
+  * blank validation
+  * isolation
+
+**Proof:** `docs/proofs/10.8.11J_update_display_name_<UTC>.md`
+**Gate:** `lane-only`
+
+
+---
+
 ### **10.8.12 — 1-Month Free Trial (One-Time, User-Scoped)**
 
 **Deliverable:**
