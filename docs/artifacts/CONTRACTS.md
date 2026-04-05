@@ -285,6 +285,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_user_tenants_v1 | 10.8.11A | Return all tenants the current user belongs to, with slug, role, and is_current flag | SECURITY DEFINER, authenticated only | current_tenant_id() — no tenant_id param |
 | set_current_tenant_v1 | 10.8.11B | Update current workspace for authenticated user | SECURITY DEFINER, authenticated only | p_tenant_id validated against caller membership — no user_id param |
 | get_profile_settings_v1 | 10.8.11D | Return current authenticated user's profile data (user_id, email, display_name) | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
+| get_workspace_settings_v1 | 10.8.11E | Return current workspace settings (slug, role, tenant_id) for authenticated user | SECURITY DEFINER, authenticated only | current_tenant_id() — no caller tenant_id param |
 
 ### Mapping Rules
 
@@ -643,4 +644,23 @@ Behavior:
 Constraints:
 - No direct table calls from WeWeb
 - No cross-user data leakage
+- anon cannot execute
+
+## 41) Workspace Settings Read RPC Contract (10.8.11E)
+
+`public.get_workspace_settings_v1()` returns current workspace settings for the authenticated user.
+
+Behavior:
+- SECURITY DEFINER
+- Requires authenticated context
+- No caller-supplied tenant_id
+- Derives tenant from current_tenant_id() only
+- Returns tenant_id, workspace_name (null), slug, role, country (null), currency (null), measurement_unit (null)
+- Returns NOT_AUTHORIZED when current_tenant_id() is null
+- Returns NOT_AUTHORIZED when caller is not a member of the current tenant
+- data is always an object, never null
+
+Constraints:
+- No direct table calls from WeWeb
+- No cross-tenant data leakage
 - anon cannot execute
