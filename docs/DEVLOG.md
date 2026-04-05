@@ -8105,3 +8105,28 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-05 — Build Route v2.4 — 10.8.11G
+
+Objective
+Workspace Members RPCs — list, invite, update role, remove member.
+
+Changes
+- Migration 20260405000002: display_name text column added to user_profiles
+- list_workspace_members_v1: returns user_id, email, display_name, role — min role: member
+- invite_workspace_member_v1: creates invite, rejects duplicates and existing members — min role: admin
+- update_member_role_v1: updates member role, NOT_FOUND guard — min role: admin
+- remove_member_v1: removes member, NOT_FOUND guard — min role: admin
+- All four SECURITY DEFINER, search_path = public, no caller tenant_id
+- Token generated via gen_random_uuid() — no pgcrypto dependency
+- pgTAP tests: 22 tests passing including post-call state, cross-tenant isolation, member denial
+- Registered in rpc_contract_registry, execute_allowlist, definer_allowlist, privilege_truth
+- CONTRACTS.md §17 (four rows) and §43 updated
+
+Proof
+docs/proofs/10.8.11G_workspace_members_rpcs_20260405T202023Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
