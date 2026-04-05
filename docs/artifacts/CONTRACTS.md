@@ -578,7 +578,7 @@ Behavior:
 - Accepts no frontend tenant_id parameter
 - Sets or updates slug for the current tenant context
 - Slug must be lowercase and URL-safe
-- Slug uniqueness enforced (UNIQUE on slug column, existing constraint)
+- Slug uniqueness enforced (UNIQUE on slug column, existing constraint) and tested(in Build Route item 10.8.11E1)
 - One slug per tenant enforced (UNIQUE on tenant_id column, added in this migration)
 - Upsert: INSERT ... ON CONFLICT (tenant_id) DO UPDATE
 - Standard RPC envelope; data always an object, never null
