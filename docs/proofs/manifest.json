@@ -194,6 +194,7 @@
     "docs/proofs/10.8.11B_set_current_tenant_20260401T235811Z.log": "195737214e1be202a02da907657d73c5e5f600d332018b168d7d7475fe598fac",
     "docs/proofs/10.8.11C_workspace_switcher_20260403T193230Z.md": "f72b99c751f704ee4a879709fd248a76b27d0cfe2a092c3d5b1885be878ea06d",
     "docs/proofs/10.8.11D_profile_settings_20260404T233844Z.md": "ffe5e08b39983c072a8abc9f394c485df730eaafa27e0d923a1b9cd5a3ae4f99",
-    "docs/proofs/10.8.11E_workspace_settings_read_20260405T004720Z.md": "19b6e9118e5575642d467b3884c89c9de217d0e94184f5866e33350dfabff477"
+    "docs/proofs/10.8.11E_workspace_settings_read_20260405T004720Z.md": "19b6e9118e5575642d467b3884c89c9de217d0e94184f5866e33350dfabff477",
+    "docs/proofs/10.8.11E1_workspace_slug_invariant_20260405T014452Z.log": "5c7dd618c4b42864ecd2398d38f0f3ac474050a41ffc03fb5afa8ad3a8d5fdaf"
   }
 }

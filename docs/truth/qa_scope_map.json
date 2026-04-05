@@ -479,6 +479,9 @@
     },
     "10.8.11E": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11E_workspace_settings_"
+    },
+    "10.8.11E1": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11E1_workspace_slug_invariant_"
     }
   }
 }
