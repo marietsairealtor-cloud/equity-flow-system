@@ -8061,3 +8061,22 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-05 — Build Route v2.4 — 10.8.11E1
+
+Objective
+Workspace slug invariant enforcement — database-level and test-level proof.
+
+Changes
+- No migration required — UNIQUE(tenant_id) and UNIQUE(slug) already enforced from 10.8.8B
+- pgTAP tests: 4 tests proving unique constraints behaviorally and RPC slug read
+- CONTRACTS.md §37 updated with invariant note
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 updated
+
+Proof
+docs/proofs/10.8.11E1_workspace_slug_invariant_20260405T013406Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
