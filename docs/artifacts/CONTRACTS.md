@@ -291,6 +291,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | invite_workspace_member_v1 | 10.8.11G | Invite a new member to current workspace by email; rejects duplicates and existing members | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | update_member_role_v1 | 10.8.11G | Update role of existing workspace member | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | remove_member_v1 | 10.8.11G | Remove a member from current workspace | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+| list_farm_areas_v1 | 10.8.11H | List all farm areas for current tenant; corrected from admin to member role enforcement | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — no caller tenant_id param |
+| create_farm_area_v1 | 10.8.11H | Create a new farm area for current tenant; enforces uniqueness | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+| delete_farm_area_v1 | 10.8.11H | Delete a farm area for current tenant; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 
 
 ### Mapping Rules
@@ -729,6 +732,43 @@ remove_member_v1 constraints:
 
 Schema changes:
 - public.user_profiles.display_name text column added
+
+data is always an object, never null.
+anon cannot execute any of these RPCs.
+
+## 44) Workspace Farm Areas RPCs Contract (10.8.11H)
+
+`public.list_farm_areas_v1()` lists all farm areas for the current tenant.
+`public.create_farm_area_v1(p_area_name text)` creates a new farm area.
+`public.delete_farm_area_v1(p_farm_area_id uuid)` deletes a farm area.
+
+Behavior (all three):
+- SECURITY DEFINER, search_path = public
+- Requires authenticated context
+- No caller-supplied tenant_id
+- Derives workspace from current_tenant_id() only
+
+Role enforcement:
+- list_farm_areas_v1: require_min_role_v1('member') — corrected from admin (10.8.6)
+- create, delete: require_min_role_v1('admin')
+
+Corrective note:
+- list_farm_areas_v1 was originally authored in 10.8.6 with admin role enforcement
+- 10.8.11H corrects this to member per system read/write pattern
+- Response shape also corrected: id → farm_area_id, internal fields removed
+
+list_farm_areas_v1 returns:
+- data.items[].farm_area_id
+- data.items[].area_name
+- data.items[].created_at
+
+create_farm_area_v1 constraints:
+- Blank name returns VALIDATION_ERROR
+- Duplicate name returns CONFLICT via unique_violation
+
+delete_farm_area_v1 constraints:
+- Null farm_area_id returns VALIDATION_ERROR
+- Non-existent or cross-tenant returns NOT_FOUND
 
 data is always an object, never null.
 anon cannot execute any of these RPCs.

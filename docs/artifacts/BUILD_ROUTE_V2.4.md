@@ -5387,7 +5387,7 @@ Authenticated RPC surface for the Members tab of Workspace Settings, covering me
 ### **10.8.11H — Workspace Farm Areas RPCs**
 
 **Deliverable:**
-Authenticated RPC surface for the farm areas portion of Workspace Settings General tab.
+Authenticated RPC surface for farm areas.
 
 **DoD:**
 
@@ -5397,11 +5397,12 @@ Authenticated RPC surface for the farm areas portion of Workspace Settings Gener
 - All three RPCs are SECURITY DEFINER, authenticated-only
 - No caller-supplied tenant_id
 - All derive workspace from `public.current_tenant_id()`
+- `list_farm_areas_v1()` enforces `require_min_role_v1('member')`
 - Mutation RPCs enforce `require_min_role_v1('admin')` as first executable statement
 - `list_farm_areas_v1()` returns farm areas for current tenant only
 - `create_farm_area_v1()` enforces uniqueness within current tenant
 - `delete_farm_area_v1()` removes farm area for current tenant only
-- No map or polygon support
+- Standard RPC envelope (`ok`, `code`, `data`, `error`)
 - No direct table access required by frontend
 - Registered in:
   - `rpc_contract_registry.json`
@@ -5425,22 +5426,24 @@ Authenticated RPC surface for the farm areas portion of Workspace Settings Gener
 ### **10.8.11I — Workspace Settings UI**
 
 **Deliverable:**
-WeWeb Workspace Settings page rendered inside authenticated shell, with role-gated tabs aligned to architecture: General, Members, Billing.
+WeWeb Workspace Settings page rendered inside authenticated shell, with role-gated tabs aligned to architecture.
 
 **DoD:**
 
 - Workspace Settings page exists in authenticated UI
 - Page reachable from Workspace ▾ dropdown
+- **Workspace Settings is visible to Admin+ only (not visible to members)**
 - Uses governed RPCs only
 - Page has role-gated tabs aligned to architecture:
   - General
   - Members
   - Billing
+
 - General tab:
   - visible to Admin+
   - calls `get_workspace_settings_v1()`
   - displays/edit fields for:
-    - workspace name (if implemented)
+    - workspace name
     - slug
     - country
     - currency
@@ -5448,6 +5451,7 @@ WeWeb Workspace Settings page rendered inside authenticated shell, with role-gat
   - displays farm areas list
   - uses `update_workspace_settings_v1(...)`
   - uses farm area RPCs for add/delete
+
 - Members tab:
   - visible to Admin+
   - calls `list_workspace_members_v1()`
@@ -5455,12 +5459,13 @@ WeWeb Workspace Settings page rendered inside authenticated shell, with role-gat
   - supports invite member
   - supports role update
   - supports remove member
+
 - Billing tab:
   - visible to Owner only
-  - placeholder or link-out is acceptable in this item
+  - placeholder or link-out acceptable
   - no custom billing logic in WeWeb
-- Members cannot edit workspace settings
-- Members may see a read-only limited workspace context view if desired, but no mutation controls
+
+- Members cannot access Workspace Settings page
 - No direct table calls
 - No frontend permission logic beyond visibility; authority remains server-side
 
