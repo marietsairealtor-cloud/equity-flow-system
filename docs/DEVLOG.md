@@ -8130,3 +8130,29 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+
+
+2026-04-06 — Build Route v2.4 — 10.8.11H
+
+Objective
+Workspace Farm Areas RPCs — corrective migration aligning all three farm area
+RPCs with current contract standards.
+
+Changes
+- Migration 20260406000001: corrective rewrite of list_farm_areas_v1, create_farm_area_v1, delete_farm_area_v1
+- list_farm_areas_v1: role corrected from admin to member; json→jsonb; data object; internal fields removed; id→farm_area_id
+- create_farm_area_v1: json→jsonb; data object; id→farm_area_id; require_min_role_v1 moved to first statement
+- delete_farm_area_v1: json→jsonb; data object; p_id→p_farm_area_id; id→farm_area_id; require_min_role_v1 moved to first statement
+- pgTAP tests: 17 tests passing including isolation, member denial, cross-tenant protection
+- 10.8.6 test file updated to match new response shapes
+- privilege_truth.json updated: three farm area RPCs added to routine_grants.authenticated
+- CONTRACTS.md §17 three rows and §44 added
+
+Proof
+docs/proofs/10.8.11H_workspace_farm_areas_rpcs_20260406T173910Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
