@@ -130,6 +130,18 @@
       {
         "routine": "complete_reminder_v1",
         "privilege": "EXECUTE"
+      },
+      {
+        "routine": "list_farm_areas_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "create_farm_area_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "delete_farm_area_v1",
+        "privilege": "EXECUTE"
       }
     ]
   },

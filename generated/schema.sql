@@ -473,46 +473,56 @@ $$;
 
 ALTER FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer, "p_assumptions" "jsonb") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."create_farm_area_v1"("p_area_name" "text") RETURNS json
+CREATE OR REPLACE FUNCTION "public"."create_farm_area_v1"("p_area_name" "text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant UUID;
-  v_id     UUID;
+  v_tenant_id uuid;
+  v_new_id uuid;
 BEGIN
-  v_tenant := public.current_tenant_id();
-  IF v_tenant IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+  PERFORM public.require_min_role_v1('admin');
+
+  v_tenant_id := public.current_tenant_id();
+
+  IF v_tenant_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
     );
   END IF;
 
-  PERFORM public.require_min_role_v1('admin');
-
-  IF p_area_name IS NULL OR trim(p_area_name) = '' THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
-      'error', json_build_object('message', 'area_name is required', 'fields', json_build_object('area_name', 'required'))
+  IF p_area_name IS NULL OR btrim(p_area_name) = '' THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Area name is required', 'fields', jsonb_build_object('area_name', 'Must not be blank'))
     );
   END IF;
 
   INSERT INTO public.tenant_farm_areas (tenant_id, area_name)
-  VALUES (v_tenant, trim(p_area_name))
-  RETURNING id INTO v_id;
+  VALUES (v_tenant_id, btrim(p_area_name))
+  RETURNING id INTO v_new_id;
 
-  RETURN json_build_object(
-    'ok',   true,
+  RETURN jsonb_build_object(
+    'ok', true,
     'code', 'OK',
-    'data', json_build_object('id', v_id),
+    'data', jsonb_build_object(
+      'farm_area_id', v_new_id,
+      'area_name', btrim(p_area_name)
+    ),
     'error', null
   );
 EXCEPTION
   WHEN unique_violation THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'CONFLICT', 'data', null,
-      'error', json_build_object('message', 'Farm area name already exists for this tenant', 'fields', json_build_object('area_name', 'conflict'))
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'CONFLICT',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Farm area already exists', 'fields', jsonb_build_object('area_name', 'Already exists in this workspace'))
     );
 END;
 $$;
@@ -799,46 +809,60 @@ $$;
 
 ALTER FUNCTION "public"."current_tenant_id"() OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."delete_farm_area_v1"("p_id" "uuid") RETURNS json
+CREATE OR REPLACE FUNCTION "public"."delete_farm_area_v1"("p_farm_area_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant      UUID;
-  v_rows_deleted INT;
+  v_tenant_id uuid;
 BEGIN
-  v_tenant := public.current_tenant_id();
-  IF v_tenant IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
-    );
-  END IF;
-
   PERFORM public.require_min_role_v1('admin');
 
-  DELETE FROM public.tenant_farm_areas
-  WHERE id = p_id AND tenant_id = v_tenant;
+  v_tenant_id := public.current_tenant_id();
 
-  GET DIAGNOSTICS v_rows_deleted = ROW_COUNT;
-
-  IF v_rows_deleted = 0 THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_FOUND', 'data', null,
-      'error', json_build_object('message', 'Farm area not found', 'fields', json_build_object())
+  IF v_tenant_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
     );
   END IF;
 
-  RETURN json_build_object(
-    'ok',   true,
+  IF p_farm_area_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'farm_area_id is required', 'fields', jsonb_build_object('farm_area_id', 'Must not be null'))
+    );
+  END IF;
+
+  DELETE FROM public.tenant_farm_areas
+  WHERE id = p_farm_area_id
+    AND tenant_id = v_tenant_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_FOUND',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Farm area not found', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'ok', true,
     'code', 'OK',
-    'data', json_build_object('id', p_id),
+    'data', jsonb_build_object(
+      'farm_area_id', p_farm_area_id
+    ),
     'error', null
   );
 END;
 $$;
 
-ALTER FUNCTION "public"."delete_farm_area_v1"("p_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."delete_farm_area_v1"("p_farm_area_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."foundation_log_activity_v1"("p_action" "text", "p_meta" "jsonb" DEFAULT '{}'::"jsonb", "p_actor_id" "uuid" DEFAULT NULL::"uuid") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -1226,44 +1250,41 @@ $$;
 
 ALTER FUNCTION "public"."list_deals_v1"("p_limit" integer, "p_cursor" "text") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."list_farm_areas_v1"() RETURNS json
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+CREATE OR REPLACE FUNCTION "public"."list_farm_areas_v1"() RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant UUID;
+  v_tenant_id uuid;
+  v_items jsonb;
 BEGIN
-  v_tenant := public.current_tenant_id();
-  IF v_tenant IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+  PERFORM public.require_min_role_v1('member');
+
+  v_tenant_id := public.current_tenant_id();
+
+  IF v_tenant_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
     );
   END IF;
 
-  PERFORM public.require_min_role_v1('admin');
+  SELECT jsonb_agg(jsonb_build_object(
+    'farm_area_id', fa.id,
+    'area_name', fa.area_name,
+    'created_at', fa.created_at
+  ) ORDER BY fa.area_name ASC)
+  INTO v_items
+  FROM public.tenant_farm_areas fa
+  WHERE fa.tenant_id = v_tenant_id;
 
-  RETURN json_build_object(
-    'ok',   true,
+  RETURN jsonb_build_object(
+    'ok', true,
     'code', 'OK',
-    'data', json_build_object(
-      'items', COALESCE(
-        (
-          SELECT json_agg(
-            json_build_object(
-              'id',          fa.id,
-              'tenant_id',   fa.tenant_id,
-              'area_name',   fa.area_name,
-              'row_version', fa.row_version,
-              'created_at',  fa.created_at
-            )
-            ORDER BY fa.area_name
-          )
-          FROM public.tenant_farm_areas fa
-          WHERE fa.tenant_id = v_tenant
-        ),
-        '[]'::json
-      )
+    'data', jsonb_build_object(
+      'items', COALESCE(v_items, '[]'::jsonb)
     ),
     'error', null
   );

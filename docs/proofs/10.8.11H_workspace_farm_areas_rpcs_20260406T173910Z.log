@@ -1,0 +1,133 @@
+PROOF_HEAD=5c5685ab88b06f28ab467eaae143bbf9822bf22d
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11H Workspace Farm Areas RPCs -- Proof Log ===
+Date: 2026-04-06T13:37:36.2877852-04:00
+Branch: feature/10.8.11H-workspace-farm-areas-rpcs
+PR HEAD SHA: 5c5685ab88b06f28ab467eaae143bbf9822bf22d
+
+=== Backend ===
+Migration: 20260406000001_10_8_11H_workspace_farm_areas_rpcs.sql
+Type: Corrective migration — rewrites all three farm area RPCs from 10.8.6
+RPCs corrected:
+  - public.list_farm_areas_v1() — role: member (was admin), json→jsonb, data object, internal fields removed
+  - public.create_farm_area_v1(p_area_name text) — json→jsonb, data object, id→farm_area_id
+  - public.delete_farm_area_v1(p_farm_area_id uuid) — json→jsonb, data object, p_id→p_farm_area_id, id→farm_area_id
+Security: all SECURITY DEFINER, search_path = public, authenticated only
+Role enforcement: require_min_role_v1 as first executable statement on all three
+Tenant context: current_tenant_id() only — no caller-supplied tenant_id
+REVOKE ALL FROM PUBLIC: YES on all three RPCs
+GRANT EXECUTE TO authenticated: YES on all three RPCs
+
+=== Corrections from 10.8.6 ===
+list_farm_areas_v1:
+  - require_min_role_v1 changed from admin to member
+  - return type json → jsonb
+  - data null → data object
+  - removed internal fields: tenant_id, row_version
+  - id → farm_area_id in response
+  - require_min_role_v1 moved to first executable statement
+create_farm_area_v1:
+  - return type json → jsonb
+  - data null → data object
+  - id → farm_area_id in response
+  - require_min_role_v1 moved to first executable statement
+delete_farm_area_v1:
+  - return type json → jsonb
+  - data null → data object
+  - parameter p_id → p_farm_area_id
+  - id → farm_area_id in response
+  - require_min_role_v1 moved to first executable statement
+
+=== pgTAP Tests ===
+Test file: 10_8_11H_workspace_farm_areas_rpcs.test.sql
+Plan: 17
+1. list_farm_areas_v1 exists -- PASS
+2. create_farm_area_v1 exists -- PASS
+3. delete_farm_area_v1 exists -- PASS
+4. authenticated can execute list -- PASS
+5. anon cannot execute list -- PASS
+6. list returns ok=true for admin -- PASS
+7. admin can create farm area -- PASS
+8. farm area exists after create (via list RPC) -- PASS
+9. duplicate farm area name returns CONFLICT -- PASS
+10. blank area name returns VALIDATION_ERROR -- PASS
+11. admin can delete farm area -- PASS
+12. farm area removed after delete (via list RPC) -- PASS
+13. tenant 1 cannot see tenant 2 farm areas (isolation) -- PASS
+14. member cannot create farm area (throws exception) -- PASS
+15. member cannot delete farm area (throws exception) -- PASS
+16. delete non-existent farm area returns NOT_FOUND -- PASS
+17. tenant 1 cannot delete tenant 2 farm area (cross-tenant protection) -- PASS
+
+Updated test file: 10_8_6_farm_areas.test.sql
+- Auth pattern updated to SET LOCAL "request.jwt.claims"
+- json_array_length → jsonb_array_length
+- elem->>'id' → elem->>'farm_area_id' in delete path
+- All ::json casts removed
+
+=== Registration ===
+rpc_contract_registry.json -- PASS (existing from 10.8.6, verified present)
+execute_allowlist.json -- PASS (existing from 10.8.6, verified present)
+definer_allowlist.json -- PASS (existing from 10.8.6, verified present)
+privilege_truth.json (three RPCs added to routine_grants.authenticated) -- PASS
+CONTRACTS.md §17 three mapping rows added -- PASS
+CONTRACTS.md §44 contract section added -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260406T172418Z.md -- PASS
+
+=== Constraints ===
+Direct table calls: NONE
+Business logic in WeWeb: NONE
+All data via allowlisted RPCs: YES
+No caller-supplied tenant_id: YES
+No cross-tenant access possible: YES
+anon cannot execute: YES
+member role cannot execute mutations: YES
+
+=== Files changed in PR ===
+docs/artifacts/BUILD_ROUTE_V2.4.md
+docs/artifacts/CONTRACTS.md
+docs/governance/GOVERNANCE_CHANGE_20260406T172418Z.md
+docs/handoff_latest.txt
+docs/truth/cloud_migration_parity.json
+docs/truth/privilege_truth.json
+docs/truth/qa_claim.json
+docs/truth/qa_scope_map.json
+docs/truth/write_path_registry.json
+generated/contracts.snapshot.json
+generated/schema.sql
+scripts/ci_robot_owned_guard.ps1
+supabase/migrations/20260406000001_10_8_11H_workspace_farm_areas_rpcs.sql
+supabase/tests/10_8_11H_workspace_farm_areas_rpcs.test.sql
+supabase/tests/10_8_6_farm_areas.test.sql
+
+
+=== Phase 3 verification ===
+green:once   -- PASS
+green:twice  -- PASS
+pr:preflight -- PASS
+
+=== DoD Checklist ===
+list_farm_areas_v1 exists -- PASS
+create_farm_area_v1 exists -- PASS
+delete_farm_area_v1 exists -- PASS
+All three SECURITY DEFINER authenticated-only -- PASS
+No caller-supplied tenant_id -- PASS
+All derive workspace from current_tenant_id() -- PASS
+list enforces require_min_role_v1('member') -- PASS
+Mutation RPCs enforce require_min_role_v1('admin') -- PASS
+list returns farm areas for current tenant only -- PASS
+create enforces uniqueness within current tenant -- PASS
+delete removes farm area for current tenant only -- PASS
+Standard RPC envelope, data always object -- PASS
+No direct table access from WeWeb -- PASS
+Registered in all required truth files -- PASS
+pgTAP tests pass -- PASS
+10.8.6 tests updated and passing -- PASS
+
+=== RESULT ===
+10.8.11H Workspace Farm Areas RPCs: PASS (merge-blocking gate)
