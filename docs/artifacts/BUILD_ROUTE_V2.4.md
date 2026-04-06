@@ -5508,6 +5508,116 @@ WeWeb Workspace Settings page rendered inside authenticated shell, with role-gat
 **Proof:** `docs/proofs/10.8.11J_update_display_name_<UTC>.md`
 **Gate:** `lane-only`
 
+---
+
+### **10.8.11K — Subscription Status Consistency (Bridge Fix)**
+
+ **Deliverable**
+
+* `get_user_entitlements_v1()` returns:
+
+  * `subscription_status`
+  * `subscription_days_remaining`
+* Banner uses entitlement output only
+
+---
+
+**DoD**
+
+* `resolveStatus()` maps Stripe → raw status:
+
+  * `trialing` → `active`
+  * `past_due` → `past_due`
+  * `unpaid` / `incomplete_expired` → `expired`
+  * `canceled` → `canceled`
+
+* `tenant_subscriptions.status`:
+
+  * webhook-written only
+
+* `get_user_entitlements_v1()` returns:
+
+```json
+{
+  "subscription_status": "expiring",
+  "subscription_days_remaining": 3
+}
+```
+
+* Derivation handled server-side:
+
+  * `active` + within threshold → `expiring`
+  * `past_due` → `expiring`
+  * `expired/unpaid/incomplete_expired` → `expired`
+
+* `subscription_days_remaining`:
+
+  * derived from `current_period_end`
+  * integer
+  * returned for `expiring` only
+
+---
+
+**UI Binding**
+
+**Visibility**
+
+```js
+subscription_status == 'expired' || subscription_status == 'expiring'
+```
+
+**Text**
+
+```js
+subscription_status == 'expired'
+  ? 'Subscription expired — Renew now →'
+  : 'Your subscription expires in ' + subscription_days_remaining + ' days — Renew now →'
+```
+
+---
+
+**Proof:** `docs/proofs/10.8.11K_subscription_status_<UTC>.md`
+**Gate:** `lane-only`
+
+---
+
+### **10.8.11L — Renew Now Routing Fix (Bridge Fix)**
+
+**Deliverable**
+
+* “Renew now” CTA routes to billing (not onboarding)
+* Same destination across all subscription states
+
+---
+
+**DoD**
+
+* “Renew now” CTA:
+
+  * does NOT route to `/onboarding`
+  * routes to:
+
+    * Stripe Customer Portal **OR**
+    * Workspace Settings → Billing
+
+* Same destination used for:
+
+  * expired banner
+  * expiring banner
+  * billing section CTA
+
+* Workspace Settings:
+
+  * Admin+ can access
+  * Billing section is Owner-only
+
+* CTA copy reflects billing action (no onboarding language)
+
+---
+
+**Proof:** `docs/proofs/10.8.11L_renew_now_<UTC>.md`
+**Gate:** `lane-only`
+
 
 ---
 
