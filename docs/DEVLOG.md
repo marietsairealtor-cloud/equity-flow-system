@@ -8156,3 +8156,33 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-07 — Build Route v2.4 — 10.8.11I
+
+Objective
+Workspace Settings UI — three-tab authenticated page for admin+ users.
+
+Changes
+- /workspace-settings page created from template
+- Page access: admin+ only — members redirected to /today, hamburger link hidden
+- General tab: workspace identity fields (name, slug, country, currency, measurement unit)
+  wired to get_workspace_settings_v1 and update_workspace_settings_v1
+  with save, error, and auto-clearing success message
+- Billing section inside General tab: owner-only (not rendered for admin)
+  shows subscription_status and subscription_days_remaining from entitlements
+  Manage billing button opens Stripe customer portal
+- Members tab: member list with role display, role change dropdown, remove button
+  invite form with email + role select
+  all wired to list_workspace_members_v1, update_member_role_v1,
+  remove_member_v1, invite_workspace_member_v1
+- Farm Areas tab: list with delete, add form
+  wired to list_farm_areas_v1, create_farm_area_v1, delete_farm_area_v1
+- No direct table calls. All data via allowlisted RPCs only.
+
+Proof
+docs/proofs/10.8.11I_workspace_settings_ui_20260407T223959Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
