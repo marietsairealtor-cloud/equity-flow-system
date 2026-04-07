@@ -5429,45 +5429,27 @@ Authenticated RPC surface for farm areas.
 WeWeb Workspace Settings page rendered inside authenticated shell, with role-gated tabs aligned to architecture.
 
 **DoD:**
-
-- Workspace Settings page exists in authenticated UI
-- Page reachable from Workspace ▾ dropdown
-- **Workspace Settings is visible to Admin+ only (not visible to members)**
-- Uses governed RPCs only
-- Page has role-gated tabs aligned to architecture:
-  - General
-  - Members
-  - Billing
-
-- General tab:
-  - visible to Admin+
-  - calls `get_workspace_settings_v1()`
-  - displays/edit fields for:
-    - workspace name
-    - slug
-    - country
-    - currency
-    - measurement unit
-  - displays farm areas list
-  - uses `update_workspace_settings_v1(...)`
-  - uses farm area RPCs for add/delete
-
-- Members tab:
-  - visible to Admin+
-  - calls `list_workspace_members_v1()`
-  - displays member list with role
-  - supports invite member
-  - supports role update
-  - supports remove member
-
-- Billing tab:
-  - visible to Owner only
-  - placeholder or link-out acceptable
-  - no custom billing logic in WeWeb
-
-- Members cannot access Workspace Settings page
-- No direct table calls
-- No frontend permission logic beyond visibility; authority remains server-side
+*Workspace Settings page exists and is reachable from Workspace ▾
+*Visible to Admin+ only; members cannot access
+*Non-admin users are redirected before protected data fetches run
+*Uses governed RPCs only
+**Tabs
+*General (Admin+)
+ get_workspace_settings_v1, update_workspace_settings_v1
+ fields: name, slug, country, currency, unit
+*Members (Admin+)
+ list_workspace_members_v1
+ invite, role update, remove
+*Farm Areas (Admin+)
+ list_farm_areas_v1
+ add/delete via RPCs
+*Billing (in General)
+ Owner-only
+ shows subscription status + days remaining
+ “Manage billing” → Stripe
+*Constraints
+ No direct table calls
+ No frontend permission logic beyond visibility
 
 **Proof:** `docs/proofs/10.8.11I_workspace_settings_ui_<UTC>.md`
 
