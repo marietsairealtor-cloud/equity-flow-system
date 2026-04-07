@@ -491,6 +491,9 @@
     },
     "10.8.11H": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11H_workspace_farm_areas_rpcs_"
+    },
+    "10.8.11I": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I_workspace_settings_ui_"
     }
   }
 }

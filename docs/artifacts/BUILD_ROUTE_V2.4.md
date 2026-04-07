@@ -5429,48 +5429,264 @@ Authenticated RPC surface for farm areas.
 WeWeb Workspace Settings page rendered inside authenticated shell, with role-gated tabs aligned to architecture.
 
 **DoD:**
-
-- Workspace Settings page exists in authenticated UI
-- Page reachable from Workspace ▾ dropdown
-- **Workspace Settings is visible to Admin+ only (not visible to members)**
-- Uses governed RPCs only
-- Page has role-gated tabs aligned to architecture:
-  - General
-  - Members
-  - Billing
-
-- General tab:
-  - visible to Admin+
-  - calls `get_workspace_settings_v1()`
-  - displays/edit fields for:
-    - workspace name
-    - slug
-    - country
-    - currency
-    - measurement unit
-  - displays farm areas list
-  - uses `update_workspace_settings_v1(...)`
-  - uses farm area RPCs for add/delete
-
-- Members tab:
-  - visible to Admin+
-  - calls `list_workspace_members_v1()`
-  - displays member list with role
-  - supports invite member
-  - supports role update
-  - supports remove member
-
-- Billing tab:
-  - visible to Owner only
-  - placeholder or link-out acceptable
-  - no custom billing logic in WeWeb
-
-- Members cannot access Workspace Settings page
-- No direct table calls
-- No frontend permission logic beyond visibility; authority remains server-side
+*Workspace Settings page exists and is reachable from Workspace ▾
+*Visible to Admin+ only; members cannot access
+*Non-admin users are redirected before protected data fetches run
+*Uses governed RPCs only
+**Tabs
+*General (Admin+)
+ get_workspace_settings_v1, update_workspace_settings_v1
+ fields: name, slug, country, currency, unit
+*Members (Admin+)
+ list_workspace_members_v1
+ invite, role update, remove
+*Farm Areas (Admin+)
+ list_farm_areas_v1
+ add/delete via RPCs
+*Billing (in General)
+ Owner-only
+ shows subscription status + days remaining
+ “Manage billing” → Stripe
+*Constraints
+ No direct table calls
+ No frontend permission logic beyond visibility
 
 **Proof:** `docs/proofs/10.8.11I_workspace_settings_ui_<UTC>.md`
 
+**Gate:** `lane-only`
+
+### **10.8.11I1 — Workspace Invite Email Delivery (Bridge Fix)**
+
+**Deliverable**
+*Invited users receive an email after invite_workspace_member_v1 is called
+*Email contains link to /auth and enables invite resolution via accept_pending_invites_v1 post-auth
+
+**DoD**
+*After successful invite_workspace_member_v1 call:
+ email is sent to tenant_invites.email
+*Email contains:
+ workspace name
+ inviter identifier (name or email)
+ link to /auth (optionally with context token)
+*No change to invite acceptance flow:
+ user signs up / logs in
+ /post-auth calls accept_pending_invites_v1
+ membership is created server-side
+*Email delivery:
+ triggered server-side only
+ no frontend email logic
+ no direct table access from UI
+*Failure handling:
+ email failure does NOT block invite creation
+ invite remains in tenant_invites
+*No changes to:
+ existing RPC signatures
+ entitlement logic
+ onboarding logic
+
+**Proof**: docs/proofs/10.8.11I1_invite_email_<UTC>.md
+**Gate**: lane-only
+
+### **10.8.11I2 — Workspace Settings Read RPC Corrective Fix**
+
+**Deliverable:**
+Update `public.get_workspace_settings_v1()` to read `name`, `country`, `currency`, and `measurement_unit` from `public.tenants` for the current tenant context. No schema changes. No new columns. RPC behavior fix only.
+
+**DoD:**
+
+* `public.get_workspace_settings_v1()` returns:
+
+  * `tenant_id`
+  * `workspace_name`
+  * `slug`
+  * `role`
+  * `country`
+  * `currency`
+  * `measurement_unit`
+* `workspace_name` is sourced from `public.tenants.name`
+* `country` is sourced from `public.tenants.country`
+* `currency` is sourced from `public.tenants.currency`
+* `measurement_unit` is sourced from `public.tenants.measurement_unit`
+* No caller-supplied tenant_id
+* Tenant context still derives from `public.current_tenant_id()`
+* Membership validation remains server-side
+* Standard envelope unchanged
+* No new RPC
+* No schema changes
+* No new columns
+* Corrective migration updates existing RPC only
+* pgTAP tests prove:
+
+  * authenticated success with tenant context
+  * returned `workspace_name` matches tenant row
+  * returned `country` matches tenant row
+  * returned `currency` matches tenant row
+  * returned `measurement_unit` matches tenant row
+  * `NOT_AUTHORIZED` with no tenant context
+  * cross-tenant leakage denied
+* `CONTRACTS.md` §41 updated to remove null-placeholder language and reflect actual returned fields
+* `CONTRACTS.md` §17 mapping row updated if needed
+* No direct table calls from WeWeb
+
+**Proof:** `docs/proofs/10.8.11I2_workspace_settings_read_fix_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11I3 — Pending Invites RPC (Management Layer)**
+
+### **Deliverable**
+
+* RPC to list pending invites
+* RPC to rescind (cancel) an invite
+
+---
+
+### **DoD**
+
+#### **1) `list_pending_invites_v1`**
+
+* Returns pending invites for current tenant:
+
+```json
+[
+  {
+    "invite_id": "uuid",
+    "email": "user@example.com",
+    "role": "admin|member",
+    "created_at": "timestamp",
+    "invited_by": "user_id"
+  }
+]
+```
+
+* Only returns invites where:
+
+  * not accepted
+  * not expired (if expiry exists)
+
+* Tenant scoped:
+
+  * derived from `current_tenant_id()`
+
+* Access:
+
+  * Admin+ only
+
+---
+
+#### **2) `rescind_invite_v1`**
+
+* Input:
+
+  * `invite_id`
+
+* Behavior:
+
+  * deletes or marks invite as canceled
+  * invite can no longer be accepted
+
+* Constraints:
+
+  * tenant-scoped (must belong to current tenant)
+  * cannot rescind already accepted invites
+
+* Access:
+
+  * Admin+ only
+
+---
+
+#### **3) Security + Contract**
+
+* No caller-supplied tenant_id
+* No cross-tenant access
+* Standard envelope
+* No changes to existing invite RPC
+* No changes to acceptance flow (`accept_pending_invites_v1`)
+
+---
+
+#### **4) Tests**
+
+* list returns only current tenant invites
+* list excludes accepted invites
+* rescind removes invite from list
+* rescind fails cross-tenant
+* rescind fails on already accepted invite
+
+---
+
+**Proof:** `docs/proofs/10.8.11I3_pending_invites_rpc_<UTC>.md`
+**Gate:** `merge-blocking`
+
+---
+
+### **10.8.11I4 — Pending Invites UI (Workspace Settings)**
+
+### **Deliverable**
+
+* UI to view and manage pending invites in Workspace Settings
+
+---
+
+### **DoD**
+
+#### **1) Display**
+
+* Pending invites list shows:
+
+  * email
+  * role
+  * invited_by
+  * created_at
+
+* Data source:
+
+  * `list_pending_invites_v1` only
+
+---
+
+#### **2) Rescind Action**
+
+* Each invite has:
+
+  * “Cancel invite” action
+
+* Action calls:
+
+  * `rescind_invite_v1(invite_id)`
+
+* On success:
+
+  * invite removed from UI list
+
+---
+
+#### **3) Access Control**
+
+* Visible to:
+
+  * Admin+ only
+
+---
+
+#### **4) UI Constraints**
+
+* No direct table access
+* No client-side filtering of raw data
+* No additional business logic in UI
+
+---
+
+#### **5) UX Requirements**
+
+* Empty state shown if no pending invites
+* Confirmation required before rescind
+
+---
+
+**Proof:** `docs/proofs/10.8.11I4_pending_invites_ui_<UTC>.md`
 **Gate:** `lane-only`
 
 ---
