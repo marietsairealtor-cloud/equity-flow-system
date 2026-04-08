@@ -5617,7 +5617,7 @@ Update `public.get_workspace_settings_v1()` to read `name`, `country`, `currency
 
 ---
 
-**Proof:** `docs/proofs/10.8.11I3_pending_invites_rpc_<UTC>.md`
+**Proof:** `docs/proofs/10.8.11I3_pending_invites_rpc_<UTC>.log`
 **Gate:** `merge-blocking`
 
 ---
@@ -5694,34 +5694,31 @@ Update `public.get_workspace_settings_v1()` to read `name`, `country`, `currency
 ## **10.8.11J — Update Display Name RPC + UI**
 
 **Deliverable**
-
-* `public.update_display_name_v1(p_display_name text)` RPC
-* Profile Settings page:
-
-  * Display name shown + editable
-  * Save calls RPC
+*update_display_name_v1(p_display_name text) RPC
+*get_profile_settings_v1() returns display_name from user_profiles
+*Profile Settings UI shows + edits display name
 
 **DoD**
+*update_display_name_v1:
+ SECURITY DEFINER, search_path = public
+ uses auth.uid() only
+ updates user_profiles.display_name
+ blank → VALIDATION_ERROR
+ returns display_name
+*get_profile_settings_v1:
+ reads display_name from user_profiles
+ no hardcoded null
+*UI:
+ loads via get_profile_settings_v1
+ saves via update_display_name_v1
+ RPC-only (no table access)
+*pgTAP:
+ update success + DB state
+ validation
+ isolation
+ read returns saved value
 
-* RPC exists, `SECURITY DEFINER`, `search_path = public`
-* `require_min_role_v1('member')` first statement
-* Uses `auth.uid()` only (no caller user_id)
-* Updates `public.user_profiles.display_name`
-* Blank → `VALIDATION_ERROR`
-* Returns standard envelope with `display_name`
-* authenticated-only, anon denied
-* No cross-user updates
-* UI uses RPC only (no direct table access)
-* Registered in all required truth files
-* pgTAP:
-
-  * exists
-  * auth/anon permissions
-  * success + DB state updated
-  * blank validation
-  * isolation
-
-**Proof:** `docs/proofs/10.8.11J_update_display_name_<UTC>.md`
+**Proof:** `docs/proofs/10.8.11J_update_display_name_<UTC>.log`
 **Gate:** `lane-only`
 
 ---
