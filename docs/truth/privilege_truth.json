@@ -79,11 +79,19 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "list_pending_invites_v1",
+        "privilege": "EXECUTE"
+      },
+      {
         "routine": "list_workspace_members_v1",
         "privilege": "EXECUTE"
       },
       {
         "routine": "invite_workspace_member_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "rescind_invite_v1",
         "privilege": "EXECUTE"
       },
       {
@@ -201,9 +209,11 @@
       "delete_farm_area_v1",
       "foundation_log_activity_v1",
       "get_user_entitlements_v1",
+      "list_pending_invites_v1",
       "list_deals_v1",
       "list_farm_areas_v1",
       "lookup_share_token_v1",
+      "rescind_invite_v1",
       "update_deal_v1",
       "revoke_share_token_v1",
       "create_share_token_v1",

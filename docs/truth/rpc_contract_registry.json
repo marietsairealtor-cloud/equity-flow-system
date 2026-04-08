@@ -358,6 +358,24 @@
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
       "notes": "Removes member from current workspace. Min role: admin. No caller-supplied tenant_id."
+    },
+    {
+      "name": "list_pending_invites_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11I3",
+      "input_contract": "CONTRACTS.md §17 list_pending_invites_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED"],
+      "notes": "Returns all pending invites for current tenant. Min role: admin. No caller-supplied tenant_id."
+    },
+    {
+      "name": "rescind_invite_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11I3",
+      "input_contract": "CONTRACTS.md §17 rescind_invite_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "Rescinds a pending invite for current tenant. Min role: admin. No caller-supplied tenant_id."
     }
   ]
 }

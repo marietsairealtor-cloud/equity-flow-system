@@ -1,0 +1,82 @@
+PROOF_HEAD=fed6e4d7a31dee68018bafc235d7b1328f236671
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11I3 Pending Invites RPC Management Layer -- Proof Log ===
+Date: 2026-04-08T12:04:40.2405343-04:00
+Branch: feature/10.8.11I3-pending-invites-rpc
+PR HEAD SHA: fed6e4d7a31dee68018bafc235d7b1328f236671
+
+=== Deliverables ===
+Migration: 20260408000002_10_8_11I3_pending_invites_rpc.sql -- applied
+Test file: supabase/tests/10_8_11I3_pending_invites_rpc.test.sql -- PASS
+
+=== RPCs ===
+list_pending_invites_v1():
+- SECURITY DEFINER, search_path = public
+- require_min_role_v1('admin') first executable statement
+- Returns pending invites: accepted_at IS NULL AND expires_at > now()
+- data.items is empty array when no pending invites, never null
+- invited_by returns inviter email from auth.users
+
+rescind_invite_v1(p_invite_id uuid):
+- SECURITY DEFINER, search_path = public
+- require_min_role_v1('admin') first executable statement
+- Deletes pending invite row from public.tenant_invites
+- Returns NOT_FOUND for accepted, expired, or cross-tenant invites
+- Returns VALIDATION_ERROR if p_invite_id is null
+
+=== pgTAP Results ===
+supabase db reset -- PASS (47 test files, 496 tests, 0 failures)
+list_pending_invites_v1 returns ok=true -- PASS
+list_pending_invites_v1 returns only pending invites -- PASS
+list_pending_invites_v1 excludes accepted invites -- PASS
+list_pending_invites_v1 returns empty array when no pending invites -- PASS
+rescind_invite_v1 returns ok=true for pending invite -- PASS
+after rescind invite no longer appears in list -- PASS
+rescind_invite_v1 returns NOT_FOUND for accepted invite -- PASS
+rescind_invite_v1 returns NOT_FOUND for cross-tenant invite -- PASS
+
+=== db push ===
+20260408000002_10_8_11I3_pending_invites_rpc.sql -- applied
+
+=== Secret Scan ===
+gitleaks --no-git -- PASS (working tree clean)
+
+=== DoD Checklist ===
+list_pending_invites_v1 exists, SECURITY DEFINER, admin+               -- PASS
+list_pending_invites_v1 returns only unaccepted unexpired invites       -- PASS
+list_pending_invites_v1 returns empty array not null                    -- PASS
+list_pending_invites_v1 tenant-scoped via current_tenant_id()          -- PASS
+rescind_invite_v1 exists, SECURITY DEFINER, admin+                     -- PASS
+rescind_invite_v1 deletes pending invite                               -- PASS
+rescind_invite_v1 tenant-scoped, cross-tenant returns NOT_FOUND        -- PASS
+rescind_invite_v1 fails on accepted invite                             -- PASS
+rescind_invite_v1 returns VALIDATION_ERROR for null invite_id          -- PASS
+No caller-supplied tenant_id                                           -- PASS
+No changes to accept_pending_invites_v1 or existing invite flow        -- PASS
+Standard envelope unchanged                                            -- PASS
+CONTRACTS.md section 46 added                                          -- PASS
+CONTRACTS.md section 17 updated                                        -- PASS
+
+=== Registration ===
+definer_allowlist.json -- PASS
+execute_allowlist.json -- PASS
+privilege_truth.json -- PASS
+rpc_contract_registry.json -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260408T154613Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11I3 Pending Invites RPC Management Layer: PASS (merge-blocking gate)
