@@ -1,0 +1,63 @@
+PROOF_HEAD=8a4f4e711e9b96f486270273ddfba5b13ff4ed4c
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11I2 Workspace Settings Read RPC Corrective Fix -- Proof Log ===
+Date: 2026-04-08T11:09:44.9005201-04:00
+Branch: feature/10.8.11I2-workspace-settings-read-fix
+PR HEAD SHA: 8a4f4e711e9b96f486270273ddfba5b13ff4ed4c
+
+=== Deliverable ===
+Migration: 20260408000001_10_8_11I2_workspace_settings_read_fix.sql -- applied
+Test file: supabase/tests/10_8_11I2_workspace_settings_read_fix.test.sql -- PASS
+
+=== Corrective Fix ===
+get_workspace_settings_v1 previously returned null for:
+  workspace_name, country, currency, measurement_unit
+Now reads these fields from public.tenants for current tenant context.
+No schema changes. No new columns. No new RPCs. Interface unchanged.
+
+=== pgTAP Results ===
+supabase db reset -- PASS (46 test files, 488 tests, 0 failures)
+workspace_name sourced from public.tenants.name -- PASS
+country sourced from public.tenants.country -- PASS
+currency sourced from public.tenants.currency -- PASS
+measurement_unit sourced from public.tenants.measurement_unit -- PASS
+returns NOT_AUTHORIZED with no tenant context -- PASS
+
+=== db push ===
+20260408000001_10_8_11I2_workspace_settings_read_fix.sql -- applied
+
+=== DoD Checklist ===
+get_workspace_settings_v1 returns workspace_name from public.tenants.name    -- PASS
+get_workspace_settings_v1 returns country from public.tenants.country        -- PASS
+get_workspace_settings_v1 returns currency from public.tenants.currency      -- PASS
+get_workspace_settings_v1 returns measurement_unit from tenants              -- PASS
+No caller-supplied tenant_id                                                 -- PASS
+Tenant context derives from current_tenant_id()                              -- PASS
+Membership validation remains server-side                                    -- PASS
+Standard envelope unchanged                                                  -- PASS
+No new RPC                                                                   -- PASS
+No schema changes                                                            -- PASS
+No new columns                                                               -- PASS
+CONTRACTS.md section 41 updated                                              -- PASS
+No direct table calls from WeWeb                                             -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md section 41 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260408T145722Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11I2 Workspace Settings Read RPC Corrective Fix: PASS (merge-blocking gate)
