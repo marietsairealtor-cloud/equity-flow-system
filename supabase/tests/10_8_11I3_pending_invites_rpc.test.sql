@@ -36,7 +36,7 @@ VALUES (
   'c1000000-0000-0000-0000-000000000001',
   'pending@example.com',
   'member',
-  'token-pending-001',
+  gen_random_uuid()::text,
   '866998e1-cce3-4902-b5b1-b01ddd2fa785',
   now() + interval '7 days'
 );
@@ -49,7 +49,7 @@ VALUES (
   'c1000000-0000-0000-0000-000000000001',
   'accepted@example.com',
   'member',
-  'token-accepted-001',
+  gen_random_uuid()::text,
   '866998e1-cce3-4902-b5b1-b01ddd2fa785',
   now() + interval '7 days',
   now()
@@ -129,7 +129,7 @@ VALUES (
   'c1000000-0000-0000-0000-000000000002',
   'other@example.com',
   'member',
-  'token-other-001',
+  gen_random_uuid()::text,
   '8a2b5fd0-42a4-48da-95a5-792e2b1c9bb7',
   now() + interval '7 days'
 );
