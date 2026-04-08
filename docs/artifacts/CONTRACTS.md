@@ -294,7 +294,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_farm_areas_v1 | 10.8.11H | List all farm areas for current tenant; corrected from admin to member role enforcement | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — no caller tenant_id param |
 | create_farm_area_v1 | 10.8.11H | Create a new farm area for current tenant; enforces uniqueness | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | delete_farm_area_v1 | 10.8.11H | Delete a farm area for current tenant; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
-
+| list_pending_invites_v1 | 10.8.11I3 | List pending (unaccepted, unexpired) invites for current workspace | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+| rescind_invite_v1 | 10.8.11I3 | Cancel a pending invite by invite_id; deletes row; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 
 ### Mapping Rules
 
@@ -677,6 +678,8 @@ Constraints:
 - No direct table calls from WeWeb
 - No cross-tenant data leakage
 - anon cannot execute
+
+
 ## 42) Workspace Settings General RPCs Contract (10.8.11F)
 
 `public.update_workspace_settings_v1(p_workspace_name, p_slug, p_country, p_currency, p_measurement_unit)` updates workspace settings for the current tenant.
@@ -800,3 +803,33 @@ Constraints:
 - Not callable from WeWeb
 - Not callable by authenticated or anon roles
 - Trigger only — no direct execution path
+
+## 46) Pending Invites RPC Contract (10.8.11I3)
+
+`public.list_pending_invites_v1()` returns pending invites for the current workspace.
+`public.rescind_invite_v1(p_invite_id uuid)` cancels a pending invite.
+
+Behavior (both):
+- SECURITY DEFINER, search_path = public
+- Requires authenticated context
+- No caller-supplied tenant_id
+- Derives workspace from current_tenant_id() only
+- require_min_role_v1('admin') is first executable statement
+
+list_pending_invites_v1:
+- Returns data.items array (empty array when no pending invites, never null)
+- Only returns invites where accepted_at IS NULL AND expires_at > now()
+- invited_by returns inviter email from auth.users
+
+rescind_invite_v1:
+- Deletes invite row from public.tenant_invites
+- Only rescinds pending invites (accepted_at IS NULL AND expires_at > now())
+- Returns NOT_FOUND for accepted, expired, or cross-tenant invites
+- Returns NOT_FOUND for cross-tenant invite attempts
+- Returns VALIDATION_ERROR if p_invite_id is null
+
+Constraints:
+- No direct table calls from WeWeb
+- No cross-tenant access
+- anon cannot execute either RPC
+- No changes to accept_pending_invites_v1 or existing invite flow
