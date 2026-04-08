@@ -497,6 +497,9 @@
     },
     "10.8.11I1": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11I1_invite_email_"
+    }, 
+    "10.8.11I2": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I2_workspace_settings_read_fix_"
     }
   }
 }

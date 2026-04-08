@@ -655,7 +655,7 @@ Constraints:
 - No cross-user data leakage
 - anon cannot execute
 
-## 41) Workspace Settings Read RPC Contract (10.8.11E)
+## 41) Workspace Settings Read RPC Contract (10.8.11E, corrected 10.8.11I2)
 
 `public.get_workspace_settings_v1()` returns current workspace settings for the authenticated user.
 
@@ -664,7 +664,11 @@ Behavior:
 - Requires authenticated context
 - No caller-supplied tenant_id
 - Derives tenant from current_tenant_id() only
-- Returns tenant_id, workspace_name (null), slug, role, country (null), currency (null), measurement_unit (null)
+- Returns tenant_id, workspace_name, slug, role, country, currency, measurement_unit
+- workspace_name sourced from public.tenants.name
+- country sourced from public.tenants.country
+- currency sourced from public.tenants.currency
+- measurement_unit sourced from public.tenants.measurement_unit
 - Returns NOT_AUTHORIZED when current_tenant_id() is null
 - Returns NOT_AUTHORIZED when caller is not a member of the current tenant
 - data is always an object, never null
@@ -673,7 +677,6 @@ Constraints:
 - No direct table calls from WeWeb
 - No cross-tenant data leakage
 - anon cannot execute
-
 ## 42) Workspace Settings General RPCs Contract (10.8.11F)
 
 `public.update_workspace_settings_v1(p_workspace_name, p_slug, p_country, p_currency, p_measurement_unit)` updates workspace settings for the current tenant.
