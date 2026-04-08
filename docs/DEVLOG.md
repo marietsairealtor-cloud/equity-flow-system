@@ -8186,3 +8186,29 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-08 — Build Route v2.4 — 10.8.11I1
+
+Objective
+Invite email delivery — server-side trigger calling Edge Function after
+invite_workspace_member_v1 inserts a row into public.tenant_invites.
+
+Changes
+- pg_net extension enabled in extensions schema
+- trigger_invite_email SECURITY DEFINER function created on public.tenant_invites
+  AFTER INSERT; reads service_role_key from vault.decrypted_secrets
+- on_tenant_invite_insert trigger wires insert event to trigger function
+- send-invite-email Edge Function deployed; calls supabase.auth.admin.inviteUserByEmail
+- Vault secret service_role_key provisioned for trigger auth header
+- Email failure non-blocking; invite creation always succeeds
+- CONTRACTS.md section 45 added documenting trigger contract and dependencies
+- definer_allowlist.json updated (trigger_invite_email, tenant context exempt)
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I1_invite_email_20260408T011719Z.log
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
