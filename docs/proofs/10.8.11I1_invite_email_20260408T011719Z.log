@@ -1,0 +1,83 @@
+PROOF_HEAD=216e1b882f96992d243c49e7e9b8b88a343d5466
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11I1 Invite Email Delivery -- Proof Log ===
+Date: 2026-04-07T21:15:39.0833078-04:00
+Branch: feature/10.8.11I1-invite-email-delivery
+PR HEAD SHA: 216e1b882f96992d243c49e7e9b8b88a343d5466
+
+=== Deliverables ===
+Edge Function: supabase/functions/send-invite-email/index.ts -- deployed
+Migration 1: 20260407000001_10_8_11I1_invite_email_webhook.sql -- applied
+Migration 2: 20260407000002_10_8_11I1_trigger_vault_auth.sql -- applied
+Test file: supabase/tests/10_8_11I1_invite_email_webhook.test.sql -- PASS
+
+=== Infrastructure ===
+pg_net extension: enabled in extensions schema
+Trigger: on_tenant_invite_insert AFTER INSERT ON public.tenant_invites
+Trigger function: public.trigger_invite_email() SECURITY DEFINER
+Vault secret: service_role_key -- provisioned
+Edge Function auth: Bearer token from vault.decrypted_secrets
+
+=== Email Flow ===
+1. invite_workspace_member_v1 called from WeWeb
+2. Row inserted into public.tenant_invites
+3. on_tenant_invite_insert trigger fires
+4. trigger_invite_email reads service_role_key from vault
+5. net.http_post calls send-invite-email Edge Function
+6. Edge Function calls supabase.auth.admin.inviteUserByEmail
+7. Supabase Auth sends invite email to invited_email address
+8. Email failure is non-blocking -- invite row always created
+
+=== net._http_response verification ===
+status_code: 200
+content: ok
+Edge Function reached and processed successfully
+
+=== Email received ===
+Subject: You have been invited
+From: Supabase Auth noreply@mail.app.supabase.io
+Link: redirects to /auth per Site URL configuration
+Invite accepted: tenant_memberships updated via accept_pending_invites_v1
+
+=== pgTAP Results ===
+supabase db reset -- PASS (45 test files, 0 failures)
+trigger_invite_email function exists -- PASS
+trigger_invite_email is SECURITY DEFINER -- PASS
+on_tenant_invite_insert trigger exists on tenant_invites -- PASS
+insert into tenant_invites succeeds even if email trigger fails -- PASS
+
+=== DoD Checklist ===
+invite_workspace_member_v1 triggers email after success            -- PASS
+Email sent to tenant_invites.invited_email                         -- PASS
+Email delivery triggered server-side only                          -- PASS
+No frontend email logic                                            -- PASS
+No direct table access from UI                                     -- PASS
+Email failure does not block invite creation                       -- PASS
+invite remains in tenant_invites on email failure                  -- PASS
+No changes to existing RPC signatures                              -- PASS
+No changes to entitlement logic                                    -- PASS
+No changes to onboarding logic                                     -- PASS
+No secret embedded in migration SQL                                -- PASS
+Vault-backed auth only                                             -- PASS
+
+=== Registration ===
+definer_allowlist.json -- PASS (trigger_invite_email, tenant context exempt)
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md section 45 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260408T010609Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11I1 Invite Email Delivery: PASS (lane-only gate)
