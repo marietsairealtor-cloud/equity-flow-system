@@ -2013,6 +2013,37 @@ $_$;
 
 ALTER FUNCTION "public"."submit_form_v1"("p_slug" "text", "p_form_type" "text", "p_payload" "jsonb") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."trigger_invite_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_service_role_key text;
+BEGIN
+  SELECT decrypted_secret INTO v_service_role_key
+  FROM vault.decrypted_secrets
+  WHERE name = 'service_role_key'
+  LIMIT 1;
+
+  PERFORM net.http_post(
+    url := 'https://upnelewdvbicxvfgzojg.supabase.co/functions/v1/send-invite-email',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || v_service_role_key
+    ),
+    body := jsonb_build_object(
+      'record', row_to_json(NEW)::jsonb
+    )
+  );
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION "public"."trigger_invite_email"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer DEFAULT NULL::integer) RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -2694,6 +2725,8 @@ CREATE OR REPLACE TRIGGER "deal_inputs_tenant_match" BEFORE INSERT OR UPDATE ON 
 CREATE OR REPLACE TRIGGER "deal_outputs_tenant_match" BEFORE INSERT OR UPDATE ON "public"."deal_outputs" FOR EACH ROW EXECUTE FUNCTION "public"."check_deal_tenant_match"();
 
 CREATE CONSTRAINT TRIGGER "deals_snapshot_not_null" AFTER INSERT OR UPDATE ON "public"."deals" DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION "public"."check_deal_snapshot_not_null"();
+
+CREATE OR REPLACE TRIGGER "on_tenant_invite_insert" AFTER INSERT ON "public"."tenant_invites" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_invite_email"();
 
 ALTER TABLE ONLY "public"."activity_log"
     ADD CONSTRAINT "activity_log_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
