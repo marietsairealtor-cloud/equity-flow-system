@@ -8212,3 +8212,26 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-08 — Build Route v2.4 — 10.8.11I2
+
+Objective
+Corrective fix for get_workspace_settings_v1 — fields workspace_name, country,
+currency, and measurement_unit were hardcoded null; now read from public.tenants.
+
+Changes
+- Migration 20260408000001_10_8_11I2_workspace_settings_read_fix.sql applied
+- get_workspace_settings_v1 updated to SELECT name, country, currency,
+  measurement_unit from public.tenants for current tenant context
+- No schema changes. No new columns. No new RPCs. Interface unchanged.
+- CONTRACTS.md section 41 updated to remove null-placeholder language
+- pgTAP tests added proving correct field sourcing and NOT_AUTHORIZED path
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I2_workspace_settings_read_fix_20260408T151046Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
