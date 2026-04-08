@@ -8235,3 +8235,30 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-08 — Build Route v2.4 — 10.8.11I3
+
+Objective
+Pending Invites RPC Management Layer — two new RPCs for listing and rescinding
+pending workspace invites.
+
+Changes
+- Migration 20260408000002_10_8_11I3_pending_invites_rpc.sql applied
+- list_pending_invites_v1: returns pending (unaccepted, unexpired) invites for
+  current tenant; data.items is empty array when no invites; invited_by returns
+  inviter email not raw UUID; admin+ only
+- rescind_invite_v1: deletes pending invite by invite_id; returns NOT_FOUND for
+  accepted, expired, or cross-tenant invites; admin+ only
+- No changes to existing invite flow or accept_pending_invites_v1
+- CONTRACTS.md sections 46 added, section 17 updated
+- definer_allowlist.json, execute_allowlist.json, privilege_truth.json,
+  rpc_contract_registry.json, qa_scope_map.json, qa_claim.json,
+  ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I3_pending_invites_rpc_20260408T160557Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
