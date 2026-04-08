@@ -5689,6 +5689,38 @@ Update `public.get_workspace_settings_v1()` to read `name`, `country`, `currency
 **Proof:** `docs/proofs/10.8.11I4_pending_invites_ui_<UTC>.md`
 **Gate:** `lane-only`
 
+### **10.8.11I5 — Seat Billing Sync on Invite Acceptance**
+
+**Deliverable**
+Invite acceptance updates Stripe seat quantity
+
+**DoD**
+*On accept_pending_invites_v1():
+ membership created
+ Stripe subscription quantity updated (active members)
+*Seat count:
+ derived server-side from tenant memberships
+*Stripe:
+ update existing subscription only
+ webhook → upsert_subscription_v1 → tenant_subscriptions
+*Server-side only (no frontend role)
+*Idempotent (no duplicate billing events)
+
+**Proof**: docs/proofs/10.8.11I5_seat_billing_sync_<UTC>.log
+**Gate**: merge-blocking
+
+### **10.8.11I6 — Billing Seat Count UI**
+
+**Deliverable**
+Billing section shows seat count
+
+**DoD**
+Owner-only billing section displays active member count
+Data from existing RPCs only
+No billing mutations from UI
+
+**Proof**: docs/proofs/10.8.11I6_billing_seat_ui_<UTC>.md
+**Gate**: lane-only
 ---
 
 ## **10.8.11J — Update Display Name RPC + UI**
