@@ -5484,7 +5484,7 @@ WeWeb Workspace Settings page rendered inside authenticated shell, with role-gat
  entitlement logic
  onboarding logic
 
-**Proof**: docs/proofs/10.8.11I1_invite_email_<UTC>.md
+**Proof**: docs/proofs/10.8.11I1_invite_email_<UTC>.log
 **Gate**: lane-only
 
 ### **10.8.11I2 — Workspace Settings Read RPC Corrective Fix**

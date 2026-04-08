@@ -772,3 +772,28 @@ delete_farm_area_v1 constraints:
 
 data is always an object, never null.
 anon cannot execute any of these RPCs.
+
+## 45) Invite Email Delivery Contract (10.8.11I1)
+
+`public.trigger_invite_email()` is a SECURITY DEFINER trigger function that fires
+on INSERT to `public.tenant_invites`.
+
+Behavior:
+- Fires AFTER INSERT on public.tenant_invites FOR EACH ROW
+- Reads service_role_key from vault.decrypted_secrets
+- Calls send-invite-email Edge Function via net.http_post
+- Edge Function calls supabase.auth.admin.inviteUserByEmail
+- Email failure does not block invite creation (EXCEPTION path returns NEW)
+- No caller-supplied parameters
+- No tenant context required — fires as infrastructure trigger
+
+Dependencies:
+- pg_net extension enabled in extensions schema
+- vault secret: service_role_key must exist
+- Edge Function: send-invite-email must be deployed
+- Supabase Auth invite template configured
+
+Constraints:
+- Not callable from WeWeb
+- Not callable by authenticated or anon roles
+- Trigger only — no direct execution path

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260406000001",
-  "migration_tip_file": "20260406000001_10_8_11H_workspace_farm_areas_rpcs.sql",
-  "migration_count": 80,
-  "pinned_at": "2026-04-06"
+  "migration_tip": "20260407000002",
+  "migration_tip_file": "20260407000002_10_8_11I1_trigger_vault_auth.sql",
+  "migration_count": 82,
+  "pinned_at": "2026-04-08"
 }
