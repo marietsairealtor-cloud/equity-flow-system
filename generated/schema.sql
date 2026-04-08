@@ -1051,6 +1051,10 @@ DECLARE
   v_tenant_id uuid;
   v_role public.tenant_role;
   v_slug text;
+  v_name text;
+  v_country text;
+  v_currency text;
+  v_measurement_unit text;
 BEGIN
   v_tenant_id := public.current_tenant_id();
 
@@ -1084,17 +1088,22 @@ BEGIN
   WHERE ts.tenant_id = v_tenant_id
   LIMIT 1;
 
+  SELECT t.name, t.country, t.currency, t.measurement_unit
+  INTO v_name, v_country, v_currency, v_measurement_unit
+  FROM public.tenants t
+  WHERE t.id = v_tenant_id;
+
   RETURN jsonb_build_object(
     'ok', true,
     'code', 'OK',
     'data', jsonb_build_object(
       'tenant_id', v_tenant_id,
-      'workspace_name', null,
+      'workspace_name', v_name,
       'slug', v_slug,
       'role', v_role,
-      'country', null,
-      'currency', null,
-      'measurement_unit', null
+      'country', v_country,
+      'currency', v_currency,
+      'measurement_unit', v_measurement_unit
     ),
     'error', null
   );
