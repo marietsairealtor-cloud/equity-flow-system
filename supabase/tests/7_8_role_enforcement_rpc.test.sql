@@ -127,6 +127,7 @@ SELECT is(
      AND p.proname != 'list_user_tenants_v1'
      AND p.proname != 'set_current_tenant_v1'
      AND p.proname != 'upsert_subscription_v1'
+     AND p.proname != 'trigger_seat_sync'
      AND NOT (pg_get_functiondef(p.oid) ~* 'require_min_role_v1')),
   0,
   'Catalog audit: zero privileged RPCs missing require_min_role_v1 guard'

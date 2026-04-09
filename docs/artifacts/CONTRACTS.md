@@ -832,4 +832,31 @@ Constraints:
 - No direct table calls from WeWeb
 - No cross-tenant access
 - anon cannot execute either RPC
-- No changes to accept_pending_invites_v1 or existing invite flow
+
+## 47) Seat Billing Sync Contract (10.8.11I5)
+
+`public.trigger_seat_sync()` is a SECURITY DEFINER trigger function that fires
+on INSERT and DELETE on `public.tenant_memberships`.
+
+Behavior:
+- Fires AFTER INSERT and AFTER DELETE on public.tenant_memberships FOR EACH ROW
+- Reads service_role_key from vault.decrypted_secrets
+- Calls sync-seat-count Edge Function via net.http_post
+- Edge Function counts all active tenant_memberships for the tenant
+- Edge Function updates Stripe subscription quantity via STRIPE_PRICE_ID match
+- Seat count = all members including owner (absolute recomputation, idempotent)
+- Sync failure does not block membership changes (EXCEPTION path returns NEW/OLD)
+
+Dependencies:
+- pg_net extension enabled in extensions schema
+- vault secret: service_role_key must exist
+- Edge Function: sync-seat-count must be deployed
+- Supabase Edge Function secret: STRIPE_PRICE_ID must match exact Stripe price ID
+- Supabase Edge Function secret: STRIPE_SECRET_KEY must be valid
+
+Constraints:
+- Not callable from WeWeb
+- Not callable by authenticated or anon roles
+- Trigger only — no direct execution path
+- No subscription for tenant → no-op (deliberate)
+- No matching seat price item → no-op (deliberate)

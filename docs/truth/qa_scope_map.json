@@ -506,6 +506,9 @@
     },
     "10.8.11I4": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11I4_pending_invites_ui_"
+    },
+    "10.8.11I5": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I5_seat_billing_sync_"  
     }
   }
 }
