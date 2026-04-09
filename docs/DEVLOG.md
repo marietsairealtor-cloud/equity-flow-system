@@ -8317,3 +8317,24 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-09 — Build Route v2.4 — 10.8.11I6
+
+Objective
+Billing Seat Count UI — active seat count displayed in owner-only billing
+section of Workspace Settings General tab.
+
+Changes
+- Active seats field added to billing section
+- Data sourced from list_workspace_members_v1 response items length
+- No new RPCs. No direct table access. No billing mutations from UI.
+- Owner-only visibility enforced via existing entitlements role check
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I6_billing_seat_ui_20260409T204947Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
