@@ -13,7 +13,9 @@ Get-ChildItem $paths -Recurse -File -Filter *.sql -ErrorAction SilentlyContinue 
 
   if(($stripped -match '(?is)security\s+definer') -and (
        ($stripped -match '(?is)\bformat\s*\(') -or
-       (($stripped -match '(?is)\bexecute\b') -and ($stripped -notmatch '(?is)\b(grant|revoke)\s+execute\s+on\s+(function|procedure)\b'))
+       (($stripped -match '(?is)\bexecute\b') -and 
+        ($stripped -notmatch '(?is)\b(grant|revoke)\s+execute\s+on\s+(function|procedure)\b') -and 
+        ($stripped -notmatch '(?is)\bcreate\s+trigger\b.*\bexecute\s+function\b'))
      )){ $bad+=("$($_.FullName) : SECURITY DEFINER dynamic SQL (EXECUTE/format)") }
 }
 if($bad.Count){ $bad | %{"LINT_SQL_SAFETY FAIL: $_"}; exit 1 } else { "LINT_SQL_SAFETY OK" }
