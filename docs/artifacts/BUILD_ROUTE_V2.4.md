@@ -5721,6 +5721,40 @@ No billing mutations from UI
 
 **Proof**: docs/proofs/10.8.11I6_billing_seat_ui_<UTC>.md
 **Gate**: lane-only
+
+## **10.8.11I7 — Re-Invite Email Delivery for Existing Users**
+
+### **Deliverable**
+
+* Re-inviting an email that already exists in `auth.users` sends a custom invite email
+
+### **DoD**
+
+* If invited email does **not** exist in `auth.users`:
+
+  * existing `inviteUserByEmail` flow remains unchanged
+
+* If invited email **does** exist in `auth.users`:
+
+  * server sends custom re-invite email
+  * email links user to `/auth`
+  * after login, `accept_pending_invites_v1()` resolves access
+
+* Re-invite email is triggered server-side only
+
+* No frontend email logic
+
+* No direct table access from UI
+
+* Existing invite acceptance flow unchanged
+
+* Invite row still created even if email delivery fails
+
+* Existing-user re-invite behavior is documented in proof / contract notes
+
+**Proof:** `docs/proofs/10.8.11I7_reinvite_email_<UTC>.log`
+**Gate:** `merge-blocking`
+
 ---
 
 ## **10.8.11J — Update Display Name RPC + UI**
