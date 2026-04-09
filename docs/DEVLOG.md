@@ -8262,3 +8262,28 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-09 — Build Route v2.4 — 10.8.11I4
+
+Objective
+Pending Invites UI — view and manage pending workspace invites in Workspace
+Settings Members tab.
+
+Changes
+- Pending invites list added below Invite members section in Members tab
+- Displays email, role, invited_by (inviter email), created_at (formatted)
+- Data sourced from list_pending_invites_v1 only
+- Cancel invite button opens confirmation modal before calling rescind_invite_v1
+- On success: invite removed from UI, list refreshed
+- Empty state displayed when no pending invites
+- Admin+ only (inherited from page access gate)
+- No direct table access. All data via allowlisted RPCs only.
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I4_pending_invites_ui_20260409T005305Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
