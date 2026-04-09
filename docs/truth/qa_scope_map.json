@@ -505,7 +505,7 @@
     "proof_pattern": "^docs/proofs/10\\.8\\.11I3_pending_invites_rpc_"
     },
     "10.8.11I4": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I4_update_display_name_"
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I4_pending_invites_ui_"
     }
   }
 }
