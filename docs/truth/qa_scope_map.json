@@ -509,6 +509,9 @@
     },
     "10.8.11I5": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11I5_seat_billing_sync_"  
+    },
+    "10.8.11I6": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I6_billing_seat_ui"  
     }
   }
 }
