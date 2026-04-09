@@ -204,6 +204,7 @@
     "docs/proofs/10.8.11I2_workspace_settings_read_fix_20260408T151046Z.log": "ceed7254168f977354259892bd973cca9266a8400f0e932f31a8c77df3876c23",
     "docs/proofs/10.8.11I3_pending_invites_rpc_20260408T160557Z.log": "c4c9680ba12942ba7f33ff4a53a7f9395b6d8b2bd4353b744a6fd44eb71fa11c",
     "docs/proofs/10.8.11I4_pending_invites_ui_20260409T005858Z.md": "7ce70d7e68ef5231d0b8b5b07d3b45a433757be85f7d8cef531168e244bbbdbc",
-    "docs/proofs/10.8.11I5_seat_billing_sync_20260409T181032Z.log": "9bb6fc38c788dfc48517bb40cb2d8cbeb16c74101b9e8f19dbfcf6fd7a093249"
+    "docs/proofs/10.8.11I5_seat_billing_sync_20260409T181032Z.log": "9bb6fc38c788dfc48517bb40cb2d8cbeb16c74101b9e8f19dbfcf6fd7a093249",
+    "docs/proofs/10.8.11I6_billing_seat_ui_20260409T205526Z.md": "3eb6966fc04a5d0c8bf02ef81306f3a8c5b191ac46fbc1b6557ae139b9bd3133"
   }
 }
