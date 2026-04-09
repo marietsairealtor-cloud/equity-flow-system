@@ -8287,3 +8287,33 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-09 — Build Route v2.4 — 10.8.11I5
+
+Objective
+Seat billing sync — membership changes automatically update Stripe subscription
+quantity server-side.
+
+Changes
+- Migration 20260409000001_10_8_11I5_seat_billing_sync.sql applied
+- trigger_seat_sync SECURITY DEFINER function created on public.tenant_memberships
+  AFTER INSERT and AFTER DELETE
+- on_membership_insert_sync_seats and on_membership_delete_sync_seats triggers
+  fire on member join and removal
+- sync-seat-count Edge Function deployed; counts active members and updates
+  Stripe subscription quantity via deterministic STRIPE_PRICE_ID item lookup
+- Seat count uses absolute recomputation — idempotent by design
+- Sync failure non-blocking; membership changes always succeed
+- lint_sql_safety.ps1 updated to exclude CREATE TRIGGER EXECUTE FUNCTION
+  from dynamic SQL false positive detection
+- CONTRACTS.md section 47 added
+- definer_allowlist.json updated (trigger_seat_sync, tenant context exempt)
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I5_seat_billing_sync_20260409T181032Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
