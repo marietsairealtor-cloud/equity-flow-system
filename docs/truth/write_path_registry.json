@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-08T15:47:01Z",
+    "generated":  "2026-04-09T17:51:12Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -223,6 +223,24 @@
                             "name":  "on_tenant_invite_insert",
                             "tables":  [
                                            "tenant_invites"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "on_membership_delete_sync_seats",
+                            "tables":  [
+                                           "tenant_memberships"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "on_membership_insert_sync_seats",
+                            "tables":  [
+                                           "tenant_memberships"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
