@@ -1,0 +1,90 @@
+PROOF_HEAD=325f9aaeab21a6a7c57826c248c5a7ba5cfedd59
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11I5 Seat Billing Sync on Invite Acceptance -- Proof Log ===
+Date: 2026-04-09T14:09:06.1868337-04:00
+Branch: feature/10.8.11I5-seat-billing-sync
+PR HEAD SHA: 325f9aaeab21a6a7c57826c248c5a7ba5cfedd59
+
+=== Deliverables ===
+Migration: 20260409000001_10_8_11I5_seat_billing_sync.sql -- applied
+Test file: supabase/tests/10_8_11I5_seat_billing_sync.test.sql -- PASS
+Edge Function: supabase/functions/sync-seat-count/index.ts -- deployed
+
+=== Infrastructure ===
+pg_net extension: enabled in extensions schema (from 10.8.11I1)
+Trigger function: public.trigger_seat_sync() SECURITY DEFINER
+Trigger INSERT: on_membership_insert_sync_seats AFTER INSERT ON tenant_memberships
+Trigger DELETE: on_membership_delete_sync_seats AFTER DELETE ON tenant_memberships
+Vault secret: service_role_key -- provisioned (from 10.8.11I1)
+Edge Function auth: Bearer token from vault.decrypted_secrets
+STRIPE_PRICE_ID: configured in Edge Function secrets (exact case verified)
+
+=== Seat Sync Flow ===
+1. Member joins via accept_pending_invites_v1
+2. Row inserted into public.tenant_memberships
+3. on_membership_insert_sync_seats trigger fires
+4. trigger_seat_sync reads service_role_key from vault
+5. net.http_post calls sync-seat-count Edge Function
+6. Edge Function counts all active tenant_memberships for tenant
+7. Edge Function finds seat item via STRIPE_PRICE_ID match
+8. Edge Function updates Stripe subscription quantity (absolute recomputation)
+9. Sync failure is non-blocking -- membership always created
+
+Same flow on DELETE for member removal.
+
+=== Idempotency ===
+Seat count uses absolute recomputation from DB state.
+Duplicate trigger calls set same quantity -- cannot overbill.
+
+=== net._http_response verification ===
+status_code: 200
+content: ok
+Edge Function reached and processed successfully
+
+=== Stripe verification ===
+Tested: owner creates workspace (1 seat)
+Tested: invite + accept adds member (2 seats) -- Stripe quantity updated
+Tested: invite + accept adds member (3 seats) -- Stripe quantity updated
+Tested: remove member (2 seats) -- Stripe quantity updated
+Upcoming invoice confirmed correct quantity and amount in Stripe dashboard
+
+=== pgTAP Results ===
+supabase db reset -- PASS (48 test files, 501 tests, 0 failures)
+trigger_seat_sync function exists -- PASS
+trigger_seat_sync is SECURITY DEFINER -- PASS
+on_membership_insert_sync_seats trigger exists -- PASS
+on_membership_delete_sync_seats trigger exists -- PASS
+INSERT and DELETE succeed with live triggers active -- PASS
+
+=== DoD Checklist ===
+Membership created on accept_pending_invites_v1                        -- PASS
+Stripe subscription quantity updated on membership INSERT               -- PASS
+Stripe subscription quantity updated on membership DELETE               -- PASS
+Seat count derived server-side from tenant_memberships                 -- PASS
+Update existing subscription only                                      -- PASS
+Server-side only -- no frontend role                                   -- PASS
+Idempotent -- absolute recomputation, no duplicate billing events      -- PASS
+No subscription for tenant -- no-op                                    -- PASS
+No matching seat item -- no-op                                         -- PASS
+
+=== Registration ===
+definer_allowlist.json -- PASS (trigger_seat_sync, tenant context exempt)
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md section 47 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260409T174927Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11I5 Seat Billing Sync on Invite Acceptance: PASS (merge-blocking gate)
