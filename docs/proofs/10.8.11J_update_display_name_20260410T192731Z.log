@@ -1,0 +1,88 @@
+PROOF_HEAD=acd26ef4671e4ac5bde6b308e5773ceaef04ba32
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11J Update Display Name RPC + UI -- Proof Log ===
+Date: 2026-04-10T15:25:18.0106274-04:00
+Branch: feature/10.8.11J-update-display-name
+PR HEAD SHA: acd26ef4671e4ac5bde6b308e5773ceaef04ba32
+
+=== Deliverables ===
+Migration: 20260410000002_10_8_11J_update_display_name.sql -- applied
+Test file: supabase/tests/10_8_11J_update_display_name.test.sql -- PASS
+UI: Profile Settings page display name input + save button wired
+
+=== RPCs ===
+update_display_name_v1(p_display_name text):
+- SECURITY DEFINER, search_path = public
+- Requires authenticated context
+- Uses auth.uid() only -- no caller-supplied user_id
+- Updates public.user_profiles.display_name
+- Blank/null input returns VALIDATION_ERROR
+- NOT_FOUND if no profile row exists
+- Returns saved display_name in data envelope
+
+get_profile_settings_v1 corrective fix:
+- Now reads display_name from public.user_profiles
+- No longer returns hardcoded null
+- Interface unchanged
+
+=== UI Implementation ===
+Location: Profile Settings page
+Input initial value: profileSettings.data.display_name
+Save button: calls update_display_name_v1 with input value
+On success: fetch-profile-settings refreshed, success_message set
+No direct table access from WeWeb
+
+=== pgTAP Results ===
+supabase db reset -- PASS (51 test files, 518 tests, 0 failures)
+update_display_name_v1(text) exists -- PASS
+authenticated can execute -- PASS
+anon cannot execute -- PASS
+success + DB state updated -- PASS
+display_name updated in user_profiles -- PASS
+blank display_name returns VALIDATION_ERROR -- PASS
+get_profile_settings_v1 returns saved display_name -- PASS
+user 2 update does not affect user 1 profile (isolation) -- PASS
+user 1 display_name unchanged after user 2 update -- PASS
+
+=== db push ===
+20260410000002_10_8_11J_update_display_name.sql -- applied
+
+=== DoD Checklist ===
+update_display_name_v1 exists, SECURITY DEFINER                                -- PASS
+uses auth.uid() only                                                           -- PASS
+updates user_profiles.display_name                                             -- PASS
+blank returns VALIDATION_ERROR                                                 -- PASS
+returns display_name in envelope                                               -- PASS
+authenticated only, anon denied                                                -- PASS
+cross-user isolation proven by pgTAP                                           -- PASS
+get_profile_settings_v1 reads display_name from user_profiles                  -- PASS
+UI loads via get_profile_settings_v1                                           -- PASS
+UI saves via update_display_name_v1                                            -- PASS
+RPC-only, no direct table access from WeWeb                                    -- PASS
+CONTRACTS.md section 49 added (update_display_name_v1 contract)               -- PASS
+CONTRACTS.md section 17 updated (update_display_name_v1 mapping row)          -- PASS
+CONTRACTS.md section 40 updated (display_name null placeholder removed)        -- PASS
+
+=== Registration ===
+definer_allowlist.json -- PASS
+execute_allowlist.json -- PASS
+privilege_truth.json -- PASS
+rpc_contract_registry.json -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260410T184245Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11J Update Display Name RPC + UI: PASS (lane-only gate)
