@@ -8389,3 +8389,24 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-10 — Build Route v2.4 — 10.8.11I9
+
+Objective
+Workspace Switcher Name Wiring — hamburger popup workspace switcher now displays
+workspace_name instead of slug, with fallback to 'Unnamed Workspace'.
+
+Changes
+- Text binding updated to context.item.data.workspace_name || 'Unnamed Workspace'
+- Fallback handles null workspace_name gracefully
+- Data source remains list_user_tenants_v1 only
+- No new RPCs. No direct table access. No business logic in UI.
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I9_workspace_switcher_name_ui_20260410T151618Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
