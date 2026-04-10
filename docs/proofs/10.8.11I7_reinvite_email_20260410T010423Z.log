@@ -1,0 +1,92 @@
+PROOF_HEAD=e3c835acee99c9be12ca87452bc4b09da69c7499
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11I7 Re-Invite Email Delivery for Existing Users -- Proof Log ===
+Date: 2026-04-09T21:02:58.5925409-04:00
+Branch: feature/10.8.11I7-reinvite-email
+PR HEAD SHA: e3c835acee99c9be12ca87452bc4b09da69c7499
+
+=== Deliverables ===
+Migration: 20260409000002_10_8_11I7_auth_user_exists.sql -- applied
+Test file: supabase/tests/10_8_11I7_auth_user_exists.test.sql -- PASS
+Edge Function: supabase/functions/send-invite-email/index.ts -- updated + deployed
+
+=== Helper Function ===
+auth_user_exists_v1(p_email text):
+- SECURITY DEFINER, search_path = public
+- Reads from auth.users only
+- Returns boolean -- true if email exists, false if not
+- Case-insensitive match via lower()
+- REVOKE ALL FROM PUBLIC -- service_role access only (implicit, no explicit grant)
+- Excluded from rpc-mapping-contract gate (internal helper, not public RPC)
+
+=== Edge Function Revised Logic ===
+New user (not in auth.users):
+  calls supabase.auth.admin.inviteUserByEmail(email, { redirectTo: APP_URL/auth })
+Existing user (in auth.users):
+  calls supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: APP_URL/auth } })
+Both paths:
+  user lands on /auth
+  /post-auth calls accept_pending_invites_v1()
+  invite resolved automatically
+Email failure: non-blocking -- invite row always created
+
+=== Guards ===
+APP_URL guard: returns 'misconfigured' if env not set
+shouldCreateUser: false -- prevents accidental user creation
+email normalized: trim().toLowerCase()
+
+=== Magic Link Template Dependency ===
+Supabase Magic Link email template repurposed for existing-user re-invite emails
+Subject: You've been invited to join Wholesale Hub
+Template dependency is project-level -- documented in CONTRACTS.md section 48
+
+=== Testing ===
+New user invite -- invite email received -- PASS
+Existing user re-invite -- magic link email received -- PASS
+Both users land on /auth after clicking link -- PASS
+accept_pending_invites_v1 resolves access after login -- PASS
+
+=== pgTAP Results ===
+supabase db reset -- PASS (49 test files, 506 tests, 0 failures)
+auth_user_exists_v1(text) exists -- PASS
+auth_user_exists_v1 is SECURITY DEFINER -- PASS
+returns true for existing email -- PASS
+returns false for non-existing email -- PASS
+case-insensitive match returns true -- PASS
+
+=== DoD Checklist ===
+New user invite flow unchanged                                         -- PASS
+Existing user receives re-invite email                                 -- PASS
+Email links user to /auth                                              -- PASS
+accept_pending_invites_v1 resolves access after login                  -- PASS
+Re-invite triggered server-side only                                   -- PASS
+No frontend email logic                                                -- PASS
+No direct table access from UI                                         -- PASS
+Existing invite acceptance flow unchanged                              -- PASS
+Invite row created even if email delivery fails                        -- PASS
+Existing-user re-invite behavior documented in CONTRACTS.md            -- PASS
+
+=== Registration ===
+definer_allowlist.json -- PASS (auth_user_exists_v1, tenant context exempt)
+privilege_truth.json -- PASS (service_role section added)
+rpc_contract_registry.json -- PASS
+ci_rpc_mapping_contract.ps1 -- PASS (auth_user_exists_v1 excluded as internal helper)
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md section 48 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260410T003629Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11I7 Re-Invite Email Delivery for Existing Users: PASS (merge-blocking gate)
