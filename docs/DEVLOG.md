@@ -8367,3 +8367,25 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-10 — Build Route v2.4 — 10.8.11I8
+
+Objective
+list_user_tenants_v1 Workspace Name Corrective Fix — workspace_name was
+hardcoded null; now sourced from public.tenants.name.
+
+Changes
+- Migration 20260410000001_10_8_11I8_list_user_tenants_workspace_name.sql applied
+- list_user_tenants_v1 updated to JOIN public.tenants and return workspace_name
+  from tenants.name for each tenant membership
+- No schema changes. No new columns. No new RPCs. Interface unchanged.
+- CONTRACTS.md section 17 mapping row updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I8_list_user_tenants_workspace_name_20260410T143328Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
