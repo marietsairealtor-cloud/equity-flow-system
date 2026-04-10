@@ -518,6 +518,9 @@
     },
     "10.8.11I8": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11I8_list_user_tenants_workspace_name_"
+    },
+    "10.8.11I9": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I9_workspace_switcher_name_ui_"
     }
   }
 }
