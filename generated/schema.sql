@@ -217,6 +217,21 @@ $$;
 
 ALTER FUNCTION "public"."activity_log_append_only"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."auth_user_exists_v1"("p_email" "text") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM auth.users u
+    WHERE lower(u.email) = lower(p_email)
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."auth_user_exists_v1"("p_email" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."check_deal_snapshot_not_null"() RETURNS "trigger"
     LANGUAGE "plpgsql" STABLE
     SET "search_path" TO 'public'
