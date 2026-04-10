@@ -512,6 +512,9 @@
     },
     "10.8.11I6": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11I6_billing_seat_ui"  
+    },
+    "10.8.11I7": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I7_reinvite_email_"  
     }
   }
 }

@@ -22,7 +22,7 @@
     ]
   },
   "routine_grants": {
-    "comment": "EXECUTE grants on public schema routines. Source: information_schema.role_routine_grants. Must match execute_allowlist.json exactly.",
+    "comment": "EXECUTE grants on public schema routines. Source: information_schema.role_routine_grants. anon and authenticated must match execute_allowlist.json exactly. service_role lists integration-only routines (not app-user callable).",
     "anon": [
       {
         "routine": "resolve_form_slug_v1",
@@ -150,6 +150,13 @@
       {
         "routine": "delete_farm_area_v1",
         "privilege": "EXECUTE"
+      }
+    ],
+    "service_role": [
+      {
+        "routine": "auth_user_exists_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.8.11I7 — send-invite-email Edge Function; EXECUTE to service_role only (REVOKE PUBLIC)"
       }
     ]
   },
