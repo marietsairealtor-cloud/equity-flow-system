@@ -1454,7 +1454,7 @@ BEGIN
   SELECT jsonb_agg(
     jsonb_build_object(
       'tenant_id', tm.tenant_id,
-      'tenant_name', NULL,
+      'workspace_name', t.name,
       'slug', ts.slug,
       'role', tm.role,
       'is_current', (tm.tenant_id = v_current_tenant_id)
@@ -1463,6 +1463,7 @@ BEGIN
   ) INTO v_items
   FROM public.tenant_memberships tm
   LEFT JOIN public.tenant_slugs ts ON ts.tenant_id = tm.tenant_id
+  LEFT JOIN public.tenants t ON t.id = tm.tenant_id
   WHERE tm.user_id = v_user_id;
 
   RETURN jsonb_build_object(
