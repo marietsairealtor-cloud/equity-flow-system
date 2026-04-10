@@ -8410,3 +8410,32 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-10 — Build Route v2.4 — 10.8.11J
+
+Objective
+Update Display Name RPC + UI — users can now set and update their display name
+from the Profile Settings page.
+
+Changes
+- Migration 20260410000002_10_8_11J_update_display_name.sql applied
+- update_display_name_v1(p_display_name text) added: SECURITY DEFINER,
+  authenticated only, updates user_profiles.display_name for auth.uid();
+  blank returns VALIDATION_ERROR; NOT_FOUND if no profile row exists
+- get_profile_settings_v1 corrected to read display_name from user_profiles
+  instead of returning hardcoded null; interface unchanged
+- Profile Settings UI wired: input loads from get_profile_settings_v1,
+  save button calls update_display_name_v1
+- Cross-user isolation proven by pgTAP
+- CONTRACTS.md sections 49 added, 17 and 40 updated
+- definer_allowlist.json, execute_allowlist.json, privilege_truth.json,
+  rpc_contract_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11J_update_display_name_20260410T192731Z.log
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
