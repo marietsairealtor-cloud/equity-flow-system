@@ -376,6 +376,15 @@
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
       "notes": "Rescinds a pending invite for current tenant. Min role: admin. No caller-supplied tenant_id."
+    },
+    {
+      "name": "auth_user_exists_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11I7",
+      "input_contract": "p_email text — case-insensitive match against auth.users.email",
+      "response_schema": null,
+      "error_codes": [],
+      "notes": "SECURITY DEFINER. Callable by service_role only (REVOKE PUBLIC). Returns boolean (not JSON envelope). Existence only — no user data leakage. Used by send-invite-email Edge Function."
     }
   ]
 }

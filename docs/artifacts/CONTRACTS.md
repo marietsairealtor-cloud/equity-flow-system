@@ -860,3 +860,39 @@ Constraints:
 - Trigger only — no direct execution path
 - No subscription for tenant → no-op (deliberate)
 - No matching seat price item → no-op (deliberate)
+
+## 48) Re-Invite Email Delivery Contract (10.8.11I7)
+
+`public.auth_user_exists_v1(p_email text)` is a SECURITY DEFINER helper function
+used by the send-invite-email Edge Function to determine invite email path.
+
+Behavior:
+- SECURITY DEFINER, search_path = public
+- Reads from auth.users only
+- Returns boolean — true if email exists, false if not
+- Case-insensitive match via lower()
+- No data leakage — boolean only
+
+Access:
+- EXECUTE granted to service_role only
+- Not callable by authenticated or anon
+- Not callable from WeWeb
+
+send-invite-email Edge Function revised behavior:
+- New user (not in auth.users): calls supabase.auth.admin.inviteUserByEmail()
+- Existing user (in auth.users): calls supabase.auth.signInWithOtp() with shouldCreateUser: false
+- Both paths redirect to APP_URL/auth
+- After login: /post-auth calls accept_pending_invites_v1() — invite resolved
+- Email failure does not block invite creation
+- invite row remains in tenant_invites on email failure
+
+Dependencies:
+- Supabase Magic Link email template repurposed for existing-user re-invite emails
+- APP_URL Edge Function secret must be configured
+- Magic Link template dependency is project-level — any future passwordless login
+  flow will share this template
+
+Constraints:
+- No frontend email logic
+- No direct table access from UI
+- Existing invite acceptance flow unchanged
