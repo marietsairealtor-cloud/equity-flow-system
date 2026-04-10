@@ -515,6 +515,9 @@
     },
     "10.8.11I7": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11I7_reinvite_email_"  
+    },
+    "10.8.11I8": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11I8_list_user_tenants_workspace_name_"
     }
   }
 }
