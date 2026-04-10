@@ -30,7 +30,7 @@ foreach ($mig in $migrationsChanged) {
     foreach ($m in $matches) {
       $rpcName = $m.Groups[2].Value
       # Exclude known internal helpers
-      if ($rpcName -notin @("require_min_role_v1", "current_tenant_id")) {
+      if ($rpcName -notin @("require_min_role_v1", "current_tenant_id", "auth_user_exists_v1")) {
         $newRpcs += $rpcName
       }
     }

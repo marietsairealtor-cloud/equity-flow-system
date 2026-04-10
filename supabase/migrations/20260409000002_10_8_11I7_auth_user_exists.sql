@@ -18,4 +18,3 @@ END;
 $fn$;
 
 REVOKE ALL ON FUNCTION public.auth_user_exists_v1(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.auth_user_exists_v1(text) TO service_role;
