@@ -941,6 +941,7 @@ CREATE OR REPLACE FUNCTION "public"."get_profile_settings_v1"() RETURNS "jsonb"
 DECLARE
   v_user_id uuid;
   v_email text;
+  v_display_name text;
 BEGIN
   v_user_id := auth.uid();
 
@@ -953,10 +954,13 @@ BEGIN
     );
   END IF;
 
-  SELECT u.email
-  INTO v_email
+  SELECT u.email INTO v_email
   FROM auth.users u
   WHERE u.id = v_user_id;
+
+  SELECT up.display_name INTO v_display_name
+  FROM public.user_profiles up
+  WHERE up.id = v_user_id;
 
   RETURN jsonb_build_object(
     'ok', true,
@@ -964,7 +968,7 @@ BEGIN
     'data', jsonb_build_object(
       'user_id', v_user_id,
       'email', v_email,
-      'display_name', null
+      'display_name', v_display_name
     ),
     'error', null
   );
@@ -2279,6 +2283,60 @@ END;
 $$;
 
 ALTER FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_row_version" bigint, "p_calc_version" integer) OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."update_display_name_v1"("p_display_name" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_user_id uuid;
+  v_display_name text;
+BEGIN
+  v_user_id := auth.uid();
+
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_AUTHORIZED',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Not authenticated', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  IF p_display_name IS NULL OR trim(p_display_name) = '' THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'VALIDATION_ERROR',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Display name is required', 'fields', jsonb_build_object('display_name', 'Must not be blank'))
+    );
+  END IF;
+
+  v_display_name := trim(p_display_name);
+
+  UPDATE public.user_profiles
+  SET display_name = v_display_name
+  WHERE id = v_user_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'ok', false,
+      'code', 'NOT_FOUND',
+      'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Profile not found', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'code', 'OK',
+    'data', jsonb_build_object('display_name', v_display_name),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."update_display_name_v1"("p_display_name" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."update_member_role_v1"("p_user_id" "uuid", "p_role" "public"."tenant_role") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER

@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-10T14:13:37Z",
+    "generated":  "2026-04-10T18:44:02Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -144,6 +144,15 @@
                                        ],
                             "row_version_enforced":  true,
                             "optimistic_concurrency":  true
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_display_name_v1",
+                            "tables":  [
+                                           "user_profiles"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
                         },
                         {
                             "path_type":  "rpc",

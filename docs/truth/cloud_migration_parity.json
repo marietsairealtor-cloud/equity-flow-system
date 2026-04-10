@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260410000001",
-  "migration_tip_file": "20260410000001_10_8_11I8_list_user_tenants_workspace_name.sql",
-  "migration_count": 87,
+  "migration_tip": "20260410000002",
+  "migration_tip_file": "20260410000002_10_8_11J_update_display_name.sql",
+  "migration_count": 88,
   "pinned_at": "2026-04-10"
 }
