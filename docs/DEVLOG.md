@@ -8338,3 +8338,32 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-10 — Build Route v2.4 — 10.8.11I7
+
+Objective
+Re-Invite Email Delivery for Existing Users — invite emails now sent to both
+new and existing auth.users accounts deterministically.
+
+Changes
+- Migration 20260409000002_10_8_11I7_auth_user_exists.sql applied
+- auth_user_exists_v1(p_email text) SECURITY DEFINER helper created;
+  reads from auth.users, returns boolean only, service_role access only
+- send-invite-email Edge Function updated with two-path logic:
+  new user: inviteUserByEmail (unchanged)
+  existing user: signInWithOtp with shouldCreateUser: false
+- Both paths redirect to APP_URL/auth; accept_pending_invites_v1 resolves access
+- APP_URL Edge Function secret added; APP_URL guard prevents misconfigured redirects
+- Supabase Magic Link email template updated for re-invite notification
+- ci_rpc_mapping_contract.ps1 updated to exclude auth_user_exists_v1 as internal helper
+- CONTRACTS.md section 48 added; Magic Link template dependency documented
+- definer_allowlist.json, privilege_truth.json, rpc_contract_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11I7_reinvite_email_20260410T010423Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
