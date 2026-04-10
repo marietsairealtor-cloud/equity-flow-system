@@ -521,6 +521,9 @@
     },
     "10.8.11I9": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11I9_workspace_switcher_name_ui_"
+    },
+    "10.8.11J": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11J_update_display_name_"
     }
   }
 }

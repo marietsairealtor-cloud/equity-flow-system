@@ -299,6 +299,19 @@
       "notes": "Returns the current user's profile settings. No caller-supplied user_id."
     },
     {
+      "name": "update_display_name_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11J",
+      "input_contract": "p_display_name text -- non-null and non-blank after trim",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
+      "notes": "Updates user_profiles.display_name for auth.uid() only. No caller-supplied user_id. Returns saved display_name in standard envelope."
+    },
+    {
       "name": "get_workspace_settings_v1",
       "version": 1,
       "build_route_owner": "10.8.11E",

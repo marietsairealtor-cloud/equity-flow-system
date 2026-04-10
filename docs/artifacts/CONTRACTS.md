@@ -296,6 +296,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | delete_farm_area_v1 | 10.8.11H | Delete a farm area for current tenant; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | list_pending_invites_v1 | 10.8.11I3 | List pending (unaccepted, unexpired) invites for current workspace | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | rescind_invite_v1 | 10.8.11I3 | Cancel a pending invite by invite_id; deletes row; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+| update_display_name_v1 | 10.8.11J | Update display name for current authenticated user; blank returns VALIDATION_ERROR | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 
 ### Mapping Rules
 
@@ -647,7 +648,7 @@ Behavior:
 - Requires authenticated context
 - No caller-supplied user_id
 - Derives user from auth.uid() only
-- Returns user_id, email, display_name (null until implemented)
+- Returns user_id, email, display_name (sourced from public.user_profiles.display_name)
 - Returns NOT_AUTHORIZED when auth.uid() is null
 - data is always an object, never null
 
@@ -896,3 +897,23 @@ Constraints:
 - No frontend email logic
 - No direct table access from UI
 - Existing invite acceptance flow unchanged
+
+## 49) Update Display Name RPC Contract (10.8.11J)
+
+`public.update_display_name_v1(p_display_name text)` updates the display name
+for the current authenticated user.
+
+Behavior:
+- SECURITY DEFINER, search_path = public
+- Requires authenticated context
+- No caller-supplied user_id
+- Derives user from auth.uid() only
+- Updates public.user_profiles.display_name
+- Blank or null input returns VALIDATION_ERROR
+- Returns NOT_FOUND if no user_profiles row exists for user
+- Returns updated display_name in data envelope
+
+Constraints:
+- No direct table calls from WeWeb
+- No cross-user updates possible
+- anon cannot execute
