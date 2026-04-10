@@ -207,6 +207,7 @@
     "docs/proofs/10.8.11I5_seat_billing_sync_20260409T181032Z.log": "9bb6fc38c788dfc48517bb40cb2d8cbeb16c74101b9e8f19dbfcf6fd7a093249",
     "docs/proofs/10.8.11I6_billing_seat_ui_20260409T205526Z.md": "3eb6966fc04a5d0c8bf02ef81306f3a8c5b191ac46fbc1b6557ae139b9bd3133",
     "docs/proofs/10.8.11I7_reinvite_email_20260410T010423Z.log": "8cc7df266353f1cf7ede079ce2501b35f4b47e0a78eed0d1509820243b870159",
-    "docs/proofs/10.8.11I8_list_user_tenants_workspace_name_20260410T143328Z.log": "5a9c697e59c9f9131554f6e1c3dd6f23ef86631f25bbabf69b9bff0af2f21b3d"
+    "docs/proofs/10.8.11I8_list_user_tenants_workspace_name_20260410T143328Z.log": "5a9c697e59c9f9131554f6e1c3dd6f23ef86631f25bbabf69b9bff0af2f21b3d",
+    "docs/proofs/10.8.11I9_workspace_switcher_name_ui_20260410T151618Z.md": "95aca6e3db4c9f786aeb6a978a97c18d4e5f8d573cf6012598d958783575ccea"
   }
 }
