@@ -5755,6 +5755,44 @@ No billing mutations from UI
 **Proof:** `docs/proofs/10.8.11I7_reinvite_email_<UTC>.log`
 **Gate:** `merge-blocking`
 
+### **10.8.11I8 — list_user_tenants_v1 Workspace Name Corrective Fix**
+
+**Deliverable**
+
+list_user_tenants_v1 returns workspace name from public.tenants.name
+
+**DoD**
+
+*list_user_tenants_v1 joins public.tenants
+*returns workspace_name from public.tenants.name
+*no hardcoded null placeholder
+*no schema changes
+*no new columns
+*no new RPCs
+*standard envelope unchanged
+*pgTAP proves returned workspace name is sourced from tenant row
+*contract text updated if it still says null/placeholder
+
+**Proof**: docs/proofs/10.8.11I8_list_user_tenants_workspace_name_<UTC>.log
+**Gate**: merge-blocking
+
+**10.8.11I9 — Workspace Switcher Name Wiring**
+
+**Deliverable**
+
+Workspace switcher displays workspace name from list_user_tenants_v1
+
+**DoD**
+
+*switcher uses list_user_tenants_v1 only
+*display binding uses workspace_name
+*no direct table access
+*no new RPCs
+*no business logic added in UI
+*slug may remain secondary display if desired
+
+**Proof**: docs/proofs/10.8.11I9_workspace_switcher_name_ui_<UTC>.md
+**Gate**: lane-only
 ---
 
 ## **10.8.11J — Update Display Name RPC + UI**
