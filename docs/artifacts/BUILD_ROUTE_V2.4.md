@@ -5897,13 +5897,13 @@ subscription_status == 'expired'
 **Gate:** `lane-only`
 
 ---
-
-### **10.8.11L — Renew Now Routing Fix (Bridge Fix)**
+### 10.8.11L — Renew Now Routing Fix (Bridge Fix)
 
 **Deliverable**
 
-* “Renew now” CTA routes to billing (not onboarding)
-* Same destination across all subscription states
+* “Renew now” CTA routes to billing, not onboarding
+* Same billing destination used everywhere renewal is allowed
+* Renew CTA is role-aware and only shown when billing action is valid
 
 ---
 
@@ -5911,31 +5911,257 @@ subscription_status == 'expired'
 
 * “Renew now” CTA:
 
-  * does NOT route to `/onboarding`
-  * routes to:
+  * does **not** route to `/onboarding`
+  * routes to a billing destination only:
 
     * Stripe Customer Portal **OR**
     * Workspace Settings → Billing
 
-* Same destination used for:
+* `renew_route` is a semantic billing destination, not onboarding language and not a workspace-creation flow
+
+* Same billing destination used for:
 
   * expired banner
   * expiring banner
   * billing section CTA
 
+* Owner behavior:
+
+  * actionable **Renew now** CTA is shown
+  * CTA routes to billing destination only
+
+* Admin/member behavior:
+
+  * no actionable **Renew now** CTA
+  * informational subscription message only
+
 * Workspace Settings:
 
-  * Admin+ can access
-  * Billing section is Owner-only
+  * admin+ can access settings shell
+  * Billing section remains owner-only
 
-* CTA copy reflects billing action (no onboarding language)
+* CTA copy reflects billing action only:
+
+  * no onboarding language
+  * no workspace-creation language
+  * no subscription-recovery flow through onboarding
+
+* Archived/unreachable workspaces are outside normal renew-routing flow:
+
+  * no in-workspace billing CTA required once workspace is unreachable
 
 ---
 
 **Proof:** `docs/proofs/10.8.11L_renew_now_<UTC>.md`
 **Gate:** `lane-only`
 
+### 10.8.11M — Entitlement RPC Access + Retention State Extension (Bridge Fix)
 
+**Deliverable**
+
+* `get_user_entitlements_v1()` extended to return app access-state and retention-state fields
+* Post-auth routing, read-only mode, billing access, and retention messaging derive from this RPC only
+* No new RPC introduced
+
+---
+
+**DoD**
+
+* `get_user_entitlements_v1()` return type remains unchanged
+* `get_user_entitlements_v1()` continues to return:
+
+  * `subscription_status`
+  * `subscription_days_remaining`
+
+* RPC is extended to also return:
+
+  * `app_mode`
+  * `can_manage_billing`
+  * `renew_route`
+  * `retention_deadline`
+  * `days_until_deletion`
+
+* `app_mode` enum:
+
+  * `normal`
+  * `read_only_expired`
+  * `archived_unreachable`
+
+* `renew_route` is a semantic enum, not a URL:
+
+  * `billing`
+  * `none`
+
+* Derivation handled server-side only:
+
+  * active / expiring → `app_mode = normal`
+  * expired + within 60-day grace window → `app_mode = read_only_expired`
+  * expired + beyond 60-day grace window → `app_mode = archived_unreachable`
+  * no memberships → existing no-workspace routing remains unchanged
+
+* `can_manage_billing`:
+
+  * `true` only for workspace owner
+  * `false` for admin/member
+
+* `renew_route`:
+
+  * `billing` only when user is owner and renewal action is valid
+  * `none` for admin/member or unreachable archived state
+
+* `retention_deadline`:
+
+  * server-derived timestamp
+  * marks the end of the 60-day read-only grace window
+
+* `days_until_deletion`:
+
+  * server-derived integer
+  * counts down only after archive begins
+  * no frontend date math allowed
+
+* CONTRACTS.md updated in same PR
+
+---
+
+**Proof:** `docs/proofs/10.8.11M_entitlement_access_retention_<UTC>.md`  
+**Gate:** `lane-only`
+
+### 10.8.11N — Expired Subscription Server-Side Write Lock (Bridge Fix)
+
+**Deliverable**
+
+* Expired workspaces become server-enforced read-only during the 60-day grace window
+* Write paths are blocked at RPC/server layer, not UI only
+
+---
+
+**DoD**
+
+* During expired 60-day grace window:
+
+  * read access remains allowed
+  * write actions are blocked server-side
+
+* Blocked actions include:
+
+  * create
+  * update
+  * delete
+  * send
+  * complete
+  * upload
+  * create share token
+
+* Existing public links are not viewable once workspace is expired
+
+* Blocked write attempts return contract-valid error envelope
+* Error message uses universal language consistent with retention policy
+* Billing / renewal path remains allowed for workspace owner
+* Profile settings remain allowed
+* No WeWeb-only enforcement claim; server-side enforcement is authoritative
+
+---
+
+**Proof:** `docs/proofs/10.8.11N_expired_write_lock_<UTC>.md`  
+**Gate:** `lane-only`
+
+### 10.8.11O — Expired Workspace Retention + Archive Lifecycle (Bridge Fix)
+
+**Deliverable**
+
+* Expired workspace lifecycle defined from read-only → archive → hard delete
+* Archive and deletion timing are server-defined and automatic
+
+---
+
+**DoD**
+
+* Lifecycle:
+
+  * Day 0–60 after expiration: workspace is read-only
+  * Day 61: workspace becomes archived and unreachable
+  * 6 months after archive begins: workspace is hard deleted automatically
+
+* Universal notification during 60-day window:
+
+  * `Subscription expired. This workspace is read-only. Renew within 60 days to avoid data loss.`
+
+* Archived/unreachable behavior:
+
+  * workspace cannot be accessed by any user
+  * workspace data is not viewable
+  * uploads blocked
+  * new share tokens blocked
+  * existing public links not viewable
+
+* Post-auth after archive:
+
+  * users are treated as having no reachable workspace
+  * routing behaves like a user without a workspace
+  * onboarding may be shown again
+
+* Archive happens before hard delete
+* Hard delete is automatic after 6 months in archive
+* Retention timing is backend-driven only
+* No frontend countdown/date math required
+
+---
+
+**Proof:** `docs/proofs/10.8.11O_retention_archive_lifecycle_<UTC>.md`  
+**Gate:** `lane-only`
+
+### 10.8.11P — Expired Workspace UI Read-Only + Banner Enforcement (Bridge Fix)
+
+**Deliverable**
+
+* UI reads entitlement/retention state from `get_user_entitlements_v1()` only
+* Expired users remain in app during grace window with read-only access
+* Archived workspaces are unreachable in UI
+
+---
+
+**DoD**
+
+* During expired 60-day grace window:
+
+  * users remain inside authenticated shell
+  * bottom nav remains enabled
+  * pages remain viewable
+  * write / save / create / update / send / complete / upload actions are disabled in UI
+
+* Universal notification shown during 60-day window:
+
+  * `Subscription expired. This workspace is read-only. Renew within 60 days to avoid data loss.`
+
+* Owner behavior:
+
+  * actionable Renew Now CTA shown
+  * CTA routes to billing destination only
+
+* Admin/member behavior:
+
+  * same universal notification shown
+  * no actionable billing CTA
+
+* Banner and page enforcement use only:
+
+  * `subscription_status`
+  * `subscription_days_remaining`
+  * `app_mode`
+  * `can_manage_billing`
+  * `renew_route`
+  * `retention_deadline`
+  * `days_until_deletion`
+
+* No page-specific duplicated expired logic
+* One shared entitlement source/global used across protected pages
+* Archived workspace state is not rendered as read-only app mode; workspace becomes unreachable instead
+
+---
+
+**Proof:** `docs/proofs/10.8.11P_expired_ui_read_only_<UTC>.md`  
+**Gate:** `lane-only`
 ---
 
 ### **10.8.12 — 1-Month Free Trial (One-Time, User-Scoped)**
