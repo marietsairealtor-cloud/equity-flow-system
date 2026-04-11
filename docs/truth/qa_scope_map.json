@@ -524,6 +524,9 @@
     },
     "10.8.11J": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11J_update_display_name_"
+    },
+    "10.8.11K": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11K_subscription_status_"
     }
   }
 }

@@ -373,13 +373,27 @@ Violations return `VALIDATION_ERROR` with field-level error:
 
 Signature unchanged: `create_share_token_v1(p_deal_id uuid, p_expires_at timestamptz)`.
 
-## 24) Entitlement RPC Extension — Subscription Status (10.8.2)
+## 24) Entitlement RPC Extension — Subscription Status (10.8.2, corrected 10.8.11K)
 
 `get_user_entitlements_v1` return shape extended (Build Route 10.8.2).
+Status mapping corrected and extended (Build Route 10.8.11K).
 
 New fields in `data`:
-- `subscription_status`: `active | expiring | expired | none` — computed server-side from `tenant_subscriptions`. `expiring` when active AND ≤5 days remain. `none` when no subscription record exists.
-- `subscription_days_remaining`: integer, null when `subscription_status` is `none`. 0 or negative when expired.
+- `subscription_status`: `active | expiring | expired | none` — computed server-side from `tenant_subscriptions`. `expiring` when active AND ≤5 days remain OR raw status is `past_due`. `none` when no subscription record exists.
+- `subscription_days_remaining`: integer. Returned for `expiring` only. `null` for all other statuses including `expired` and `none`.
+
+Raw storage vs derived return:
+- `tenant_subscriptions.status` is webhook-written raw Stripe status only.
+- `get_user_entitlements_v1` returns derived banner/routing status, not raw status.
+
+Stripe status mapping (raw → derived):
+- `trialing` → normalized to `active`, then threshold logic applies
+- `past_due` → `expiring`
+- `unpaid` / `incomplete_expired` → `expired`
+- `canceled` → `expired`
+- `active` / `expiring` + >5 days remain → `active`
+- `active` / `expiring` + ≤5 days remain → `expiring`
+- no subscription record → `none`
 
 Computation rules:
 - Threshold (5 days) lives in RPC only. WeWeb performs zero date math (GUARDRAILS §5).
@@ -390,8 +404,6 @@ Gate logic derivable from single RPC call:
 - No memberships → onboarding Step 1
 - Membership + status `none` or `expired` → onboarding Step 3
 - Membership + status `active` or `expiring` → hub
-
-Additive change — existing callers unaffected. DROP + CREATE per CONTRACTS §2.
 
 ## 25) Privilege Firewall Closure — Historical RPC Gaps (10.8.3B)
 

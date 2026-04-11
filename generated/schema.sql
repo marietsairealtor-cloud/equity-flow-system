@@ -986,6 +986,7 @@ DECLARE
   v_user                uuid;
   v_role                public.tenant_role;
   v_member              boolean;
+  v_raw_status          text;
   v_sub_status          text;
   v_sub_days_remaining  integer;
   v_period_end          timestamptz;
@@ -998,7 +999,7 @@ BEGIN
     RETURN json_build_object(
       'ok',    false,
       'code',  'NOT_AUTHORIZED',
-      'data',  null,
+      'data',  json_build_object(),
       'error', json_build_object(
         'message', 'No tenant or user context',
         'fields',  json_build_object()
@@ -1014,31 +1015,30 @@ BEGIN
 
   v_member := FOUND;
 
-  -- Resolve subscription status (server-side computation)
+  -- Resolve subscription status
   SELECT ts.status, ts.current_period_end
-  INTO v_sub_status, v_period_end
+  INTO v_raw_status, v_period_end
   FROM public.tenant_subscriptions ts
   WHERE ts.tenant_id = v_tenant;
 
   IF NOT FOUND THEN
-    -- No subscription record
     v_sub_status         := 'none';
     v_sub_days_remaining := null;
-  ELSIF v_sub_status = 'canceled' OR v_period_end <= now() THEN
-    -- Canceled or past period end -- expired
+
+  ELSIF v_raw_status = 'canceled' OR v_period_end <= now() THEN
     v_sub_status         := 'expired';
-    v_sub_days_remaining := EXTRACT(DAY FROM (v_period_end - now()))::integer;
-  ELSIF v_sub_status IN ('active', 'expiring') THEN
-    -- Compute days remaining
+    v_sub_days_remaining := null;
+
+  ELSIF v_raw_status IN ('active', 'expiring') THEN
     v_sub_days_remaining := GREATEST(0, EXTRACT(DAY FROM (v_period_end - now()))::integer);
-    -- Expiring threshold: active AND <=5 days remain
     IF v_sub_days_remaining <= v_expiring_threshold THEN
-      v_sub_status := 'expiring';
+      v_sub_status         := 'expiring';
     ELSE
-      v_sub_status := 'active';
+      v_sub_status         := 'active';
+      v_sub_days_remaining := null;
     END IF;
+
   ELSE
-    -- Fallback for any other stored status
     v_sub_status         := 'none';
     v_sub_days_remaining := null;
   END IF;
@@ -1047,12 +1047,12 @@ BEGIN
     'ok',   true,
     'code', 'OK',
     'data', json_build_object(
-      'tenant_id',                v_tenant,
-      'user_id',                  v_user,
-      'is_member',                v_member,
-      'role',                     v_role,
-      'entitled',                 v_member,
-      'subscription_status',      v_sub_status,
+      'tenant_id',                   v_tenant,
+      'user_id',                     v_user,
+      'is_member',                   v_member,
+      'role',                        v_role,
+      'entitled',                    v_member,
+      'subscription_status',         v_sub_status,
       'subscription_days_remaining', v_sub_days_remaining
     ),
     'error', null
