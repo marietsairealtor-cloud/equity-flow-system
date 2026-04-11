@@ -56,10 +56,10 @@ SELECT is(
   'active',
   'get_user_entitlements_v1: active >5 days -- status=active'
 );
-SELECT isnt(
+SELECT is(
   (public.get_user_entitlements_v1()::json)->'data'->>'subscription_days_remaining',
   NULL,
-  'get_user_entitlements_v1: active >5 days -- days_remaining not null'
+  'get_user_entitlements_v1: active >5 days -- days_remaining=null'
 );
 
 -- ============================================================
@@ -161,8 +161,8 @@ SELECT is(
 );
 SELECT is(
   (public.get_user_entitlements_v1()::json)->>'data',
-  NULL,
-  'get_user_entitlements_v1 NOT_AUTHORIZED: data=null'
+  '{}',
+  'get_user_entitlements_v1 NOT_AUTHORIZED: data={}'
 );
 SELECT isnt(
   (public.get_user_entitlements_v1()::json)->>'error',

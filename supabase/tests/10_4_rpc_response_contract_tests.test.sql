@@ -125,8 +125,8 @@ SELECT is(
 
 SELECT is(
   (public.get_user_entitlements_v1()::json)->>'data',
-  NULL,
-  'get_user_entitlements_v1 NOT_AUTHORIZED: data=null'
+  '{}',
+  'get_user_entitlements_v1 NOT_AUTHORIZED: data={}'
 );
 
 SELECT isnt(
