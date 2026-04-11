@@ -8439,3 +8439,32 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-11 — Build Route v2.4 — 10.8.11K
+
+Objective
+Subscription Status Consistency Bridge Fix — corrected get_user_entitlements_v1
+status computation and removed dead RPC branches for impossible DB statuses.
+
+Changes
+- Migration 20260410000003_10_8_11K_subscription_status_consistency.sql applied
+- get_user_entitlements_v1 corrected:
+  error path data: null → data: {} per frozen envelope contract
+  subscription_days_remaining: integer for expiring only, null for all others
+  removed dead branches for trialing, past_due, unpaid, incomplete_expired
+  (webhook normalizes raw Stripe status before DB write)
+- CONTRACTS.md section 24 updated to reflect corrected architecture
+- Existing test files updated to match corrected behavior:
+  10_4_rpc_response_contract_tests.test.sql
+  10_8_2_entitlements_extension.test.sql
+- New test file 10_8_11K added proving stored DB status mappings
+- Banner UI bindings verified against DoD -- no changes needed
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11K_subscription_status_20260411T003438Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
