@@ -530,6 +530,9 @@
     },
     "10.8.11L": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11L_renew_now_"
+    },
+    "10.8.11M": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11M_entitlement_access_retention_"
     }
   }
 }
