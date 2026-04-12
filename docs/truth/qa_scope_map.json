@@ -527,6 +527,9 @@
     },
     "10.8.11K": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11K_subscription_status_"
+    },
+    "10.8.11L": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11L_renew_now_"
     }
   }
 }
