@@ -8491,3 +8491,31 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-12 — Build Route v2.4 — 10.8.11M
+
+Objective
+Entitlement RPC Access + Retention State Extension — get_user_entitlements_v1
+extended with app_mode, can_manage_billing, renew_route, retention_deadline,
+and days_until_deletion fields.
+
+Changes
+- Migration 20260412000001_10_8_11M_entitlement_access_retention.sql applied
+- get_user_entitlements_v1 extended with five new fields:
+  app_mode: normal | read_only_expired | archived_unreachable
+  can_manage_billing: owner=true, admin/member=false
+  renew_route: billing | none (semantic enum)
+  retention_deadline: 60 days from current_period_end
+  days_until_deletion: countdown after archive begins
+- No membership early return preserves existing no-workspace behavior
+- No new RPC. No schema changes. No new columns. Additive only.
+- CONTRACTS.md section 5A updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11M_entitlement_access_retention_20260412T153536Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
