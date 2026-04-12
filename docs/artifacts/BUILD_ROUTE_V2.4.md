@@ -6032,18 +6032,40 @@ subscription_status == 'expired'
 **Deliverable**
 
 * Expired workspaces become server-enforced read-only during the 60-day grace window
-* Write paths are blocked at RPC/server layer, not UI only
+* A shared internal helper enforces workspace write eligibility
+* Existing workspace-write RPCs are retrofitted to use the helper
+* Billing / renewal path and profile settings remain allowed
 
 ---
 
 **DoD**
 
-* During expired 60-day grace window:
+* Add internal helper:
 
-  * read access remains allowed
-  * write actions are blocked server-side
+  * `check_workspace_write_allowed_v1()`
 
-* Blocked actions include:
+* Helper behavior:
+
+  * returns `true` only when workspace write is allowed
+  * returns `false` for:
+    * no tenant context
+    * caller not a member of tenant
+    * no subscription
+    * canceled subscription
+    * expired subscription
+    * archived/unreachable workspace
+
+* Helper is internal only:
+
+  * `SECURITY DEFINER`
+  * fixed `search_path`
+  * membership enforced internally
+  * `REVOKE ALL FROM PUBLIC`
+  * not granted to authenticated
+
+* Existing workspace-write RPCs are retrofitted to call the helper near the top of the function
+
+* Blocked actions include current write RPC coverage for:
 
   * create
   * update
@@ -6053,18 +6075,68 @@ subscription_status == 'expired'
   * upload
   * create share token
 
-* Existing public links are not viewable once workspace is expired
+* At minimum, retrofit all existing workspace-write RPCs in scope, excluding approved exceptions
+
+* Approved exceptions:
+
+  * billing / renewal path
+  * profile settings (`update_display_name_v1`)
 
 * Blocked write attempts return contract-valid error envelope
 * Error message uses universal language consistent with retention policy
-* Billing / renewal path remains allowed for workspace owner
-* Profile settings remain allowed
+* Existing public links are not viewable once workspace is expired
+* Public submission path is blocked once workspace is expired
 * No WeWeb-only enforcement claim; server-side enforcement is authoritative
 
 ---
 
 **Proof:** `docs/proofs/10.8.11N_expired_write_lock_<UTC>.md`  
 **Gate:** `lane-only`
+
+### 10.8.11N1 — Workspace Write Lock Coverage Gate (Bridge Fix)
+
+**Deliverable**
+
+* Merge-blocking gate ensures all workspace-write RPCs are protected by the expired workspace write-lock helper
+* Prevents future write RPCs from bypassing read-only enforcement
+
+---
+
+**DoD**
+
+* Add a merge-blocking gate that validates workspace-write RPC coverage
+
+* Gate verifies that every workspace-write RPC in scope calls:
+
+  * `public.check_workspace_write_allowed_v1()`
+
+* Gate scope includes workspace/app data write RPCs covering:
+
+  * create
+  * update
+  * delete
+  * send
+  * complete
+  * upload
+  * create share token
+
+* Gate fails if any in-scope workspace-write RPC is missing the helper call
+
+* Gate supports explicit exemption allowlist for approved exceptions only
+
+* Approved exemptions:
+
+  * billing / renewal path
+  * profile settings (`update_display_name_v1`)
+
+* Gate output identifies offending RPC names clearly
+* Gate is deterministic and merge-blocking
+* CONTRACTS / truth / governance docs updated in same PR if required by enforcement design
+
+---
+
+**Proof:** `docs/proofs/10.8.11N1_write_lock_coverage_gate_<UTC>.log`  
+**Gate:** `merge-blocking`
 
 ### 10.8.11O — Expired Workspace Retention + Archive Lifecycle (Bridge Fix)
 
