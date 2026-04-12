@@ -91,13 +91,13 @@ Return:
 }
 ```
 ---
-
-## 5A) Entitlement RPC Contract (LOCKED)
+## 5A) Entitlement RPC Contract (LOCKED, extended 10.8.11M)
 
 ### rpc.get_user_entitlements_v1
 
-Returns the current user entitlement state for the active tenant context.
-Entitlement is derived from tenant_memberships. Membership exists = entitled.
+Returns the current user entitlement state, access mode, and retention state
+for the active tenant context. Entitlement is derived from tenant_memberships.
+Membership exists = entitled.
 
 Parameters: none (reads from JWT context: tenant_id, user_id).
 
@@ -105,6 +105,21 @@ Security: SECURITY DEFINER, search_path = public.
 GRANT EXECUTE to authenticated only. REVOKE from anon.
 Source of truth per GUARDRAILS S17.
 
+Returns (in addition to existing fields):
+- `app_mode`: `normal` | `read_only_expired` | `archived_unreachable`
+- `can_manage_billing`: boolean — true for owner only
+- `renew_route`: `billing` | `none` — semantic enum, not a URL
+- `retention_deadline`: timestamptz | null — end of 60-day grace window, derived from current_period_end
+- `days_until_deletion`: integer | null — countdown after archive begins
+
+Derivation rules:
+- active / expiring → `app_mode = normal`
+- expired within 60 days of current_period_end → `app_mode = read_only_expired`
+- expired beyond 60 days of current_period_end → `app_mode = archived_unreachable`
+- membership + no subscription → `app_mode = read_only_expired`
+- no membership → early return, `is_member = false`, `app_mode = normal`
+- owner → `can_manage_billing = true`, `renew_route = billing` (when valid)
+- admin/member/archived → `can_manage_billing = false`, `renew_route = none`
 ---
 
 ## 6) Idempotency Replay Semantics (LOCKED)
