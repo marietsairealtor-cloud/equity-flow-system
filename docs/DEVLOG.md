@@ -8468,3 +8468,26 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-12 — Build Route v2.4 — 10.8.11L
+
+Objective
+Renew Now Routing Fix — CTA now routes to Workspace Settings Billing section,
+role-aware visibility enforced, no onboarding language.
+
+Changes
+- Renew Now CTA changed from button to link element
+- Routes to Workspace Settings Billing section (not onboarding)
+- Owner: actionable Renew Now link visible
+- Admin/member: informational Contact workspace owner message, no CTA
+- Same billing destination used across expired and expiring banners
+- No onboarding language in CTA copy
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11L_renew_now_20260412T142847Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
