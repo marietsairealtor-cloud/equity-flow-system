@@ -8519,3 +8519,39 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-13 — Build Route v2.4 — 10.8.11N
+
+Objective
+Expired Subscription Server-Side Write Lock — expired workspaces become
+server-enforced read-only during the 60-day grace window.
+
+Changes
+- Migration 20260412000002_10_8_11N_expired_write_lock.sql applied
+- check_workspace_write_allowed_v1() internal helper added:
+  SECURITY DEFINER, REVOKE ALL FROM PUBLIC, membership enforced internally
+  returns false for: no tenant, not a member, no subscription, canceled, expired
+- Retrofitted write RPCs: create_deal_v1, update_deal_v1, create_farm_area_v1,
+  delete_farm_area_v1, create_reminder_v1, complete_reminder_v1,
+  create_share_token_v1, update_workspace_settings_v1, update_member_role_v1,
+  remove_member_v1, invite_workspace_member_v1
+- submit_form_v1 and lookup_share_token_v1: inline subscription check
+- Approved exceptions: update_display_name_v1, billing/renewal path
+- Universal error: This workspace is read-only. Renew your subscription to continue.
+- Migration 20260412000003_10_8_11N_test_seed_helper.sql applied
+- create_active_workspace_seed_v1() test seed helper added
+- 19 existing pgTAP test files retrofitted with active subscription seeds
+- JWT claim format normalized across older test files
+- postgrest_seed.sql and test_postgrest_isolation.mjs updated
+- CONTRACTS.md sections 17 and 17A updated
+- definer_allowlist.json, calc_version_registry.json updated
+- ci_rpc_mapping_contract.ps1 exclusions added for internal helpers
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11N_expired_write_lock_20260413T015015Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
