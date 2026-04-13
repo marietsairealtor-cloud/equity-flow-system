@@ -6138,22 +6138,59 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11N1_write_lock_coverage_gate_<UTC>.log`  
 **Gate:** `merge-blocking`
 
-### **10.8.11O — Expired Workspace Retention + Archive Lifecycle (Bridge Fix)**
+### **10.8.11O — Expired Workspace Retention + Archive Lifecycle Automation (Bridge Fix)**
 
 **Deliverable**
 
-* Expired workspace lifecycle defined from read-only → archive → hard delete
+* Scheduled backend automation enforces expired workspace lifecycle from read-only → archived/unreachable → hard delete
 * Archive and deletion timing are server-defined and automatic
+* Renewal and restore behavior are explicitly defined
+* No manual ops required for normal lifecycle enforcement
 
 ---
 
 **DoD**
 
+* A scheduled **Supabase Edge Function** is implemented as the authoritative retention automation path
+
+* Backend state is stored on `public.tenants`:
+
+  * `subscription_lapsed_at timestamptz`
+  * `archived_at timestamptz`
+
 * Lifecycle:
 
-  * Day 0–60 after expiration: workspace is read-only
-  * Day 61: workspace becomes archived and unreachable
+  * Day 0–60 after lapse/expiration: workspace remains read-only
+  * Day 61: workspace is transitioned to archived/unreachable automatically
   * 6 months after archive begins: workspace is hard deleted automatically
+
+* Lapse anchors:
+
+  * subscription-bearing expired workspace → anchor = `tenant_subscriptions.current_period_end`
+  * membership + no subscription workspace → anchor = `tenants.subscription_lapsed_at`
+  * if membership exists and no subscription is detected for the first time, automation sets `subscription_lapsed_at = now()`
+
+* Automation is authoritative for:
+
+  * lapse detection
+  * archive eligibility
+  * archive execution
+  * hard delete eligibility
+  * hard delete execution
+
+* Hard delete is executed in explicit backend-controlled scope/order
+* Do not rely blindly on FK cascade unless already proven and intentional
+
+* Renewal behavior:
+
+  * renewal within the 60-day read-only window restores normal access automatically
+  * renewal after archive does **not** automatically restore the workspace
+  * archived workspace requires an explicit **Restore workspace** action
+  * restore is allowed only when:
+    * workspace is archived
+    * workspace is not hard deleted
+    * subscription is active again
+  * renewal after hard delete does not restore anything
 
 * Universal notification during 60-day window:
 
@@ -6177,62 +6214,120 @@ subscription_status == 'expired'
 * Hard delete is automatic after 6 months in archive
 * Retention timing is backend-driven only
 * No frontend countdown/date math required
+* This item is implementation, not documentation-only
 
 ---
 
 **Proof:** `docs/proofs/10.8.11O_retention_archive_lifecycle_<UTC>.md`  
 **Gate:** `lane-only`
 
-### **10.8.11P — Expired Workspace UI Read-Only + Banner Enforcement (Bridge Fix)**
+### **10.8.11O1 — Archived Workspace Restore Implementation (Bridge Fix)**
 
 **Deliverable**
 
-* UI reads entitlement/retention state from `get_user_entitlements_v1()` only
-* Expired users remain in app during grace window with read-only access
-* Archived workspaces are unreachable in UI
+* Archived workspaces can be restored only through an explicit backend restore action
+* Renewal after archive does not auto-unarchive
+* Restore is owner-only and requires active billing
 
 ---
 
 **DoD**
 
-* During expired 60-day grace window:
+* Add a backend restore path for archived workspaces
+* Restore is **not** handled automatically by renewal alone
 
-  * users remain inside authenticated shell
-  * bottom nav remains enabled
-  * pages remain viewable
-  * write / save / create / update / send / complete / upload actions are disabled in UI
+* Restore is allowed only when all are true:
 
-* Universal notification shown during 60-day window:
+  * workspace is archived
+  * workspace is not hard deleted
+  * caller is workspace owner
+  * subscription is active again
 
-  * `Subscription expired. This workspace is read-only. Renew within 60 days to avoid data loss.`
+* Restore behavior:
 
-* Owner behavior:
+  * clears `tenants.archived_at`
+  * clears `tenants.subscription_lapsed_at`
+  * workspace becomes reachable again
+  * normal post-auth routing resumes
+  * write access resumes through existing entitlement + write-lock logic
 
-  * actionable Renew Now CTA shown
-  * CTA routes to billing destination only
+* Restore must fail with contract-valid error envelope when:
 
-* Admin/member behavior:
+  * caller is not owner
+  * workspace is not archived
+  * subscription is not active
+  * workspace has already been hard deleted
 
-  * same universal notification shown
-  * no actionable billing CTA
+* Renewal behavior remains:
 
-* Banner and page enforcement use only:
+  * renew within 60-day read-only window → auto restore normal access
+  * renew after archive → explicit restore required
+  * renew after hard delete → no recovery
 
-  * `subscription_status`
-  * `subscription_days_remaining`
-  * `app_mode`
-  * `can_manage_billing`
-  * `renew_route`
-  * `retention_deadline`
-  * `days_until_deletion`
-
-* No page-specific duplicated expired logic
-* One shared entitlement source/global used across protected pages
-* Archived workspace state is not rendered as read-only app mode; workspace becomes unreachable instead
+* No WeWeb-only restore logic
+* Restore is backend-authoritative
+* CONTRACTS.md and WEWEB_ARCHITECTURE.md updated in same PR
 
 ---
 
-**Proof:** `docs/proofs/10.8.11P_expired_ui_read_only_<UTC>.md`  
+**Proof:** `docs/proofs/10.8.11O1_archived_workspace_restore_<UTC>.md`  
+**Gate:** `lane-only`
+
+### **10.8.11P — Expired / Archived Workspace UI Wiring (Bridge Fix)**
+
+**Deliverable**
+
+* UI wiring reflects read-only expired, archived/unreachable, and restore-required states using backend entitlement state only
+* Archived renewal and restore flow is represented correctly in UI
+
+---
+
+**DoD**
+
+* UI uses backend entitlement state as the single source of truth
+* No frontend lifecycle date math
+* No frontend archive/delete state invention
+
+* **Read-only expired** UI behavior:
+
+  * users may enter authenticated shell
+  * pages may remain viewable
+  * write/save/create/update/send/complete/upload actions are disabled
+  * expired banner is shown:
+    * `Subscription expired. This workspace is read-only. Renew within 60 days to avoid data loss.`
+  * owner sees **Manage billing**
+  * admin/member do not see actionable billing controls
+
+* **Archived/unreachable** UI behavior:
+
+  * workspace is not rendered as read-only app mode
+  * user is treated as having no reachable workspace
+  * post-auth routing behaves like user without reachable workspace
+  * onboarding may be shown again
+
+* **Renewal / restore UI behavior**:
+
+  * renew before archive → workspace resumes automatically after billing sync
+  * renew after archive → billing alone does not reopen workspace
+  * owner must see explicit **Restore workspace** action only when:
+    * workspace is archived
+    * subscription is active again
+  * non-owner must not see restore action
+
+* **Restore action wiring**:
+
+  * Restore workspace action calls backend restore path only
+  * no local UI-only unarchive mutation
+  * on successful restore:
+    * entitlement is refreshed
+    * routing returns to normal reachable workspace flow
+
+* Existing public-link/public-submit expired behavior remains aligned with backend enforcement
+* WEWEB_ARCHITECTURE.md updated in same PR
+
+---
+
+**Proof:** `docs/proofs/10.8.11P_expired_archived_workspace_ui_<UTC>.md`  
 **Gate:** `lane-only`
 ---
 

@@ -2,6 +2,7 @@
 // Build Route 10.6: RPC Contract Registry gate.
 // Verifies:
 // 1. Every RPC in expected_surface.json and execute_allowlist.json exists in rpc_contract_registry.json
+//    (plus execute_allowlist.service_role_allow — integration RPCs, service_role EXECUTE only)
 // 2. Every registry entry with a response_schema points to an existing file
 // 3. Every registry entry has at least one documented error code OR explicit empty array with notes
 
@@ -63,6 +64,19 @@ async function main() {
     }
   }
 
+  const serviceRoleAllow = Array.isArray(allowlist.service_role_allow) ? allowlist.service_role_allow : [];
+  if (serviceRoleAllow.length > 0) {
+    console.log("\n--- Check 2b: service_role_allow RPCs in registry ---");
+    for (const rpc of serviceRoleAllow) {
+      if (registryNames.has(rpc)) {
+        console.log(`  PASS: ${rpc}`);
+      } else {
+        console.error(`  FAIL: ${rpc} in execute_allowlist.service_role_allow but missing from registry`);
+        ok = false;
+      }
+    }
+  }
+
   // Check 3: response_schema references point to existing files
   console.log("\n--- Check 3: response_schema file references ---");
   for (const entry of registry.rpcs) {
@@ -98,6 +112,9 @@ async function main() {
   console.log(`Registry entries: ${registry.rpcs.length}`);
   console.log(`Surface RPCs checked: ${surface.rpc.length}`);
   console.log(`Allowlist RPCs checked: ${allowlist.allow.length}`);
+  if (serviceRoleAllow.length > 0) {
+    console.log(`service_role_allow RPCs checked: ${serviceRoleAllow.length}`);
+  }
   console.log("ci_rpc_contract_registry: PASS");
 }
 

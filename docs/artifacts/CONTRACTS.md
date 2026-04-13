@@ -994,3 +994,56 @@ Constraints:
 - No direct table calls from WeWeb
 - No cross-user updates possible
 - anon cannot execute
+
+## 50) Retention Lifecycle Automation Contract (10.8.11O)
+
+`public.process_workspace_retention_v1()` is an internal SECURITY DEFINER function
+called daily by the `retention-lifecycle` Edge Function (service_role only).
+
+Behavior:
+- SECURITY DEFINER, search_path = public
+- Not callable from WeWeb
+- Not callable by authenticated or anon roles
+- Service_role only
+
+Lifecycle steps executed in order:
+1. Recovery: clears `tenants.subscription_lapsed_at` for workspaces that are
+   not yet archived and have a valid active subscription again
+2. Lapse detection: sets `tenants.subscription_lapsed_at = now()` on first
+   detection for workspaces with members but no subscription row
+3. Archive (subscription path): archives workspaces where
+   `tenant_subscriptions.current_period_end <= now() - 60 days`
+4. Archive (no-subscription path): archives workspaces where
+   `tenants.subscription_lapsed_at <= now() - 60 days` and no subscription exists
+5. Hard delete: explicit ordered delete for workspaces where
+   `tenants.archived_at <= now() - 6 months`
+
+Hard delete order:
+- DELETE FROM public.activity_log WHERE tenant_id = ...
+- DELETE FROM public.tenant_memberships WHERE tenant_id = ...
+- DELETE FROM public.tenants WHERE tenant_id = ...
+- CASCADE handles: deal_reminders, deal_tc, deal_tc_checklist, draft_deals,
+  tenant_farm_areas, tenant_invites, tenant_slugs, tenant_subscriptions
+- user_profiles.current_tenant_id SET NULL (proven FK rule)
+
+Schema additions (public.tenants):
+- subscription_lapsed_at timestamptz DEFAULT NULL
+- archived_at timestamptz DEFAULT NULL
+
+Renewal behavior:
+- Renew within 60-day read-only window: subscription_lapsed_at cleared
+  automatically on next processor run, archive does not occur
+- Renew after archive: does not auto-restore, explicit restore required (10.8.11O1)
+- Renew after hard delete: no recovery
+
+Returns:
+- data.recovery_count: integer
+- data.lapsed_count: integer
+- data.archived_count: integer
+- data.deleted_count: integer
+- data.run_at: timestamptz
+
+Edge Function:
+- Name: retention-lifecycle
+- Schedule: 02:00 UTC daily
+- Uses SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
