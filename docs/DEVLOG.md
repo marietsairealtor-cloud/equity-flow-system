@@ -8585,3 +8585,37 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-13 — Build Route v2.4 — 10.8.11O
+
+Objective
+Expired Workspace Retention + Archive Lifecycle Automation — scheduled backend
+automation enforces expired workspace lifecycle from read-only to archived to
+hard delete.
+
+Changes
+- Migration 20260413000001_10_8_11O_retention_archive_lifecycle.sql applied
+- public.tenants.subscription_lapsed_at timestamptz DEFAULT NULL added
+- public.tenants.archived_at timestamptz DEFAULT NULL added
+- process_workspace_retention_v1() internal RPC added:
+  SECURITY DEFINER, REVOKE ALL FROM PUBLIC, REVOKE ALL FROM authenticated
+  Steps: recovery, lapse detection, archive (sub path), archive (no-sub path), hard delete
+  Explicit delete order: activity_log, tenant_memberships, tenants (CASCADE rest)
+- Edge Function supabase/functions/retention-lifecycle/index.ts deployed
+  x-retention-secret header enforcement, unauthorized calls rejected 401
+- GitHub Actions scheduler .github/workflows/retention-lifecycle-scheduler.yml added
+  Cron: 02:00 UTC daily, workflow_dispatch enabled, manual trigger verified PASS
+- RETENTION_LIFECYCLE_SECRET set in Supabase Edge Function secrets
+- RETENTION_LIFECYCLE_SECRET and SUPABASE_URL set in GitHub Actions secrets
+- CONTRACTS.md section 50 added
+- definer_allowlist.json, privilege_truth.json, rpc_contract_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260413T171511Z.md
+
+Proof
+docs/proofs/10.8.11O_retention_archive_lifecycle_20260413T184223Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
