@@ -12,4 +12,9 @@ INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, row_versio
   ('a3000000-0000-0000-0000-000000000002','a0000000-0000-0000-0000-000000000001','a2000000-0000-0000-0000-000000000002',1,1,'{}'),
   ('b3000000-0000-0000-0000-000000000001','b0000000-0000-0000-0000-000000000001','b2000000-0000-0000-0000-000000000001',1,1,'{}'),
   ('b3000000-0000-0000-0000-000000000002','b0000000-0000-0000-0000-000000000001','b2000000-0000-0000-0000-000000000002',1,1,'{}');
+  INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+VALUES
+  ('a0000000-0000-0000-0000-000000000001', 'active', now() + interval '1 year'),
+  ('b0000000-0000-0000-0000-000000000001', 'active', now() + interval '1 year')
+ON CONFLICT (tenant_id) DO UPDATE SET status = 'active', current_period_end = now() + interval '1 year';
 COMMIT;

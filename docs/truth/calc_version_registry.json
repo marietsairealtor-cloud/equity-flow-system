@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 17,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -51,6 +51,17 @@
       "description": "10.8.4: list_deals_v1 recreated with health_color field. Migration references calc_version incidentally in json_build_object return - no calc logic changed. Health computation derives from updated_at and stage only.",
       "introduced_pr": "PR139",
       "released_at": "2026-03-19"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.8.11N expired write lock",
+      "migration": "20260412000002_10_8_11N_expired_write_lock.sql",
+      "ruling": "incidental_reference",
+      "note": "Migration references calc_version only in update_deal_v1 retrofit (deal update return shape and optimistic concurrency). No calc protocol changed. Write lock enforcement only.",
+      "description": "10.8.11N: Migration references calc_version only in update_deal_v1 retrofit (deal update return shape and optimistic concurrency). No calc protocol changed. Write lock enforcement only. Incidental reference, no calc logic changed.",
+      "authority": "QA ruling 2026-04-13",
+      "introduced_pr": "10.8.11N",
+      "released_at": "2026-04-13"
     }
   ],
   "watch_surface": {
