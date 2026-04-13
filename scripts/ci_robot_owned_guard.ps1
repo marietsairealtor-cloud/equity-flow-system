@@ -168,6 +168,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/10\.8\.11L_renew_now_\d{8}T\d{6}Z\.md$"){ return "ALLOW:10.8.11L proof doc" }
   if($pp -match "^docs/proofs/10\.8\.11M_entitlement_access_retention_\d{8}T\d{6}Z\.md$"){ return "ALLOW:10.8.11M proof doc" }
   if($pp -match "^docs/proofs/10\.8\.11N_expired_write_lock_\d{8}T\d{6}Z\.md$"){ return "ALLOW:10.8.11N proof doc" }
+  if($pp -match "^docs/proofs/10\.8\.11N1_write_lock_coverage_gate_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.8.11N1 proof log" }
   if($pp -eq "docs/truth/deal_health_thresholds.json"){ return "ALLOW:10.8.4 deal health thresholds truth file" }
   if($pp -eq "docs/truth/rpc_schemas/list_deals_v1.json"){ return "ALLOW:10.8.4 list_deals_v1 schema update" }
   if($pp -eq "docs/truth/surface_truth.json"){ return "ALLOW:9.1 surface truth capture" }

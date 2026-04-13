@@ -291,6 +291,11 @@
       "required": true
     },
     {
+      "name": "CI / write-lock-coverage",
+      "type": "github_status",
+      "required": true
+    },
+    {
       "name": "database-tests / pgtap",
       "type": "github_status",
       "required": true
