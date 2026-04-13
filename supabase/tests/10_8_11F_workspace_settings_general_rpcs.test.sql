@@ -19,6 +19,9 @@ VALUES
   ('e0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'member')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+VALUES ('d0000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year');
+
 -- Second tenant for slug conflict + isolation test
 INSERT INTO public.tenants (id)
 VALUES ('d0000000-0000-0000-0000-000000000002')

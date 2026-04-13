@@ -9,6 +9,9 @@ SET CONSTRAINTS ALL DEFERRED;
 
 INSERT INTO public.tenants (id) VALUES ('eb000000-0000-0000-0000-000000000001'::uuid);
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+VALUES ('eb000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year');
+
 INSERT INTO public.deals (id, tenant_id, row_version, calc_version, assumptions_snapshot_id)
 VALUES
   ('eb100000-0000-0000-0000-000000000001'::uuid,

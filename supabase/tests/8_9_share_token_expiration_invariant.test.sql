@@ -42,10 +42,17 @@ VALUES
    now() + interval '1 year',
    now() - interval '1 hour');
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+VALUES ('ea000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
+VALUES ('89000000-0000-0000-0000-000000000001'::uuid, 'ea000000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-0000000000a1'::uuid, 'owner')
+ON CONFLICT DO NOTHING;
+
 RESET ROLE;
 SET ROLE authenticated;
-SELECT set_config('request.jwt.claim.tenant_id', 'ea000000-0000-0000-0000-000000000001', true);
-SELECT set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-0000000000a1', true);
+SELECT set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-0000000000a1","role":"authenticated","tenant_id":"ea000000-0000-0000-0000-000000000001"}', true);
 
 -- Test 1: expires_at column is NOT NULL
 RESET ROLE;
@@ -55,7 +62,7 @@ SELECT col_not_null('public', 'share_tokens', 'expires_at',
 
 -- Test 2: Valid token before expiry resolves successfully
 SET ROLE authenticated;
-SELECT set_config('request.jwt.claim.tenant_id', 'ea000000-0000-0000-0000-000000000001', true);
+SELECT set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-0000000000a1","role":"authenticated","tenant_id":"ea000000-0000-0000-0000-000000000001"}', true);
 SELECT is(
   (public.lookup_share_token_v1('shr_89000000000000000000000000000000000000000000000000000000000000aa', 'ea100000-0000-0000-0000-000000000001'::uuid)::json ->> 'code'),
   'OK',

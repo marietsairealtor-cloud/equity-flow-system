@@ -27,6 +27,14 @@ VALUES
   ('d7200000-0000-0000-0000-000000000002'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid,
    'd7000000-0000-0000-0000-000000000001'::uuid, extensions.digest('shr_67000000000000000000000000000000000000000000000000000000000000bb', 'sha256'), '2020-01-01 00:00:00+00');
 
+-- Seed tenant and active subscription for write lock
+INSERT INTO public.tenants (id) VALUES ('a0000000-0000-0000-0000-000000000001'::uuid)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+VALUES ('a0000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year')
+ON CONFLICT DO NOTHING;
+
 -- Switch to Tenant A authenticated context
 RESET ROLE;
 SET ROLE authenticated;

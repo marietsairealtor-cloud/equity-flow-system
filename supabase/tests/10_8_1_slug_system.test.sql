@@ -19,6 +19,9 @@ INSERT INTO public.tenant_slugs (id, tenant_id, slug)
     'test-workspace-01'
   );
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+VALUES ('a0810000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year');
+
 -- ============================================================
 -- resolve_form_slug_v1 -- valid slug + valid form_type
 -- ============================================================

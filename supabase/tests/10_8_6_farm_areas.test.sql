@@ -51,6 +51,10 @@ INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role) VALUES
    'admin')
   ON CONFLICT DO NOTHING;
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end) VALUES
+  ('e0000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year'),
+  ('e0000000-0000-0000-0000-000000000002'::uuid, 'active', now() + interval '1 year');
+
 SET LOCAL "request.jwt.claims" TO '{"sub":"e9000000-0000-0000-0000-000000000001","role":"authenticated"}';
 SET LOCAL ROLE authenticated;
 SET LOCAL "app.tenant_id" TO 'e0000000-0000-0000-0000-000000000001';

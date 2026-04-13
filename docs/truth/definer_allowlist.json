@@ -5,6 +5,7 @@
     "public.accept_pending_invites_v1",
     "public.auth_user_exists_v1",
     "public.check_slug_access_v1",
+    "public.check_workspace_write_allowed_v1",
     "public.complete_reminder_v1",
     "public.create_deal_v1",
     "public.create_farm_area_v1",
@@ -43,6 +44,7 @@
   "tenant_context_exempt": [
     "public.auth_user_exists_v1",
     "public.check_slug_access_v1",
+    "public.check_workspace_write_allowed_v1",
     "public.get_profile_settings_v1",
     "public.resolve_form_slug_v1",
     "public.submit_form_v1",

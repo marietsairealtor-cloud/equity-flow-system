@@ -318,6 +318,49 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 - Any PR that adds or modifies a public RPC must update this table in the same PR.
 - Internal helpers are excluded from this table but must be listed in docs/truth/definer_allowlist.json if SECURITY DEFINER.
 - Gate: rpc-mapping-contract (merge-blocking, policy-coupling style).
+- Any workspace-write RPC must call `check_workspace_write_allowed_v1()` near the top. Approved exceptions: billing/renewal path, `update_display_name_v1`. Gate: 10.8.11N1 (merge-blocking).
+
+## 17A) Expired Workspace Write Lock (10.8.11N)
+
+All workspace-write RPCs are server-enforced read-only when the workspace subscription is expired, canceled, or has no subscription record.
+
+### Internal helper
+
+`check_workspace_write_allowed_v1()` — SECURITY DEFINER, internal only, REVOKE ALL FROM PUBLIC.
+Returns `true` when write is allowed, `false` otherwise.
+Checks: tenant context exists, caller is a member, subscription exists, subscription is active or expiring.
+
+### Locked RPCs (retrofitted 10.8.11N)
+
+- `create_deal_v1`
+- `update_deal_v1`
+- `create_farm_area_v1`
+- `delete_farm_area_v1`
+- `create_reminder_v1`
+- `complete_reminder_v1`
+- `create_share_token_v1`
+- `update_workspace_settings_v1`
+- `update_member_role_v1`
+- `remove_member_v1`
+- `invite_workspace_member_v1`
+
+### Inline subscription check (slug-based resolution)
+
+- `submit_form_v1` — blocked when workspace expired (inline check, no membership context)
+- `lookup_share_token_v1` — blocked when workspace expired (inline check, no membership context)
+
+### Approved exceptions (not locked)
+
+- `update_display_name_v1` — profile settings, always allowed
+- Billing/renewal path — always allowed
+
+### Universal error message
+
+`This workspace is read-only. Renew your subscription to continue.`
+
+### Future enforcement
+
+10.8.11N1 adds a merge-blocking CI gate verifying all workspace-write RPCs call `check_workspace_write_allowed_v1()`.
 
 ---
 
