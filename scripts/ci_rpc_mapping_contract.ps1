@@ -31,7 +31,8 @@ foreach ($mig in $migrationsChanged) {
       $rpcName = $m.Groups[2].Value
       # Exclude known internal helpers
       if ($rpcName -notin @("require_min_role_v1", "current_tenant_id", "auth_user_exists_v1",
-                             "check_workspace_write_allowed_v1", "create_active_workspace_seed_v1")) {
+                             "check_workspace_write_allowed_v1", "create_active_workspace_seed_v1",
+                             "process_workspace_retention_v1")) {
         $newRpcs += $rpcName
       }
     }

@@ -781,6 +781,19 @@ When adding or updating test-only seed helpers:
   2. inspect the function definition in local DB if audit tests fail
   3. confirm no parameter names accidentally trip tenancy-input catalog audits
 
+## 19.1) Seed Helper Update Trigger
+- Update create_active_workspace_seed_v1() when a column is added to any table the helper inserts into (public.tenants, public.tenant_memberships, public.tenant_subscriptions, public.user_profiles) and that column meets either condition:
+
+  -NOT NULL with no default — helper insert will fail without it
+  -Default value that produces invalid or misleading baseline state for tests
+
+- Do not update the helper when the new column:
+
+  -Has DEFAULT NULL — NULL is correct baseline, tests mutate explicitly
+   Has a safe non-null default that is valid for all test scenarios
+
+- Verification step: after any migration that touches those four tables, check the new column's nullability and default before writing tests. If neither trigger condition is met, proceed without touching the helper.
+
 
 STATUS:
 Aligned with Build Route v2.4

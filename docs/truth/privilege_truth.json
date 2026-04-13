@@ -161,6 +161,11 @@
         "routine": "auth_user_exists_v1",
         "privilege": "EXECUTE",
         "authority": "Build Route 10.8.11I7 — send-invite-email Edge Function; EXECUTE to service_role only (REVOKE PUBLIC)"
+      },
+      {
+        "routine": "process_workspace_retention_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.8.11O — retention-lifecycle Edge Function; EXECUTE to service_role only (REVOKE PUBLIC, authenticated)"
       }
     ]
   },

@@ -514,6 +514,66 @@ These apply to ALL Section 10 items. Each is explicitly rejected with rationale 
 - §11-14 RLS + Privilege Firewall enforced server-side
 - §29 No `$$` in SQL
 
+## 14)## Expired, Archived, and Restore Flow
+
+Workspace access has 3 distinct states:
+
+### 14.1. Read-only expired
+A workspace is **read-only expired** when billing has lapsed but the 60-day grace window has not yet ended.
+
+Behavior:
+- users may still enter the authenticated app shell
+- pages may remain viewable
+- write actions are blocked by backend enforcement
+- billing remains available to the workspace owner
+- the expired banner is shown
+
+Universal message:
+- `Subscription expired. This workspace is read-only. Renew within 60 days to avoid data loss.`
+
+Recovery:
+- if the owner renews during this 60-day window, the workspace returns to normal automatically after billing sync completes
+
+### 14.2. Archived / unreachable
+A workspace becomes **archived / unreachable** after the 60-day grace window ends.
+
+Behavior:
+- workspace is not reachable by any user
+- archived workspace is not rendered as normal read-only mode
+- archived users are treated as having no reachable workspace
+- post-auth routing behaves like a user without a reachable workspace
+- onboarding may be shown again
+
+Important:
+- archived is not the same as read-only expired
+- payment alone does not reopen an archived workspace
+
+Recovery:
+- if the owner renews after archive, the workspace remains archived
+- archived workspace requires an explicit **Restore workspace** action
+- restore is allowed only when:
+  - the workspace is archived
+  - the workspace has not been hard deleted
+  - billing is active again
+
+### 14.3. Hard deleted
+A workspace is **hard deleted** 6 months after archive begins.
+
+Behavior:
+- workspace data is permanently removed
+- no user can access the workspace
+- no restore is possible
+
+### Routing summary
+- read-only expired → user may still enter app shell in restricted mode
+- archived / unreachable → user treated as having no reachable workspace
+- hard deleted → no workspace remains to restore
+
+### Billing summary
+- owner-only **Manage billing** remains the billing entry point
+- renew before archive → automatic recovery
+- renew after archive → explicit restore required
+- renew after hard delete → no recovery
 ---
 
 STATUS:

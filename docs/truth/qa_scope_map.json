@@ -539,6 +539,9 @@
     },
     "10.8.11N1": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11N1_write_lock_coverage_gate_"
+    },
+    "10.8.11O": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11O_retention_archive_lifecycle_"
     }
   }
 }

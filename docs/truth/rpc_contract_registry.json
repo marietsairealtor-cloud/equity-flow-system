@@ -398,6 +398,17 @@
       "response_schema": null,
       "error_codes": [],
       "notes": "SECURITY DEFINER. Callable by service_role only (REVOKE PUBLIC). Returns boolean (not JSON envelope). Existence only — no user data leakage. Used by send-invite-email Edge Function."
+    },
+    {
+      "name": "process_workspace_retention_v1",
+      "version": 1,
+      "build_route_owner": "10.8.11O",
+      "input_contract": "No parameters. Batch retention processor for subscription lapse, archive, and hard-delete windows.",
+      "response_schema": null,
+      "error_codes": [
+        "INTERNAL"
+      ],
+      "notes": "SECURITY DEFINER. Callable by service_role exclusively (REVOKE PUBLIC, authenticated). JSON envelope ok/data/error. Invoked by retention-lifecycle Edge Function only — not app-user callable. Not in execute_allowlist."
     }
   ]
 }

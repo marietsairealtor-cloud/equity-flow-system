@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-13T15:33:19Z",
+    "generated":  "2026-04-13T17:30:56Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -108,6 +108,15 @@
                             "name":  "invite_workspace_member_v1",
                             "tables":  [
                                            "tenant_invites"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "process_workspace_retention_v1",
+                            "tables":  [
+                                           "tenants"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
