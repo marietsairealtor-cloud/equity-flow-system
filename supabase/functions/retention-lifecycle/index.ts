@@ -1,12 +1,32 @@
 // retention-lifecycle/index.ts
-// Supabase Edge Function — daily retention lifecycle automation
-// Schedule: 02:00 UTC daily
-// Calls process_workspace_retention_v1() via service_role RPC
+// Supabase Edge Function -- daily retention lifecycle automation
+// Invoked by GitHub Actions scheduled workflow at 02:00 UTC daily
+// Requires x-retention-secret header matching RETENTION_LIFECYCLE_SECRET
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
   try {
+    // Validate invocation secret
+    const expectedSecret = Deno.env.get('RETENTION_LIFECYCLE_SECRET')
+    const incomingSecret = req.headers.get('x-retention-secret')
+
+    if (!expectedSecret) {
+      console.error('retention-lifecycle: RETENTION_LIFECYCLE_SECRET not configured')
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Server misconfiguration' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!incomingSecret || incomingSecret !== expectedSecret) {
+      console.error('retention-lifecycle: unauthorized invocation attempt')
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 

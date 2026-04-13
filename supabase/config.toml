@@ -408,3 +408,8 @@ entrypoint = "./functions/sync-seat-count/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/sync-seat-count/*.html" ]
+
+[functions.retention-lifecycle]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/retention-lifecycle/index.ts"
