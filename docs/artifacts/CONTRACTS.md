@@ -311,6 +311,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | delete_farm_area_v1 | 10.8.11H | Delete a farm area for current tenant; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | list_pending_invites_v1 | 10.8.11I3 | List pending (unaccepted, unexpired) invites for current workspace | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | rescind_invite_v1 | 10.8.11I3 | Cancel a pending invite by invite_id; deletes row; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
+| restore_workspace_v1 | 10.8.11O1 | Restore an archived workspace; clears archived_at and subscription_lapsed_at; owner-only, requires active subscription | SECURITY DEFINER, authenticated only, min role: owner | current_tenant_id() — no caller tenant_id param |
 | update_display_name_v1 | 10.8.11J | Update display name for current authenticated user; blank returns VALIDATION_ERROR | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 
 ### Mapping Rules
@@ -1047,3 +1048,44 @@ Edge Function:
 - Name: retention-lifecycle
 - Schedule: 02:00 UTC daily
 - Uses SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
+
+## 51) Archived Workspace Restore RPC Contract (10.8.11O1)
+
+`public.restore_workspace_v1()` restores an archived workspace to normal reachable state.
+
+Behavior:
+- SECURITY DEFINER, search_path = public
+- Requires authenticated context
+- No caller-supplied tenant_id
+- Derives workspace from current_tenant_id() only
+- Owner-only: returns NOT_AUTHORIZED for admin/member
+
+Restore is allowed only when all are true:
+- workspace is archived (tenants.archived_at IS NOT NULL)
+- workspace is not hard deleted (tenant row still exists)
+- caller is workspace owner
+- subscription is active again (status IN ('active','expiring') AND current_period_end > now())
+
+Restore behavior:
+- clears tenants.archived_at
+- clears tenants.subscription_lapsed_at
+- workspace becomes reachable again
+- normal post-auth routing resumes
+- write access resumes through existing entitlement + write-lock logic
+
+Failure envelopes:
+- NOT_AUTHORIZED: caller is not owner or no membership
+- CONFLICT: workspace is not archived
+- CONFLICT: subscription is not active
+- CONFLICT/NOT_AUTHORIZED: workspace hard deleted (tenant row gone)
+
+Renewal behavior:
+- renew within 60-day read-only window: auto restore, no explicit restore needed
+- renew after archive: explicit restore_workspace_v1() required
+- renew after hard delete: no recovery
+
+Constraints:
+- No direct table calls from WeWeb
+- No auto-restore via renewal alone
+- Approved write-lock exemption: does not call check_workspace_write_allowed_v1()
+- anon cannot execute

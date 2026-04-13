@@ -3,7 +3,7 @@
 # Merge-blocking: verifies every in-scope workspace-write RPC calls
 # check_workspace_write_allowed_v1() in its definition.
 # Approved inline-check exceptions: submit_form_v1, lookup_share_token_v1
-# Approved full exceptions: update_display_name_v1, billing/renewal path
+# Approved full exceptions: update_display_name_v1, restore_workspace_v1, billing/renewal path
 
 $ErrorActionPreference = "Stop"
 
@@ -30,6 +30,20 @@ $inlineCheckRpcs = @(
   "submit_form_v1",
   "lookup_share_token_v1"
 )
+
+# Approved full exceptions: intentionally omit check_workspace_write_allowed_v1 (not normal
+# workspace writes under expired lock — profile, archived restore after active billing, etc.)
+$approvedFullExemptRpcs = @(
+  "update_display_name_v1",
+  "restore_workspace_v1"
+)
+
+foreach ($rpc in $approvedFullExemptRpcs) {
+  if ($helperRequiredRpcs -contains $rpc) {
+    Write-Error "WRITE_LOCK_COVERAGE: $rpc cannot be both helper-required and approved full-exempt"
+    exit 1
+  }
+}
 
 # Build final function definition map from migrations (last definition wins)
 $migrationsDir = "supabase/migrations"
@@ -84,6 +98,16 @@ foreach ($rpc in $inlineCheckRpcs) {
     Write-Host "  FAIL: $rpc -- missing inline subscription check"
   } else {
     Write-Host "  PASS: $rpc (inline check)"
+  }
+}
+
+Write-Host ""
+Write-Host "--- Approved full-exempt RPCs (documented; not helper-required) ---"
+foreach ($rpc in $approvedFullExemptRpcs) {
+  if ($functionDefs.ContainsKey($rpc)) {
+    Write-Host "  SKIP: $rpc (approved exemption)"
+  } else {
+    Write-Host "  WARN: $rpc not found in migrations (may be baseline or renamed)"
   }
 }
 
