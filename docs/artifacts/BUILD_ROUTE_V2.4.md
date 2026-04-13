@@ -5897,7 +5897,7 @@ subscription_status == 'expired'
 **Gate:** `lane-only`
 
 ---
-### 10.8.11L — Renew Now Routing Fix (Bridge Fix)
+### **10.8.11L — Renew Now Routing Fix (Bridge Fix)**
 
 **Deliverable**
 
@@ -5955,7 +5955,7 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11L_renew_now_<UTC>.md`
 **Gate:** `lane-only`
 
-### 10.8.11M — Entitlement RPC Access + Retention State Extension (Bridge Fix)
+### **10.8.11M — Entitlement RPC Access + Retention State Extension (Bridge Fix)**
 
 **Deliverable**
 
@@ -6027,7 +6027,7 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11M_entitlement_access_retention_<UTC>.md`  
 **Gate:** `lane-only`
 
-### 10.8.11N — Expired Subscription Server-Side Write Lock (Bridge Fix)
+### **10.8.11N — Expired Subscription Server-Side Write Lock (Bridge Fix)**
 
 **Deliverable**
 
@@ -6093,7 +6093,7 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11N_expired_write_lock_<UTC>.md`  
 **Gate:** `lane-only`
 
-### 10.8.11N1 — Workspace Write Lock Coverage Gate (Bridge Fix)
+### **10.8.11N1 — Workspace Write Lock Coverage Gate (Bridge Fix)**
 
 **Deliverable**
 
@@ -6138,7 +6138,7 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11N1_write_lock_coverage_gate_<UTC>.log`  
 **Gate:** `merge-blocking`
 
-### 10.8.11O — Expired Workspace Retention + Archive Lifecycle (Bridge Fix)
+### **10.8.11O — Expired Workspace Retention + Archive Lifecycle (Bridge Fix)**
 
 **Deliverable**
 
@@ -6183,7 +6183,7 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11O_retention_archive_lifecycle_<UTC>.md`  
 **Gate:** `lane-only`
 
-### 10.8.11P — Expired Workspace UI Read-Only + Banner Enforcement (Bridge Fix)
+### **10.8.11P — Expired Workspace UI Read-Only + Banner Enforcement (Bridge Fix)**
 
 **Deliverable**
 

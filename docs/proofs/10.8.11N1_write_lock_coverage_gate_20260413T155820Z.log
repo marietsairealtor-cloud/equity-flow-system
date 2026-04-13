@@ -1,0 +1,88 @@
+PROOF_HEAD=7b4fc2c64d3bfc40eea1b9b86c202d67c8fe4c3e
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11N1 Workspace Write Lock Coverage Gate -- Proof Log ===
+Date: 2026-04-13T11:56:03.8227491-04:00
+Branch: feature/10.8.11N1-write-lock-coverage-gate
+PR HEAD SHA: 7b4fc2c64d3bfc40eea1b9b86c202d67c8fe4c3e
+
+=== Deliverable ===
+Gate script: scripts/ci_write_lock_coverage.ps1 -- PASS
+CI job: write-lock-coverage added to ci.yml -- PASS
+Gate registered in required.needs -- PASS
+docs/truth/required_checks.json updated -- PASS
+
+=== Gate Design ===
+Authoritative in-scope RPC list (helper-required):
+  create_deal_v1, update_deal_v1, create_farm_area_v1, delete_farm_area_v1,
+  create_reminder_v1, complete_reminder_v1, create_share_token_v1,
+  update_workspace_settings_v1, update_member_role_v1, remove_member_v1,
+  invite_workspace_member_v1
+
+Approved inline-check RPCs (subscription check, not helper):
+  submit_form_v1, lookup_share_token_v1
+
+Gate fails with clear offending RPC names if any in-scope RPC is missing enforcement.
+
+=== Gate Output ===
+
+=== write-lock-coverage: Workspace write lock enforcement gate ===
+Functions found in migrations: 45
+
+--- Checking helper-required RPCs ---
+  PASS: create_deal_v1
+  PASS: update_deal_v1
+  PASS: create_farm_area_v1
+  PASS: delete_farm_area_v1
+  PASS: create_reminder_v1
+  PASS: complete_reminder_v1
+  PASS: create_share_token_v1
+  PASS: update_workspace_settings_v1
+  PASS: update_member_role_v1
+  PASS: remove_member_v1
+  PASS: invite_workspace_member_v1
+
+--- Checking inline-check RPCs ---
+  PASS: submit_form_v1 (inline check)
+  PASS: lookup_share_token_v1 (inline check)
+
+Helper-required failures: 0
+Inline-check failures: 0
+write-lock-coverage: PASS
+
+=== Incidental Fix ===
+6_11_role_guard_helper.test.sql -- throws_ok with 42501 was crashing DB
+connection under CI load. Replaced with has_function_privilege() catalog
+check. Same assertion, no transaction abort risk.
+
+=== DoD Checklist ===
+Gate script added                                                      -- PASS
+Gate checks all helper-required write RPCs                             -- PASS
+Gate checks inline-check RPCs for subscription enforcement             -- PASS
+Gate fails with clear offending RPC names                              -- PASS
+Gate is deterministic                                                  -- PASS
+Gate is merge-blocking (added to required.needs)                       -- PASS
+Approved exceptions documented (update_display_name_v1, billing path)  -- PASS
+CONTRACTS.md section 17A updated with gate description                 -- PASS
+qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered  -- PASS
+docs/truth/required_checks.json updated via truth:sync                 -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md section 17A updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260413T150946Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11N1 Workspace Write Lock Coverage Gate: PASS (merge-blocking gate)

@@ -536,6 +536,9 @@
     },
     "10.8.11N": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11N_expired_write_lock_"
+    },
+    "10.8.11N1": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11N1_write_lock_coverage_gate_"
     }
   }
 }

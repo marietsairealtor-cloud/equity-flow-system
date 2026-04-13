@@ -213,6 +213,7 @@
     "docs/proofs/10.8.11K_subscription_status_20260411T003438Z.md": "9908889348993ad92409b001b9d9c2a4e01dbcabd8c192337c80fc93b4e42a3e",
     "docs/proofs/10.8.11L_renew_now_20260412T142847Z.md": "cd1f264fad0c89f7813585f1a129b961aad24a8376bb1aa06523a8f85b14ee8b",
     "docs/proofs/10.8.11M_entitlement_access_retention_20260412T153536Z.md": "1d41ce8d0ee16907ca623c017e646ce7054d8cf073916cc449467ac3bdeca09f",
-    "docs/proofs/10.8.11N_expired_write_lock_20260413T015015Z.md": "6666397a6406f53dfce0c5532ca5b0871c02e352854f252a537f4022de88d126"
+    "docs/proofs/10.8.11N_expired_write_lock_20260413T015015Z.md": "6666397a6406f53dfce0c5532ca5b0871c02e352854f252a537f4022de88d126",
+    "docs/proofs/10.8.11N1_write_lock_coverage_gate_20260413T155820Z.log": "1bf58ff38ba43182659378e234210f3e63c7292c8e80c00945774f327091e2d3"
   }
 }

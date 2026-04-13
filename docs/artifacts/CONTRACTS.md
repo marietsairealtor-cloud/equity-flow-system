@@ -358,9 +358,16 @@ Checks: tenant context exists, caller is a member, subscription exists, subscrip
 
 `This workspace is read-only. Renew your subscription to continue.`
 
-### Future enforcement
+### 10.8.11N1 Coverage Gate (merge-blocking)
 
-10.8.11N1 adds a merge-blocking CI gate verifying all workspace-write RPCs call `check_workspace_write_allowed_v1()`.
+`scripts/ci_write_lock_coverage.ps1` — merge-blocking CI gate added in 10.8.11N1.
+
+Verifies at every PR that:
+- All helper-required write RPCs call `check_workspace_write_allowed_v1()`
+- Inline-check RPCs (`submit_form_v1`, `lookup_share_token_v1`) contain a subscription check
+
+Gate fails clearly with offending RPC names if any in-scope RPC is missing enforcement.
+Registered in `ci.yml` under `required.needs` as `write-lock-coverage`.
 
 ---
 
