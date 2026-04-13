@@ -58,8 +58,8 @@
     "surface:capture": "node scripts/capture_surface_truth.mjs",
     "surface:verify": "node scripts/ci_surface_truth.mjs",
     "surface:invariants": "node scripts/ci_surface_invariants.mjs",
-  "data-surface:truth": "node scripts/ci_data_surface_truth.mjs",
-  "weweb:drift": "node scripts/ci_weweb_drift_guard.mjs",
+    "data-surface:truth": "node scripts/ci_data_surface_truth.mjs",
+    "weweb:drift": "node scripts/ci_weweb_drift_guard.mjs",
     "rpc-contract-registry": "node scripts/ci_rpc_contract_registry.mjs",
     "gate-promotion-registry": "node scripts/ci_gate_promotion_registry.mjs"
   },
@@ -67,7 +67,7 @@
     "husky": "^9.1.7",
     "jsonwebtoken": "^9.0.3",
     "lint-staged": "^16.2.7",
-    "supabase": "^2.76.11",
+    "supabase": "^2.90.0",
     "yaml": "^2.6.0"
   },
   "lint-staged": {
