@@ -382,6 +382,45 @@ $_$;
 
 ALTER FUNCTION "public"."check_slug_access_v1"("p_slug" "text") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."check_workspace_write_allowed_v1"() RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant      uuid;
+  v_status      text;
+  v_period_end  timestamptz;
+BEGIN
+  v_tenant := public.current_tenant_id();
+
+  IF v_tenant IS NULL THEN
+    RETURN false;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.tenant_memberships tm
+    WHERE tm.tenant_id = v_tenant AND tm.user_id = auth.uid()
+  ) THEN
+    RETURN false;
+  END IF;
+
+  SELECT ts.status, ts.current_period_end INTO v_status, v_period_end
+  FROM public.tenant_subscriptions ts WHERE ts.tenant_id = v_tenant;
+
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  IF v_status = 'canceled' OR v_period_end <= now() THEN
+    RETURN false;
+  END IF;
+
+  RETURN true;
+END;
+$$;
+
+ALTER FUNCTION "public"."check_workspace_write_allowed_v1"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."complete_reminder_v1"("p_reminder_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -389,55 +428,66 @@ CREATE OR REPLACE FUNCTION "public"."complete_reminder_v1"("p_reminder_id" "uuid
 DECLARE
   v_tenant uuid;
 BEGIN
-  -- Role enforcement first (CONTRACTS S8, Build Route 7.8)
-  -- Caught and returned as JSON envelope per RPC contract
   BEGIN
     PERFORM public.require_min_role_v1('member');
   EXCEPTION WHEN OTHERS THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object()));
   END;
 
   v_tenant := public.current_tenant_id();
-
   IF v_tenant IS NULL THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object()));
   END IF;
 
   IF p_reminder_id IS NULL THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'VALIDATION_ERROR',
-      'data',  null,
-      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_id', 'Required'))
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_id', 'Required')));
   END IF;
 
-  UPDATE public.deal_reminders
-  SET completed_at = now()
-  WHERE id = p_reminder_id
-    AND tenant_id = v_tenant
-    AND completed_at IS NULL;
+  UPDATE public.deal_reminders SET completed_at = now()
+  WHERE id = p_reminder_id AND tenant_id = v_tenant AND completed_at IS NULL;
 
-  RETURN json_build_object(
-    'ok',   true,
-    'code', 'OK',
-    'data', json_build_object('id', p_reminder_id),
-    'error', null
-  );
+  RETURN json_build_object('ok', true, 'code', 'OK', 'data', json_build_object('id', p_reminder_id), 'error', null);
 END;
 $$;
 
 ALTER FUNCTION "public"."complete_reminder_v1"("p_reminder_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."create_active_workspace_seed_v1"("p_seed_workspace" "uuid", "p_user_id" "uuid", "p_role" "public"."tenant_role" DEFAULT 'admin'::"public"."tenant_role") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  INSERT INTO public.tenants (id)
+  VALUES (p_seed_workspace)
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO auth.users (id, email, created_at, updated_at, raw_app_meta_data, raw_user_meta_data, aud, role)
+  VALUES (p_user_id, 'seed_' || p_user_id || '@test.local', now(), now(), '{}', '{}', 'authenticated', 'authenticated')
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
+  VALUES (gen_random_uuid(), p_seed_workspace, p_user_id, p_role)
+  ON CONFLICT (tenant_id, user_id) DO NOTHING;
+
+  INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+  VALUES (p_seed_workspace, 'active', now() + interval '1 year')
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO public.user_profiles (id, current_tenant_id)
+  VALUES (p_user_id, p_seed_workspace)
+  ON CONFLICT DO NOTHING;
+END;
+$$;
+
+ALTER FUNCTION "public"."create_active_workspace_seed_v1"("p_seed_workspace" "uuid", "p_user_id" "uuid", "p_role" "public"."tenant_role") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer DEFAULT 1, "p_assumptions" "jsonb" DEFAULT '{}'::"jsonb") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -449,40 +499,29 @@ DECLARE
 BEGIN
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
   END IF;
 
-  -- Generate snapshot id
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object()));
+  END IF;
+
   v_snapshot_id := gen_random_uuid();
 
-  -- Step 1: Insert deal with snapshot id up-front (FK is DEFERRABLE; deal_inputs row may be inserted later in txn)
-INSERT INTO public.deals (id, tenant_id, row_version, calc_version, assumptions_snapshot_id)
-VALUES (p_id, v_tenant, 1, p_calc_version, v_snapshot_id);
+  INSERT INTO public.deals (id, tenant_id, row_version, calc_version, assumptions_snapshot_id)
+  VALUES (p_id, v_tenant, 1, p_calc_version, v_snapshot_id);
+
   INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, row_version, assumptions)
   VALUES (v_snapshot_id, v_tenant, p_id, p_calc_version, 1, p_assumptions);
 
-  RETURN json_build_object(
-    'ok',   true,
-    'code', 'OK',
-    'data', json_build_object(
-      'id',                    p_id,
-      'tenant_id',             v_tenant,
-      'assumptions_snapshot_id', v_snapshot_id
-    ),
-    'error', null
-  );
+  RETURN json_build_object('ok', true, 'code', 'OK',
+    'data', json_build_object('id', p_id, 'tenant_id', v_tenant, 'assumptions_snapshot_id', v_snapshot_id),
+    'error', null);
 EXCEPTION WHEN unique_violation THEN
-  RETURN json_build_object(
-    'ok',    false,
-    'code',  'CONFLICT',
-    'data',  null,
-    'error', json_build_object('message', 'Deal already exists', 'fields', json_build_object())
-  );
+  RETURN json_build_object('ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+    'error', json_build_object('message', 'Deal already exists', 'fields', json_build_object()));
 END;
 $$;
 
@@ -499,46 +538,29 @@ BEGIN
   PERFORM public.require_min_role_v1('admin');
 
   v_tenant_id := public.current_tenant_id();
-
   IF v_tenant_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', '{}'::jsonb));
   END IF;
 
   IF p_area_name IS NULL OR btrim(p_area_name) = '' THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Area name is required', 'fields', jsonb_build_object('area_name', 'Must not be blank'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Area name is required', 'fields', jsonb_build_object('area_name', 'Must not be blank')));
   END IF;
 
   INSERT INTO public.tenant_farm_areas (tenant_id, area_name)
-  VALUES (v_tenant_id, btrim(p_area_name))
-  RETURNING id INTO v_new_id;
+  VALUES (v_tenant_id, btrim(p_area_name)) RETURNING id INTO v_new_id;
 
-  RETURN jsonb_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', jsonb_build_object(
-      'farm_area_id', v_new_id,
-      'area_name', btrim(p_area_name)
-    ),
-    'error', null
-  );
-EXCEPTION
-  WHEN unique_violation THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'CONFLICT',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Farm area already exists', 'fields', jsonb_build_object('area_name', 'Already exists in this workspace'))
-    );
+  RETURN jsonb_build_object('ok', true, 'code', 'OK',
+    'data', jsonb_build_object('farm_area_id', v_new_id, 'area_name', btrim(p_area_name)), 'error', null);
+EXCEPTION WHEN unique_violation THEN
+  RETURN jsonb_build_object('ok', false, 'code', 'CONFLICT', 'data', '{}'::jsonb,
+    'error', jsonb_build_object('message', 'Farm area already exists', 'fields', jsonb_build_object('area_name', 'Already exists in this workspace')));
 END;
 $$;
 
@@ -552,79 +574,48 @@ DECLARE
   v_tenant      uuid;
   v_reminder_id uuid;
 BEGIN
-  -- Role enforcement first (CONTRACTS S8, Build Route 7.8)
-  -- Caught and returned as JSON envelope per RPC contract
   BEGIN
     PERFORM public.require_min_role_v1('member');
   EXCEPTION WHEN OTHERS THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object()));
   END;
 
   v_tenant := public.current_tenant_id();
-
   IF v_tenant IS NULL THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object()));
   END IF;
 
   IF p_deal_id IS NULL THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'VALIDATION_ERROR',
-      'data',  null,
-      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('deal_id', 'Required'))
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('deal_id', 'Required')));
   END IF;
 
   IF p_reminder_date IS NULL THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'VALIDATION_ERROR',
-      'data',  null,
-      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_date', 'Required'))
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_date', 'Required')));
   END IF;
 
   IF p_reminder_type IS NULL OR trim(p_reminder_type) = '' THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'VALIDATION_ERROR',
-      'data',  null,
-      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_type', 'Required'))
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_type', 'Required')));
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM public.deals d
-    WHERE d.id = p_deal_id AND d.tenant_id = v_tenant
-  ) THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_FOUND',
-      'data',  null,
-      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
-    );
+  IF NOT EXISTS (SELECT 1 FROM public.deals d WHERE d.id = p_deal_id AND d.tenant_id = v_tenant) THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object()));
   END IF;
 
   INSERT INTO public.deal_reminders (deal_id, tenant_id, reminder_date, reminder_type)
-  VALUES (p_deal_id, v_tenant, p_reminder_date, p_reminder_type)
-  RETURNING id INTO v_reminder_id;
+  VALUES (p_deal_id, v_tenant, p_reminder_date, p_reminder_type) RETURNING id INTO v_reminder_id;
 
-  RETURN json_build_object(
-    'ok',   true,
-    'code', 'OK',
-    'data', json_build_object('id', v_reminder_id),
-    'error', null
-  );
+  RETURN json_build_object('ok', true, 'code', 'OK', 'data', json_build_object('id', v_reminder_id), 'error', null);
 END;
 $$;
 
@@ -643,81 +634,53 @@ DECLARE
 BEGIN
   v_tenant_id := public.current_tenant_id();
   IF v_tenant_id IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
   END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object()));
+  END IF;
+
   IF p_deal_id IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
-      'error', json_build_object('message', 'deal_id is required', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'deal_id is required', 'fields', json_build_object()));
   END IF;
   IF p_expires_at IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
-      'error', json_build_object('message', 'expires_at is required', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'expires_at is required', 'fields', json_build_object()));
   END IF;
   IF p_expires_at <= now() THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
-      'error', json_build_object('message', 'expires_at must be in the future', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'expires_at must be in the future', 'fields', json_build_object()));
   END IF;
-  -- 9.7: Maximum lifetime invariant - tokens cannot exceed 90 days
   IF p_expires_at > now() + interval '90 days' THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
-      'error', json_build_object(
-        'message', 'expires_at exceeds maximum allowed lifetime of 90 days',
-        'fields', json_build_object('expires_at', 'Maximum token lifetime is 90 days')
-      )
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'expires_at exceeds maximum allowed lifetime of 90 days',
+        'fields', json_build_object('expires_at', 'Maximum token lifetime is 90 days')));
   END IF;
-  -- Verify deal belongs to tenant
-  IF NOT EXISTS (
-    SELECT 1 FROM public.deals
-    WHERE id = p_deal_id AND tenant_id = v_tenant_id
-  ) THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_FOUND', 'data', null,
-      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
-    );
+  IF NOT EXISTS (SELECT 1 FROM public.deals WHERE id = p_deal_id AND tenant_id = v_tenant_id) THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object()));
   END IF;
-  -- 9.5: Cardinality guard - count active tokens for this deal
-  SELECT count(*)::int
-  INTO v_active_count
-  FROM public.share_tokens
-  WHERE deal_id   = p_deal_id
-    AND tenant_id = v_tenant_id
-    AND revoked_at IS NULL
-    AND expires_at > now();
+
+  SELECT count(*)::int INTO v_active_count FROM public.share_tokens
+  WHERE deal_id = p_deal_id AND tenant_id = v_tenant_id AND revoked_at IS NULL AND expires_at > now();
+
   IF v_active_count >= v_max_tokens THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'CONFLICT', 'data', null,
-      'error', json_build_object(
-        'message', 'Active token limit reached for this resource',
-        'fields', json_build_object()
-      )
-    );
+    RETURN json_build_object('ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Active token limit reached for this resource', 'fields', json_build_object()));
   END IF;
-  -- Generate token: shr_ prefix + 32 random bytes as hex (256 bits entropy)
+
   v_token := 'shr_' || encode(extensions.gen_random_bytes(32), 'hex');
   v_hash  := extensions.digest(v_token, 'sha256');
+
   INSERT INTO public.share_tokens (tenant_id, deal_id, token_hash, expires_at)
   VALUES (v_tenant_id, p_deal_id, v_hash, p_expires_at);
-  -- Return raw token to caller - only time it is ever seen in plaintext
-  RETURN json_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', json_build_object(
-      'token',      v_token,
-      'expires_at', p_expires_at
-    ),
-    'error', null
-  );
+
+  RETURN json_build_object('ok', true, 'code', 'OK',
+    'data', json_build_object('token', v_token, 'expires_at', p_expires_at), 'error', null);
 END;
 $$;
 
@@ -834,46 +797,30 @@ BEGIN
   PERFORM public.require_min_role_v1('admin');
 
   v_tenant_id := public.current_tenant_id();
-
   IF v_tenant_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', '{}'::jsonb));
   END IF;
 
   IF p_farm_area_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'farm_area_id is required', 'fields', jsonb_build_object('farm_area_id', 'Must not be null'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'farm_area_id is required', 'fields', jsonb_build_object('farm_area_id', 'Must not be null')));
   END IF;
 
-  DELETE FROM public.tenant_farm_areas
-  WHERE id = p_farm_area_id
-    AND tenant_id = v_tenant_id;
+  DELETE FROM public.tenant_farm_areas WHERE id = p_farm_area_id AND tenant_id = v_tenant_id;
 
   IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_FOUND',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Farm area not found', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_FOUND', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Farm area not found', 'fields', '{}'::jsonb));
   END IF;
 
-  RETURN jsonb_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', jsonb_build_object(
-      'farm_area_id', p_farm_area_id
-    ),
-    'error', null
-  );
+  RETURN jsonb_build_object('ok', true, 'code', 'OK',
+    'data', jsonb_build_object('farm_area_id', p_farm_area_id), 'error', null);
 END;
 $$;
 
@@ -1212,85 +1159,48 @@ BEGIN
   PERFORM public.require_min_role_v1('admin');
 
   v_tenant_id := public.current_tenant_id();
-
   IF v_tenant_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', '{}'::jsonb));
   END IF;
 
   IF p_email IS NULL OR btrim(p_email) = '' THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Email is required', 'fields', jsonb_build_object('email', 'Must not be blank'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Email is required', 'fields', jsonb_build_object('email', 'Must not be blank')));
   END IF;
-
   IF p_role IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Role is required', 'fields', jsonb_build_object('role', 'Must not be null'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Role is required', 'fields', jsonb_build_object('role', 'Must not be null')));
   END IF;
 
-  SELECT tm.user_id INTO v_existing_member
-  FROM public.tenant_memberships tm
+  SELECT tm.user_id INTO v_existing_member FROM public.tenant_memberships tm
   JOIN auth.users u ON u.id = tm.user_id
-  WHERE tm.tenant_id = v_tenant_id
-    AND lower(u.email) = lower(btrim(p_email));
+  WHERE tm.tenant_id = v_tenant_id AND lower(u.email) = lower(btrim(p_email));
 
   IF v_existing_member IS NOT NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'CONFLICT',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'User is already a member', 'fields', jsonb_build_object('email', 'Already a member of this workspace'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'CONFLICT', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'User is already a member', 'fields', jsonb_build_object('email', 'Already a member of this workspace')));
   END IF;
 
-  SELECT id INTO v_existing_invite
-  FROM public.tenant_invites
-  WHERE tenant_id = v_tenant_id
-    AND lower(invited_email) = lower(btrim(p_email))
-    AND accepted_at IS NULL
-    AND expires_at > now();
+  SELECT id INTO v_existing_invite FROM public.tenant_invites
+  WHERE tenant_id = v_tenant_id AND lower(invited_email) = lower(btrim(p_email))
+    AND accepted_at IS NULL AND expires_at > now();
 
   IF v_existing_invite IS NOT NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'CONFLICT',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Pending invite already exists', 'fields', jsonb_build_object('email', 'Already has a pending invite'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'CONFLICT', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Pending invite already exists', 'fields', jsonb_build_object('email', 'Already has a pending invite')));
   END IF;
 
-  INSERT INTO public.tenant_invites (
-    tenant_id, invited_email, role, token, invited_by, expires_at
-  ) VALUES (
-    v_tenant_id,
-    lower(btrim(p_email)),
-    p_role,
-    gen_random_uuid()::text,
-    auth.uid(),
-    now() + interval '7 days'
-  );
+  INSERT INTO public.tenant_invites (tenant_id, invited_email, role, token, invited_by, expires_at)
+  VALUES (v_tenant_id, lower(btrim(p_email)), p_role, gen_random_uuid()::text, auth.uid(), now() + interval '7 days');
 
-  RETURN jsonb_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', jsonb_build_object(
-      'invited_email', lower(btrim(p_email)),
-      'role', p_role
-    ),
-    'error', null
-  );
+  RETURN jsonb_build_object('ok', true, 'code', 'OK',
+    'data', jsonb_build_object('invited_email', lower(btrim(p_email)), 'role', p_role), 'error', null);
 END;
 $$;
 
@@ -1609,114 +1519,91 @@ CREATE OR REPLACE FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p
     SET "search_path" TO 'public'
     AS $_$
 DECLARE
-  v_tenant_id uuid;
-  v_row       record;
-  v_hash      bytea;
-  v_result    json;
+  v_tenant_id  uuid;
+  v_row        record;
+  v_hash       bytea;
+  v_result     json;
+  v_sub_status text;
+  v_period_end timestamptz;
 BEGIN
   v_tenant_id := public.current_tenant_id();
   IF v_tenant_id IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
   END IF;
+
   IF p_deal_id IS NULL THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'VALIDATION_ERROR', 'data', null,
-      'error', json_build_object('message', 'deal_id is required', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'deal_id is required', 'fields', json_build_object()));
   END IF;
-  -- 9.4: Format validation - occurs BEFORE hashing.
-  -- Rule 1: prefix must be 'shr_'
-  -- Rule 2: body after prefix must be exactly 64 lowercase hex chars
-  -- Rule 3: total length >= 68
-  -- Returns NOT_FOUND - identical shape to nonexistent token (no format leak).
-  IF p_token IS NULL
-     OR length(p_token) < 68
-     OR left(p_token, 4) <> 'shr_'
+
+  -- Block share link access for expired workspaces
+  SELECT ts.status, ts.current_period_end INTO v_sub_status, v_period_end
+  FROM public.tenant_subscriptions ts WHERE ts.tenant_id = v_tenant_id;
+
+  IF NOT FOUND OR v_sub_status = 'canceled' OR v_period_end <= now() THEN
+    BEGIN
+      PERFORM public.foundation_log_activity_v1('share_token_lookup',
+        json_build_object('token_hash', null, 'success', false, 'failure_category', 'workspace_expired')::jsonb, null);
+    EXCEPTION WHEN OTHERS THEN NULL; END;
+    RETURN json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object()));
+  END IF;
+
+  IF p_token IS NULL OR length(p_token) < 68 OR left(p_token, 4) <> 'shr_'
      OR substring(p_token FROM 5) !~ '^[0-9a-f]{64}$'
   THEN
     BEGIN
-      PERFORM public.foundation_log_activity_v1(
-        'share_token_lookup',
-        json_build_object('token_hash', null, 'success', false, 'failure_category', 'format_invalid')::jsonb,
-        null
-      );
+      PERFORM public.foundation_log_activity_v1('share_token_lookup',
+        json_build_object('token_hash', null, 'success', false, 'failure_category', 'format_invalid')::jsonb, null);
     EXCEPTION WHEN OTHERS THEN NULL; END;
-    RETURN json_build_object(
-      'ok', false, 'code', 'NOT_FOUND', 'data', null,
-      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object()));
   END IF;
+
   v_hash := extensions.digest(p_token, 'sha256');
-  SELECT st.deal_id, st.expires_at, st.revoked_at, d.calc_version
-  INTO v_row
+
+  SELECT st.deal_id, st.expires_at, st.revoked_at, d.calc_version INTO v_row
   FROM public.share_tokens st
   JOIN public.deals d ON d.id = st.deal_id AND d.tenant_id = st.tenant_id
-  WHERE st.token_hash = v_hash
-    AND st.tenant_id  = v_tenant_id
-    AND st.deal_id    = p_deal_id;
+  WHERE st.token_hash = v_hash AND st.tenant_id = v_tenant_id AND st.deal_id = p_deal_id;
+
   IF NOT FOUND THEN
-    v_result := json_build_object(
-      'ok', false, 'code', 'NOT_FOUND', 'data', null,
-      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
-    );
+    v_result := json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object()));
     BEGIN
-      PERFORM public.foundation_log_activity_v1(
-        'share_token_lookup',
-        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'not_found')::jsonb,
-        null
-      );
+      PERFORM public.foundation_log_activity_v1('share_token_lookup',
+        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'not_found')::jsonb, null);
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  -- Revocation check first (overrides expiration per 8.6)
+
   IF v_row.revoked_at IS NOT NULL THEN
-    v_result := json_build_object(
-      'ok', false, 'code', 'NOT_FOUND', 'data', null,
-      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
-    );
+    v_result := json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object()));
     BEGIN
-      PERFORM public.foundation_log_activity_v1(
-        'share_token_lookup',
-        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'revoked')::jsonb,
-        null
-      );
+      PERFORM public.foundation_log_activity_v1('share_token_lookup',
+        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'revoked')::jsonb, null);
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  -- Expiration check - returns NOT_FOUND (no existence leak per 8.9)
+
   IF v_row.expires_at <= now() THEN
-    v_result := json_build_object(
-      'ok', false, 'code', 'NOT_FOUND', 'data', null,
-      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object())
-    );
+    v_result := json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Token not found for this tenant', 'fields', json_build_object()));
     BEGIN
-      PERFORM public.foundation_log_activity_v1(
-        'share_token_lookup',
-        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'expired')::jsonb,
-        null
-      );
+      PERFORM public.foundation_log_activity_v1('share_token_lookup',
+        json_build_object('token_hash', encode(v_hash, 'hex'), 'success', false, 'failure_category', 'expired')::jsonb, null);
     EXCEPTION WHEN OTHERS THEN NULL; END;
     RETURN v_result;
   END IF;
-  v_result := json_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', json_build_object(
-      'deal_id',      v_row.deal_id,
-      'calc_version', v_row.calc_version,
-      'expires_at',   v_row.expires_at
-    ),
-    'error', null
-  );
+
+  v_result := json_build_object('ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', v_row.deal_id, 'calc_version', v_row.calc_version, 'expires_at', v_row.expires_at),
+    'error', null);
   BEGIN
-    PERFORM public.foundation_log_activity_v1(
-      'share_token_lookup',
-      json_build_object('token_hash', encode(v_hash, 'hex'), 'success', true, 'failure_category', null)::jsonb,
-      null
-    );
+    PERFORM public.foundation_log_activity_v1('share_token_lookup',
+      json_build_object('token_hash', encode(v_hash, 'hex'), 'success', true, 'failure_category', null)::jsonb, null);
   EXCEPTION WHEN OTHERS THEN NULL; END;
   RETURN v_result;
 END;
@@ -1734,46 +1621,30 @@ BEGIN
   PERFORM public.require_min_role_v1('admin');
 
   v_tenant_id := public.current_tenant_id();
-
   IF v_tenant_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', '{}'::jsonb));
   END IF;
 
   IF p_user_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'user_id is required', 'fields', jsonb_build_object('user_id', 'Must not be null'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'user_id is required', 'fields', jsonb_build_object('user_id', 'Must not be null')));
   END IF;
 
-  DELETE FROM public.tenant_memberships
-  WHERE tenant_id = v_tenant_id
-    AND user_id = p_user_id;
+  DELETE FROM public.tenant_memberships WHERE tenant_id = v_tenant_id AND user_id = p_user_id;
 
   IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_FOUND',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Member not found', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_FOUND', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Member not found', 'fields', '{}'::jsonb));
   END IF;
 
-  RETURN jsonb_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', jsonb_build_object(
-      'user_id', p_user_id
-    ),
-    'error', null
-  );
+  RETURN jsonb_build_object('ok', true, 'code', 'OK',
+    'data', jsonb_build_object('user_id', p_user_id), 'error', null);
 END;
 $$;
 
@@ -2120,101 +1991,56 @@ DECLARE
   v_repair_est    numeric;
   v_valid_types   text[] := ARRAY['buyer', 'seller', 'birddog'];
   v_spam_token    text;
+  v_sub_status    text;
+  v_period_end    timestamptz;
 BEGIN
-  -- Validate form_type
   IF p_form_type IS NULL OR NOT (p_form_type = ANY(v_valid_types)) THEN
-    RETURN json_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', null,
-      'error', json_build_object(
-        'message', 'Invalid form type',
-        'fields', json_build_object('form_type', 'Must be buyer, seller, or birddog')
-      )
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Invalid form type',
+        'fields', json_build_object('form_type', 'Must be buyer, seller, or birddog')));
   END IF;
-
-  -- Validate slug
   IF p_slug IS NULL OR p_slug !~ '^[a-z0-9][a-z0-9\-]{1,61}[a-z0-9]$' THEN
-    RETURN json_build_object(
-      'ok', false,
-      'code', 'NOT_FOUND',
-      'data', null,
-      'error', json_build_object('message', 'Not found', 'fields', '{}'::json)
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not found', 'fields', '{}'::json));
   END IF;
-
-  -- Validate payload present
   IF p_payload IS NULL THEN
-    RETURN json_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', null,
-      'error', json_build_object(
-        'message', 'Payload required',
-        'fields', json_build_object('payload', 'Required')
-      )
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Payload required', 'fields', json_build_object('payload', 'Required')));
   END IF;
 
-  -- Validate spam token present (Turnstile/reCAPTCHA)
   v_spam_token := p_payload->>'spam_token';
   IF v_spam_token IS NULL OR length(trim(v_spam_token)) = 0 THEN
-    RETURN json_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', null,
-      'error', json_build_object(
-        'message', 'Spam protection token required',
-        'fields', json_build_object('spam_token', 'Required')
-      )
-    );
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Spam protection token required',
+        'fields', json_build_object('spam_token', 'Required')));
   END IF;
 
-  -- Resolve slug to tenant
-  SELECT ts.tenant_id INTO v_tenant_id
-  FROM public.tenant_slugs ts
-  WHERE ts.slug = p_slug;
-
+  SELECT ts.tenant_id INTO v_tenant_id FROM public.tenant_slugs ts WHERE ts.slug = p_slug;
   IF v_tenant_id IS NULL THEN
-    RETURN json_build_object(
-      'ok', false,
-      'code', 'NOT_FOUND',
-      'data', null,
-      'error', json_build_object('message', 'Not found', 'fields', '{}'::json)
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not found', 'fields', '{}'::json));
   END IF;
 
-  -- Extract MAO pre-fill fields from seller submissions
+  -- Block submissions for expired workspaces
+  SELECT ts.status, ts.current_period_end INTO v_sub_status, v_period_end
+  FROM public.tenant_subscriptions ts WHERE ts.tenant_id = v_tenant_id;
+
+  IF NOT FOUND OR v_sub_status = 'canceled' OR v_period_end <= now() THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is not accepting submissions.', 'fields', json_build_object()));
+  END IF;
+
   IF p_form_type = 'seller' THEN
     v_asking_price := (p_payload->>'asking_price')::numeric;
     v_repair_est   := (p_payload->>'repair_estimate')::numeric;
   END IF;
 
-  -- Insert draft deal record
-  INSERT INTO public.draft_deals (
-    tenant_id,
-    slug,
-    form_type,
-    payload,
-    asking_price,
-    repair_estimate
-  ) VALUES (
-    v_tenant_id,
-    p_slug,
-    p_form_type,
-    p_payload,
-    v_asking_price,
-    v_repair_est
-  )
+  INSERT INTO public.draft_deals (tenant_id, slug, form_type, payload, asking_price, repair_estimate)
+  VALUES (v_tenant_id, p_slug, p_form_type, p_payload, v_asking_price, v_repair_est)
   RETURNING id INTO v_draft_id;
 
-  RETURN json_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', json_build_object('draft_id', v_draft_id),
-    'error', null
-  );
+  RETURN json_build_object('ok', true, 'code', 'OK',
+    'data', json_build_object('draft_id', v_draft_id), 'error', null);
 END;
 $_$;
 
@@ -2295,59 +2121,40 @@ CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant      UUID;
-  v_stage       TEXT;
-  v_rows_updated INT;
+  v_tenant      uuid;
+  v_stage       text;
+  v_rows_updated int;
 BEGIN
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'NOT_AUTHORIZED',
-      'data',  null,
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
   END IF;
 
-  -- Immutable close: reject writes to terminal-stage deals
-  SELECT stage INTO v_stage
-  FROM public.deals
-  WHERE id = p_id AND tenant_id = v_tenant;
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object()));
+  END IF;
+
+  SELECT stage INTO v_stage FROM public.deals WHERE id = p_id AND tenant_id = v_tenant;
 
   IF v_stage IN ('Closed / Dead') THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'DEAL_IMMUTABLE',
-      'data',  null,
-      'error', json_build_object('message', 'Deal is in a terminal stage and cannot be modified', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'DEAL_IMMUTABLE', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal is in a terminal stage and cannot be modified', 'fields', json_build_object()));
   END IF;
 
   UPDATE public.deals
-  SET
-    row_version  = row_version + 1,
-    calc_version = COALESCE(p_calc_version, calc_version)
-  WHERE id         = p_id
-    AND tenant_id  = v_tenant
-    AND row_version = p_expected_row_version;
+  SET row_version = row_version + 1, calc_version = COALESCE(p_calc_version, calc_version)
+  WHERE id = p_id AND tenant_id = v_tenant AND row_version = p_expected_row_version;
 
   GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
 
   IF v_rows_updated = 0 THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'CONFLICT',
-      'data',  null,
-      'error', json_build_object('message', 'Row version mismatch or deal not found for this tenant', 'fields', json_build_object())
-    );
+    RETURN json_build_object('ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Row version mismatch or deal not found for this tenant', 'fields', json_build_object()));
   END IF;
 
-  RETURN json_build_object(
-    'ok',   true,
-    'code', 'OK',
-    'data', json_build_object('id', p_id),
-    'error', null
-  );
+  RETURN json_build_object('ok', true, 'code', 'OK', 'data', json_build_object('id', p_id), 'error', null);
 END;
 $$;
 
@@ -2417,57 +2224,34 @@ BEGIN
   PERFORM public.require_min_role_v1('admin');
 
   v_tenant_id := public.current_tenant_id();
-
   IF v_tenant_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', '{}'::jsonb));
   END IF;
 
   IF p_user_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'user_id is required', 'fields', jsonb_build_object('user_id', 'Must not be null'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'user_id is required', 'fields', jsonb_build_object('user_id', 'Must not be null')));
   END IF;
-
   IF p_role IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message','Role is required', 'fields', jsonb_build_object('role', 'Must not be null'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Role is required', 'fields', jsonb_build_object('role', 'Must not be null')));
   END IF;
 
-  UPDATE public.tenant_memberships
-  SET role = p_role
-  WHERE tenant_id = v_tenant_id
-    AND user_id = p_user_id;
+  UPDATE public.tenant_memberships SET role = p_role WHERE tenant_id = v_tenant_id AND user_id = p_user_id;
 
   IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_FOUND',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Member not found', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_FOUND', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Member not found', 'fields', '{}'::jsonb));
   END IF;
 
-  RETURN jsonb_build_object(
-    'ok', true,
-    'code', 'OK',
-    'data', jsonb_build_object(
-      'user_id', p_user_id,
-      'role', p_role
-    ),
-    'error', null
-  );
+  RETURN jsonb_build_object('ok', true, 'code', 'OK',
+    'data', jsonb_build_object('user_id', p_user_id, 'role', p_role), 'error', null);
 END;
 $$;
 
@@ -2483,74 +2267,43 @@ BEGIN
   PERFORM public.require_min_role_v1('admin');
 
   v_tenant_id := public.current_tenant_id();
-
   IF v_tenant_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb));
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', '{}'::jsonb));
   END IF;
 
   IF p_workspace_name IS NOT NULL AND btrim(p_workspace_name) = '' THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Invalid workspace name', 'fields', jsonb_build_object('workspace_name', 'Must not be blank'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Invalid workspace name', 'fields', jsonb_build_object('workspace_name', 'Must not be blank')));
   END IF;
-
   IF p_country IS NOT NULL AND btrim(p_country) = '' THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Invalid country', 'fields', jsonb_build_object('country', 'Must not be blank'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Invalid country', 'fields', jsonb_build_object('country', 'Must not be blank')));
   END IF;
-
   IF p_currency IS NOT NULL AND btrim(p_currency) = '' THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Invalid currency', 'fields', jsonb_build_object('currency', 'Must not be blank'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Invalid currency', 'fields', jsonb_build_object('currency', 'Must not be blank')));
   END IF;
-
   IF p_measurement_unit IS NOT NULL AND btrim(p_measurement_unit) = '' THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'VALIDATION_ERROR',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Invalid measurement unit', 'fields', jsonb_build_object('measurement_unit', 'Must not be blank'))
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Invalid measurement unit', 'fields', jsonb_build_object('measurement_unit', 'Must not be blank')));
   END IF;
-
   IF p_slug IS NOT NULL THEN
     IF btrim(p_slug) = '' OR p_slug !~ '^[a-z0-9][a-z0-9\-]{1,48}[a-z0-9]$' THEN
-      RETURN jsonb_build_object(
-        'ok', false,
-        'code', 'VALIDATION_ERROR',
-        'data', '{}'::jsonb,
-        'error', jsonb_build_object('message', 'Invalid slug format', 'fields', jsonb_build_object('slug', 'Must be lowercase, URL-safe, 3-50 characters'))
-      );
+      RETURN jsonb_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+        'error', jsonb_build_object('message', 'Invalid slug format', 'fields', jsonb_build_object('slug', 'Must be lowercase, URL-safe, 3-50 characters')));
     END IF;
-
     BEGIN
-      INSERT INTO public.tenant_slugs (tenant_id, slug)
-      VALUES (v_tenant_id, p_slug)
-      ON CONFLICT (tenant_id) DO UPDATE SET slug = EXCLUDED.slug
-      WHERE tenant_slugs.tenant_id = v_tenant_id;
+      INSERT INTO public.tenant_slugs (tenant_id, slug) VALUES (v_tenant_id, p_slug)
+      ON CONFLICT (tenant_id) DO UPDATE SET slug = EXCLUDED.slug WHERE tenant_slugs.tenant_id = v_tenant_id;
     EXCEPTION WHEN unique_violation THEN
-      RETURN jsonb_build_object(
-        'ok', false,
-        'code', 'CONFLICT',
-        'data', '{}'::jsonb,
-        'error', jsonb_build_object('message', 'Slug already taken', 'fields', jsonb_build_object('slug', 'Already in use'))
-      );
+      RETURN jsonb_build_object('ok', false, 'code', 'CONFLICT', 'data', '{}'::jsonb,
+        'error', jsonb_build_object('message', 'Slug already taken', 'fields', jsonb_build_object('slug', 'Already in use')));
     END;
   END IF;
 
@@ -2562,17 +2315,11 @@ BEGIN
   WHERE id = v_tenant_id;
 
   IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_FOUND',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Workspace not found', 'fields', '{}'::jsonb)
-    );
+    RETURN jsonb_build_object('ok', false, 'code', 'NOT_FOUND', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Workspace not found', 'fields', '{}'::jsonb));
   END IF;
 
-  RETURN jsonb_build_object(
-    'ok', true,
-    'code', 'OK',
+  RETURN jsonb_build_object('ok', true, 'code', 'OK',
     'data', jsonb_build_object(
       'tenant_id', v_tenant_id,
       'workspace_name', COALESCE(p_workspace_name, (SELECT name FROM public.tenants WHERE id = v_tenant_id)),
@@ -2580,9 +2327,7 @@ BEGIN
       'country', COALESCE(p_country, (SELECT country FROM public.tenants WHERE id = v_tenant_id)),
       'currency', COALESCE(p_currency, (SELECT currency FROM public.tenants WHERE id = v_tenant_id)),
       'measurement_unit', COALESCE(p_measurement_unit, (SELECT measurement_unit FROM public.tenants WHERE id = v_tenant_id))
-    ),
-    'error', null
-  );
+    ), 'error', null);
 END;
 $_$;
 
