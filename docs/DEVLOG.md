@@ -8555,3 +8555,33 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-13 — Build Route v2.4 — 10.8.11N1
+
+Objective
+Workspace Write Lock Coverage Gate — merge-blocking CI gate added to ensure
+all workspace-write RPCs are protected by the expired workspace write-lock helper.
+
+Changes
+- scripts/ci_write_lock_coverage.ps1 added
+- Gate checks authoritative in-scope RPC list for check_workspace_write_allowed_v1():
+  create_deal_v1, update_deal_v1, create_farm_area_v1, delete_farm_area_v1,
+  create_reminder_v1, complete_reminder_v1, create_share_token_v1,
+  update_workspace_settings_v1, update_member_role_v1, remove_member_v1,
+  invite_workspace_member_v1
+- Gate checks inline-check RPCs for subscription enforcement:
+  submit_form_v1, lookup_share_token_v1
+- Job write-lock-coverage added to ci.yml required.needs
+- docs/truth/required_checks.json updated via truth:sync
+- CONTRACTS.md section 17A updated with gate description
+- 6_11_role_guard_helper.test.sql: throws_ok replaced with
+  has_function_privilege() to prevent DB connection crash under CI load
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.8.11N1_write_lock_coverage_gate_20260413T155820Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
