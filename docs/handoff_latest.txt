@@ -1,8 +1,10 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 0d695cc
+HEAD: 60b13c6
 
 === git status --porcelain=v1 ===
+ M docs/truth/definer_allowlist.json
  M docs/truth/write_path_registry.json
+?? supabase/functions/retention-lifecycle/
 
 === supabase status (sanitized summary) ===
 {
@@ -23,7 +25,7 @@ HEAD: 0d695cc
  20260413000001
 
 === latest migration file in repo ===
-20260413000001_10_8_11O_retention_archive_lifecycle.sql
+20260412000003_10_8_11N_test_seed_helper.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
