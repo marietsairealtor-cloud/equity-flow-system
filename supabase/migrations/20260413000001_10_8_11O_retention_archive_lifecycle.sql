@@ -11,7 +11,7 @@ ALTER TABLE public.tenants
   ADD COLUMN IF NOT EXISTS archived_at timestamptz DEFAULT NULL;
 
 -- Step 2: Internal retention processor
--- Called daily by retention-lifecycle Edge Function (service_role only).
+-- Called daily by retention-lifecycle Edge Function (Edge Function caller only).
 -- Performs in order:
 --   A. Recovery: clear lapsed state when active subscription has returned
 --   B. Lapse detection: set anchor for membership + no subscription
@@ -173,7 +173,5 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $fn$;
 
--- Restrict to service_role only
 REVOKE ALL ON FUNCTION public.process_workspace_retention_v1() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.process_workspace_retention_v1() FROM authenticated;
-GRANT EXECUTE ON FUNCTION public.process_workspace_retention_v1() TO service_role;
