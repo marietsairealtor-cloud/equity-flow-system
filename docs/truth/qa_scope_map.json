@@ -533,6 +533,9 @@
     },
     "10.8.11M": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11M_entitlement_access_retention_"
+    },
+    "10.8.11N": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11N_expired_write_lock_"
     }
   }
 }

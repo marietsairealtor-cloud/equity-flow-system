@@ -27,6 +27,10 @@ VALUES
   ('a2000000-0000-0000-0000-000000000004', 'a1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', 'member')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end) VALUES
+  ('a1000000-0000-0000-0000-000000000001', 'active', now() + interval '1 year'),
+  ('a1000000-0000-0000-0000-000000000002', 'active', now() + interval '1 year');
+
 -- Tenant slugs (required by RPCs that resolve tenant context)
 INSERT INTO public.tenant_slugs (tenant_id, slug)
 VALUES

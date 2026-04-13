@@ -21,6 +21,9 @@ INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
     'member'
   );
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end)
+VALUES ('a0500000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year');
+
 -- Authenticated context
 SELECT set_config('request.jwt.claims',
   '{"sub":"a0500000-0000-0000-0000-000000000002","role":"authenticated","tenant_id":"a0500000-0000-0000-0000-000000000001"}',
@@ -44,8 +47,8 @@ SELECT is(
 );
 SELECT is(
   (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'data',
-  NULL,
-  'create_deal_v1 CONFLICT: data=null'
+  '{}',
+  'create_deal_v1 CONFLICT: data={}'
 );
 SELECT isnt(
   (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'error',
@@ -68,8 +71,8 @@ SELECT is(
 );
 SELECT is(
   (public.update_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 999)::json)->>'data',
-  NULL,
-  'update_deal_v1 CONFLICT: data=null'
+  '{}',
+  'update_deal_v1 CONFLICT: data={}'
 );
 SELECT isnt(
   (public.update_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 999)::json)->>'error',
@@ -92,8 +95,8 @@ SELECT is(
 );
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, NULL)::json)->>'data',
-  NULL,
-  'create_share_token_v1 VALIDATION_ERROR null expires_at: data=null'
+  '{}',
+  'create_share_token_v1 VALIDATION_ERROR null expires_at: data={}'
 );
 SELECT isnt(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, NULL)::json)->>'error',
@@ -139,8 +142,8 @@ SELECT is(
 );
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000099'::uuid, now() + interval '1 day')::json)->>'data',
-  NULL,
-  'create_share_token_v1 NOT_FOUND: data=null'
+  '{}',
+  'create_share_token_v1 NOT_FOUND: data={}'
 );
 SELECT isnt(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000099'::uuid, now() + interval '1 day')::json)->>'error',
@@ -171,8 +174,8 @@ SELECT is(
 );
 SELECT is(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, now() + interval '1 day')::json)->>'data',
-  NULL,
-  'create_share_token_v1 CONFLICT cardinality: data=null'
+  '{}',
+  'create_share_token_v1 CONFLICT cardinality: data={}'
 );
 SELECT isnt(
   (public.create_share_token_v1('a0500000-0000-0000-0000-000000000004'::uuid, now() + interval '1 day')::json)->>'error',
@@ -219,8 +222,8 @@ SELECT is(
 );
 SELECT is(
   (public.lookup_share_token_v1('shr_' || repeat('a', 64), NULL)::json)->>'data',
-  NULL,
-  'lookup_share_token_v1 VALIDATION_ERROR null deal_id: data=null'
+  '{}',
+  'lookup_share_token_v1 VALIDATION_ERROR null deal_id: data={}'
 );
 SELECT isnt(
   (public.lookup_share_token_v1('shr_' || repeat('a', 64), NULL)::json)->>'error',

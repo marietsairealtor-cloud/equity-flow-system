@@ -52,12 +52,28 @@ INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, row_versio
   ('b1000000-0000-0000-0000-000000000001'::uuid, 'b0000000-0000-0000-0000-000000000001'::uuid, 'b2000000-0000-0000-0000-000000000001'::uuid, 1, 1, '{}'::jsonb),
   ('b1000000-0000-0000-0000-000000000002'::uuid, 'b0000000-0000-0000-0000-000000000001'::uuid, 'b2000000-0000-0000-0000-000000000002'::uuid, 1, 1, '{}'::jsonb);
 
+-- Seed active subscriptions for write lock
+INSERT INTO public.tenants (id) VALUES
+  ('a0000000-0000-0000-0000-000000000001'::uuid),
+  ('b0000000-0000-0000-0000-000000000001'::uuid)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end) VALUES
+  ('a0000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year'),
+  ('b0000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role) VALUES
+  ('63000000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-0000000000a1'::uuid, 'owner'),
+  ('63000000-0000-0000-0000-000000000002'::uuid, 'b0000000-0000-0000-0000-000000000001'::uuid, 'a0000000-0000-0000-0000-0000000000a1'::uuid, 'owner')
+ON CONFLICT DO NOTHING;
+
 -- ============================================================
 -- Tenant A session
 -- ============================================================
 RESET ROLE;
 SET ROLE authenticated;
-SET request.jwt.claim.tenant_id = 'a0000000-0000-0000-0000-000000000001';
+SELECT set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-0000000000a1","role":"authenticated","tenant_id":"a0000000-0000-0000-0000-000000000001"}', true);
 
 SELECT is(
   (public.list_deals_v1(1)::json)->>'code',
@@ -102,7 +118,7 @@ SELECT is(
 -- ============================================================
 RESET ROLE;
 SET ROLE authenticated;
-SET request.jwt.claim.tenant_id = 'b0000000-0000-0000-0000-000000000001';
+SELECT set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-0000000000a1","role":"authenticated","tenant_id":"b0000000-0000-0000-0000-000000000001"}', true);
 
 SELECT is(
   (SELECT json_array_length(public.list_deals_v1(100)::json -> 'data' -> 'items'))::int,
@@ -129,7 +145,7 @@ SELECT is(
 -- ============================================================
 RESET ROLE;
 SET ROLE authenticated;
-RESET request.jwt.claim.tenant_id;
+SELECT set_config('request.jwt.claims', '{"sub":"a0000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true);
 
 SELECT is(
   (public.list_deals_v1()::json ->> 'code'),

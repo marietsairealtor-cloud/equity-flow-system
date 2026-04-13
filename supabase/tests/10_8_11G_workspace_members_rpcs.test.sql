@@ -31,6 +31,10 @@ VALUES
   ('f1000000-0000-0000-0000-000000000004', 'f0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', 'member')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end) VALUES
+  ('f0000000-0000-0000-0000-000000000001', 'active', now() + interval '1 year'),
+  ('f0000000-0000-0000-0000-000000000002', 'active', now() + interval '1 year');
+
 -- Seed tenant slugs
 INSERT INTO public.tenant_slugs (tenant_id, slug)
 VALUES ('f0000000-0000-0000-0000-000000000001', 'ws-members-test')

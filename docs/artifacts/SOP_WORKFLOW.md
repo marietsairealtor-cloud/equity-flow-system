@@ -80,6 +80,7 @@ This is the complete step-by-step sequence from starting an objective to closing
 Complete all technical and functional changes defined in the Build Route objective:
 - Logic/Scripts: Author or modify any required scripts, backend logic, or application code.
 - QA checks and passes all the required scripts, backend logic, or application code.
+- Write-RPC success tests must seed an active subscription under the current contract.
 - Run DB reset and pass test db on migration files before DB push. 
 - Pipeline Wiring: Update `scripts/handoff.ps1` or relevant workflow files to integrate the new functionality.
 - CI/Enforcement: Apply any required fixes to CI guard scripts (e.g., `ci_governance_change_guard.ps1`) to ensure the new state is valid.
@@ -742,9 +743,46 @@ in the changed schema file, not whether the function body actually changed.
 The note must document something true about the PR's behavioral impact.
 
 ---
+## 19) Test Seed Helper SOP
+
+When adding or updating test-only seed helpers:
+
+- Test seed helpers must be **internal only**
+  - `SECURITY DEFINER`
+  - fixed `search_path`
+  - `REVOKE ALL FROM PUBLIC`
+  - never granted to `authenticated`
+
+- Test seed helpers may seed:
+  - tenant/workspace
+  - auth user
+  - membership
+  - active subscription
+  - user profile current workspace
+
+- Test seed helpers must be clearly **test-only**
+  - not callable from app/runtime code
+  - used only in pgTAP / local test setup
+
+- **Do not use parameter names containing `tenant_id`**
+  in SECURITY DEFINER test helpers, because catalog/audit tests may pattern-match
+  `tenant_id` as caller-supplied tenancy input.
+
+- Use test-safe parameter names instead, for example:
+  - `p_seed_workspace`
+  - `p_seed_ws`
+  - `p_workspace_seed`
+
+- If a new write-lock or entitlement rule requires common setup across many tests,
+  prefer a reusable internal test seed helper over copy-pasting setup into many files.
+
+- After adding a new test seed helper:
+  1. run `supabase db reset`
+  2. inspect the function definition in local DB if audit tests fail
+  3. confirm no parameter names accidentally trip tenancy-input catalog audits
+
 
 STATUS:
-Aligned with Command for Chat
 Aligned with Build Route v2.4
 Aligned with AUTOMATION
 Aligned with GUARDRAILS

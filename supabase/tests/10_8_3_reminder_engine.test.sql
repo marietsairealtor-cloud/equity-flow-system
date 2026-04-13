@@ -36,6 +36,10 @@ INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role)
     'member'
   );
 
+INSERT INTO public.tenant_subscriptions (tenant_id, status, current_period_end) VALUES
+  ('a0830000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval '1 year'),
+  ('a0830000-0000-0000-0000-000000000010'::uuid, 'active', now() + interval '1 year');
+
 -- Seed a deal for tenant 1
 INSERT INTO public.deals (id, tenant_id, row_version, calc_version)
   VALUES (

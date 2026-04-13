@@ -10,10 +10,13 @@ const API_URL = 'http://127.0.0.1:54321';
 const JWT_SECRET = 'super-secret-jwt-token-with-at-least-32-characters-long';
 const TENANT_A = 'a0000000-0000-0000-0000-000000000001';
 const TENANT_B = 'b0000000-0000-0000-0000-000000000001';
+/** Must match scripts/postgrest_seed.sql tenant_memberships.user_id for each tenant */
+const USER_A = 'a0000000-0000-0000-0000-0000000000a1';
+const USER_B = 'b0000000-0000-0000-0000-0000000000b1';
 
-function mintJwt(tenantId, role) {
+function mintJwt(tenantId, role, sub) {
   return jwt.sign(
-    { role, iss: 'supabase', tenant_id: tenantId, aud: 'authenticated' },
+    { role, iss: 'supabase', tenant_id: tenantId, aud: 'authenticated', sub },
     JWT_SECRET,
     { expiresIn: '1h' }
   );
@@ -86,8 +89,8 @@ async function run() {
   console.log('# PostgREST schema cache refreshed');
   console.log('');
 
-  const tokenA = mintJwt(TENANT_A, 'authenticated');
-  const tokenB = mintJwt(TENANT_B, 'authenticated');
+  const tokenA = mintJwt(TENANT_A, 'authenticated', USER_A);
+  const tokenB = mintJwt(TENANT_B, 'authenticated', USER_B);
 
   // Test 1: Tenant A list_deals_v1 returns ok + own rows only
   const r1 = await rpcPost('list_deals_v1', { p_limit: 100 }, tokenA);

@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-12T15:25:23Z",
+    "generated":  "2026-04-13T01:38:25Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -29,6 +29,18 @@
                             "name":  "complete_reminder_v1",
                             "tables":  [
                                            "deal_reminders"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_active_workspace_seed_v1",
+                            "tables":  [
+                                           "tenant_memberships",
+                                           "tenant_subscriptions",
+                                           "tenants",
+                                           "user_profiles"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
