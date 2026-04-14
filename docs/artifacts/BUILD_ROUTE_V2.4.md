@@ -6273,6 +6273,50 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11O1_archived_workspace_restore_<UTC>.md`  
 **Gate:** `lane-only`
 
+### **10.8.11O3 — Archived Workspace Restore Targeting Corrective Fix (Bridge Fix)**
+
+**Deliverable**
+
+* Archived workspace restore no longer depends on current tenant context
+* Restore targets a specific archived workspace selected by the owner
+* Existing merged O1 behavior is corrected without rewriting historical item scope
+
+---
+
+**DoD**
+
+* Add a corrective backend restore path that targets a specific archived workspace
+* Restore must not rely only on `current_tenant_id()`
+
+* Restore is allowed only when all are true:
+
+  * target workspace is archived
+  * target workspace is not hard deleted
+  * caller is workspace owner
+  * subscription is active again
+
+* Restore behavior:
+
+  * clears `tenants.archived_at`
+  * clears `tenants.subscription_lapsed_at`
+  * restored workspace becomes reachable again
+  * normal post-auth routing resumes
+
+* Restore must fail with contract-valid error envelope when:
+
+  * caller is not owner
+  * target workspace is not archived
+  * subscription is not active
+  * workspace has already been hard deleted
+
+* This item supersedes O1’s current-tenant-only restore limitation
+* CONTRACTS.md and WEWEB_ARCHITECTURE.md updated in same PR
+
+---
+
+**Proof:** `docs/proofs/10.8.11O3_archived_workspace_restore_targeting_<UTC>.md`  
+**Gate:** `lane-only`
+
 ### **10.8.11O2 — Entitlement Archived-State Corrective Fix (Bridge Fix)**
 
 **Deliverable**
@@ -6320,13 +6364,15 @@ subscription_status == 'expired'
 **Deliverable**
 
 * UI wiring reflects read-only expired, archived/unreachable, and restore-required states using backend entitlement state only
-* Archived renewal and restore flow is represented correctly in UI
+* Onboarding includes archived workspace recovery for owners
+* Archived restore flow does not depend on current workspace context
 
 ---
 
 **DoD**
 
 * UI uses backend entitlement state as the single source of truth
+* `app_mode` is the primary routing signal
 * No frontend lifecycle date math
 * No frontend archive/delete state invention
 
@@ -6342,27 +6388,34 @@ subscription_status == 'expired'
 
 * **Archived/unreachable** UI behavior:
 
-  * workspace is not rendered as read-only app mode
-  * user is treated as having no reachable workspace
-  * post-auth routing behaves like user without reachable workspace
-  * onboarding may be shown again
+  * archived workspace is not rendered as normal read-only app mode
+  * if user has no reachable workspace, routing goes to onboarding
+  * onboarding shows:
+    * **Create workspace**
+    * **Archived workspaces**
+  * there is **no self-serve Join workspace flow**
 
-* **Renewal / restore UI behavior**:
+* **Archived workspaces onboarding section**:
 
-  * renew before archive → workspace resumes automatically after billing sync
-  * renew after archive → billing alone does not reopen workspace
-  * owner must see explicit **Restore workspace** action only when:
-    * workspace is archived
-    * subscription is active again
-  * non-owner must not see restore action
+  * shows archived workspaces owned by the authenticated user
+  * each item shows workspace name, slug, and status
+  * if billing inactive: show **Subscribe to restore workspace**
+  * if billing active: show **Restore workspace**
 
 * **Restore action wiring**:
 
-  * Restore workspace action calls backend restore path only
+  * Restore workspace action calls backend restore path for the selected archived workspace
   * no local UI-only unarchive mutation
+  * restore must not depend on current selected tenant
   * on successful restore:
     * entitlement is refreshed
     * routing returns to normal reachable workspace flow
+
+* **Renewal behavior**:
+
+  * renew before archive → workspace resumes automatically after billing sync
+  * renew after archive → payment alone does not reopen workspace
+  * owner must use archived workspace recovery flow to restore the selected archived workspace
 
 * Existing public-link/public-submit expired behavior remains aligned with backend enforcement
 * WEWEB_ARCHITECTURE.md updated in same PR

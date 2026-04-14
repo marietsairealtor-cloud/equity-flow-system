@@ -91,7 +91,7 @@ Return:
 }
 ```
 ---
-## 5A) Entitlement RPC Contract (LOCKED, extended 10.8.11M)
+## 5A) Entitlement RPC Contract (LOCKED, extended 10.8.11M; corrective 10.8.11O2)
 
 ### rpc.get_user_entitlements_v1
 
@@ -105,6 +105,8 @@ Security: SECURITY DEFINER, search_path = public.
 GRANT EXECUTE to authenticated only. REVOKE from anon.
 Source of truth per GUARDRAILS S17.
 
+**10.8.11O2 (corrective extension, no new RPC, no new columns):** After membership is confirmed for the current tenant, the implementation reads `public.tenants.archived_at` for that tenant. When `archived_at IS NOT NULL`, `app_mode` must be `archived_unreachable` and must override subscription-derived `app_mode` until archive state is cleared (e.g. by `restore_workspace_v1`). This aligns RPC output with archived workspace truth already stored on `tenants`.
+
 Returns (in addition to existing fields):
 - `app_mode`: `normal` | `read_only_expired` | `archived_unreachable`
 - `can_manage_billing`: boolean — true for owner only
@@ -113,6 +115,7 @@ Returns (in addition to existing fields):
 - `days_until_deletion`: integer | null — countdown after archive begins
 
 Derivation rules:
+- if `public.tenants.archived_at IS NOT NULL` for the current tenant → `app_mode = archived_unreachable` (takes priority over subscription-derived rules below; Build Route 10.8.11O2)
 - active / expiring → `app_mode = normal`
 - expired within 60 days of current_period_end → `app_mode = read_only_expired`
 - expired beyond 60 days of current_period_end → `app_mode = archived_unreachable`

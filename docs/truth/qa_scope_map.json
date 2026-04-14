@@ -545,6 +545,9 @@
     },
     "10.8.11O1": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11O1_archived_workspace_restore_"
+    },
+    "10.8.11O2": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11O2_entitlement_archived_state_"
     }
   }
 }
