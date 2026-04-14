@@ -8619,3 +8619,34 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-14 — Build Route v2.4 — 10.8.11O1
+
+Objective
+Archived Workspace Restore Implementation — archived workspaces can be restored
+only through an explicit backend restore action; renewal alone does not unarchive.
+
+Changes
+- Migration 20260413000002_10_8_11O1_archived_workspace_restore.sql applied
+- restore_workspace_v1() RPC added:
+  SECURITY DEFINER, authenticated only, owner-only
+  Requires: workspace archived, tenant row exists, active subscription
+  Clears tenants.archived_at and tenants.subscription_lapsed_at on success
+  Returns NOT_AUTHORIZED for non-owner
+  Returns CONFLICT for not-archived, no active subscription, second restore attempt
+  Returns contract-valid failure envelope for hard-deleted workspace
+- ci_write_lock_coverage.ps1: restore_workspace_v1 added to approved full exemptions
+- CONTRACTS.md section 51 added, section 17 mapping table updated
+- WEWEB_ARCHITECTURE.md section 14 restore/archived flow updated
+- definer_allowlist.json, execute_allowlist.json, privilege_truth.json updated
+- rpc_contract_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260413T235632Z.md
+
+Proof
+docs/proofs/10.8.11O1_archived_workspace_restore_20260414T001330Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
