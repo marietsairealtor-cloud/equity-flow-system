@@ -8677,3 +8677,39 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-14 — Build Route v2.4 — 10.8.11O3
+
+Objective
+Archived Workspace Restore Targeting Corrective Fix — restore no longer depends
+on current tenant context; uses server-generated restore_token as targeting mechanism.
+
+Changes
+- Migration 20260414000002_10_8_11O3_archived_workspace_restore_targeting.sql applied
+- public.tenants.restore_token uuid DEFAULT NULL added
+- Unique partial index: tenants_restore_token_unique ON tenants(restore_token) WHERE restore_token IS NOT NULL
+- DROP FUNCTION public.restore_workspace_v1() -- O1 zero-parameter form removed
+- process_workspace_retention_v1() updated: sets restore_token = gen_random_uuid() on archive
+- list_archived_workspaces_v1() added:
+  owner-scoped, returns archived workspaces with workspace_name, slug, restore_token, subscription snapshot
+  SECURITY DEFINER, authenticated only, tenant context exempt
+- restore_workspace_v1(p_restore_token uuid) added:
+  resolves token internally, no caller-supplied tenant_id
+  owner-only (explicit membership check), requires active subscription
+  clears archived_at, subscription_lapsed_at, restore_token on success
+  approved write-lock exemption, tenant context exempt
+- O1 test file updated: corrective compatibility test proving old signature gone, new exists
+- CONTRACTS.md sections 51 (superseded), 52 (new), 17 (updated)
+- definer_allowlist.json, execute_allowlist.json, privilege_truth.json updated
+- rpc_contract_registry.json updated
+- ci_write_lock_coverage.ps1: restore_workspace_v1 exemption confirmed
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260414T183850Z.md
+
+Proof
+docs/proofs/10.8.11O3_archived_workspace_restore_targeting_20260414T185658Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
