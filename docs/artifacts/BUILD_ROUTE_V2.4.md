@@ -6273,6 +6273,49 @@ subscription_status == 'expired'
 **Proof:** `docs/proofs/10.8.11O1_archived_workspace_restore_<UTC>.md`  
 **Gate:** `lane-only`
 
+### **10.8.11O2 — Entitlement Archived-State Corrective Fix (Bridge Fix)**
+
+**Deliverable**
+
+* `get_user_entitlements_v1()` correctly returns `app_mode = archived_unreachable` when `public.tenants.archived_at IS NOT NULL`
+* Archived workspace state overrides subscription-derived app mode until explicit restore clears archive state
+
+---
+
+**DoD**
+
+* Update `get_user_entitlements_v1()` to read `public.tenants.archived_at`
+
+* After membership is confirmed, the RPC must:
+
+  * read `public.tenants.archived_at` for the current tenant
+  * if `archived_at IS NOT NULL`, return `app_mode = archived_unreachable`
+  * skip normal subscription/app_mode derivation for archived workspaces
+
+* Archived state has priority over subscription-derived state:
+
+  * archived workspace must remain `archived_unreachable`
+  * even if subscription is active again
+  * until `restore_workspace_v1()` clears `archived_at`
+
+* Existing entitlement return shape remains stable
+* No new RPC introduced
+* No frontend date math or archive inference
+* Post-auth routing and UI may rely on `app_mode` as authoritative after this fix
+
+* Tests must prove:
+
+  * archived workspace returns `app_mode = archived_unreachable`
+  * archived state overrides active subscription
+  * non-archived workspaces still follow existing subscription/app_mode logic
+  * restore path clears archive state and entitlement no longer returns archived mode
+
+---
+
+**Proof:** `docs/proofs/10.8.11O2_entitlement_archived_state_<UTC>.md`  
+**Gate:** `lane-only`
+
+
 ### **10.8.11O3 — Archived Workspace Restore Targeting Corrective Fix (Bridge Fix)**
 
 **Deliverable**
@@ -6315,48 +6358,6 @@ subscription_status == 'expired'
 ---
 
 **Proof:** `docs/proofs/10.8.11O3_archived_workspace_restore_targeting_<UTC>.md`  
-**Gate:** `lane-only`
-
-### **10.8.11O2 — Entitlement Archived-State Corrective Fix (Bridge Fix)**
-
-**Deliverable**
-
-* `get_user_entitlements_v1()` correctly returns `app_mode = archived_unreachable` when `public.tenants.archived_at IS NOT NULL`
-* Archived workspace state overrides subscription-derived app mode until explicit restore clears archive state
-
----
-
-**DoD**
-
-* Update `get_user_entitlements_v1()` to read `public.tenants.archived_at`
-
-* After membership is confirmed, the RPC must:
-
-  * read `public.tenants.archived_at` for the current tenant
-  * if `archived_at IS NOT NULL`, return `app_mode = archived_unreachable`
-  * skip normal subscription/app_mode derivation for archived workspaces
-
-* Archived state has priority over subscription-derived state:
-
-  * archived workspace must remain `archived_unreachable`
-  * even if subscription is active again
-  * until `restore_workspace_v1()` clears `archived_at`
-
-* Existing entitlement return shape remains stable
-* No new RPC introduced
-* No frontend date math or archive inference
-* Post-auth routing and UI may rely on `app_mode` as authoritative after this fix
-
-* Tests must prove:
-
-  * archived workspace returns `app_mode = archived_unreachable`
-  * archived state overrides active subscription
-  * non-archived workspaces still follow existing subscription/app_mode logic
-  * restore path clears archive state and entitlement no longer returns archived mode
-
----
-
-**Proof:** `docs/proofs/10.8.11O2_entitlement_archived_state_<UTC>.md`  
 **Gate:** `lane-only`
 
 ### **10.8.11P — Expired / Archived Workspace UI Wiring (Bridge Fix)**
@@ -6450,6 +6451,53 @@ subscription_status == 'expired'
 ---
 
 **Proof:** `docs/proofs/10.8.11Q_storage_drift_guard_<UTC>.log` (must capture `supabase start` output showing **no** storage-api version mismatch warning)  
+**Gate:** `lane-only`
+
+### **10.8.11R — GitHub Actions Node 24 Runtime Compatibility (Bridge Fix)**
+
+**Problem statement**
+
+* GitHub Actions warns that Node.js 20-based JavaScript actions are deprecated.
+* Current workflows may still use actions that run on Node 20, including:
+  * `actions/checkout@v4`
+  * `actions/setup-node@v4`
+  * `supabase/setup-cli@v1`
+* GitHub Actions will force JavaScript actions onto Node 24 by default beginning June 2, 2026.
+* This is CI/runtime compatibility work, not product behavior.
+
+**Deliverable**
+
+* Repo workflows are updated so GitHub Actions runs without Node 20 deprecation warnings
+* Action versions used in workflows are compatible with Node 24
+* Workflow/tooling expectations are documented so the warning does not return
+
+---
+
+**DoD**
+
+* Audit GitHub Actions workflows for JavaScript actions currently running on Node 20
+* Upgrade action versions where newer Node 24-compatible versions exist
+* Replace deprecated action versions in repo workflows as needed
+
+* At minimum, evaluate and update usage of:
+
+  * `actions/checkout`
+  * `actions/setup-node`
+  * `supabase/setup-cli`
+
+* CI must run without the Node 20 deprecation warning:
+  * `Node.js 20 actions are deprecated`
+
+* If needed during validation, workflow may temporarily opt into Node 24 behavior for testing
+* Final committed workflow state must be stable and intentional
+* No unrelated workflow redesign in this item
+* No product logic changes in this item
+
+* Document the final expectation in the appropriate tooling truth / workflow note so future upgrades do not silently regress
+
+---
+
+**Proof:** `docs/proofs/10.8.11R_node24_runtime_compatibility_<UTC>.log`  
 **Gate:** `lane-only`
 
 ### **10.8.12 — 1-Month Free Trial (One-Time, User-Scoped)**

@@ -548,6 +548,9 @@
     },
     "10.8.11O2": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11O2_entitlement_archived_state_"
+    },
+    "10.8.11O3": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11O3_archived_workspace_restore_targeting_"
     }
   }
 }

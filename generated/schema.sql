@@ -1236,6 +1236,64 @@ $$;
 
 ALTER FUNCTION "public"."invite_workspace_member_v1"("p_email" "text", "p_role" "public"."tenant_role") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."list_archived_workspaces_v1"() RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_user uuid;
+  v_items json;
+BEGIN
+  v_user := auth.uid();
+
+  IF v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  json_build_object(),
+      'error', json_build_object(
+        'message', 'Authentication required',
+        'fields',  json_build_object()
+      )
+    );
+  END IF;
+
+  SELECT json_agg(row_to_json(r)) INTO v_items
+  FROM (
+    SELECT
+      t.name          AS workspace_name,
+      tsl.slug,
+      t.archived_at,
+      t.restore_token,
+      tm.role,
+      ts.status       AS subscription_status,
+      ts.current_period_end
+    FROM public.tenants t
+    JOIN public.tenant_memberships tm
+      ON tm.tenant_id = t.id
+      AND tm.user_id  = v_user
+      AND tm.role     = 'owner'
+    LEFT JOIN public.tenant_slugs tsl
+      ON tsl.tenant_id = t.id
+    LEFT JOIN public.tenant_subscriptions ts
+      ON ts.tenant_id = t.id
+    WHERE t.archived_at IS NOT NULL
+    ORDER BY t.archived_at DESC
+  ) r;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object(
+      'items', COALESCE(v_items, '[]'::json)
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_archived_workspaces_v1"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25, "p_cursor" "text" DEFAULT NULL::"text") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1658,9 +1716,6 @@ DECLARE
 BEGIN
 
   -- === Step A: Recovery ===
-  -- Clear subscription_lapsed_at for workspaces that are not yet archived
-  -- and now have a valid active subscription again.
-  -- This is the "renew within 60-day window" auto-restore path.
   UPDATE public.tenants t
   SET subscription_lapsed_at = NULL
   WHERE t.archived_at IS NULL
@@ -1676,8 +1731,6 @@ BEGIN
   GET DIAGNOSTICS v_recovery_count = ROW_COUNT;
 
   -- === Step B: Lapse detection ===
-  -- Set subscription_lapsed_at on first detection for workspaces that have
-  -- members but no subscription row. Anchor is used for day-61 archive.
   FOR v_tenant IN
     SELECT t.id
     FROM public.tenants t
@@ -1701,8 +1754,7 @@ BEGIN
 
   -- === Step C: Archive ===
 
-  -- Case 1: subscription-bearing expired workspaces.
-  -- Anchor = current_period_end. Archive when anchor > 60 days ago.
+  -- Case 1: subscription-bearing expired workspaces
   FOR v_tenant IN
     SELECT t.id
     FROM public.tenants t
@@ -1715,14 +1767,14 @@ BEGIN
       AND ts.current_period_end <= v_archive_cutoff
   LOOP
     UPDATE public.tenants
-    SET archived_at = now()
+    SET archived_at   = now(),
+        restore_token = gen_random_uuid()
     WHERE id = v_tenant.id;
 
     v_archived_count := v_archived_count + 1;
   END LOOP;
 
-  -- Case 2: membership + no subscription workspaces.
-  -- Anchor = subscription_lapsed_at. Archive when anchor > 60 days ago.
+  -- Case 2: membership + no subscription workspaces
   FOR v_tenant IN
     SELECT t.id
     FROM public.tenants t
@@ -1735,33 +1787,26 @@ BEGIN
       )
   LOOP
     UPDATE public.tenants
-    SET archived_at = now()
+    SET archived_at   = now(),
+        restore_token = gen_random_uuid()
     WHERE id = v_tenant.id;
 
     v_archived_count := v_archived_count + 1;
   END LOOP;
 
   -- === Step D: Hard delete ===
-  -- Explicit delete order for NO ACTION FK tables first,
-  -- then delete tenants row (CASCADE handles remaining children).
   FOR v_tenant IN
     SELECT t.id
     FROM public.tenants t
     WHERE t.archived_at IS NOT NULL
       AND t.archived_at <= v_delete_cutoff
   LOOP
-    -- NO ACTION FK tables: must delete explicitly
     DELETE FROM public.activity_log
     WHERE tenant_id = v_tenant.id;
 
     DELETE FROM public.tenant_memberships
     WHERE tenant_id = v_tenant.id;
 
-    -- Tenants row delete. CASCADE handles:
-    -- deal_reminders, deal_tc, deal_tc_checklist, draft_deals,
-    -- tenant_farm_areas, tenant_invites, tenant_slugs,
-    -- tenant_subscriptions.
-    -- user_profiles.current_tenant_id SET NULL (proven FK rule).
     DELETE FROM public.tenants
     WHERE id = v_tenant.id;
 
@@ -1973,34 +2018,63 @@ $_$;
 
 ALTER FUNCTION "public"."resolve_form_slug_v1"("p_slug" "text", "p_form_type" "text") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."restore_workspace_v1"() RETURNS json
+CREATE OR REPLACE FUNCTION "public"."restore_workspace_v1"("p_restore_token" "uuid") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant  uuid;
-  v_user    uuid;
-  v_role    public.tenant_role;
+  v_user      uuid;
+  v_tenant_id uuid;
+  v_role      public.tenant_role;
 BEGIN
-  v_tenant := public.current_tenant_id();
-  v_user   := auth.uid();
+  v_user := auth.uid();
 
-  IF v_tenant IS NULL OR v_user IS NULL THEN
+  IF v_user IS NULL THEN
     RETURN json_build_object(
       'ok',    false,
       'code',  'NOT_AUTHORIZED',
       'data',  json_build_object(),
       'error', json_build_object(
-        'message', 'No tenant or user context',
+        'message', 'Authentication required',
         'fields',  json_build_object()
       )
     );
   END IF;
 
-  -- Resolve caller role
+  IF p_restore_token IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  json_build_object(),
+      'error', json_build_object(
+        'message', 'p_restore_token is required',
+        'fields',  json_build_object()
+      )
+    );
+  END IF;
+
+  -- Resolve restore_token to tenant internally
+  SELECT t.id INTO v_tenant_id
+  FROM public.tenants t
+  WHERE t.restore_token = p_restore_token
+    AND t.archived_at IS NOT NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_FOUND',
+      'data',  json_build_object(),
+      'error', json_build_object(
+        'message', 'Workspace not found or not eligible for restore',
+        'fields',  json_build_object()
+      )
+    );
+  END IF;
+
+  -- Verify caller is owner of resolved tenant
   SELECT tm.role INTO v_role
   FROM public.tenant_memberships tm
-  WHERE tm.tenant_id = v_tenant
+  WHERE tm.tenant_id = v_tenant_id
     AND tm.user_id   = v_user;
 
   IF NOT FOUND OR v_role != 'owner' THEN
@@ -2015,27 +2089,10 @@ BEGIN
     );
   END IF;
 
-  -- Verify workspace is archived
-  IF NOT EXISTS (
-    SELECT 1 FROM public.tenants t
-    WHERE t.id = v_tenant
-      AND t.archived_at IS NOT NULL
-  ) THEN
-    RETURN json_build_object(
-      'ok',    false,
-      'code',  'CONFLICT',
-      'data',  json_build_object(),
-      'error', json_build_object(
-        'message', 'Workspace is not archived',
-        'fields',  json_build_object()
-      )
-    );
-  END IF;
-
   -- Verify subscription is active again
   IF NOT EXISTS (
     SELECT 1 FROM public.tenant_subscriptions ts
-    WHERE ts.tenant_id = v_tenant
+    WHERE ts.tenant_id = v_tenant_id
       AND ts.status IN ('active', 'expiring')
       AND ts.current_period_end > now()
   ) THEN
@@ -2050,17 +2107,18 @@ BEGIN
     );
   END IF;
 
-  -- Restore: clear archived_at and subscription_lapsed_at
+  -- Restore: clear archived_at, subscription_lapsed_at, restore_token
   UPDATE public.tenants
   SET archived_at            = NULL,
-      subscription_lapsed_at = NULL
-  WHERE id = v_tenant;
+      subscription_lapsed_at = NULL,
+      restore_token          = NULL
+  WHERE id = v_tenant_id;
 
   RETURN json_build_object(
     'ok',   true,
     'code', 'OK',
     'data', json_build_object(
-      'tenant_id', v_tenant,
+      'tenant_id', v_tenant_id,
       'restored',  true
     ),
     'error', null
@@ -2079,7 +2137,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
-ALTER FUNCTION "public"."restore_workspace_v1"() OWNER TO "postgres";
+ALTER FUNCTION "public"."restore_workspace_v1"("p_restore_token" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."revoke_share_token_v1"("p_token" "text") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -2960,7 +3018,8 @@ CREATE TABLE IF NOT EXISTS "public"."tenants" (
     "currency" "text",
     "measurement_unit" "text",
     "subscription_lapsed_at" timestamp with time zone,
-    "archived_at" timestamp with time zone
+    "archived_at" timestamp with time zone,
+    "restore_token" "uuid"
 );
 
 ALTER TABLE "public"."tenants" OWNER TO "postgres";
@@ -3055,6 +3114,8 @@ ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id");
 
 CREATE UNIQUE INDEX "share_tokens_token_hash_unique" ON "public"."share_tokens" USING "btree" ("token_hash");
+
+CREATE UNIQUE INDEX "tenants_restore_token_unique" ON "public"."tenants" USING "btree" ("restore_token") WHERE ("restore_token" IS NOT NULL);
 
 CREATE OR REPLACE TRIGGER "activity_log_no_delete" BEFORE DELETE ON "public"."activity_log" FOR EACH ROW EXECUTE FUNCTION "public"."activity_log_append_only"();
 

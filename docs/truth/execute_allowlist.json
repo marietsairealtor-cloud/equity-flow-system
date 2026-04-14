@@ -17,6 +17,7 @@
     "get_user_entitlements_v1",
     "get_workspace_settings_v1",
     "invite_workspace_member_v1",
+    "list_archived_workspaces_v1",
     "list_deals_v1",
     "list_farm_areas_v1",
     "list_pending_invites_v1",

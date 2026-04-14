@@ -314,7 +314,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | delete_farm_area_v1 | 10.8.11H | Delete a farm area for current tenant; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | list_pending_invites_v1 | 10.8.11I3 | List pending (unaccepted, unexpired) invites for current workspace | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | rescind_invite_v1 | 10.8.11I3 | Cancel a pending invite by invite_id; deletes row; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
-| restore_workspace_v1 | 10.8.11O1 | Restore an archived workspace; clears archived_at and subscription_lapsed_at; owner-only, requires active subscription | SECURITY DEFINER, authenticated only, min role: owner | current_tenant_id() — no caller tenant_id param |
+| list_archived_workspaces_v1 | 10.8.11O3 | List archived workspaces owned by caller; includes restore_token and subscription snapshot | SECURITY DEFINER, authenticated only | auth.uid() + owner membership — not JWT current-tenant scoped |
+| restore_workspace_v1 | 10.8.11O3 | Restore an archived workspace by p_restore_token; clears archived_at, subscription_lapsed_at, restore_token; owner-only, requires active subscription | SECURITY DEFINER, authenticated only, owner-only (explicit membership check, not require_min_role_v1) | p_restore_token resolves tenant internally — no caller tenant_id param |
 | update_display_name_v1 | 10.8.11J | Update display name for current authenticated user; blank returns VALIDATION_ERROR | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 
 ### Mapping Rules
@@ -1052,43 +1053,66 @@ Edge Function:
 - Schedule: 02:00 UTC daily
 - Uses SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
 
-## 51) Archived Workspace Restore RPC Contract (10.8.11O1)
+## 51) Archived Workspace Restore RPC Contract (10.8.11O1) — superseded
 
-`public.restore_workspace_v1()` restores an archived workspace to normal reachable state.
+**Superseded by §52 (10.8.11O3).** The O1 zero-parameter `restore_workspace_v1()` form is removed; runtime contract is token-targeted restore plus list RPC below.
+
+Historical (O1): `public.restore_workspace_v1()` restored an archived workspace using JWT current-tenant context only.
+
+---
+
+## 52) Archived Workspace Restore Targeting (10.8.11O3)
+
+### `public.list_archived_workspaces_v1()`
+
+Returns archived workspaces where the authenticated caller is **owner** (not JWT-scoped to a single current tenant).
+
+Behavior:
+- SECURITY DEFINER, STABLE, search_path = public
+- Requires authenticated context (`auth.uid()`)
+- Each row includes: workspace_name, slug, archived_at, **restore_token**, role, subscription_status, current_period_end
+- Empty list is OK when caller has no archived owned workspaces
+
+Failure envelopes:
+- NOT_AUTHORIZED: unauthenticated
+
+Constraints:
+- anon cannot execute
+- Does not call `check_workspace_write_allowed_v1()` (read-only aggregate)
+
+### `public.restore_workspace_v1(p_restore_token uuid)`
+
+Restores an archived workspace to normal reachable state by resolving `public.tenants.restore_token` internally.
 
 Behavior:
 - SECURITY DEFINER, search_path = public
 - Requires authenticated context
-- No caller-supplied tenant_id
-- Derives workspace from current_tenant_id() only
-- Owner-only: returns NOT_AUTHORIZED for admin/member
+- **No caller-supplied tenant_id** — tenant is resolved from `restore_token` where `archived_at IS NOT NULL`
+- Owner-only on the resolved tenant: NOT_AUTHORIZED otherwise
+- `p_restore_token` NULL → VALIDATION_ERROR
 
 Restore is allowed only when all are true:
-- workspace is archived (tenants.archived_at IS NOT NULL)
-- workspace is not hard deleted (tenant row still exists)
-- caller is workspace owner
+- token matches a row with `archived_at IS NOT NULL` (otherwise NOT_FOUND)
+- caller is workspace owner for that tenant
 - subscription is active again (status IN ('active','expiring') AND current_period_end > now())
 
 Restore behavior:
-- clears tenants.archived_at
-- clears tenants.subscription_lapsed_at
-- workspace becomes reachable again
-- normal post-auth routing resumes
-- write access resumes through existing entitlement + write-lock logic
+- clears `tenants.archived_at`, `tenants.subscription_lapsed_at`, and `tenants.restore_token`
+- workspace becomes reachable again; post-auth routing and write access follow existing entitlement + write-lock logic
 
 Failure envelopes:
-- NOT_AUTHORIZED: caller is not owner or no membership
-- CONFLICT: workspace is not archived
-- CONFLICT: subscription is not active
-- CONFLICT/NOT_AUTHORIZED: workspace hard deleted (tenant row gone)
+- NOT_AUTHORIZED: unauthenticated or not owner
+- VALIDATION_ERROR: `p_restore_token` is NULL
+- NOT_FOUND: token unknown or workspace not archived / not eligible
+- CONFLICT: subscription not active
+- INTERNAL: server error
 
-Renewal behavior:
-- renew within 60-day read-only window: auto restore, no explicit restore needed
-- renew after archive: explicit restore_workspace_v1() required
+Renewal behavior (unchanged in intent from §50 / §51):
+- renew within 60-day read-only window: auto recovery of lapse state without archive
+- renew after archive: explicit `restore_workspace_v1(uuid)` required (after `restore_token` is present from archive)
 - renew after hard delete: no recovery
 
 Constraints:
 - No direct table calls from WeWeb
-- No auto-restore via renewal alone
-- Approved write-lock exemption: does not call check_workspace_write_allowed_v1()
+- Approved write-lock exemption: does not call `check_workspace_write_allowed_v1()`
 - anon cannot execute
