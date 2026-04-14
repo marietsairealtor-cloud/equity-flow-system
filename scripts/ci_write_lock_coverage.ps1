@@ -33,6 +33,7 @@ $inlineCheckRpcs = @(
 
 # Approved full exceptions: intentionally omit check_workspace_write_allowed_v1 (not normal
 # workspace writes under expired lock — profile, archived restore after active billing, etc.)
+# restore_workspace_v1 matches by RPC name; last migration wins (10.8.11O3 uuid signature).
 $approvedFullExemptRpcs = @(
   "update_display_name_v1",
   "restore_workspace_v1"

@@ -391,13 +391,22 @@
       "notes": "Rescinds a pending invite for current tenant. Min role: admin. No caller-supplied tenant_id."
     },
     {
-      "name": "restore_workspace_v1",
+      "name": "list_archived_workspaces_v1",
       "version": 1,
-      "build_route_owner": "10.8.11O1",
-      "input_contract": "No parameters. JSON envelope per §1.",
+      "build_route_owner": "10.8.11O3",
+      "input_contract": "CONTRACTS.md §52 list_archived_workspaces_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "INTERNAL"],
-      "notes": "Owner-only. Clears archived_at and subscription_lapsed_at when tenant is archived and subscription is active/expiring with current_period_end > now(). No caller tenant_id."
+      "error_codes": ["NOT_AUTHORIZED"],
+      "notes": "No parameters. Returns archived workspaces where caller is owner; includes restore_token for restore_workspace_v1(uuid). Not JWT-tenant-scoped."
+    },
+    {
+      "name": "restore_workspace_v1",
+      "version": 2,
+      "build_route_owner": "10.8.11O3",
+      "input_contract": "p_restore_token uuid — CONTRACTS.md §52 restore_workspace_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND", "CONFLICT", "INTERNAL"],
+      "notes": "Owner-only. Resolves tenants.restore_token to tenant; clears archived_at, subscription_lapsed_at, restore_token when subscription active. Supersedes 10.8.11O1 zero-parameter form."
     },
     {
       "name": "auth_user_exists_v1",
