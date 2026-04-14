@@ -933,6 +933,7 @@ DECLARE
   v_user                uuid;
   v_role                public.tenant_role;
   v_member              boolean;
+  v_archived_at         timestamptz;
   v_raw_status          text;
   v_sub_status          text;
   v_sub_days_remaining  integer;
@@ -991,7 +992,38 @@ BEGIN
     );
   END IF;
 
-  -- Member confirmed -- resolve subscription
+  -- Member confirmed -- check archived state first
+  SELECT t.archived_at INTO v_archived_at
+  FROM public.tenants t
+  WHERE t.id = v_tenant;
+
+  IF v_archived_at IS NOT NULL THEN
+    -- Workspace is archived -- override all subscription-derived state.
+    -- days_until_deletion counts down from archived_at + 6 months.
+    RETURN json_build_object(
+      'ok',   true,
+      'code', 'OK',
+      'data', json_build_object(
+        'tenant_id',                   v_tenant,
+        'user_id',                     v_user,
+        'is_member',                   true,
+        'role',                        v_role,
+        'entitled',                    true,
+        'subscription_status',         'expired',
+        'subscription_days_remaining', null,
+        'app_mode',                    'archived_unreachable',
+        'can_manage_billing',          false,
+        'renew_route',                 'none',
+        'retention_deadline',          null,
+        'days_until_deletion',         GREATEST(0,
+          EXTRACT(DAY FROM (v_archived_at + interval '6 months' - now()))::integer
+        )
+      ),
+      'error', null
+    );
+  END IF;
+
+  -- Not archived -- resolve subscription status
   SELECT ts.status, ts.current_period_end
   INTO v_raw_status, v_period_end
   FROM public.tenant_subscriptions ts
@@ -1014,13 +1046,11 @@ BEGIN
     v_retention_deadline := v_period_end + (v_grace_days || ' days')::interval;
 
     IF now() <= v_retention_deadline THEN
-      -- Within 60-day grace window
       v_app_mode           := 'read_only_expired';
       v_can_manage_billing := (v_role = 'owner');
       v_renew_route        := CASE WHEN v_role = 'owner' THEN 'billing' ELSE 'none' END;
       v_days_until_deletion := null;
     ELSE
-      -- Beyond 60-day grace window -- archived
       v_app_mode            := 'archived_unreachable';
       v_can_manage_billing  := false;
       v_renew_route         := 'none';
