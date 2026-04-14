@@ -8650,3 +8650,30 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-14 — Build Route v2.4 — 10.8.11O2
+
+Objective
+Entitlement Archived-State Corrective Fix — get_user_entitlements_v1 now reads
+tenants.archived_at and returns app_mode = archived_unreachable when set,
+overriding subscription-derived app_mode.
+
+Changes
+- Migration 20260414000001_10_8_11O2_entitlement_archived_state_fix.sql applied
+- get_user_entitlements_v1 updated:
+  reads tenants.archived_at after membership confirmed
+  if archived_at IS NOT NULL: returns app_mode = archived_unreachable immediately
+  archived branch preserves is_member = true, entitled = true
+  days_until_deletion computed from archived_at + interval '6 months'
+  archived state overrides subscription-derived app_mode until restore clears it
+- CONTRACTS.md section 5A updated with O2 corrective note and derivation rules
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260414T160308Z.md
+
+Proof
+docs/proofs/10.8.11O2_entitlement_archived_state_20260414T161317Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
