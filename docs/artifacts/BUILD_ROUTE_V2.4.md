@@ -6331,6 +6331,32 @@ subscription_status == 'expired'
 **Gate:** `lane-only`
 ---
 
+### **10.8.11Q — Supabase Storage Service Version Alignment (Bridge Fix)**
+
+**Problem statement**
+
+* `supabase start` (with a linked project) warns when **local Docker images** for Storage do not match the **linked cloud project**, e.g.  
+  `WARNING: You are running different service versions locally than your linked project:`  
+  `supabase/storage-api:v1.48.28 => v1.48.20`  
+  That mismatch is **storage-api image drift** (local stack vs hosted fleet), not bucket RLS or app code.
+
+**Deliverable**
+
+* Local dev uses a storage-api image version that matches the linked Supabase project, so the warning above does not appear on a clean `supabase start`.
+* Repo documents **how** alignment is enforced (Supabase CLI version, `supabase/config.toml` image overrides if supported by the CLI in use, or `supabase link` / pull behavior per current Supabase docs).
+
+**DoD**
+
+* Reproduce the warning locally, then fix until **no** “different service versions” line appears for **`supabase/storage-api`** on `supabase start` (same check the operator uses: `npx supabase start …` with project linked).
+* `docs/truth/toolchain.json` records the **Supabase CLI** expectation used for local dev; if the CLI or `config.toml` pins a **storage-api** image tag, that pin is documented there or in `supabase/config.toml` with a one-line comment pointing to this item.
+* Bucket contracts for **10.8.7** / **10.8.7A** (CONTRACTS.md §30–§31) are unchanged unless a migration is required solely because of a **breaking** Storage API change (unlikely); this item is **version/image alignment**, not new product features.
+* Short note added to **`docs/artifacts/AUTOMATION.md`** or **`SOP_WORKFLOW.md`**: after upgrading the hosted project or CLI, re-run alignment so Storage warnings do not return.
+
+---
+
+**Proof:** `docs/proofs/10.8.11Q_storage_drift_guard_<UTC>.log` (must capture `supabase start` output showing **no** storage-api version mismatch warning)  
+**Gate:** `lane-only`
+
 ### **10.8.12 — 1-Month Free Trial (One-Time, User-Scoped)**
 
 **Deliverable:**

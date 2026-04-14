@@ -107,6 +107,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "restore_workspace_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.8.11O1 — owner-only archived workspace restore; EXECUTE to authenticated"
+      },
+      {
         "routine": "list_deals_v1",
         "privilege": "EXECUTE"
       },
@@ -231,6 +236,7 @@
       "list_farm_areas_v1",
       "lookup_share_token_v1",
       "rescind_invite_v1",
+      "restore_workspace_v1",
       "update_deal_v1",
       "revoke_share_token_v1",
       "create_share_token_v1",

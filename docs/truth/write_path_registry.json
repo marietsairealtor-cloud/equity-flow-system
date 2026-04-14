@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-13T19:03:16Z",
+    "generated":  "2026-04-14T00:00:03Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -115,6 +115,15 @@
                         {
                             "path_type":  "rpc",
                             "name":  "process_workspace_retention_v1",
+                            "tables":  [
+                                           "tenants"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "restore_workspace_v1",
                             "tables":  [
                                            "tenants"
                                        ],
