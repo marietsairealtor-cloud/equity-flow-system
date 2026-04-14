@@ -216,6 +216,7 @@
     "docs/proofs/10.8.11N_expired_write_lock_20260413T015015Z.md": "6666397a6406f53dfce0c5532ca5b0871c02e352854f252a537f4022de88d126",
     "docs/proofs/10.8.11N1_write_lock_coverage_gate_20260413T155820Z.log": "1bf58ff38ba43182659378e234210f3e63c7292c8e80c00945774f327091e2d3",
     "docs/proofs/10.8.11O_retention_archive_lifecycle_20260413T184223Z.md": "5143951f4b07242e9e5db085d1e3da714e3db283dfa96ac8db9a523bd6012fdf",
-    "docs/proofs/10.8.11O1_archived_workspace_restore_20260414T001330Z.md": "2208f707625a6fea946a0223c323c22c330bea6babf6890c849b4706f99b2abe"
+    "docs/proofs/10.8.11O1_archived_workspace_restore_20260414T001330Z.md": "2208f707625a6fea946a0223c323c22c330bea6babf6890c849b4706f99b2abe",
+    "docs/proofs/10.8.11O2_entitlement_archived_state_20260414T161317Z.md": "8a2e9ec3fccc8ac64e5d7e69a8aae3e443c64aa86f20c2c21a961b3e086d158d"
   }
 }
