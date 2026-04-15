@@ -829,6 +829,45 @@ After upgrading the hosted Supabase project or the Supabase CLI:
 - `local_version`: local Docker image version at time of last alignment check
 - `known_limitation`: operator guidance
 
+---
+
+## 21) GitHub Actions Node 24 Runtime Compatibility (10.8.11R)
+
+### Upgraded actions
+
+The following GitHub Actions were upgraded to Node 24 compatible versions:
+
+| Action | From | To | Node runtime |
+|--------|------|----|-------------|
+| `actions/checkout` | `@v4` | `@v5` | Node 24 |
+| `actions/setup-node` | `@v4` | `@v6` | Node 24 |
+
+### Known limitation -- supabase/setup-cli@v1
+
+`supabase/setup-cli@v1` is a third-party action maintained by Supabase.
+As of April 2026, no Node 24 compatible version exists (`v2` does not exist).
+GitHub will warn:
+
+```
+Warning: Node.js 20 actions are deprecated. The following actions are running
+on Node.js 20 and may not work as expected: supabase/setup-cli@v1.
+```
+
+This warning is outside repo control. It is non-blocking until June 2, 2026
+when GitHub forces Node 24 by default.
+
+### Operator instruction
+
+When Supabase releases a Node 24 compatible version of `setup-cli`:
+1. Upgrade all `supabase/setup-cli@v1` references in `.github/workflows/` to the new version
+2. Push and confirm the Node 20 deprecation warning is gone
+3. Update this section and `docs/truth/toolchain.json` to record the new version
+
+### Deadline
+
+GitHub will force Node 24 by default: **June 2, 2026**
+GitHub will remove Node 20 from runners: **September 16, 2026**
+
 STATUS:
 Aligned with Build Route v2.4
 Aligned with AUTOMATION

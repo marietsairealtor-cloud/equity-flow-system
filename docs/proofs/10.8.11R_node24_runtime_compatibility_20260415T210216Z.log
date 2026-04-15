@@ -1,0 +1,72 @@
+PROOF_HEAD=b731d404307029e861d15e5354560e43ea5b50a3
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11R GitHub Actions Node 24 Runtime Compatibility -- Proof Log ===
+Date: 2026-04-15T17:00:46.2976758-04:00
+Branch: feature/10.8.11R-node24-runtime-compatibility
+PR HEAD SHA: b731d404307029e861d15e5354560e43ea5b50a3
+
+=== Problem Statement ===
+GitHub Actions warned that Node.js 20-based JavaScript actions are deprecated:
+  actions/checkout@v4 -- Node 20
+  actions/setup-node@v4 -- Node 20
+  supabase/setup-cli@v1 -- Node 20
+Actions will be forced onto Node 24 by default starting June 2, 2026.
+
+=== Actions Upgraded ===
+actions/checkout@v4 → actions/checkout@v5 (Node 24) -- all workflow files
+actions/setup-node@v4 → actions/setup-node@v6 (Node 24) -- all workflow files
+
+=== CI Result After Upgrades ===
+actions/checkout Node 20 warning: GONE
+actions/setup-node Node 20 warning: GONE
+Remaining warning: supabase/setup-cli@v1 -- Node 20 (third-party limitation)
+
+=== supabase/setup-cli@v1 -- Known Limitation ===
+Attempted: upgrade to supabase/setup-cli@v2
+Result: Error: Unable to resolve action supabase/setup-cli@v2, unable to find version v2
+Confirmed: v2 does not exist as of April 2026
+Reverted to: supabase/setup-cli@v1
+Status: third-party limitation, outside repo control
+Non-blocking until: June 2, 2026 (GitHub forces Node 24 by default)
+
+=== Deliverables ===
+.github/workflows/*.yml: actions/checkout@v4 → @v5 (all occurrences)
+.github/workflows/*.yml: actions/setup-node@v4 → @v6 (all occurrences)
+docs/artifacts/SOP_WORKFLOW.md: section 21 added
+  Node 24 compatible action versions documented
+  supabase/setup-cli@v1 known limitation documented
+  Operator upgrade instructions documented
+  Deadline: June 2, 2026
+
+=== DoD Checklist ===
+Audited GitHub Actions workflows for Node 20 JavaScript actions             -- PASS
+actions/checkout upgraded to Node 24 compatible version (@v5)              -- PASS
+actions/setup-node upgraded to Node 24 compatible version (@v6)            -- PASS
+supabase/setup-cli@v2 attempted -- does not exist                          -- PASS
+supabase/setup-cli@v1 documented as third-party known limitation           -- PASS
+CI warning eliminated for repo-controlled actions                           -- PASS
+Remaining supabase/setup-cli@v1 warning documented                         -- PASS
+SOP_WORKFLOW.md section 21 added with operator instructions                -- PASS
+No unrelated workflow redesign                                              -- PASS
+No product logic changes                                                    -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+SOP_WORKFLOW.md section 21 added -- PASS
+Governance file: GOVERNANCE_CHANGE_20260415T205550Z.md -- PASS
+
+=== Phase 2 ===
+Skipped -- no migrations, no schema changes, no handoff pipeline touched
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11R GitHub Actions Node 24 Runtime Compatibility: PASS (lane-only gate)
+Repo-controlled actions upgraded. supabase/setup-cli@v1 documented as known limitation.
