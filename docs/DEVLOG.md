@@ -8713,3 +8713,43 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-15 — Build Route v2.4 — 10.8.11P
+
+Objective
+Expired / Archived Workspace UI Wiring — UI reflects read-only expired,
+archived/unreachable, and restore-required states using backend entitlement
+state only. Archived restore flow uses onboarding, not current workspace context.
+
+Changes
+- Post-auth routing: app_mode is now primary routing signal
+  normal / read_only_expired → Today
+  archived_unreachable → onboarding
+- Expired banner updated: correct DoD message, owner Manage billing CTA,
+  admin/member informational message only
+- Onboarding archived workspaces section added:
+  data source: list_archived_workspaces_v1() only
+  billing inactive: Subscribe to restore workspace → create-restore-checkout-session
+  billing active: Restore workspace → restore_workspace_v1(p_restore_token)
+  hidden when list is empty
+- Hamburger menu: Archived workspaces item added (visible when applicable)
+- Edge Function create-restore-checkout-session deployed:
+  validates restore_token against server-returned archived list
+  resolves tenant_id server-side for Stripe subscription_data.metadata
+  fetches verified email via admin.getUserById()
+  returns to /onboarding?restore_checkout=success
+  no auto-restore on billing sync
+- supabase/config.toml: create-restore-checkout-session block added
+- supabase/functions/create-checkout-session/index.ts: stray leading n removed
+- WEWEB_ARCHITECTURE.md sections 13.1, 14, 14.1 updated
+- CONTRACTS.md section 52 updated with 10.8.11P UI wiring notes
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260415T192754Z.md
+
+Proof
+docs/proofs/10.8.11P_expired_archived_workspace_ui_20260415T194055Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
