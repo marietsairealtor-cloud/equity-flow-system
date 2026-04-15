@@ -794,6 +794,40 @@ When adding or updating test-only seed helpers:
 
 - Verification step: after any migration that touches those four tables, check the new column's nullability and default before writing tests. If neither trigger condition is met, proceed without touching the helper.
 
+---
+
+## 20) Storage API Version Alignment (10.8.11Q)
+
+### Known Limitation
+
+`supabase start` may show the following warning when local Docker images differ from the linked cloud project:
+
+```
+WARNING: You are running different service versions locally than your linked project:
+supabase/storage-api:v1.48.28 => v1.48.20
+```
+
+This is cosmetic and non-blocking unless a real Storage behavior mismatch is observed (e.g. bucket policy differences, upload failures, or presigned URL breakage).
+
+### Why it cannot be governed-fixed today
+
+Supabase CLI 2.90.0 does not support pinning `storage-api` image version via `config.toml` (`image` key is rejected) or any other repo-based mechanism. The `-x storage-api` exclusion flag removes storage from the local stack entirely and is not an acceptable workaround.
+
+### Operator instruction
+
+After upgrading the hosted Supabase project or the Supabase CLI:
+
+1. Run `supabase stop --no-backup && supabase start -x vector --ignore-health-check`
+2. Check output for any `WARNING: You are running different service versions` line
+3. If storage-api version has drifted, update `docs/truth/toolchain.json` `storage_api.cloud_version` to match
+4. If CLI gains support for image pinning in a future version, implement governed pin and remove this note
+
+### Truth file
+
+`docs/truth/toolchain.json` → `storage_api` key records:
+- `cloud_version`: current linked project storage-api version
+- `local_version`: local Docker image version at time of last alignment check
+- `known_limitation`: operator guidance
 
 STATUS:
 Aligned with Build Route v2.4
