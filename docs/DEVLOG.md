@@ -8781,3 +8781,30 @@ Documentation-only scope. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-15 — Build Route v2.4 — 10.8.11R
+
+Objective
+GitHub Actions Node 24 Runtime Compatibility — upgraded repo-controlled
+JavaScript actions to Node 24 compatible versions. supabase/setup-cli@v1
+documented as known third-party limitation.
+
+Changes
+- .github/workflows/*.yml: actions/checkout@v4 → @v5 (Node 24, all occurrences)
+- .github/workflows/*.yml: actions/setup-node@v4 → @v6 (Node 24, all occurrences)
+- supabase/setup-cli@v2 attempted -- does not exist, reverted to @v1
+- supabase/setup-cli@v1 Node 20 warning documented as third-party limitation
+- docs/artifacts/SOP_WORKFLOW.md: section 21 added
+  Node 24 compatible action versions documented
+  supabase/setup-cli@v1 known limitation and upgrade deadline documented
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260415T205550Z.md
+
+Proof
+docs/proofs/10.8.11R_node24_runtime_compatibility_20260415T210216Z.log
+
+DoD
+Repo-controlled actions upgraded. supabase/setup-cli@v1 documented as
+known limitation. Lane-only gate satisfied.
+
+Status
+MERGED
