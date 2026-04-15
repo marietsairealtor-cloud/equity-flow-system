@@ -8753,3 +8753,31 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-15 — Build Route v2.4 — 10.8.11Q
+
+Objective
+Storage API Version Alignment — documented known storage-api image version
+drift between local Docker and linked cloud project. No governed fix available
+in Supabase CLI 2.90.0.
+
+Changes
+- docs/truth/toolchain.json: storage_api key added
+  cloud_version: v1.48.28 (linked project)
+  local_version: v1.48.20 (local Docker)
+  known_limitation: operator guidance documented
+- docs/artifacts/SOP_WORKFLOW.md: section 20 added
+  Storage API version drift documented as known cosmetic limitation
+  Re-alignment operator instructions documented
+  Future action when CLI gains image pinning support documented
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260415T200647Z.md
+
+Proof
+docs/proofs/10.8.11Q_storage_drift_guard_20260415T201502Z.log
+
+DoD
+Warning reproduced. Governed fix path unavailable -- documented.
+Documentation-only scope. Lane-only gate satisfied.
+
+Status
+MERGED
