@@ -1,0 +1,68 @@
+PROOF_HEAD=9f88eee27fe2f211d4addd9c6752b859f22c1a42
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.8.11Q Storage API Version Alignment -- Proof Log ===
+Date: 2026-04-15T16:11:26.6440852-04:00
+Branch: feature/10.8.11Q-storage-drift-guard
+PR HEAD SHA: d98239eb7907bae1cbab9cda15921a142191eee2
+
+=== Problem Reproduced ===
+supabase stop --no-backup && supabase start -x vector --ignore-health-check
+WARNING: You are running different service versions locally than your linked project:
+supabase/storage-api:v1.48.28 => v1.48.20
+Cloud / linked project: v1.48.28
+Local: v1.48.20
+
+=== Governed Fix Attempted ===
+Attempted: image = "supabase/storage-api:v1.48.20" in [storage] section of config.toml
+Result: failed to parse config: 'storage' has invalid keys: image
+Supabase CLI 2.90.0 does not support storage-api image pinning via config.toml.
+
+=== Attempted Alternatives ===
+docker-compose override: no supabase/docker-compose.override.yml exists
+supabase start --image flag: not available in CLI 2.90.0
+-x storage-api exclusion: removes storage from local stack entirely -- not acceptable
+
+=== Conclusion ===
+No governed repo-based fix available in current CLI version.
+Warning is cosmetic and non-blocking.
+No Storage behavior mismatch observed (bucket RLS, uploads, presigned URLs unaffected).
+CONTRACTS.md sections 30-31 (10.8.7/10.8.7A bucket contracts) unchanged.
+
+=== Deliverables ===
+docs/truth/toolchain.json: storage_api key added
+  cloud_version: v1.48.28
+  local_version: v1.48.20
+  known_limitation: operator guidance documented
+docs/artifacts/SOP_WORKFLOW.md: section 20 added
+  Storage API version drift documented
+  Re-alignment operator instructions documented
+  Future action when CLI gains image pinning support documented
+
+=== DoD Checklist ===
+Warning reproduced and captured                                            -- PASS
+Governed repo-based fix path unavailable -- documented                    -- PASS
+docs/truth/toolchain.json updated with known limitation                   -- PASS
+docs/artifacts/SOP_WORKFLOW.md section 20 added                          -- PASS
+CONTRACTS.md sections 30-31 unchanged                                     -- PASS
+No fake warning-removed claim                                             -- PASS
+No dashboard/manual workaround as official path                           -- PASS
+No -x storage-api workaround as official path                             -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260415T200647Z.md -- PASS
+
+=== Phase 2 ===
+Skipped -- no migrations, no schema changes, no handoff pipeline touched
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.8.11Q Storage API Version Alignment: PASS (lane-only gate, documentation-only)
