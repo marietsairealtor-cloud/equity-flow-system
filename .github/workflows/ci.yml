@@ -12,7 +12,7 @@ jobs:
     name: env-sanity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: env-sanity
         run: npm ci && npm run env:sanity
 
@@ -20,10 +20,10 @@ jobs:
     name: main-moved-guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -35,7 +35,7 @@ jobs:
       workflows_changed: ${{ steps.set.outputs.workflows_changed }}
       foundation_changed: ${{ steps.set.outputs.foundation_changed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -87,7 +87,7 @@ jobs:
         os: [ubuntu-latest]
         node-version: [16.x, 18.x, 20.x, 22.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
@@ -103,7 +103,7 @@ jobs:
     
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -116,7 +116,7 @@ jobs:
     name: governance-change-guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: governance-change-guard
@@ -128,7 +128,7 @@ jobs:
     name: governance-change-template-contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: governance-change-template-contract
         shell: pwsh
         run: |
@@ -138,7 +138,7 @@ jobs:
     name: proof-commit-binding
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: proof-commit-binding
@@ -149,8 +149,8 @@ jobs:
     needs: [changes, lane-enforcement]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - name: ci-semantic-contract
@@ -161,8 +161,8 @@ jobs:
   toolchain-contract:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -171,8 +171,8 @@ jobs:
   qa-verify:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -180,10 +180,10 @@ jobs:
   robot-owned-publish-guard:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -191,8 +191,8 @@ jobs:
   qa-requirements-contract:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -200,8 +200,8 @@ jobs:
   docs-push-contract:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -209,8 +209,8 @@ jobs:
   handoff-commit-safety:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -218,8 +218,8 @@ jobs:
   ship-guard:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -227,8 +227,8 @@ jobs:
   automation-contract:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -236,8 +236,8 @@ jobs:
   toolchain-contract-supabase:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -246,10 +246,10 @@ jobs:
     name: waiver-rate-limit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -259,10 +259,10 @@ jobs:
     name: waiver-debt-enforcement
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - name: waiver-debt-enforcement
@@ -273,8 +273,8 @@ jobs:
     name: ci-topology-audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -285,8 +285,8 @@ jobs:
     name: truth-sync-enforced
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with: { node-version: "20" }
       - run: npm ci
       - name: truth-sync-enforced
@@ -296,7 +296,7 @@ jobs:
     name: proof-manifest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: enforce LF
@@ -312,7 +312,7 @@ jobs:
     name: robot-owned-guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: robot-owned-guard
@@ -327,8 +327,8 @@ jobs:
       - name: foundation-invariants (no skip)
         run: |
           echo "foundation-invariants running..."
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with: { node-version: "20" }
       - run: npm ci
       - run: npm run foundation:invariants
@@ -338,7 +338,7 @@ jobs:
     needs: [changes, lane-enforcement]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: entitlement-policy-coupling
@@ -350,10 +350,10 @@ jobs:
     name: stop-the-line
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: "20" }
       - run: npm ci
       - name: stop-the-line (pass-through unless simulated)
@@ -364,9 +364,9 @@ jobs:
     name: stop-the-line-xor
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: "20" }
       - run: npm ci
       - name: stop-the-line-xor
@@ -378,8 +378,8 @@ jobs:
     name: lane-policy-contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with: { node-version: "20" }
       - run: npm ci
       - name: lane-policy-contract
@@ -390,8 +390,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with: { node-version: '20' }
       - name: lane-enforcement
         run: node scripts/lane_policy_contract.mjs
@@ -400,8 +400,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with: { node-version: '20' }
       - name: ci-normalize-sweep
         shell: pwsh
@@ -410,7 +410,7 @@ jobs:
     name: ci-encoding-audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: ci-encoding-audit
         shell: pwsh
         run: |
@@ -422,7 +422,7 @@ jobs:
     name: ci-path-leak-audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: ci-path-leak-audit
         shell: pwsh
         run: |
@@ -433,8 +433,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -456,8 +456,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with: { node-version: "20" }
       - run: npm ci
       - name: boot local supabase (deterministic)
@@ -471,7 +471,7 @@ jobs:
     name: deferred-proof-registry
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: deferred-proof-registry
         shell: pwsh
         run: ./scripts/ci_deferred_proof_registry.ps1
@@ -479,7 +479,7 @@ jobs:
     name: governance-path-coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: governance-path-coverage
         shell: pwsh
         run: ./scripts/ci_governance_path_coverage.ps1
@@ -487,7 +487,7 @@ jobs:
     name: qa-scope-coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: qa-scope-coverage
         shell: pwsh
         run: ./scripts/ci_qa_scope_coverage.ps1
@@ -495,7 +495,7 @@ jobs:
     name: job-graph-ordering
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: job-graph-ordering
         shell: pwsh
         run: ./scripts/ci_job_graph_contract.ps1
@@ -503,7 +503,7 @@ jobs:
     name: anon-privilege-audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: anon-privilege-audit
@@ -515,7 +515,7 @@ jobs:
     name: rls-strategy-consistent
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: rls-strategy-consistent
         shell: pwsh
         run: ./scripts/ci_rls_strategy_lint.ps1
@@ -523,7 +523,7 @@ jobs:
     name: migration-rls-colocation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: migration-rls-colocation
         shell: pwsh
         run: ./scripts/ci_migration_rls_lint.ps1
@@ -531,7 +531,7 @@ jobs:
     name: migration-schema-coupling
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: migration-schema-coupling
@@ -545,7 +545,7 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: background-context-review
         shell: pwsh
         run: ./scripts/ci_background_context_review.ps1
@@ -555,8 +555,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -578,7 +578,7 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: blocked-identifiers
         shell: pwsh
         run: ./scripts/ci_blocked_identifiers.ps1
@@ -588,7 +588,7 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: unregistered-table-access
         shell: pwsh
         run: ./scripts/ci_unregistered_table_access.ps1
@@ -597,8 +597,8 @@ jobs:
     name: migration-grant-lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
       - name: Install deps
@@ -610,7 +610,7 @@ jobs:
     name: policy-coupling
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: policy-coupling
@@ -622,7 +622,7 @@ jobs:
     name: calc-version-registry
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: calc-version-registry
@@ -634,7 +634,7 @@ jobs:
     name: rpc-mapping-contract
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: rpc-mapping-contract
@@ -647,7 +647,7 @@ jobs:
     name: cloud-migration-parity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install PostgreSQL 16 client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: cloud-migration-parity
@@ -661,7 +661,7 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install PostgreSQL 17 client
         run: |
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -682,8 +682,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -723,8 +723,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -754,8 +754,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -795,8 +795,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -821,8 +821,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -835,8 +835,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -849,8 +849,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -865,8 +865,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -881,8 +881,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -895,8 +895,8 @@ jobs:
     if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
       - run: npm ci
@@ -914,7 +914,7 @@ jobs:
     name: write-lock-coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Run ./scripts/ci_write_lock_coverage.ps1
