@@ -554,6 +554,9 @@
     },
     "10.8.11P": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11P_expired_archived_workspace_ui_"
+    },
+    "10.8.11Q": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11Q_storage_drift_guard_"
     }
   }
 }
