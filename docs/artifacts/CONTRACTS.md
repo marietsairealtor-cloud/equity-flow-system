@@ -1063,6 +1063,8 @@ Historical (O1): `public.restore_workspace_v1()` restored an archived workspace 
 
 ## 52) Archived Workspace Restore Targeting (10.8.11O3)
 
+**10.8.11P (UI wiring, no new RPCs):** `list_archived_workspaces_v1` and `restore_workspace_v1(p_restore_token uuid)` are wired in WeWeb. The onboarding **Archived workspaces** section loads the list via `list_archived_workspaces_v1`. When billing is active again, **Restore workspace** calls `restore_workspace_v1` with the row’s `restore_token`. When billing is inactive, **Subscribe to restore workspace** uses the Supabase Edge Function `create-restore-checkout-session` (not the new-workspace `create-checkout-session` flow): the function accepts `restore_token`, validates it server-side against the same list RPC, creates a Stripe Checkout session, and returns the customer to `/onboarding?restore_checkout=success` on success.
+
 ### `public.list_archived_workspaces_v1()`
 
 Returns archived workspaces where the authenticated caller is **owner** (not JWT-scoped to a single current tenant).

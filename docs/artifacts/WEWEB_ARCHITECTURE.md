@@ -506,6 +506,7 @@ These apply to ALL Section 10 items. Each is explicitly rejected with rationale 
 - §9 Helper Function Exposure — `require_min_role_v1` for role gating
 - §12 Privilege Firewall — core tables not readable by anon/authenticated. Controlled exception for `resolve_form_slug_v1` and `submit_form_v1` (anon-callable).
 - §17 RPC Mapping — all data calls via registered RPCs only. New RPCs registered.
+- §52 Archived Workspace Restore Targeting — `list_archived_workspaces_v1`, `restore_workspace_v1(p_restore_token)`; onboarding archived recovery and `create-restore-checkout-session` Edge Function per CONTRACTS §52 and Build Route 10.8.11P.
 
 ### 13.2 GUARDRAILS References
 - §3 Prime Directive — all reads/writes via allowlisted RPCs only
@@ -515,6 +516,8 @@ These apply to ALL Section 10 items. Each is explicitly rejected with rationale 
 - §29 No `$$` in SQL
 
 ## 14) Expired, Archived, Restore, and Recovery Flow
+
+**Build Route 10.8.11P (authoritative UI wiring):** All behavior in this section is driven by `get_user_entitlements_v1` and governed RPCs only — no client-side subscription grace-period math, no client-invented archive state. `app_mode` is the primary routing signal (`normal` | `read_only_expired` | `archived_unreachable`).
 
 Workspace access has three distinct states.
 
@@ -526,8 +529,8 @@ Behavior:
 
 - users may still enter the authenticated app shell
 - pages may remain viewable
-- write actions are blocked by backend enforcement
-- billing remains available to the workspace owner
+- write/save/create/update/send/complete/upload affordances are disabled (backend write lock is authoritative; UI mirrors entitlement state)
+- billing remains available to the workspace owner via **Manage billing**; admin/member do not get actionable billing controls
 - the expired banner is shown
 
 Universal message:
@@ -603,6 +606,8 @@ Access to another workspace is invite-only because the workspace owner pays for 
 
 If the authenticated user owns one or more archived workspaces, onboarding must show an **Archived workspaces** section.
 
+The list is populated from `list_archived_workspaces_v1` (owner-scoped; not JWT current-tenant scoped). Each row includes `restore_token` for downstream restore or checkout.
+
 For each archived workspace, show:
 
 - workspace name
@@ -613,8 +618,8 @@ For each archived workspace, show:
 
 Button behavior:
 
-- if billing is inactive: **Subscribe to restore workspace**
-- if billing is active again: **Restore workspace**
+- if billing is inactive: **Subscribe to restore workspace** — WeWeb calls the Edge Function `create-restore-checkout-session` with the user’s bearer token and the selected row’s `restore_token` in the request body. The function validates the token against `list_archived_workspaces_v1`, creates a Stripe Checkout session for that tenant, and sets `success_url` / `cancel_url` back to `/onboarding` with `restore_checkout=success` or `restore_checkout=canceled` (distinct from new-workspace checkout which uses `create-checkout-session` and lands on `/today` on success).
+- if billing is active again: **Restore workspace** — WeWeb calls `restore_workspace_v1(p_restore_token)` with that row’s `restore_token`. On success, refetch `get_user_entitlements_v1` and resume normal reachable-workspace routing. No UI-only “unarchive” mutation.
 
 #### Restore behavior
 
