@@ -104,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v2
         with:
           version: latest
       - name: Start Supabase local
@@ -439,7 +439,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
       - name: Start Supabase and replay migrations
@@ -561,7 +561,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
       - name: Start Supabase and replay migrations
@@ -689,7 +689,7 @@ jobs:
       - run: npm ci
 
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
 
@@ -730,7 +730,7 @@ jobs:
       - run: npm ci
 
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
 
@@ -760,7 +760,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
       - name: Start Supabase and replay migrations
@@ -801,7 +801,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
       - name: Start Supabase and replay migrations
@@ -901,7 +901,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
       - name: Start Supabase
