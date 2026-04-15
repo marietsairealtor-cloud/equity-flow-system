@@ -557,6 +557,9 @@
     },
     "10.8.11Q": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11Q_storage_drift_guard_"
+    },
+    "10.8.11R": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.11R_node24_runtime_compatibility_"
     }
   }
 }
