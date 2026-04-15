@@ -1,4 +1,4 @@
-n// create-checkout-session/index.ts
+// create-checkout-session/index.ts
 // 10.8.9 -- Onboarding Wizard
 // Verifies user JWT via service role client getUser(token).
 // Price and quantity are backend-controlled. No frontend input accepted.

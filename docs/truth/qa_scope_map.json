@@ -551,6 +551,9 @@
     },
     "10.8.11O3": {
     "proof_pattern": "^docs/proofs/10\\.8\\.11O3_archived_workspace_restore_targeting_"
+    },
+    "10.8.11P": {
+    "proof_pattern": "^docs/proofs/10\\.8\\.11P_expired_archived_workspace_ui_"
     }
   }
 }
