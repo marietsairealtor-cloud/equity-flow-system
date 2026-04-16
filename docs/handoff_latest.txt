@@ -1,5 +1,5 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 6068894
+HEAD: fe65e6b
 
 === git status --porcelain=v1 ===
  M docs/truth/cloud_migration_parity.json
@@ -10,10 +10,7 @@ HEAD: 6068894
     "exitcode":  0,
     "stack_running":  false,
     "stopped_services":  [
-                             "supabase_imgproxy_equity-flow-system",
-                             "supabase_edge_runtime_equity-flow-system",
-                             "supabase_vector_equity-flow-system",
-                             "supabase_pooler_equity-flow-system"
+
                          ],
     "api_url":  null,
     "rest_url":  null,
@@ -22,10 +19,10 @@ HEAD: 6068894
 }
 
 === last applied migration (DB) ===
- 20260414000002
+ 20260415000001
 
 === latest migration file in repo ===
-20260414000002_10_8_11O3_archived_workspace_restore_targeting.sql
+20260415000001_10_8_12_free_trial.sql
 
 === implemented gates/status ===
 - handoff checkpoint: yes
