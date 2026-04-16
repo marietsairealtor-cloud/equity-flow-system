@@ -46,6 +46,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "claim_trial_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.8.12 — one-time free trial reservation at checkout; EXECUTE to authenticated"
+      },
+      {
         "routine": "create_tenant_v1",
         "privilege": "EXECUTE"
       },
@@ -173,6 +178,11 @@
         "authority": "Build Route 10.8.11I7 — send-invite-email Edge Function; EXECUTE to service_role only (REVOKE PUBLIC)"
       },
       {
+        "routine": "confirm_trial_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.8.12 — stripe-webhook Edge Function after verified trialing subscription; EXECUTE to service_role only (REVOKE PUBLIC, authenticated)"
+      },
+      {
         "routine": "process_workspace_retention_v1",
         "privilege": "EXECUTE",
         "authority": "Build Route 10.8.11O — retention-lifecycle Edge Function; EXECUTE to service_role only (REVOKE PUBLIC, authenticated)"
@@ -221,6 +231,7 @@
       "create_deal_v1",
       "create_farm_area_v1",
       "check_slug_access_v1",
+      "claim_trial_v1",
       "create_tenant_v1",
       "get_profile_settings_v1",
       "update_display_name_v1",

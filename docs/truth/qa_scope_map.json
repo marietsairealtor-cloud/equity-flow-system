@@ -560,6 +560,9 @@
     },
     "10.8.11R": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11R_node24_runtime_compatibility_"
+    },
+    "10.8.12": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.12_free_trial_"
     }
   }
 }

@@ -316,6 +316,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | rescind_invite_v1 | 10.8.11I3 | Cancel a pending invite by invite_id; deletes row; cross-tenant protected | SECURITY DEFINER, authenticated only, min role: admin | current_tenant_id() — no caller tenant_id param |
 | list_archived_workspaces_v1 | 10.8.11O3 | List archived workspaces owned by caller; includes restore_token and subscription snapshot | SECURITY DEFINER, authenticated only | auth.uid() + owner membership — not JWT current-tenant scoped |
 | restore_workspace_v1 | 10.8.11O3 | Restore an archived workspace by p_restore_token; clears archived_at, subscription_lapsed_at, restore_token; owner-only, requires active subscription | SECURITY DEFINER, authenticated only, owner-only (explicit membership check, not require_min_role_v1) | p_restore_token resolves tenant internally — no caller tenant_id param |
+| claim_trial_v1 | 10.8.12 | Atomically reserve one-time 30-day free trial for current authenticated user; returns trial_eligible and trial_period_days | SECURITY DEFINER, authenticated only | auth.uid() only — no caller tenant_id param; tenant context exempt |
 | update_display_name_v1 | 10.8.11J | Update display name for current authenticated user; blank returns VALIDATION_ERROR | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 
 ### Mapping Rules
@@ -443,21 +444,22 @@ Violations return `VALIDATION_ERROR` with field-level error:
 
 Signature unchanged: `create_share_token_v1(p_deal_id uuid, p_expires_at timestamptz)`.
 
-## 24) Entitlement RPC Extension — Subscription Status (10.8.2, corrected 10.8.11K)
+## 24) Entitlement RPC Extension — Subscription Status (10.8.2, corrected 10.8.11K, 10.8.12)
 
 `get_user_entitlements_v1` return shape extended (Build Route 10.8.2).
 Status mapping corrected and extended (Build Route 10.8.11K).
+`trialing` as a first-class stored and derived status (Build Route 10.8.12).
 
 New fields in `data`:
-- `subscription_status`: `active | expiring | expired | none` — computed server-side from `tenant_subscriptions`. `expiring` when active AND ≤5 days remain OR raw status is `past_due`. `none` when no subscription record exists.
-- `subscription_days_remaining`: integer. Returned for `expiring` only. `null` for all other statuses including `expired` and `none`.
+- `subscription_status`: `active | expiring | expired | trialing | none` — computed server-side from `tenant_subscriptions`. `expiring` when active AND ≤5 days remain OR raw status is `past_due`. `trialing` when raw status is `trialing` (Build Route 10.8.12). `none` when no subscription record exists.
+- `subscription_days_remaining`: integer. Returned for `expiring` and `trialing` (days until `current_period_end`). `null` for `active`, `expired`, and `none`.
 
 Raw storage vs derived return:
-- `tenant_subscriptions.status` is webhook-written raw Stripe status only.
-- `get_user_entitlements_v1` returns derived banner/routing status, not raw status.
+- `tenant_subscriptions.status` is webhook-written raw Stripe status only. Valid stored values include `trialing` (Build Route 10.8.12); see `upsert_subscription_v1` allowed status list.
+- `get_user_entitlements_v1` returns derived banner/routing status, not raw status (except `trialing`, which is passed through as `subscription_status` when the stored row is `trialing`).
 
 Stripe status mapping (raw → derived):
-- `trialing` → normalized to `active`, then threshold logic applies
+- `trialing` → `trialing` (normal hub routing; `subscription_days_remaining` set from period end)
 - `past_due` → `expiring`
 - `unpaid` / `incomplete_expired` → `expired`
 - `canceled` → `expired`
@@ -473,7 +475,7 @@ Computation rules:
 Gate logic derivable from single RPC call:
 - No memberships → onboarding Step 1
 - Membership + status `none` or `expired` → onboarding Step 3
-- Membership + status `active` or `expiring` → hub
+- Membership + status `active`, `expiring`, or `trialing` → hub
 
 ## 25) Privilege Firewall Closure — Historical RPC Gaps (10.8.3B)
 
@@ -685,16 +687,18 @@ Constraints:
 - Slug must be validated server-side
 - Slug collisions must return contract-valid error envelope
 
-## 38) Upsert Subscription RPC Contract (10.8.8C)
+## 38) Upsert Subscription RPC Contract (10.8.8C, corrected 10.8.12)
 
 Forward migration `20260329000001_10_8_8C_upsert_subscription.sql` adds
 `public.upsert_subscription_v1(p_tenant_id uuid, p_stripe_subscription_id text, p_status text, p_current_period_end timestamptz)` as the billing write RPC.
+Build Route 10.8.12 extends allowed `p_status` values and the `tenant_subscriptions.status` check constraint to include **`trialing`** (Stripe free-trial subscriptions written by the webhook).
 
 Behavior:
 - SECURITY DEFINER
 - Callable by service_role only -- not authenticated, not anon
 - Accepts tenant_id as parameter (server-side integration path, not app-user path)
-- Validates p_status against allowed values: active, expiring, expired, canceled
+- Validates `p_status` against allowed values: `active`, `expiring`, `expired`, `canceled`, **`trialing`**
+- Persisted `tenant_subscriptions.status` may therefore store **`trialing`** as a first-class billing state (alongside the other allowed values)
 - Upserts public.tenant_subscriptions on conflict (tenant_id)
 - Standard RPC envelope; data always an object, never null
 
@@ -1118,3 +1122,53 @@ Constraints:
 - No direct table calls from WeWeb
 - Approved write-lock exemption: does not call `check_workspace_write_allowed_v1()`
 - anon cannot execute
+
+---
+
+## 53) Free Trial Reservation and Confirmation (10.8.12)
+
+One-time, user-scoped free trial (30 days) with a two-phase RPC model: `claim_trial_v1()` reserves trial state before Stripe Checkout; `confirm_trial_v1(uuid, uuid)` finalizes usage after the webhook persists a `trialing` subscription. User profile columns: `has_used_trial`, `trial_claimed_at` (2-hour reservation window), `trial_started_at` (set on confirmation).
+
+Edge Functions: `create-checkout-session` calls `claim_trial_v1` before creating a Checkout session; `stripe-webhook` calls `upsert_subscription_v1` then `confirm_trial_v1` when `customer.subscription.created` resolves to `trialing` and metadata includes `user_id` and `tenant_id`.
+
+### `public.claim_trial_v1()`
+
+Atomically reserves a trial when the caller has not used a trial and has no active reservation (`trial_claimed_at` null or older than 2 hours).
+
+Behavior:
+- SECURITY DEFINER, search_path = public
+- Requires authenticated context (`auth.uid()`)
+- No parameters — no caller-supplied `tenant_id`
+- On success with reservation: `data.trial_eligible = true`, `data.trial_period_days = 30`
+- On success without reservation (already used or active hold): `data.trial_eligible = false`, `data.trial_period_days = null`
+- Does not use `current_tenant_id()` — listed in `tenant_context_exempt` (definer_allowlist)
+
+Failure envelopes:
+- NOT_AUTHORIZED: unauthenticated
+- NOT_FOUND: no `user_profiles` row for `auth.uid()`
+- INTERNAL: unexpected error
+
+Constraints:
+- `GRANT EXECUTE` to `authenticated` only (REVOKE PUBLIC)
+- anon cannot execute
+
+### `public.confirm_trial_v1(p_user_id uuid, p_tenant_id uuid)`
+
+Finalizes trial usage after Stripe has created a subscription in `trialing` state. Verifies `p_user_id` is owner of `p_tenant_id`, profile exists, optional idempotent return if `has_used_trial` already true, and that a valid reservation exists (`trial_claimed_at` within the last 2 hours).
+
+Behavior:
+- SECURITY DEFINER, search_path = public
+- **Not app-user callable** — `REVOKE` from `authenticated`; invoked with **service_role** from `stripe-webhook` only
+- Sets `has_used_trial = true`, `trial_started_at = now()` on success
+- Idempotent: already confirmed returns `already_confirmed: true`
+
+Failure envelopes:
+- VALIDATION_ERROR: `p_user_id` or `p_tenant_id` null
+- NOT_FOUND: user profile missing
+- NOT_AUTHORIZED: user is not owner of the tenant
+- CONFLICT: no valid reservation (missing or expired `trial_claimed_at`)
+- INTERNAL: unexpected error
+
+Constraints:
+- Listed in `tenant_context_exempt` (definer_allowlist) — no JWT current-tenant requirement
+- Not in `execute_allowlist.json`

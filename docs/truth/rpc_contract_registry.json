@@ -239,6 +239,34 @@
       "notes": "Integration RPC only. Callable by service_role exclusively. Called by stripe-webhook Edge Function after signature verification. Upserts tenant_subscriptions on conflict tenant_id. Not app-user callable. Not in execute_allowlist."
     },
     {
+      "name": "claim_trial_v1",
+      "version": 1,
+      "build_route_owner": "10.8.12",
+      "input_contract": "CONTRACTS.md §53 claim_trial_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "INTERNAL"
+      ],
+      "notes": "No parameters. auth.uid() only. Atomically sets trial_claimed_at when eligible (has_used_trial false and no active 2h reservation). ok=true with trial_eligible true/false in data. Does not use current_tenant_id(); tenant_context_exempt in definer_allowlist."
+    },
+    {
+      "name": "confirm_trial_v1",
+      "version": 1,
+      "build_route_owner": "10.8.12",
+      "input_contract": "CONTRACTS.md §53 confirm_trial_v1",
+      "response_schema": null,
+      "error_codes": [
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "NOT_AUTHORIZED",
+        "CONFLICT",
+        "INTERNAL"
+      ],
+      "notes": "Integration RPC only. Callable by service_role exclusively. Called by stripe-webhook after upsert_subscription_v1 for customer.subscription.created with trialing. REVOKE authenticated. Sets has_used_trial and trial_started_at. Not in execute_allowlist. Tenant context exempt (definer_allowlist)."
+    },
+    {
       "name": "check_slug_access_v1",
       "version": 1,
       "build_route_owner": "10.8.8D",

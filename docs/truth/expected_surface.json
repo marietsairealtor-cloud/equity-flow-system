@@ -2,6 +2,7 @@
   "version": 2,
   "description": "Expected PostgREST + DB RPC and data surface. Must match normalized DB grants and OpenAPI surface. execute_allowlist must be a strict subset. Data surface (schemas, tables, views) enforced by 9.6.",
   "rpc": [
+    "claim_trial_v1",
     "create_deal_v1",
     "create_share_token_v1",
     "current_tenant_id",
