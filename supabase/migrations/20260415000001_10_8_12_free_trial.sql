@@ -119,7 +119,7 @@ REVOKE ALL ON FUNCTION public.claim_trial_v1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.claim_trial_v1() TO authenticated;
 
 -- Step 3: confirm_trial_v1(p_user_id uuid, p_tenant_id uuid)
--- Service_role only. Called by stripe-webhook after confirmed subscription
+-- Webhook-only path. Called by stripe-webhook after confirmed subscription
 -- creation with status = trialing.
 -- Verifies user is owner of target tenant.
 -- Finalizes trial: sets has_used_trial = true, trial_started_at = now().
@@ -263,7 +263,7 @@ REVOKE ALL ON FUNCTION public.confirm_trial_v1(uuid, uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.confirm_trial_v1(uuid, uuid) FROM authenticated;
 
 -- Step 4: Update upsert_subscription_v1() to accept trialing as valid status.
--- Adds trialing to allowed statuses. Re-grants to service_role.
+-- Adds trialing to allowed statuses. Re-grants execute to webhook caller.
 -- No other behavior change. Interface unchanged.
 
 DROP FUNCTION IF EXISTS public.upsert_subscription_v1(uuid, text, text, timestamptz);
