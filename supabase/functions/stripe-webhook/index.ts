@@ -1,5 +1,6 @@
 // stripe-webhook/index.ts
 // 10.8.8C -- Stripe Billing Foundation
+// 10.8.12 -- Free Trial: calls confirm_trial_v1() when subscription created with trialing status.
 // Handles Stripe webhook events in test mode.
 // Writes tenant_subscriptions via upsert_subscription_v1 RPC only.
 
@@ -41,6 +42,7 @@ Deno.serve(async (req: Request) => {
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription
         const tenantId = sub.metadata?.tenant_id
+        const userId = sub.metadata?.user_id
 
         if (!tenantId) {
           console.error('No tenant_id in subscription metadata:', sub.id)
@@ -65,14 +67,52 @@ Deno.serve(async (req: Request) => {
         })
 
         if (error) {
-          console.error('upsert_subscription_v1 error:', error)
+          console.error('upsert_subscription_v1 transport error:', error)
           return new Response(JSON.stringify({ error: 'RPC call failed' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        if (!data?.ok) {
+          console.error('upsert_subscription_v1 envelope failure:', JSON.stringify(data))
+          return new Response(JSON.stringify({ error: 'upsert_subscription_v1 returned failure', code: data?.code }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           })
         }
 
         console.log('upsert_subscription_v1 result:', JSON.stringify(data))
+
+        // 10.8.12: Confirm trial usage after subscription created in trialing state.
+        // Only fires on subscription created event with trialing status and user_id in metadata.
+        if (
+          event.type === 'customer.subscription.created' &&
+          status === 'trialing' &&
+          userId &&
+          tenantId
+        ) {
+          const { data: confirmData, error: confirmError } = await supabase.rpc('confirm_trial_v1', {
+            p_user_id:   userId,
+            p_tenant_id: tenantId,
+          })
+
+          if (confirmError) {
+            console.error('confirm_trial_v1 transport error:', JSON.stringify(confirmError))
+            return new Response(JSON.stringify({ error: 'Trial confirmation failed' }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+          if (!confirmData?.ok) {
+            console.error('confirm_trial_v1 envelope failure:', JSON.stringify(confirmData))
+            return new Response(JSON.stringify({ error: 'confirm_trial_v1 returned failure', code: confirmData?.code }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+          console.log('confirm_trial_v1 result:', JSON.stringify(confirmData))
+        }
+
         break
       }
 
@@ -101,8 +141,15 @@ Deno.serve(async (req: Request) => {
         })
 
         if (error) {
-          console.error('upsert_subscription_v1 error on delete:', error)
+          console.error('upsert_subscription_v1 transport error on delete:', error)
           return new Response(JSON.stringify({ error: 'RPC call failed' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+        if (!data?.ok) {
+          console.error('upsert_subscription_v1 envelope failure on delete:', JSON.stringify(data))
+          return new Response(JSON.stringify({ error: 'upsert_subscription_v1 returned failure', code: data?.code }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           })
@@ -130,18 +177,18 @@ Deno.serve(async (req: Request) => {
 })
 
 function resolveStatus(sub: Stripe.Subscription): string {
-  if (sub.status === 'canceled') return 'canceled'
-
-  const periodEnd = sub.current_period_end
-    ?? (sub as any).items?.data?.[0]?.current_period_end
-    ?? null
-
-  if (!periodEnd) return 'active'
-
-  const now = Math.floor(Date.now() / 1000)
-  const daysRemaining = (periodEnd - now) / 86400
-
-  if (sub.status === 'active' && daysRemaining > 7) return 'active'
-  if (sub.status === 'active' && daysRemaining <= 7) return 'expiring'
-  return 'expired'
+  // Persist raw Stripe subscription status only.
+  // Status derivation (expiring, access/routing) is handled in get_user_entitlements_v1().
+  // Unknown statuses are logged and mapped to expired (safe fallback -- restricts access).
+  switch (sub.status) {
+    case 'trialing':            return 'trialing'
+    case 'active':              return 'active'
+    case 'canceled':            return 'canceled'
+    case 'past_due':
+    case 'unpaid':
+    case 'incomplete_expired':  return 'expired'
+    default:
+      console.error('resolveStatus: unknown Stripe subscription status:', sub.status)
+      return 'expired'
+  }
 }
