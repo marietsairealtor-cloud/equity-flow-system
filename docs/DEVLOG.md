@@ -8808,3 +8808,49 @@ known limitation. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-16 — Build Route v2.4 — 10.8.12
+
+Objective
+1-Month Free Trial (One-Time, User-Scoped) — atomic two-phase trial reservation
+and confirmation using Stripe native trial_period_days.
+
+Changes
+- Migration 20260415000001_10_8_12_free_trial.sql applied
+- user_profiles.has_used_trial boolean NOT NULL DEFAULT false added
+- user_profiles.trial_claimed_at timestamptz DEFAULT NULL added
+- user_profiles.trial_started_at timestamptz DEFAULT NULL added
+- tenant_subscriptions_status_check constraint updated to allow trialing
+- claim_trial_v1() added: SECURITY DEFINER, authenticated only, tenant context exempt
+  Atomic reservation via UPDATE ... RETURNING
+  Returns trial_eligible: true/false, trial_period_days: 30/null
+- confirm_trial_v1(p_user_id uuid, p_tenant_id uuid) added: webhook-only path
+  Validates profile exists, owner of tenant, valid non-expired reservation
+  Sets has_used_trial = true, trial_started_at = now()
+  Idempotent on already-confirmed
+- upsert_subscription_v1() updated: trialing added to allowed statuses
+- get_user_entitlements_v1() updated: trialing returned, treated as active
+- create-checkout-session Edge Function updated:
+  bearer token parsing, service-role admin email lookup
+  calls claim_trial_v1() atomically -- fatal on failure
+  applies trial_period_days = 30 when eligible
+  passes tenant_id and user_id in subscription_data.metadata
+- stripe-webhook Edge Function updated:
+  resolveStatus(): no expiring derivation, trialing/active/canceled preserved
+  calls confirm_trial_v1() on customer.subscription.created + trialing
+  confirm_trial_v1() failure is fatal -- Stripe retries
+  all RPC calls validate transport error and envelope ok
+- ci_rpc_mapping_contract.ps1: confirm_trial_v1 added to internal exclusions
+- CONTRACTS.md section 53 added, section 17 updated, billing sections updated
+- definer_allowlist.json, execute_allowlist.json, privilege_truth.json updated
+- rpc_contract_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260416T154513Z.md
+
+Proof
+docs/proofs/10.8.12_free_trial_20260416T184715Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
