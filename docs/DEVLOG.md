@@ -8884,3 +8884,24 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-17 — Admin — WeWeb Workflow and Variable Registry
+
+Objective
+Created docs/ui-workflows/WORKFLOWS.md — single lookup table documenting
+all WeWeb workflows and variables. No new gates. QA enforcement only.
+
+Contents
+- 28 workflows documented (26 confirmed, 2 placeholders for public form)
+- 9 fetch workflows
+- 19 action workflows
+- Full variable registry: global, onboarding, and workspace settings scopes
+- Variable IDs recorded for key entitlements, profileSettings, workspaceSettings,
+  archivedWorkspaces, slugCheckResult, and SLUG input
+- Confirmed wiring for all active workflows as of Build Route v2.4 10.8.12A
+
+Enforcement
+QA rejects any PR where a WeWeb workflow changed but WORKFLOWS.md was not updated.
+No new CI gate. No new proof artifact.
+
+Status
+Documentation only. No migrations. No RPCs. No gates.
