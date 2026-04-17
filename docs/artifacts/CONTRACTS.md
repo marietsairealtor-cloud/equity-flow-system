@@ -725,7 +725,7 @@ Return contract:
 - data.is_owner_or_admin: boolean
 - data.tenant_id: uuid or null
 
-## 40) Profile Settings RPC Contract (10.8.11D)
+## 40) Profile Settings RPC Contract (10.8.11D, extended 10.8.12A)
 
 `public.get_profile_settings_v1()` returns the current authenticated user's profile data.
 
@@ -735,6 +735,7 @@ Behavior:
 - No caller-supplied user_id
 - Derives user from auth.uid() only
 - Returns user_id, email, display_name (sourced from public.user_profiles.display_name)
+- **10.8.12A:** returns `has_used_trial` (boolean, sourced from `public.user_profiles.has_used_trial`) for trial-eligibility UI; additive field only, same RPC signature
 - Returns NOT_AUTHORIZED when auth.uid() is null
 - data is always an object, never null
 
