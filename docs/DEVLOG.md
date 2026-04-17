@@ -8854,3 +8854,33 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-17 — Build Route v2.4 — 10.8.12A
+
+Objective
+Trial Eligibility UI Surface Correction — onboarding Step 3 button text now
+reflects trial eligibility from backend state without frontend-only logic.
+
+Changes
+- Migration 20260416000001_10_8_12A_trial_eligibility_ui_surface.sql applied
+- get_profile_settings_v1() extended to return has_used_trial boolean
+  Additive return field only. No signature change. No new RPC.
+- supabase/tests/10_8_11D_profile_settings.test.sql updated:
+  plan bumped from 6 to 8, self-contained seed added, has_used_trial assertions added
+- supabase/config.toml: create-checkout-session and stripe-webhook blocks added
+  verify_jwt = false for both -- fixes ES256 401 and Stripe webhook 401 errors
+- WeWeb onboarding Step 3 button text wired to profileSettings.has_used_trial:
+  false → Create workspace and start 30-day free trial
+  true → Create workspace and subscribe
+- Slug input validation added to onboarding button workflow
+- CONTRACTS.md section 40 updated with has_used_trial field
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260417T000836Z.md
+
+Proof
+docs/proofs/10.8.12A_trial_eligibility_ui_surface_20260417T002813Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
