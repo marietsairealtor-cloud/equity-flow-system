@@ -1100,41 +1100,59 @@ $$;
 
 ALTER FUNCTION "public"."get_deal_health_color"("p_stage" "text", "p_updated_at" timestamp with time zone) OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_profile_settings_v1"() RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION "public"."get_profile_settings_v1"() RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_user_id uuid;
-  v_email text;
+  v_user         uuid;
+  v_email        text;
   v_display_name text;
+  v_has_used_trial boolean;
 BEGIN
-  v_user_id := auth.uid();
+  v_user := auth.uid();
 
-  IF v_user_id IS NULL THEN
-    RETURN jsonb_build_object(
-      'ok', false,
-      'code', 'NOT_AUTHORIZED',
-      'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Not authenticated', 'fields', '{}'::jsonb)
+  IF v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  json_build_object(),
+      'error', json_build_object(
+        'message', 'Authentication required',
+        'fields',  json_build_object()
+      )
     );
   END IF;
 
-  SELECT u.email INTO v_email
-  FROM auth.users u
-  WHERE u.id = v_user_id;
+  SELECT au.email INTO v_email
+  FROM auth.users au
+  WHERE au.id = v_user;
 
-  SELECT up.display_name INTO v_display_name
+  SELECT up.display_name, up.has_used_trial
+  INTO v_display_name, v_has_used_trial
   FROM public.user_profiles up
-  WHERE up.id = v_user_id;
+  WHERE up.id = v_user;
 
-  RETURN jsonb_build_object(
-    'ok', true,
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_FOUND',
+      'data',  json_build_object(),
+      'error', json_build_object(
+        'message', 'User profile not found',
+        'fields',  json_build_object()
+      )
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'ok',   true,
     'code', 'OK',
-    'data', jsonb_build_object(
-      'user_id', v_user_id,
-      'email', v_email,
-      'display_name', v_display_name
+    'data', json_build_object(
+      'user_id',        v_user,
+      'email',          v_email,
+      'display_name',   v_display_name,
+      'has_used_trial', v_has_used_trial
     ),
     'error', null
   );
