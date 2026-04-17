@@ -6533,6 +6533,62 @@ not tied to tenant (user-scoped)
 **Gate:** lane-only
 ---
 
+### **10.8.12A — Trial Eligibility UI Surface Correction**
+
+**Deliverable:**
+
+Onboarding Step 3 can show the correct subscription CTA text before checkout by reading trial eligibility state from existing profile settings load, without adding new RPCs, new globals, or frontend-only trial logic.
+
+**DoD:**
+
+1. `get_profile_settings_v1()` return shape is extended to include:
+
+   * `has_used_trial boolean`
+
+2. Return behavior:
+
+   * value is sourced from `public.user_profiles.has_used_trial`
+   * no caller-supplied user_id
+   * user derived from `auth.uid()` only
+   * no cross-user data exposure
+
+3. CONTRACTS.md updated:
+
+   * profile settings RPC section includes `has_used_trial`
+   * additive return-field change documented
+
+4. Existing profile settings test coverage updated:
+
+   * asserts `has_used_trial` is returned
+   * no regression to existing fields (`user_id`, `email`, `display_name`)
+
+5. WeWeb onboarding Step 3 wiring updated using existing `profileSettings` load only:
+
+   * if `has_used_trial = false` → button text:
+     **Create workspace & start 30-day free trial**
+   * if `has_used_trial = true` → button text:
+     **Create workspace & subscribe**
+
+6. No new RPC added
+
+7. No new WeWeb globals added
+
+8. No frontend-only trial eligibility logic:
+
+   * UI reads backend-returned `has_used_trial` only
+   * no local inference from dates, subscription state, or prior checkout attempts
+
+9. No direct table calls from frontend
+
+10. Existing checkout flow remains unchanged:
+
+* checkout session creation still relies on backend `claim_trial_v1()`
+* button text is informational only, not enforcement
+
+**Proof:** `docs/proofs/10.8.12A_trial_eligibility_ui_surface_<UTC>.md`
+**Gate:** `lane-only`
+
+
 ### **10.8.13 — Subscription Lifecycle & Renewal Handling**
 
 **Deliverable:**

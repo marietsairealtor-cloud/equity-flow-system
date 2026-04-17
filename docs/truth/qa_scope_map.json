@@ -563,6 +563,9 @@
     },
     "10.8.12": {
       "proof_pattern": "^docs/proofs/10\\.8\\.12_free_trial_"
+    },
+    "10.8.12A": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.12A_trial_eligibility_ui_surface_"
     }
   }
 }
