@@ -566,6 +566,9 @@
     },
     "10.8.12A": {
       "proof_pattern": "^docs/proofs/10\\.8\\.12A_trial_eligibility_ui_surface_"
+    },
+    "10.8.13": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.13_subscription_lifecycle_"
     }
   }
 }
