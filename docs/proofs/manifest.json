@@ -223,6 +223,7 @@
     "docs/proofs/10.8.11Q_storage_drift_guard_20260415T201502Z.log": "cd4f51e8b7d9cdcf8f229416803324ed3ad56c573d348b7fa66daee1212bbbc5",
     "docs/proofs/10.8.11R_node24_runtime_compatibility_20260415T210216Z.log": "399af0f9a47912e12b86bb2e3fdf028674ed87a93033533305eff1d83f40528b",
     "docs/proofs/10.8.12_free_trial_20260416T184715Z.md": "aaccb36c9bb4e079be0ec60fee155bd046a577b3176a1d7f7f30eca4d520392f",
-    "docs/proofs/10.8.12A_trial_eligibility_ui_surface_20260417T002813Z.md": "ab3b8b8ec4c0db7ab791e0a62335c58b099204803b66521694595f53188b3a2f"
+    "docs/proofs/10.8.12A_trial_eligibility_ui_surface_20260417T002813Z.md": "ab3b8b8ec4c0db7ab791e0a62335c58b099204803b66521694595f53188b3a2f",
+    "docs/proofs/10.8.13_subscription_lifecycle_20260418T004627Z.md": "1eb02db48e4441e8ae0e764f435a17a97ace0d1c54190fe8b1deec00d0a319db"
   }
 }
