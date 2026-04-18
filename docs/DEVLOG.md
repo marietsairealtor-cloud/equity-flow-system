@@ -8905,3 +8905,33 @@ No new CI gate. No new proof artifact.
 
 Status
 Documentation only. No migrations. No RPCs. No gates.
+2026-04-18 — Build Route v2.4 — 10.8.13
+
+Objective
+Subscription Lifecycle and Renewal Handling — verification/proof-only closure item.
+All DoD items satisfied by prior build route items. No new implementation required.
+
+Changes
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260418T004038Z.md
+
+Prior Items Satisfying DoD
+10.8.2  -- get_user_entitlements_v1() initial subscription state
+10.8.8C -- upsert_subscription_v1(), stripe-webhook foundation
+10.8.9  -- create-checkout-session Edge Function
+10.8.11K -- subscription status consistency corrections
+10.8.11M -- entitlement access and retention model
+10.8.11N -- expired workspace write lock
+10.8.11O -- retention and archive lifecycle
+10.8.11O2 -- entitlement archived state fix
+10.8.12 -- trialing support, two-phase trial, webhook envelope validation
+
+Proof
+docs/proofs/10.8.13_subscription_lifecycle_20260418T004627Z.md
+
+DoD
+All 10 checklist items PASS. Lane-only gate satisfied.
+Verification/proof-only closure. No new code.
+
+Status
+MERGED
