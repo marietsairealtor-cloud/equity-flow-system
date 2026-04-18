@@ -102,13 +102,13 @@ SELECT is(
 );
 
 SELECT is(
-  (public.create_deal_v1('a2000000-0000-0000-0000-000000000f99'::uuid, 1, '{}'::jsonb)::json ->> 'ok')::boolean,
+  (public.create_deal_v1('a2000000-0000-0000-0000-000000000f99'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json ->> 'ok')::boolean,
   true,
   'Tenant A: create_deal_v1 succeeds (own tenant)'
 );
 
 SELECT is(
-  (public.create_deal_v1('a2000000-0000-0000-0000-000000000f98'::uuid, 1, '{}'::jsonb)::json -> 'data' ->> 'tenant_id'),
+  (public.create_deal_v1('a2000000-0000-0000-0000-000000000f98'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json -> 'data' ->> 'tenant_id'),
   'a0000000-0000-0000-0000-000000000001',
   'Tenant A: create_deal_v1 binds to Tenant A'
 );
@@ -135,7 +135,7 @@ SELECT is(
 );
 
 SELECT is(
-  (public.create_deal_v1('b2000000-0000-0000-0000-000000000f99'::uuid, 1, '{}'::jsonb)::json -> 'data' ->> 'tenant_id'),
+  (public.create_deal_v1('b2000000-0000-0000-0000-000000000f99'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json -> 'data' ->> 'tenant_id'),
   'b0000000-0000-0000-0000-000000000001',
   'Tenant B: create_deal_v1 binds to Tenant B (not A)'
 );
@@ -154,7 +154,7 @@ SELECT is(
 );
 
 SELECT is(
-  (public.create_deal_v1('c2000000-0000-0000-0000-000000000001'::uuid, 1, '{}'::jsonb)::json ->> 'code'),
+  (public.create_deal_v1('c2000000-0000-0000-0000-000000000001'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json ->> 'code'),
   'NOT_AUTHORIZED',
   'No tenant context: create_deal_v1 returns NOT_AUTHORIZED'
 );

@@ -6617,48 +6617,97 @@ Stripe → Edge Function → RPC → DB
 
 **Gate:** lane-only
 
-### **10.9 — MAO Calculator (Dual-Route)**
+### **10.9 — MAO Calculator (Dual-Context, Server-Computed Save as Deal)**
 
 **Deliverable:**
-Public + authenticated MAO calculator. Free hook with upgrade CTA. Paid users get save + offer generator access.
+MAO calculator available in both public and authenticated contexts on the same URL. Public users can use the calculator without auth. Authenticated users can save a deal through `create_deal_v1`, with MAO computed authoritatively in the backend from raw calculator inputs.
 
 **DoD:**
 
-- Public context: /mao-calculator loads standalone (no navbar, no auth required)
-- Authenticated context: same URL renders inside authenticated shell with navbar
-- Inputs: ARV (with address field for future autocomplete), repair estimate (quick toggles: Light $15K | Medium $40K | Heavy $80K + custom input), desired profit/assignment fee
-- MAO multiplier toggle: 70% | 75% | 80% (default 70%, stored with calc_version)
-- Output: single MAO number with formula shown transparently (ARV × multiplier − repairs − profit)
-- All financial inputs: `inputmode="numeric"`, auto-format with commas as typed
-- `calc_version` stored with every calculation
-- Public: full results shown, no blur/gate. CTA below: "Save this deal + generate offer copy → Sign up free"
-- Authenticated: "Save as deal" button (calls `create_deal_v1` with calc inputs + calc_version + multiplier) + "Generate offer copy" button (wired in 10.12)
-- No direct table calls
+* Same URL renders calculator in both contexts:
+
+  * unauthenticated: standalone, no navbar
+  * authenticated: inside authenticated shell with navbar
+* One calculator UI / one source of truth for frontend behavior
+* Inputs:
+
+  * address field (reserved for future autocomplete)
+  * ARV
+  * repair estimate
+  * desired profit / assignment fee
+  * MAO multiplier toggle: 70% | 75% | 80% (default 70%)
+* Output:
+
+  * single MAO number shown in UI
+  * transparent formula shown: `ARV × multiplier − repairs − profit`
+* All financial inputs use `inputmode="numeric"` and auto-format with commas as typed
+* Public:
+
+  * full results shown
+  * no blur / no auth gate
+  * CTA below:
+    **Save this deal + generate offer copy → Sign up free**
+* Authenticated:
+
+  * **Save as deal** calls `create_deal_v1(...)`
+  * **Generate offer copy** remains wired in 10.12
+* **MAO calculation authority**
+
+  * frontend may display preview MAO for UX only
+  * authoritative MAO is computed **server-side** in `create_deal_v1`
+  * frontend-provided `mao` is not authoritative
+* `create_deal_v1` save path sends raw calculator inputs needed for formula, plus calc version metadata
+* Assumptions shape used for save:
+
+```json
+{
+  "address": "123 Main St",
+  "arv": 250000,
+  "repair_estimate": 40000,
+  "desired_profit": 15000,
+  "multiplier": 0.70,
+  "calc_version": "mao_v1",
+  "mao": 120000
+}
+```
+
+* `mao` stored in assumptions is backend-computed
+* `repair_mode` and `repair_tier` are not included
+* Version separation is preserved:
+
+  * `p_calc_version integer` = authoritative governed DB calc version
+  * `assumptions.calc_version text` = descriptive formula label for auditability 
+* No direct table calls from frontend
+* No frontend-only authoritative business logic for governed MAO data
+
+**Documentation:**
+
+* `WEWEB_ARCHITECTURE.md` updated to reflect:
+
+  * same-URL dual-context rendering
+  * conditional shell/navbar behavior
+  * backend-authoritative MAO calculation
+* `CONTRACTS.md` updated if `create_deal_v1` interface or assumptions contract changes
 
 **Proof:** `docs/proofs/10.9_mao_calculator_<UTC>.md`
-
 **Gate:** `lane-only`
-
-**Prerequisite:** 10.8 merged
 
 ---
 
 ### **10.10 — MAO Golden-Path Smoke (unchanged)**
 
 **Deliverable:**
-MAO calculator works end-to-end (WeWeb → Supabase) on the golden path.
+Golden-path proof that the MAO calculator works end-to-end from WeWeb through approved backend interfaces.
 
 **DoD:**
 
-- Inputs → MAO output renders correctly
-- Output uses stored `calc_version`
+- Inputs produce correct MAO output
+- Authenticated save passes expected payload, including calc_version
 - No forbidden direct table calls
 
 **Proof:** `docs/proofs/10.10_mao_golden_path_<UTC>.md`
 
 **Gate:** `lane-only`
-
-**Prerequisite:** 10.9 merged
 
 ---
 

@@ -4,15 +4,17 @@
   "rpcs": [
     {
       "name": "create_deal_v1",
-      "version": 2,
-      "build_route_owner": "6.6",
-      "input_contract": "CONTRACTS.md §RPC create_deal_v1",
+      "version": 3,
+      "build_route_owner": "10.9",
+      "input_contract": "CONTRACTS.md §54 create_deal_v1 (MAO server compute, Build Route 10.9)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
-        "CONFLICT"
+        "VALIDATION_ERROR",
+        "CONFLICT",
+        "INTERNAL"
       ],
-      "notes": "CONFLICT on duplicate deal id. No VALIDATION_ERROR — inputs are permissive."
+      "notes": "Signature unchanged: (p_id uuid, p_calc_version int, p_assumptions jsonb). Server computes MAO = ROUND(arv * multiplier - repair_estimate - desired_profit) from required string fields in p_assumptions; overwrites assumptions.mao before persist — client-supplied mao ignored. Validates p_id, arv, repair_estimate, desired_profit, multiplier (strict non-negative numeric strings; multiplier in (0,1)). Workspace write lock via check_workspace_write_allowed_v1. OK data includes mao, id, tenant_id, assumptions_snapshot_id. VALIDATION_ERROR on bad/missing calc inputs. CONFLICT duplicate deal id. INTERNAL on unexpected SQL."
     },
     {
       "name": "create_share_token_v1",

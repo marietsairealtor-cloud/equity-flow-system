@@ -63,6 +63,14 @@
       "introduced_pr": "10.8.11N",
       "released_at": "2026-04-13"
     }
+    ,{
+      "calc_version": 1,
+      "migration": "20260418000001_10_9_mao_calculator.sql",
+      "description": "10.9: create_deal_v1 revised to compute MAO server-side from p_assumptions inputs (arv, repair_estimate, desired_profit, multiplier). calc_version=1 preserved as authoritative DB version. assumptions.calc_version='mao_v1' added as descriptive formula label inside jsonb blob. No new calc_version integer introduced -- MAO formula is the first real calc logic registered under version 1.",
+      "authority": "QA ruling 2026-04-18",
+      "introduced_pr": "10.9",
+      "released_at": "2026-04-18"
+    }
   ],
   "watch_surface": {
     "migration_tokens": [
