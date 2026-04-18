@@ -278,7 +278,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 
 | RPC name | Build Route item | Purpose | Security class | Tenancy rule |
 |---|---|---|---|---|
-| create_deal_v1 | 6.6 | Create a new deal with calc_version and assumptions | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| create_deal_v1 | 6.6, 10.9 | Create deal; server-computed MAO from assumptions inputs (10.9); stores assumptions snapshot | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
@@ -1173,3 +1173,44 @@ Failure envelopes:
 Constraints:
 - Listed in `tenant_context_exempt` (definer_allowlist) — no JWT current-tenant requirement
 - Not in `execute_allowlist.json`
+
+---
+
+## 54) MAO Calculator — create_deal_v1 assumptions + server MAO (10.9)
+
+**§RPC `create_deal_v1`** — authoritative narrative for MAO persistence (Build Route 10.9). This section narrows assumptions validation and MAO semantics on top of the core deals write path introduced in Build Route 6.6.
+
+Forward migration `20260418000001_10_9_mao_calculator.sql` replaces `create_deal_v1` via DROP + CREATE with **identical signature**: `create_deal_v1(p_id uuid, p_calc_version int default 1, p_assumptions jsonb default '{}')`.
+
+### Assumptions shape (required keys for MAO path)
+
+`p_assumptions` is a JSON object. For successful deal creation the implementation requires these **string** fields (trimmed), each matching `^\d+(\.\d+)?$` before cast:
+
+| Key | Role |
+|-----|------|
+| `arv` | After-repair value |
+| `repair_estimate` | Repair budget |
+| `desired_profit` | Target profit / assignment fee |
+| `multiplier` | MAO multiplier strictly between 0 and 1 (e.g. 0.70, 0.75, 0.80) |
+
+Optional keys may be present; they are merged into the stored snapshot. The key `mao` may be sent by the client but is **ignored for persistence**: the server sets `mao` to the computed value.
+
+### Server-computed MAO
+
+`mao := ROUND(arv::numeric * multiplier::numeric - repair_estimate::numeric - desired_profit::numeric)` (implementation uses numeric `ROUND` without second argument — integer dollars).
+
+Stored snapshot: `p_assumptions || jsonb_build_object('mao', <computed>)` so `deal_inputs.assumptions` always carries backend-authoritative `mao`.
+
+### Validation and errors
+
+- `p_id` null → `VALIDATION_ERROR` (`p_id` required).
+- Missing/blank/non-matching string for `arv`, `repair_estimate`, `desired_profit`, or `multiplier` → `VALIDATION_ERROR` with field hints.
+- Negative `arv`, `repair_estimate`, or `desired_profit` after parse → `VALIDATION_ERROR`.
+- `multiplier` ≤ 0 or > 1 → `VALIDATION_ERROR`.
+- Workspace not writable (`check_workspace_write_allowed_v1`) → `NOT_AUTHORIZED` (read-only/expired messaging per §17A).
+- Duplicate `p_id` for tenant → `CONFLICT`.
+- Unexpected SQL → `INTERNAL`.
+
+### Success payload
+
+Standard envelope with `data` including at least: `id`, `tenant_id`, `assumptions_snapshot_id`, `mao` (matches stored snapshot).

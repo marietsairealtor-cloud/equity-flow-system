@@ -53,7 +53,7 @@ SELECT is(
 
 -- Test 3: create_deal_v1 returns NOT_AUTHORIZED without tenant context
 SELECT is(
-  (public.create_deal_v1(gen_random_uuid())::json -> 'code')::text,
+  (public.create_deal_v1(gen_random_uuid(), 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json -> 'code')::text,
   '"NOT_AUTHORIZED"',
   'create_deal_v1: returns NOT_AUTHORIZED when tenant context is NULL'
 );

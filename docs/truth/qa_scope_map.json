@@ -569,6 +569,9 @@
     },
     "10.8.13": {
       "proof_pattern": "^docs/proofs/10\\.8\\.13_subscription_lifecycle_"
+    },
+    "10.9": {
+      "proof_pattern": "^docs/proofs/10\\.9_mao_calculator_"
     }
   }
 }

@@ -327,6 +327,17 @@ Note: PLACEHOLDER — confirm exact RPC, payload shape, and error handling in We
 
 ---
 
+## mao-calculator-save
+Trigger: Save as deal / Sign in to save as deal button on /mao-calculator page
+Reads: pluginVariables auth user, entitlements variable (0237d4bd) app_mode,
+       input values for arv, repair, profit, multiplier, address
+Calls: [AUTH CHECK] not authenticated → navigate to /auth
+       [APP_MODE CHECK] app_mode != normal → navigate to /onboarding
+       create_deal_v1(p_id, p_calc_version=1, p_assumptions) → navigate to /acquisition
+Writes: none before RPC — deal written server-side
+Branches: not authenticated → /auth | no subscription → /onboarding | entitled → save + /acquisition
+Item: 10.9
+
 # WeWeb Variable Registry
 
 All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolean.

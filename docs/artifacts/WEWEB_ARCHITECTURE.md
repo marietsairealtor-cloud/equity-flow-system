@@ -101,8 +101,9 @@ Rules:
 
 **Authenticated context (paid user):**
 - Same URL — renders inside authenticated shell with navbar
-- Save as deal — calls `create_deal_v1` with calc inputs + calc_version + multiplier
-- Generate offer copy — seller-ready text/email/PDF with dynamic 48-hour expiration clause
+- **Dual-context rendering:** public and authenticated sessions use the same `/mao-calculator` page and components; layout chrome (standalone vs shell + navbar) switches on auth/session state only — no duplicate routes or forked calculators.
+- **Backend-authoritative save:** “Save as deal” calls `create_deal_v1(p_id, p_calc_version, p_assumptions)` with the same assumption keys as the live calculator (`arv`, `repair_estimate`, `desired_profit`, `multiplier`, plus optional fields). The server computes `mao`, overwrites any client-supplied `mao`, and persists `deal_inputs.assumptions` with that value. The UI must treat the RPC success payload (and any subsequent reads) as the source of truth for saved MAO — not the pre-call client-side preview alone.
+- Generate offer copy — seller-ready text/email/PDF with dynamic 48-hour expiration clause (must align copy with server-returned `mao` after save when a deal was just created).
 - One-click context links: Zillow / Redfin / Realtor.com auto-generated from address
 - All financial inputs: `inputmode="numeric"`, auto-format commas as typed
 

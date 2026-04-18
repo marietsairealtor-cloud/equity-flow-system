@@ -30,28 +30,28 @@ SELECT set_config('request.jwt.claims',
   true);
 
 -- Seed a deal for token tests
-SELECT public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 1, '{}'::jsonb);
+SELECT public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb);
 
 -- ============================================================
 -- create_deal_v1 -- CONFLICT (duplicate deal)
 -- ============================================================
 SELECT is(
-  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'ok',
+  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json)->>'ok',
   'false',
   'create_deal_v1 CONFLICT: ok=false'
 );
 SELECT is(
-  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'code',
+  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json)->>'code',
   'CONFLICT',
   'create_deal_v1 CONFLICT: code=CONFLICT'
 );
 SELECT is(
-  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'data',
+  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json)->>'data',
   '{}',
   'create_deal_v1 CONFLICT: data={}'
 );
 SELECT isnt(
-  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid)::json)->>'error',
+  (public.create_deal_v1('a0500000-0000-0000-0000-000000000004'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json)->>'error',
   NULL,
   'create_deal_v1 CONFLICT: error present'
 );
@@ -265,7 +265,7 @@ SELECT is(
 SELECT set_config('request.jwt.claims', '', true);
 
 SELECT is(
-  (public.create_deal_v1('a0500000-0000-0000-0000-000000000005'::uuid)::json)->>'code',
+  (public.create_deal_v1('a0500000-0000-0000-0000-000000000005'::uuid, 1, '{"arv":250000,"repair_estimate":40000,"desired_profit":15000,"multiplier":0.70,"calc_version":"mao_v1"}'::jsonb)::json)->>'code',
   'NOT_AUTHORIZED',
   'create_deal_v1 NOT_AUTHORIZED: code=NOT_AUTHORIZED'
 );
