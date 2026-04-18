@@ -8935,3 +8935,38 @@ Verification/proof-only closure. No new code.
 
 Status
 MERGED
+2026-04-18 — Build Route v2.4 — 10.9
+
+Objective
+MAO Calculator (Dual-Context, Server-Computed Save as Deal) — frontend calculator
+on same URL for public and authenticated users. Backend-authoritative MAO via
+revised create_deal_v1.
+
+Changes
+- Migration 20260418000001_10_9_mao_calculator.sql applied
+- create_deal_v1 revised: server-side MAO computation, safe numeric validation,
+  role enforcement, write-lock enforcement, REVOKE ALL FROM PUBLIC
+- supabase/tests/10_9_mao_calculator.test.sql added (12 assertions, PASS)
+- 6_3, 7_9, 10_5 test files updated with valid assumptions
+- scripts/test_postgrest_isolation.mjs updated with valid assumptions
+- docs/truth/calc_version_registry.json: mao_v1 entry added
+- docs/artifacts/CONTRACTS.md: section 54 added, mapping table updated
+- docs/artifacts/WEWEB_ARCHITECTURE.md: section 4.1 updated
+- docs/truth/rpc_contract_registry.json: create_deal_v1 updated to version 3
+- docs/ui-workflows/WORKFLOWS.md: mao-calculator-save workflow added
+- WeWeb: MAO calculator UI built on /mao-calculator (home page)
+  dual-context rendering (public standalone, authenticated shell)
+  navbar visibility conditional on auth state
+  save button three-branch workflow (not auth / no sub / entitled)
+  generate offer copy present, no wiring (10.12)
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260418T164430Z.md
+
+Proof
+docs/proofs/10.9_mao_calculator_20260418T230556Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
