@@ -112,7 +112,7 @@ async function run() {
   assert('Tenant B: zero Tenant A rows leaked', noLeakB);
 
   // Test 3: Tenant A create_deal_v1 binds to A
-  const r3 = await rpcPost('create_deal_v1', { p_id: 'a2000000-0000-0000-0000-000000000077' }, tokenA);
+  const r3 = await rpcPost('create_deal_v1', { p_id: 'a2000000-0000-0000-0000-000000000077', p_calc_version: 1, p_assumptions: { arv: 250000, repair_estimate: 40000, desired_profit: 15000, multiplier: 0.70, calc_version: 'mao_v1' } }, tokenA);
   assert('Tenant A: create_deal_v1 ok=true', r3.body?.ok === true);
   assert('Tenant A: created deal bound to Tenant A', r3.body?.data?.tenant_id === TENANT_A);
 
