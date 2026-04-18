@@ -572,6 +572,9 @@
     },
     "10.9": {
       "proof_pattern": "^docs/proofs/10\\.9_mao_calculator_"
+    },
+    "10.10": {
+      "proof_pattern": "^docs/proofs/10\\.10_mao_golden_path_"
     }
   }
 }
