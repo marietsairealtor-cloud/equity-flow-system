@@ -391,8 +391,12 @@
     "10.7.1": {
       "proof_pattern": "^docs/proofs/10\\.7\\.1_legacy_gate_promotion_retrofit_"
     },
-    "10.8": { "proof_pattern": "^docs/proofs/10\\.8_authenticated_shell_" },
-    "10.8.1": { "proof_pattern": "^docs/proofs/10\\.8\\.1_slug_system_" },
+    "10.8": {
+      "proof_pattern": "^docs/proofs/10\\.8_authenticated_shell_"
+    },
+    "10.8.1": {
+      "proof_pattern": "^docs/proofs/10\\.8\\.1_slug_system_"
+    },
     "10.8.1A": {
       "proof_pattern": "^docs/proofs/10\\.8\\.1A_subscriptions_table_"
     },
@@ -487,73 +491,73 @@
       "proof_pattern": "^docs/proofs/10\\.8\\.11F_workspace_settings_general_rpcs_"
     },
     "10.8.11G": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11G_workspace_members_rpcs_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11G_workspace_members_rpcs_"
     },
     "10.8.11H": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11H_workspace_farm_areas_rpcs_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11H_workspace_farm_areas_rpcs_"
     },
     "10.8.11I": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I_workspace_settings_ui_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I_workspace_settings_ui_"
     },
     "10.8.11I1": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I1_invite_email_"
-    }, 
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I1_invite_email_"
+    },
     "10.8.11I2": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I2_workspace_settings_read_fix_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I2_workspace_settings_read_fix_"
     },
     "10.8.11I3": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I3_pending_invites_rpc_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I3_pending_invites_rpc_"
     },
     "10.8.11I4": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I4_pending_invites_ui_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I4_pending_invites_ui_"
     },
     "10.8.11I5": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I5_seat_billing_sync_"  
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I5_seat_billing_sync_"
     },
     "10.8.11I6": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I6_billing_seat_ui"  
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I6_billing_seat_ui"
     },
     "10.8.11I7": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I7_reinvite_email_"  
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I7_reinvite_email_"
     },
     "10.8.11I8": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I8_list_user_tenants_workspace_name_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I8_list_user_tenants_workspace_name_"
     },
     "10.8.11I9": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11I9_workspace_switcher_name_ui_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11I9_workspace_switcher_name_ui_"
     },
     "10.8.11J": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11J_update_display_name_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11J_update_display_name_"
     },
     "10.8.11K": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11K_subscription_status_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11K_subscription_status_"
     },
     "10.8.11L": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11L_renew_now_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11L_renew_now_"
     },
     "10.8.11M": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11M_entitlement_access_retention_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11M_entitlement_access_retention_"
     },
     "10.8.11N": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11N_expired_write_lock_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11N_expired_write_lock_"
     },
     "10.8.11N1": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11N1_write_lock_coverage_gate_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11N1_write_lock_coverage_gate_"
     },
     "10.8.11O": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11O_retention_archive_lifecycle_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11O_retention_archive_lifecycle_"
     },
     "10.8.11O1": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11O1_archived_workspace_restore_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11O1_archived_workspace_restore_"
     },
     "10.8.11O2": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11O2_entitlement_archived_state_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11O2_entitlement_archived_state_"
     },
     "10.8.11O3": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11O3_archived_workspace_restore_targeting_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11O3_archived_workspace_restore_targeting_"
     },
     "10.8.11P": {
-    "proof_pattern": "^docs/proofs/10\\.8\\.11P_expired_archived_workspace_ui_"
+      "proof_pattern": "^docs/proofs/10\\.8\\.11P_expired_archived_workspace_ui_"
     },
     "10.8.11Q": {
       "proof_pattern": "^docs/proofs/10\\.8\\.11Q_storage_drift_guard_"
@@ -575,6 +579,9 @@
     },
     "10.10": {
       "proof_pattern": "^docs/proofs/10\\.10_mao_golden_path_"
+    },
+    "10.11": {
+      "proof_pattern": "^docs/proofs/10\\.11_acquisition_ui_"
     }
   }
 }

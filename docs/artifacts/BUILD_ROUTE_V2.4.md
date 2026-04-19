@@ -6744,7 +6744,7 @@ Acquisition UI shell and interaction design for seller-side deal work through `U
 - Deal list row renders:
   - health dot
   - address
-  - compact pricing line
+  - compact pricing line (ARV / Ask)
   - next-action / due line
   - stage chip
   - owner
@@ -6755,38 +6755,31 @@ Acquisition UI shell and interaction design for seller-side deal work through `U
   - owner
   - created date
   - Copy deal summary button
-  - Send to Dispo button in header area when current stage = `UC`
+  - Send to Dispo button — visible only when current stage = `UC`
 
 - Send to Dispo modal is **not** rendered inline in the page body
 - Modal appears only after clicking Send to Dispo
+- Modal includes:
+  - assignee dropdown (workspace members list)
+  - Confirm handoff button
+  - Cancel button
 
 - Next Action section renders:
-  - current next action
+  - current next action text
   - due date / time
-  - quick contact actions:
-    - Call
-    - Text
-    - Email
+  - quick contact actions: Call / Text / Email (native `tel:` / `sms:` / `mailto:` links)
 
-- Main detail sections render:
-  - Seller motivation
-  - Property condition
+- Main detail sections render in this order:
+  - Seller motivation (with Edit button)
+  - Property condition (with Edit button)
   - Pricing snapshot
   - Notes / Log
   - Follow-up reminders
   - Activity log
 
-- Remove from Acquisition UI:
-  - Zillow / Redfin / Realtor.com links
-  - close-angle block
-  - current objection / blocker block
+- Edit buttons open popup / modal — not inline edit mode
 
-- Seller motivation section includes Edit button
-- Property condition section includes Edit button
-
-- Edit buttons open popup / modal, not inline edit mode
-
-- Property condition edit popup may include full property details such as:
+- Property condition edit popup includes:
   - property type
   - beds / baths
   - sqft
@@ -6804,24 +6797,33 @@ Acquisition UI shell and interaction design for seller-side deal work through `U
   - Projected assignment fee
 
 - Notes / Log section includes:
-  - note history area
-  - add note input
+  - note history (mock entries in this item)
+  - add note textarea
   - Log call button
   - Add note button
 
 - Follow-up reminders section includes:
-  - reminder list
+  - reminder list (mock entries in this item)
   - Set reminder button
 
-- No generic status dropdown is shown in UI
-- UI shows only valid next-step action buttons for current stage
-- Example CTA states:
+- Activity log renders mock placeholder entries in this item
+  - Live `foundation_log_activity_v1` wiring is deferred to 10.11B
+
+- Stage-gated CTA buttons — only valid next-step action shown per stage:
   - New → Start analysis
   - Analyzing → Send offer
   - Offer Sent → Mark contract signed
-  - UC → Send to Dispo
+  - UC → Send to Dispo (in header)
 
-- Return to Acq button is **not** shown on Acquisition page
+- Mark dead is a universal action available on all active non-terminal stages
+  - Not available on Closed/Dead stage
+
+- Remove from Acquisition UI:
+  - Zillow / Redfin / Realtor.com links
+  - Close angle block
+  - Current objection / blocker block
+  - Generic status dropdown
+  - Return to Acq button
 
 - No direct table calls
 
