@@ -65,22 +65,55 @@ Supabase Auth session required. Tenant context resolved via `get_user_entitlemen
 **Note:** Notifications (🔔) is a shell-level drawer/component, not a standalone page.
 
 ---
-
 ## 3) Deal Stages (AUTHORITATIVE — IMMUTABLE)
 
-```
 New → Analyzing → Offer Sent → Under Contract (UC) → Dispo → TC → Closed / Dead
-```
 
 Rules:
-- TC is an active stage representing post-dispo transaction coordination before terminal outcome.
 - Closed and Dead are terminal states. Records become read-only.
-- Closed/Dead may be combined in UI for browsing convenience only. KPI aggregation, counts, conversion reporting, and terminal outcome analysis must treat Closed and Dead as separate outcomes.
 - FUP tiers (2 Weeks, One Month, 90 Days) are eliminated. Follow-up timing handled by reminder engine.
 - Stages track deal state. Reminders track nurture cadence. Clean separation.
-- Auto-advance: one-tap actions automatically transition stages (e.g. "Send offer" moves Analyzing → Offer Sent).
+- Auto-advance: one-tap actions automatically transition stages where applicable (for example, "Send offer" moves Analyzing → Offer Sent).
 - Valid transitions enforced server-side by `update_deal_v1`.
 
+### 3.1 Workflow Ownership + Handoff (AUTHORITATIVE)
+
+Stage and assignee are separate concepts.
+
+- `workflow_stage` tracks where the deal is in the lifecycle.
+- `assignee_user_id` tracks who currently owns the next work step.
+- Follow-up is not a stage. It is reminder-driven.
+- Notifications are user-targeted through assignee / recipient, not role-targeted.
+
+### 3.2 Handoff Rules (AUTHORITATIVE)
+
+**Acq → Dispo**
+- Available when deal is in `UC`
+- User clicks **Send to Dispo**
+- Small modal opens:
+  - assignee dropdown
+  - Confirm
+  - Cancel
+- On confirm:
+  - `workflow_stage = Dispo`
+  - `assignee_user_id = selected user`
+  - deal leaves Acquisition view
+  - assigned user receives notification
+
+**Dispo → TC**
+- Available only when both are true:
+  - `assignment_agreement_signed_at` is set
+  - `earnest_money_received_at` is set
+- User clicks **Send to TC**
+- Small modal opens:
+  - assignee dropdown
+  - Confirm
+  - Cancel
+- On confirm:
+  - `workflow_stage = TC`
+  - `assignee_user_id = selected user`
+  - deal leaves Dispo view
+  - assigned user receives notification
 ---
 
 ## 4) Public Surfaces
@@ -248,7 +281,7 @@ Pending invite resolution rules:
 | Dispo | Dispo dashboard | Purple | Share link management |
 | TC | Transaction coord. | Purple | /tc/:deal_id + checklist + contract upload |
 | Lead intake | Lead intake mgmt | Blue | Submissions, form links, embeds |
-| 🔔 | Notifications | Gray | Shell-level drawer/component only; not a standalone page. Shows reminders, submissions, buyer interest, and closing alerts. |
+| 🔔 | Notifications | Gray | Drawer/component only. Shows reminders, new intake submissions, buyer interest, closing alerts, and deal handoff notifications ("deal assigned to you"). |
 | Workspace ▾ | Account dropdown | Coral | Switch workspace, settings, profile, sign out |
 
 Mobile: navbar collapses to hamburger menu. Workspace dropdown remains accessible.
@@ -269,6 +302,23 @@ Single merged dropdown (no separate User menu). Contains:
 - Workspace settings (admin+ only)
 - Profile settings (all users)
 - Sign out
+
+### 6.4 Notifications Drawer Behavior
+
+Notifications are user-targeted, not broad role spam.
+
+Examples:
+- reminder due
+- new intake submission
+- buyer interest
+- closing alert
+- deal assigned to you
+
+Deal handoff notifications include:
+- address
+- from who
+- destination lane
+- click opens the correct page and deal
 
 ---
 
@@ -333,63 +383,76 @@ The page should help the user decide what to act on first and route them into th
 
 ## 8) Content Pages
 
-### 8.1 Acquisition (Full Pipeline)
+### 8.1 Acquisition
 
 **Purpose**
-Acquisition is where the team works active deals after intake.
-Lead Intake creates the intake record and may create or pre-fill a draft deal for address-based seller and birddog submissions. Acquisition qualifies the deal, analyzes it, follows up, negotiates it, sends the offer, and moves it forward or kills it. 
+Acquisition is the seller-side workbench. Acq works the deal until it is ready to be handed to Dispo.
 
-**What this page must help the user do**
+**Ownership rule**
+Acquisition view is ownership-scoped.
+It shows only deals still in the Acq working lane:
+- New
+- Analyzing
+- Offer Sent
+- UC
+- Follow-ups (derived reminder filter, not a stage)
 
-* understand seller pain / motivation
-* understand property condition
-* understand pricing
-* see what is blocking the yes
-* know the next action
-* move the deal to the correct next stage 
+Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 
-**Core UI**
+**What the page shows**
+- Top 3 KPIs:
+  - Contracts signed
+  - Lead-to-contract %
+  - Avg projected assignment fee
+- Filters:
+  - All
+  - New
+  - Analyzing
+  - Offer Sent
+  - UC
+  - Follow-ups
+- Farm area filter
+- Deal list with health dots
+- Click deal → `/acquisition/:deal_id` sub-route for detail/edit view
 
-* summary strip with compact Acq KPIs only
-* stage tabs: New | Analyzing | Offer Sent | UC | Dispo | TC | Closed/Dead
-* farm area filter
-* deal list with health dots
-* click a deal to open `/acquisition/:deal_id` 
+**Deal detail**
+- seller pain / motivation
+- property condition summary
+- pricing snapshot
+- close angle
+- current objection / blocker
+- next action + due time
+- quick contact actions near top:
+  - Call
+  - Text
+  - Email
+- one-click Zillow / Redfin / Realtor.com links
+- copy address icon
+- quick-copy deal summary button
+- reminders
+- notes
+- owner assignment
+- timestamps
+- activity log
+- Users do not manually choose from a generic status dropdown. The UI shows only valid next-step action buttons for the current stage.
 
-**Deal detail must prioritize**
 
-* seller pain / motivation
-* property condition summary
-* pricing snapshot
-* objection / blocker
-* next action + due time
-* reminders
-* notes
-* owner assignment
-* timestamps
-* activity log 
+**Actions**
+- In `Analyzing`, primary CTA is **Send offer → Offer Sent**
+- In `UC`, primary CTA is **Send to Dispo**
+- **Send to Dispo** opens a small modal:
+  - assignee dropdown
+  - Confirm
+  - Cancel
+- On confirm:
+  - stage moves to `Dispo`
+  - assignee is saved
+  - deal leaves Acquisition
+  - assigned user gets notification
 
-**Speed features**
-
-* one-click Zillow / Redfin / Realtor.com links from address
-* native `tel:` / `sms:` / `mailto:` links
-* copy address icon
-* quick-copy deal summary button 
-
-**Stage behavior**
-
-* “Send offer” auto-advances Analyzing → Offer Sent
-* stage transitions are enforced server-side by `update_deal_v1`
-* Dispo → TC occurs only when the assignment agreement is signed and deposit / earnest money / consideration is received
-* Dead is allowed from any active non-terminal stage and requires a dead reason
-* empty states exist per stage
-* data comes from `update_deal_v1` + `list_deals_v1` 
-
-**Primary KPIs (Top 3 only)**
-
-* Contracts Signed
-* Lead-to-Contract %
-* Avg Projected Assignment Fee / Projected Gross Profit
+**Data**
+- `update_deal_v1` + `list_deals_v1`
+- reminders from reminder engine
 
 ---
 
@@ -421,51 +484,49 @@ Its job is to generate and manage buyer-facing share links for specific deals.
 * Avg Assignment Fee
 
 ---
-
 ### 8.3 TC (Transaction Coordination)
 
 **Purpose**
-TC is the post-dispo transaction coordination page and active stage for one deal.
-It tracks the file from Dispo handoff to close. 
+TC owns the file after Dispo handoff and drives it to closing and cash in bank.
 
-**Route**
+**Ownership rule**
+TC operates on deals in `TC` stage only.
 
-* `/tc/:deal_id`
+**What the page shows**
+- Top 3 KPIs:
+  - Closings this week
+  - Closed assignment fee received
+  - At-risk closings
+- Route: `/tc/:deal_id`
+- progress % computed from checklist completion
+- days to close computed from closing_date
+- key dates:
+  - APS signed date
+  - conditional deadline
+  - closing date
+- closing checklist:
+  - APS signed
+  - deposit received
+  - sold firm
+  - docs to lawyer
+  - closing confirmed
+  - assignment fee received
+- contract upload: single PDF slot
+- actual assignment fee vs original desired profit delta
+- assignment fee, sell price, buyer info, notes
+- activity log
 
-**What this page does**
+**Entry into TC**
+A deal enters TC only through Dispo handoff:
+- assignment agreement signed
+- earnest money received
+- Send to TC confirmed
+- assignee selected
+- assigned user receives notification
 
-* shows progress % from checklist completion
-* shows days to close from `closing_date`
-* tracks key dates:
-
-  * APS signed date
-  * conditional deadline
-  * closing date
-* tracks closing checklist:
-
-  * APS signed
-  * deposit received
-  * sold firm
-  * docs to lawyer
-  * closing confirmed
-  * assignment fee received
-* allows one contract PDF upload
-* captures actual assignment fee on close
-* compares actual assignment fee to original MAO desired profit
-* shows sell price, buyer info, notes 
-
-**Rule**
-
-* when a deal enters TC, all non-TC workflow fields freeze; only TC-owned columns remain editable
-* when a deal is Closed or Dead, the deal and TC page become read-only
-* `update_deal_v1` rejects writes to terminal-stage deals 
-
-**Primary KPIs (Top 3 only)**
-
-* Closings This Week
-* Closed Assignment Fee Received
-* At-Risk Closings
-
+**Read-only rules**
+- all non-TC fields are effectively frozen once deal is in TC
+- when deal stage = Closed or Dead, entire deal record + TC data becomes read-only
 ---
 
 ### 8.4 Lead Intake (Management)
