@@ -6715,50 +6715,304 @@ Golden-path proof that the MAO calculator works end-to-end from WeWeb through ap
 **Gate:** `lane-only`
 
 ---
-
-### **10.11 — Acquisition Dashboard + Auto-Advance**
+### **10.11 — Acquisition Dashboard UI**
 
 **Deliverable:**
-Acquisition workbench for active deals after intake. This page qualifies the seller, analyzes the property, works follow-up, negotiates pricing, sends offers, and moves deals through the pipeline.
+Acquisition UI shell and interaction design for seller-side deal work through `UC`. UI only. No live backend dependency required in this item beyond safe placeholders/mock data.
 
 **DoD:**
 
-- Top KPI strip shows Acq top 3 only:
+- Top KPI strip renders 3 Acq KPI cards:
   - Contracts Signed
   - Lead-to-Contract %
   - Avg Projected Assignment Fee
-- Stage tabs match authoritative stages:
-  - New | Analyzing | Offer Sent | UC | Dispo | TC | Closed/Dead
-- Farm area filter (depends on 10.8.6 data, graceful fallback if no areas configured)
-- Deal list with health dots (red/yellow/green from 10.8.4)
-- Click deal → `/acquisition/:deal_id` sub-route for detail/edit view
-- Deal detail prioritizes:
-  - seller pain / motivation
-  - property condition summary
-  - pricing snapshot
-  - current objection / blocker
-  - next action + due time
-  - reminders
-  - notes
-  - owner assignment
-  - timestamps
-  - activity log
-- Deal detail includes one-click Zillow / Redfin / Realtor.com links auto-generated from address
-- All phone/email fields render as native `tel:` / `sms:` / `mailto:` links
-- Auto-advance: "Send offer" moves deal from Analyzing → Offer Sent automatically via `update_deal_v1`
-- Valid stage transitions enforced server-side by `update_deal_v1`
-- Cross-view transition toast when deal moves to a different primary operating view
-- Copy address icon next to every property address
-- Quick-copy deal summary button: copies 2-line teaser (address | ARV | ask)
-- Follow-up reminders visible in deal detail (from 10.8.3)
-- Empty states per stage
+
+- Acq filters render in this order:
+  - All
+  - New
+  - Analyzing
+  - Offer Sent
+  - Follow-ups
+  - UC
+
+- Filters are visually designed as Acq-owned queue filters, not company-wide pipeline tabs
+
+- Layout includes:
+  - left deal list
+  - right detail panel
+
+- Deal list row renders:
+  - health dot
+  - address
+  - compact pricing line
+  - next-action / due line
+  - stage chip
+  - owner
+
+- Detail header renders:
+  - address
+  - current stage
+  - owner
+  - created date
+  - Copy deal summary button
+  - Send to Dispo button in header area when current stage = `UC`
+
+- Send to Dispo modal is **not** rendered inline in the page body
+- Modal appears only after clicking Send to Dispo
+
+- Next Action section renders:
+  - current next action
+  - due date / time
+  - quick contact actions:
+    - Call
+    - Text
+    - Email
+
+- Main detail sections render:
+  - Seller motivation
+  - Property condition
+  - Pricing snapshot
+  - Notes / Log
+  - Follow-up reminders
+  - Activity log
+
+- Remove from Acquisition UI:
+  - Zillow / Redfin / Realtor.com links
+  - close-angle block
+  - current objection / blocker block
+
+- Seller motivation section includes Edit button
+- Property condition section includes Edit button
+
+- Edit buttons open popup / modal, not inline edit mode
+
+- Property condition edit popup may include full property details such as:
+  - property type
+  - beds / baths
+  - sqft
+  - lot size
+  - year built
+  - occupancy
+  - deficiency tags
+  - condition notes
+  - repair estimate
+
+- Pricing snapshot shows compact values only:
+  - ARV
+  - Ask
+  - MAO
+  - Projected assignment fee
+
+- Notes / Log section includes:
+  - note history area
+  - add note input
+  - Log call button
+  - Add note button
+
+- Follow-up reminders section includes:
+  - reminder list
+  - Set reminder button
+
+- No generic status dropdown is shown in UI
+- UI shows only valid next-step action buttons for current stage
+- Example CTA states:
+  - New → Start analysis
+  - Analyzing → Send offer
+  - Offer Sent → Mark contract signed
+  - UC → Send to Dispo
+
+- Return to Acq button is **not** shown on Acquisition page
+
 - No direct table calls
 
-**Proof:** `docs/proofs/10.11_acquisition_auto_advance_<UTC>.md`
+**Proof:** `docs/proofs/10.11_acquisition_ui_<UTC>.md`
 
 **Gate:** `lane-only`
 
-**Prerequisite:** 10.8, 10.8.4, 10.8.7A merged
+**Prerequisite:** 10.8 merged
+
+---
+
+### **10.11A — Acquisition Backend**
+
+**Deliverable:**
+Backend support for Acquisition list/detail data, seller/property editing, valid stage actions, handoff, reminders integration, notes/logging integration, and Mark Dead behavior.
+
+**DoD:**
+
+- Backend provides Acq KPI data for:
+  - Contracts Signed
+  - Lead-to-Contract %
+  - Avg Projected Assignment Fee
+
+- Backend provides Acq-owned deal counts / lists for filters:
+  - All
+  - New
+  - Analyzing
+  - Offer Sent
+  - Follow-ups
+  - UC
+
+- Acquisition dataset is ownership-scoped
+- Once a deal is sent to Dispo, it no longer appears in Acquisition dataset
+
+- Follow-ups is not a stage
+- Follow-ups is derived from reminder records and/or open due follow-up state
+- Notes do not auto-create follow-up state
+
+- Backend supports farm area filtering using existing farm area infrastructure
+- Backend provides full Acquisition deal detail payload
+
+- Seller info fetch + write supported, including at minimum:
+  - seller contact data
+  - seller pain / motivation fields
+  - seller timeline
+  - seller notes as applicable
+
+- Property info fetch + write supported, including at minimum:
+  - property type
+  - beds / baths
+  - sqft
+  - lot size
+  - year built
+  - occupancy
+  - deficiency tags
+  - condition notes
+  - repair estimate
+
+- Existing MAO / pricing backend is reused, not rebuilt in this item
+
+- Valid stage actions are server-enforced
+- No generic client-side freeform status mutation
+- Supported Acquisition stage actions at minimum:
+  - New → Start analysis
+  - Analyzing → Send offer
+  - Offer Sent → Mark contract signed
+  - UC → Send to Dispo
+  - Mark dead
+
+- Mark Dead behavior supported through governed backend path
+- Dead reason is required and logged
+
+- Acq → Dispo handoff supported:
+  - available only from `UC`
+  - accepts assignee
+  - on confirm:
+    - stage becomes `Dispo`
+    - assignee saved
+    - handoff logged
+    - recipient notification created
+
+- Reminder engine is reused, not rebuilt
+- Backend supports:
+  - fetch reminders for current deal
+  - create reminder
+  - complete reminder
+
+- Logging layer is reused, not rebuilt
+- Activity events recorded at minimum for:
+  - deal created
+  - stage changes
+  - offer sent
+  - contract signed
+  - note added
+  - reminder created
+  - handoff to Dispo
+  - marked dead
+  - seller info updated
+  - property info updated
+
+- No direct table calls from WeWeb
+- Contract-valid error responses enforced
+
+**Proof:** `docs/proofs/10.11A_acquisition_backend_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
+**Prerequisite:** 10.8.3, 10.8.4, 10.8.6, 10.9, 10.11A dependencies merged as applicable
+
+---
+
+### **10.11B — Acquisition Wiring**
+
+**Deliverable:**
+Live WeWeb wiring for the Acquisition page using governed backend only.
+
+**DoD:**
+
+- Acquisition UI is wired to live backend data
+- No mock KPI values remain
+- No mock deal list values remain
+- No mock detail values remain
+
+- KPI strip is wired to governed backend output
+- Filters are wired to live Acq-owned backend dataset:
+  - All
+  - New
+  - Analyzing
+  - Offer Sent
+  - Follow-ups
+  - UC
+
+- Farm area filter is wired to existing backend source
+- Deal selection loads live deal detail
+
+- Header actions are live-wired:
+  - Copy deal summary
+  - Send to Dispo when stage = `UC`
+
+- Send to Dispo click opens assignee modal
+- Confirm handoff calls governed backend only
+- On success:
+  - deal leaves Acquisition view
+  - UI refreshes correctly
+  - no stale row remains visible
+
+- Quick contact actions are live-wired:
+  - Call
+  - Text
+  - Email
+
+- Edit Seller motivation opens live edit popup
+- Save calls governed backend write path
+- UI refreshes seller data after save
+
+- Edit Property condition opens live edit popup
+- Save calls governed backend write path
+- UI refreshes property/pricing summary after save
+
+- Stage-specific CTA wiring is live:
+  - Start analysis
+  - Send offer
+  - Mark contract signed
+  - Send to Dispo
+  - Mark dead
+
+- No generic status dropdown exists
+- Only valid next-step buttons render for current stage
+
+- Notes / Log section is wired:
+  - Add note
+  - Log call
+  - note history refreshes after save
+
+- Follow-up reminders section is wired:
+  - list reminders
+  - set reminder
+  - complete reminder if supported in UI
+- Follow-ups filter behavior reflects live reminder state
+
+- Activity log renders governed backend activity history only
+- No fake frontend-generated activity history
+
+- No direct table calls
+- All data access via governed RPC / allowed backend interfaces only
+
+**Proof:** `docs/proofs/10.11B_acquisition_wiring_<UTC>.md`
+
+**Gate:** `lane-only`
+
+**Prerequisite:** 10.11 and 10.11A merged
 
 ---
 
@@ -6784,10 +7038,11 @@ Seller-ready copy from MAO results. Three output formats. Dynamic expiration cla
 **Prerequisite:** 10.9, 10.11 merged
 
 ---
-### **10.13 — Dispo Dashboard (Share Links Only)**
+
+### **10.13 — Dispo Dashboard (Share Links Only + Handoff Control)**
 
 **Deliverable:**
-Dispo operating surface for deals already in the Dispo stage. Share-link management only. No buyer CRM. No buyer-deal matching.
+Dispo operating surface for deals in `Dispo` stage, including share links, buyer interest, deposit tracking, and handoff to TC or back to Acq.
 
 **DoD:**
 
@@ -6795,27 +7050,29 @@ Dispo operating surface for deals already in the Dispo stage. Share-link managem
   - Deals Moved to TC
   - Deposit / Earnest Money / Consideration Collected
   - Avg Assignment Fee
-- Dashboard displays deals in Dispo stage only
-- Share link generation via `create_share_token_v1` — token lifecycle governed by Section 8
-- Share link status (active / revoked / expired) visible per deal
+- Dashboard shows deals in `Dispo` stage only
+- Share link generation via `create_share_token_v1`
+- Share link status visible per deal
 - Revocation via `revoke_share_token_v1`
-- Dispo → TC transition occurs only when:
-  - assignment agreement is signed
-  - and deposit / earnest money / consideration is received
-- Deposit / earnest money / consideration collection is owned by Dispo through the TC handoff point
-- Cross-view transition toast on stage transitions
-- Activity log per deal via `foundation_log_activity_v1`
-- NO buyer-deal matching
-- NO buyer CRM / Rolodex
-- Empty states handled
+- Buyer interest signals visible
+- No buyer-deal matching engine
+- No buyer CRM / Rolodex expansion
+- Primary handoff actions:
+  - **Send to TC**
+  - **Return to Acq**
+- `Send to TC` uses 10.11A handoff backend and is enabled only when:
+  - `assignment_agreement_signed_at` is set
+  - `earnest_money_received_at` is set
+- `Return to Acq` uses 10.11A handoff backend
+- Assigned recipient user gets notification on handoff
+- Activity log per deal
 - No direct table calls
 
 **Proof:** `docs/proofs/10.13_dispo_dashboard_<UTC>.md`
 
 **Gate:** `lane-only`
 
-**Prerequisite:** 10.11 merged
-
+**Prerequisite:** 10.11, 10.11A merged
 ---
 
 ### **10.14 — Save Deal + Reopen Deal (unchanged)**
@@ -6880,11 +7137,10 @@ Share link renders a buyer-ready packet and respects allowlist.
 
 **Prerequisite:** 10.15 merged
 
----
 ### **10.17 — TC + Checklist + Upload + Immutable Close**
 
 **Deliverable:**
-TC operating surface for deals in the TC stage. Post-dispo execution from signed assignment + deposit received through closing and cash in bank.
+TC operating surface for deals in `TC` stage, with checklist, upload, closing execution, and read-only enforcement.
 
 **DoD:**
 
@@ -6892,12 +7148,11 @@ TC operating surface for deals in the TC stage. Post-dispo execution from signed
   - Closings This Week
   - Closed Assignment Fee Received
   - At-Risk Closings
-- TC page exists at `/tc/:deal_id`
-- TC is the primary operating view for deals in the TC stage
-- Entry into TC occurs only when:
-  - assignment agreement is signed
-  - and deposit / earnest money / consideration is received
-- Progress % computed from checklist completion (count completed / total items)
+- TC page at `/tc/:deal_id`
+- TC operates on deals in `TC` stage only
+- Entry into TC occurs only through 10.11A handoff backend
+- Assigned TC user receives notification on handoff
+- Progress % computed from checklist completion
 - Days to close computed from closing_date
 - Key dates render:
   - APS signed date
@@ -6910,19 +7165,14 @@ TC operating surface for deals in the TC stage. Post-dispo execution from signed
   - docs to lawyer
   - closing confirmed
   - assignment fee received
-- Contract upload:
-  - single PDF slot (Supabase Storage via 10.8.7)
-  - one file per deal
-  - upload replaces previous
-- On Close:
-  - actual assignment fee input
-  - compare to original MAO desired profit
-  - display delta
-- Immutable close:
-  - when deal stage = Closed or Dead, entire deal record + TC data becomes read-only
-  - all non-TC fields are frozen once a deal enters TC
-  - only TC-owned fields remain editable while deal is in TC
-  - `update_deal_v1` rejects writes to terminal-stage deals
+- Contract upload: single PDF slot
+- Actual assignment fee input + delta vs desired profit
+- Secondary handoff action:
+  - **Return to Dispo**
+- `Return to Dispo` uses 10.11A handoff backend
+- Assigned recipient user gets notification on return
+- Non-TC work no longer appears in Acq / Dispo after handoff
+- Entire record becomes read-only when stage = Closed or Dead
 - Activity log per deal
 - No direct table calls
 
@@ -6930,9 +7180,10 @@ TC operating surface for deals in the TC stage. Post-dispo execution from signed
 
 **Gate:** `lane-only`
 
-**Prerequisite:** 10.11, 10.8.5, 10.8.7 merged
+**Prerequisite:** 10.11A, 10.8.5, 10.8.7 merged
 
 ---
+
 ### **10.18 — Intake Forms + Intake Operations**
 Section 10 intake surface split into explicit backend and UI items for seller, buyer, and birddog forms, plus internal Lead Intake operations.
 
@@ -7554,7 +7805,6 @@ Final WeWeb wiring verification for quick-copy deal summary and outbound context
 **Prerequisite:** 10.11 merged
 
 ---
-
 ### **10.31 — Notifications Drawer Data Contract + RPC**
 
 **Deliverable:**
@@ -7563,13 +7813,15 @@ Backend notification feed for the authenticated shell bell. Drawer only, not a s
 **DoD:**
 
 - RPC exists: `get_notifications_v1()` (or equivalent governed RPC)
-- Notification feed is tenant-scoped and authenticated-only
+- Notification feed is authenticated and user-targeted
+- Notification rows are filtered by recipient user
 - Notifications drawer is not a page and has no direct table access
 - RPC returns notification rows sourced from deterministic backend signals only:
   - overdue reminders
   - new intake submissions
   - buyer interest signals
-  - TC closing alerts / at-risk closing alerts
+  - TC / closing alerts
+  - deal handoff notifications
 - Each notification row includes at minimum:
   - notification_type
   - severity
@@ -7578,10 +7830,19 @@ Backend notification feed for the authenticated shell bell. Drawer only, not a s
   - created_at
   - route_target
   - route_label
+  - recipient_user_id
+- Deal handoff notifications support:
+  - Acq → Dispo
+  - Dispo → TC
+  - Dispo → Acq return
+  - TC → Dispo return
+- Handoff notification copy includes:
+  - deal address
+  - from who
+  - destination page
 - Notifications are sorted by urgency, then recency
 - Bell count derives from current actionable notifications only
 - No frontend-constructed notification logic
-- Optional unread / read state allowed only if explicitly persisted through governed backend
 - No direct table calls from WeWeb
 
 **Proof:** `docs/proofs/10.31_notifications_data_contract_<UTC>.log`
@@ -7599,22 +7860,24 @@ Authenticated shell notification bell opens a drawer wired to governed notificat
 
 - Bell in authenticated shell opens notifications drawer
 - Drawer reads from governed notification RPC only
+- User sees only notifications addressed to that user
 - Notification groups render cleanly for:
   - reminders
   - new submissions
   - buyer interest
   - closing alerts
+  - deal assigned to you
 - Rows show:
   - severity
   - title
   - context line
-  - relative / formatted timestamp
+  - timestamp
   - click-through action
-- Clicking a notification routes to the correct operating surface:
+- Clicking a notification routes to the correct page and deal:
   - Acquisition
-  - Lead Intake
   - Dispo
   - TC
+  - Lead Intake
   - Today
 - Empty state handled cleanly
 - Drawer is not a standalone page
@@ -7626,7 +7889,6 @@ Authenticated shell notification bell opens a drawer wired to governed notificat
 **Gate:** `lane-only`
 
 **Prerequisite:** 10.31 merged
-
 ---
 
 ## **11 — Release \+ Handoff Discipline**
