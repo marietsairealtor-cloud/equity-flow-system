@@ -8994,3 +8994,36 @@ Verification/proof-only closure. No new code.
 
 Status
 MERGED
+2026-04-19 — Build Route v2.4 — 10.11
+
+Objective
+Acquisition Dashboard UI shell — page, filters, deal list, deal detail, stage-gated CTAs, mock data only.
+
+Changes
+- Acquisition page built in WeWeb at /acquisition inside authenticated shell
+- KPI strip: Contracts Signed, Lead-to-Contract %, Avg Projected Assignment Fee (mock)
+- Acq queue filters: All, New, Analyzing, Offer Sent, Follow-ups, UC
+- Deal list rows: health dot, address, ARV/Ask, next-action line, stage chip, owner
+- Detail header: address, stage, owner, created date, Copy deal summary, Send to Dispo (UC only)
+- Send to Dispo opens modal only after click -- not rendered inline
+- Next Action box: action text, due date, Call/Text/Email quick contact
+- Seller motivation section with Edit button (opens popup)
+- Property condition section with Edit button (opens popup with full property details)
+- Pricing snapshot: ARV, Ask, MAO, Proj. assignment fee
+- Notes/Log: note history, textarea, Log call, Add note
+- Follow-up reminders: reminder list, Set reminder button
+- Activity log: mock placeholder entries only (live wiring deferred to 10.11B)
+- Stage-gated CTAs: UC shows Send to Dispo in header
+- Mark dead: universal for all active non-terminal stages
+- No generic status dropdown, no Return to Acq, no Zillow/Redfin/Realtor.com links
+- No direct table calls
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11_acquisition_ui_20260419T185721Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
