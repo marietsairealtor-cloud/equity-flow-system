@@ -62,16 +62,20 @@ Supabase Auth session required. Tenant context resolved via `get_user_entitlemen
 | — | Workspace settings | via Workspace ▾ dropdown | Authenticated | Admin+ (role-gated tabs) |
 | — | Error / 404 | catch-all | Universal | None |
 
+**Note:** Notifications (🔔) is a shell-level drawer/component, not a standalone page.
+
 ---
 
 ## 3) Deal Stages (AUTHORITATIVE — IMMUTABLE)
 
 ```
-New → Analyzing → Offer Sent → Under Contract (UC) → Dispo → Closed / Dead
+New → Analyzing → Offer Sent → Under Contract (UC) → Dispo → TC → Closed / Dead
 ```
 
 Rules:
+- TC is an active stage representing post-dispo transaction coordination before terminal outcome.
 - Closed and Dead are terminal states. Records become read-only.
+- Closed/Dead may be combined in UI for browsing convenience only. KPI aggregation, counts, conversion reporting, and terminal outcome analysis must treat Closed and Dead as separate outcomes.
 - FUP tiers (2 Weeks, One Month, 90 Days) are eliminated. Follow-up timing handled by reminder engine.
 - Stages track deal state. Reminders track nurture cadence. Clean separation.
 - Auto-advance: one-tap actions automatically transition stages (e.g. "Send offer" moves Analyzing → Offer Sent).
@@ -125,7 +129,7 @@ Rules:
 - Birddog form captures: property address, owner info, condition notes, asking price if known
 - Address autocomplete on all address fields (Google Places)
 - Invisible spam protection (Cloudflare Turnstile or reCAPTCHA v3)
-- Submissions pre-fill MAO draft for the deal (intake-to-MAO pipeline)
+- Address-based seller and birddog submissions may create or pre-fill MAO draft deals (intake-to-MAO pipeline); buyer submissions remain intake records only
 - One page component, dynamic rendering based on form type
 
 ### 4.3 Deal Viewer (Token-Gated) — Buyer-Ready Deal Packet
@@ -244,7 +248,7 @@ Pending invite resolution rules:
 | Dispo | Dispo dashboard | Purple | Share link management |
 | TC | Transaction coord. | Purple | /tc/:deal_id + checklist + contract upload |
 | Lead intake | Lead intake mgmt | Blue | Submissions, form links, embeds |
-| 🔔 | Notifications | Gray | Reminders + submissions + buyer interest |
+| 🔔 | Notifications | Gray | Shell-level drawer/component only; not a standalone page. Shows reminders, submissions, buyer interest, and closing alerts. |
 | Workspace ▾ | Account dropdown | Coral | Switch workspace, settings, profile, sign out |
 
 Mobile: navbar collapses to hamburger menu. Workspace dropdown remains accessible.
@@ -270,43 +274,60 @@ Single merged dropdown (no separate User menu). Contains:
 
 ## 7) Today View (Default Landing)
 
-User logs in and sees what needs attention now. Synthesized task list, not a pipeline to parse.
+**Purpose**
+Today is the executive overview and triage page. It shows what matters now, where deals are stuck, and what requires action today. It is not a full workflow page. Its job is to summarize the business and route the user into the correct working page with one click.
 
 ### 7.1 Layout
-- Compact summary strip: pipeline deal count, total value, new leads, closing this week
-- Task list: sorted by urgency
-- Pipeline snapshot: compact stage count pills (New: N, Analyzing: N, etc.)
 
-### 7.2 Task Sources (4 deterministic sources only)
-- Overdue follow-ups (from reminder engine)
-- Pending offers (Analyzing stage, MAO complete, no offer sent)
-- Closing deadlines (UC/Dispo approaching close date)
-- New intake submissions (pre-filled MAO drafts ready for analysis)
+* Compact summary strip with the top 3 business KPIs only:
 
-### 7.3 Deal Health Indicator
+  * Projected Fees
+  * Overdue Follow-Ups
+  * Closings This Week
+* Pipeline snapshot with clickable stage count pills:
 
-| Color | Meaning | Rule | Example |
-|---|---|---|---|
-| Red | Overdue | Activity gap > stage threshold | Offer sent 8 days ago, no response |
-| Yellow | Stale | Activity gap approaching threshold | Analyzing 5 days, threshold 7 |
-| Green | On track | Activity within expected cadence | UC deal, updated 2 days ago |
+  * New
+  * Analyzing
+  * Offer Sent
+  * UC
+  * Dispo
+  * TC
+* Needs Attention Now list:
 
-- Computed from `deals.updated_at` vs stage-specific thresholds
-- No new table — derived from existing deal data
-- Appears on Today view tasks AND Acquisition deal list
+  * sorted by urgency
+  * one row per deal/task
+  * one primary action per row
 
-### 7.4 One-Tap Actions + Auto-Advance
+### 7.2 Task Sources (deterministic only)
 
-| Task Type | Action Button | Advances Stage To | Behavior |
-|---|---|---|---|
-| Overdue follow-up | Follow up → | — | Native sms:/mailto: with pre-written copy |
-| Offer ready | Send offer → | Offer Sent | Offer generator pre-filled, auto-advance |
-| Closing deadline | Open TC → | — | Navigates to /tc/:deal_id |
-| New lead | Analyze → | — | MAO pre-filled from intake submission |
-| Buyer interest | View → | — | Deal detail with buyer notification context |
+* overdue Acq follow-ups
+* overdue Dispo follow-ups
+* pending offers
+* TC-stage closing deadlines / at-risk closings
+* new address-based intake submissions and internal lead-intake entries ready for analysis
+* buyer interest on dispo deals
 
-- Optimistic UI: task disappears instantly on action click, server processes in background
-- Auto-advance: "Send offer" moves deal from Analyzing → Offer Sent automatically. User never manually updates a dropdown.
+### 7.3 Each task row must show
+
+* address
+* current stage
+* owner
+* reason it is here
+* age or due time
+* one primary action button
+
+### 7.4 One-Tap Actions
+
+* Follow Up → opens Acquisition on that deal
+* Send Offer → opens Offer Generator / Acquisition and auto-advances when sent
+* Analyze → opens MAO / Acquisition with intake pre-fill
+* Open TC → opens `/tc/:deal_id`
+* View → opens Dispo or deal detail with buyer-interest context
+
+### 7.5 Design rule
+
+Today must prioritize exceptions and movement, not vanity metrics.
+The page should help the user decide what to act on first and route them into the correct page immediately.
 
 ---
 
@@ -314,71 +335,265 @@ User logs in and sees what needs attention now. Synthesized task list, not a pip
 
 ### 8.1 Acquisition (Full Pipeline)
 
-- Summary strip: deal count by stage, pipeline value, lead volume (via allowlisted RPCs)
-- Stage tabs: New | Analyzing | Offer Sent | UC | Dispo | Closed/Dead
-- Farm area filter
-- Deal list with health dots (red/yellow/green)
-- Click deal → /acquisition/:deal_id sub-route for detail/edit view
-- Deal detail: one-click Zillow/Redfin/Realtor.com links auto-generated from address
-- All phone/email fields: native `tel:` / `sms:` / `mailto:` links
-- Auto-advance: "Send offer" action moves deal Analyzing → Offer Sent automatically
-- Cross-view transition toast when deal moves to different view
-- Copy address icon next to every property address
-- Quick-copy deal summary button (2-line teaser: address | ARV | ask)
-- Follow-up reminders visible in deal detail
-- Owner assignment, notes, timestamps per deal
-- Activity log per deal via `foundation_log_activity_v1`
-- Empty states per stage
-- Data: `update_deal_v1` + `list_deals_v1` (CONTRACTS §5, §17)
+**Purpose**
+Acquisition is where the team works active deals after intake.
+Lead Intake creates the intake record and may create or pre-fill a draft deal for address-based seller and birddog submissions. Acquisition qualifies the deal, analyzes it, follows up, negotiates it, sends the offer, and moves it forward or kills it. 
+
+**What this page must help the user do**
+
+* understand seller pain / motivation
+* understand property condition
+* understand pricing
+* see what is blocking the yes
+* know the next action
+* move the deal to the correct next stage 
+
+**Core UI**
+
+* summary strip with compact Acq KPIs only
+* stage tabs: New | Analyzing | Offer Sent | UC | Dispo | TC | Closed/Dead
+* farm area filter
+* deal list with health dots
+* click a deal to open `/acquisition/:deal_id` 
+
+**Deal detail must prioritize**
+
+* seller pain / motivation
+* property condition summary
+* pricing snapshot
+* objection / blocker
+* next action + due time
+* reminders
+* notes
+* owner assignment
+* timestamps
+* activity log 
+
+**Speed features**
+
+* one-click Zillow / Redfin / Realtor.com links from address
+* native `tel:` / `sms:` / `mailto:` links
+* copy address icon
+* quick-copy deal summary button 
+
+**Stage behavior**
+
+* “Send offer” auto-advances Analyzing → Offer Sent
+* stage transitions are enforced server-side by `update_deal_v1`
+* Dispo → TC occurs only when the assignment agreement is signed and deposit / earnest money / consideration is received
+* Dead is allowed from any active non-terminal stage and requires a dead reason
+* empty states exist per stage
+* data comes from `update_deal_v1` + `list_deals_v1` 
+
+**Primary KPIs (Top 3 only)**
+
+* Contracts Signed
+* Lead-to-Contract %
+* Avg Projected Assignment Fee / Projected Gross Profit
+
+---
 
 ### 8.2 Dispo Dashboard (Share Links Only)
 
-- Displays deals in Dispo stage only
-- Share link generation via `create_share_token_v1`
-- Share link status (active / revoked / expired) visible per deal
-- Revocation via `revoke_share_token_v1`
-- Cross-view transition toast on stage transitions
-- Activity log per deal
-- NO buyer-deal matching (boundary line: no buyer CRM/Rolodex)
+**Purpose**
+Dispo is for deals already in the Dispo stage.
+Its job is to generate and manage buyer-facing share links for specific deals. 
+
+**What this page does**
+
+* shows deals in Dispo stage only
+* creates share links via `create_share_token_v1`
+* shows link status: active / revoked / expired
+* revokes links via `revoke_share_token_v1`
+* shows activity log per deal
+* shows cross-view transition toast on stage changes 
+
+**Boundary**
+
+* no buyer CRM
+* no buyer-deal matching
+* no Rolodex 
+
+**Primary KPIs (Top 3 only)**
+
+* Deals Moved to TC
+* Deposit / Earnest Money / Consideration Collected
+* Avg Assignment Fee
+
+---
 
 ### 8.3 TC (Transaction Coordination)
 
-- Route: /tc/:deal_id
-- Progress % computed from checklist completion
-- Days to close computed from closing_date
-- Key dates: APS signed date, conditional deadline, closing date
-- Closing checklist: APS signed, deposit received, sold firm, docs to lawyer, closing confirmed, assignment fee received
-- Contract upload: single PDF slot (Supabase Storage). One file per deal. Not a document management system.
-- On Close: "Actual assignment fee" input — compared to original MAO "desired profit" to show delta
-- Immutable close: when deal stage = Closed or Dead, entire deal record + TC data becomes READ-ONLY. `update_deal_v1` rejects writes to terminal-stage deals.
-- Assignment fee, sell price, buyer info section, notes
+**Purpose**
+TC is the post-dispo transaction coordination page and active stage for one deal.
+It tracks the file from Dispo handoff to close. 
+
+**Route**
+
+* `/tc/:deal_id`
+
+**What this page does**
+
+* shows progress % from checklist completion
+* shows days to close from `closing_date`
+* tracks key dates:
+
+  * APS signed date
+  * conditional deadline
+  * closing date
+* tracks closing checklist:
+
+  * APS signed
+  * deposit received
+  * sold firm
+  * docs to lawyer
+  * closing confirmed
+  * assignment fee received
+* allows one contract PDF upload
+* captures actual assignment fee on close
+* compares actual assignment fee to original MAO desired profit
+* shows sell price, buyer info, notes 
+
+**Rule**
+
+* when a deal enters TC, all non-TC workflow fields freeze; only TC-owned columns remain editable
+* when a deal is Closed or Dead, the deal and TC page become read-only
+* `update_deal_v1` rejects writes to terminal-stage deals 
+
+**Primary KPIs (Top 3 only)**
+
+* Closings This Week
+* Closed Assignment Fee Received
+* At-Risk Closings
+
+---
 
 ### 8.4 Lead Intake (Management)
 
-- Authenticated management view at /lead-intake
-- View submissions from public intake forms
-- Copy form links per type (buyer, seller, birddog)
-- Generate embed code for website integration
-- Toggle form types on/off
-- Empty state: when zero submissions, show prominent "Copy Seller Form Link" CTA button
-- Separate from Acquisition — different user moment, different nav tab
+**Purpose**
+Lead Intake is the authenticated intake-management page.
+It is the inbox and control center for public intake forms and submissions. 
+
+**This page is separate from Acquisition because**
+
+* Lead Intake is for receiving and managing incoming leads
+* Acquisition is for working those leads through the pipeline 
+
+**What this page does**
+
+* shows submissions from public intake forms
+* supports internal lead-intake entry for address-based leads
+* copies form links for buyer / seller / birddog
+* generates website embed code
+* toggles form types on or off
+* shows strong empty state CTA when there are no submissions:
+
+  * “Copy Seller Form Link” 
+
+**Route**
+
+* `/lead-intake`
+
+**Primary KPIs (Top 3 only)**
+
+* New Leads
+* Unreviewed Submissions
+* Submission-to-Deal %
+
+---
 
 ### 8.5 Offer Generator
 
-Component on MAO calculator page (authenticated context only). Not a separate page.
-- Offer copy generated from MAO inputs + calc_version + multiplier
-- Three output formats: Copy text | Copy email | Download PDF
-- Dynamic 48-hour expiration clause auto-injected into all copy formats
-- "Send offer" triggers Analyzing → Offer Sent stage transition via `update_deal_v1`
-- Follow-up reminder auto-created on offer send (via reminder engine)
+**Purpose**
+The Offer Generator turns MAO-approved numbers into seller-ready offer copy.
+It lives on the MAO calculator page in authenticated context. It is not a separate page. 
+
+**What it does**
+
+* generates offer copy from MAO inputs + `calc_version` + multiplier
+* supports:
+
+  * Copy text
+  * Copy email
+  * Download PDF
+* injects dynamic 48-hour expiration clause into all outputs
+* “Send offer” triggers Analyzing → Offer Sent via `update_deal_v1`
+* auto-creates follow-up reminder on offer send 
+
+**Reporting note**
+
+* Offer Generator metrics roll up under Acquisition KPIs.
+* Offer Generator does not create separate department KPI ownership.
+
+---
 
 ### 8.6 Intake-to-MAO Pre-fill
 
-When a seller submits via the intake form with asking_price and/or repair_estimate:
-- Values stored on draft deal record (created by `submit_form_v1`)
-- Today view "Analyze →" opens MAO calculator with fields pre-filled from draft
-- ARV defaults from asking_price (user can adjust), repairs default from self-reported estimate
-- No re-entry, no loss of context
+**Purpose**
+Intake-to-MAO pre-fill removes duplicate entry between seller submission and first analysis. 
+
+**What it does**
+When a seller submits a form with `asking_price` and/or `repair_estimate`:
+
+* `submit_form_v1` stores those values on the draft deal
+* Today view “Analyze →” opens MAO with those values pre-filled
+* ARV defaults from asking price and can be adjusted
+* repairs default from self-reported estimate
+* no re-entry
+* no context loss 
+
+**Reporting note**
+
+* Intake-to-MAO pre-fill is a pipeline behavior, not a standalone department KPI surface.
+* Related operational metrics may roll up under Lead Intake and Acquisition reporting.
+
+Two notes so you don’t accidentally build nonsense:
+
+* **Lead Intake KPIs are intake KPIs, not full marketing KPIs.** Marketing spend, cost per lead, and cost per contract belong in a separate marketing / finance reporting layer, not this page.
+* **Dispo and TC split money ownership by phase.** Dispo owns deposit / earnest money / consideration collection before TC handoff. TC owns closing execution and closed money in bank.
+
+### 8.7 KPI Definitions (AUTHORITATIVE)
+
+Use these definitions unless a governance PR changes them.
+
+**Default reporting windows**
+- **Today page KPIs:** real-time / current-state values
+- **Department page KPIs:** month-to-date values unless explicitly overridden by a reporting filter
+
+- **Projected Fees:** Sum of the authoritative projected assignment fee field for all active deals in stages New through TC. Blank values count as 0. Excludes Closed and Dead.
+- **Overdue Follow-Ups:** Count of open Acq- or Dispo-owned reminder tasks whose due time has passed and whose deals are still active. Excludes TC closing deadlines and checklist items.
+- **Closings This Week:** Count of deals in TC with `closing_date` within the tenant-local current calendar week and not yet Closed or Dead.
+- **New Leads:** Count of new intake submissions / internal lead-intake entries created during the selected reporting period.
+- **Unreviewed Submissions:** Count of intake submissions / internal lead-intake entries not yet marked reviewed by a user.
+- **Submission-to-Deal %:** Distinct property addresses from address-based intake sources that became deals ÷ distinct property addresses submitted through address-based intake sources during the selected reporting period. One property address counts once even if submitted multiple times. Buyer submissions are excluded because they are not property-address based in the current form design.
+- **Address dedup rule:** Address-based intake records are deduplicated by the system-normalized property address key. Street abbreviations and formatting variants collapse to the same address; distinct unit numbers count as distinct addresses; missing unit numbers do not merge with known unit-specific records unless governance changes the matching rule.
+- **Contracts Signed:** Count of deals with contract signed date recorded during the selected reporting period.
+- **Leads Worked:** Count of deals with at least one logged Acquisition activity during the selected reporting period.
+- **Lead-to-Contract %:** Contracts Signed ÷ Leads Worked.
+- **Avg Projected Assignment Fee / Projected Gross Profit:** Average projected assignment fee on deals that reached contract signed / UC during the selected reporting period.
+- **Deals Moved to TC:** Count of deals transitioned from Dispo to TC during the selected reporting period. A deal enters TC only when the assignment agreement is signed and deposit / earnest money / consideration is received.
+- **Deposit / Earnest Money / Consideration Collected:** Total deposit / earnest money / consideration amount recorded as received before TC handoff during the selected reporting period on Dispo-owned deals. Deposit collection is fully owned by Dispo because deposit must be received before the deal can move to TC.
+- **Avg Assignment Fee (Dispo):** Average assignment fee on deals moved from Dispo to TC during the selected reporting period.
+- **Closed Assignment Fee Received:** Total assignment fee amount recorded as received on deals marked Closed during the selected reporting period.
+- **At-Risk Closings:** Count of TC-stage deals with closing date within 7 days and missing required checklist items, overdue checklist items, or passed closing date without being marked Closed.
+- **Dead reason required:** A deal may move to Dead from any active non-terminal stage only if a dead reason is recorded. Standard reasons: house sold, seller requested no contact, seller withdrew, duplicate, invalid lead, other.
+
+### 8.8 Movement Definition (AUTHORITATIVE)
+
+A deal is considered “moved” only when a user action materially advances seller qualification, pricing certainty, offer status, contract status, buyer exposure, deposit status, or closing progress. Busywork does not count as movement.
+
+Examples of movement:
+- seller pain captured
+- property condition clarified
+- MAO confirmed
+- offer sent
+- contract signed
+- deal moved to Dispo
+- deposit / earnest money / consideration received
+- deal moved to TC
+- closing checklist milestone completed
+- deal closed
+- deal marked Dead with reason
 
 ---
 
@@ -663,7 +878,7 @@ Aligned with CONTRACTS
 Aligned with GUARDRAILS
 Three access tiers defined
 Page inventory authoritative (10 + 2 settings + 1 error)
-Deal stages authoritative (6 stages, terminal immutable)
+Deal stages authoritative (7 stages including TC, terminal immutable)
 Micro-friction features locked (12 + 7 technical)
 Boundary lines locked (21 items)
 Contract alignment documented
