@@ -585,6 +585,9 @@
     },
     "10.11A": {
       "proof_pattern": "^docs/proofs/10\\.11A_acquisition_backend_"
+    },
+    "10.11A1": {
+      "proof_pattern": "^docs/proofs/10\\.11A1_deal_notes_activity_log_"
     }
   }
 }

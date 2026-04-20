@@ -11,6 +11,7 @@
     "public.complete_reminder_v1",
     "public.confirm_trial_v1",
     "public.create_active_workspace_seed_v1",
+    "public.create_deal_note_v1",
     "public.create_deal_v1",
     "public.create_farm_area_v1",
     "public.create_reminder_v1",
@@ -30,7 +31,9 @@
     "public.invite_workspace_member_v1",
     "public.list_acq_deals_v1",
     "public.list_archived_workspaces_v1",
+    "public.list_deal_activity_v1",
     "public.list_deal_media_v1",
+    "public.list_deal_notes_v1",
     "public.list_deals_v1",
     "public.list_farm_areas_v1",
     "public.list_pending_invites_v1",
@@ -81,5 +84,8 @@
     "public.trigger_seat_sync",
     "public.update_display_name_v1",
     "public.upsert_subscription_v1"
-  ]
+  ],
+  "create_deal_note_v1": { "anon_callable": false },
+  "list_deal_notes_v1": { "anon_callable": false },
+  "list_deal_activity_v1": { "anon_callable": false }
 }

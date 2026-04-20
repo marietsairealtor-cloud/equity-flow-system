@@ -295,6 +295,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_deal_media_v1 | 10.11A | List registered deal photo metadata for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | register_deal_media_v1 | 10.11A | Register storage_path after client upload to deal-photos bucket | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_storage_path + p_sort_order |
 | delete_deal_media_v1 | 10.11A | Delete deal_media row; returns storage_path for Edge cleanup | SECURITY DEFINER, min role: member | current_tenant_id() — p_media_id only |
+| create_deal_note_v1 | 10.11A1 | Append user note or call log on `deal_notes` for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_note_type + p_content |
+| list_deal_notes_v1 | 10.11A1 | List notes/call logs for a deal (newest first) | SECURITY DEFINER, STABLE, min role: member | current_tenant_id() — p_deal_id only |
+| list_deal_activity_v1 | 10.11A1 | List `deal_activity_log` rows for a deal (newest first) | SECURITY DEFINER, STABLE, min role: member | current_tenant_id() — p_deal_id only |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
@@ -373,6 +376,7 @@ Checks: tenant context exists, caller is a member, subscription exists, subscrip
 - `update_property_info_v1`
 - `register_deal_media_v1`
 - `delete_deal_media_v1`
+- `create_deal_note_v1`
 
 ### Inline subscription check (slug-based resolution)
 
@@ -1243,7 +1247,7 @@ Standard envelope with `data` including at least: `id`, `tenant_id`, `assumption
 
 ## 55) Acquisition backend — deals schema, stages, and RPCs (10.11A)
 
-**Authority:** migrations `20260419000001`–`20260419000005` (extend `public.deals`, `deal_properties`, `deal_media`, stage normalization, SECURITY DEFINER RPCs).
+**Authority:** migrations `20260419000001`–`20260419000005` (extend `public.deals`, `deal_properties`, `deal_media`, stage normalization, SECURITY DEFINER RPCs). Deal notes and activity log tables/RPCs: **10.11A1** — migration `20260420000001_10_11A1_deal_notes_activity_log.sql` (see §56).
 
 ### Canonical deal stages
 
@@ -1261,6 +1265,8 @@ In addition to existing columns, Acquisition uses: `created_at`, `address`, `ass
 
 - **`public.deal_properties`** — one row per deal (`UNIQUE(deal_id)`), property-condition fields (beds, baths, deficiency tags, repair_estimate on the property record, etc.). RLS: `tenant_id = current_tenant_id()`. No direct table grants; reads/writes go through RPCs.
 - **`public.deal_media`** — photo metadata (`storage_path`, `sort_order`, `uploaded_by`, …) keyed to `deal_id`. RLS: `tenant_id = current_tenant_id()`. Storage objects live in the existing deal-photos bucket per §31 path contract; `register_deal_media_v1` / `delete_deal_media_v1` govern metadata.
+- **`public.deal_notes`** — user-authored notes and call logs per deal (`note_type` ∈ `note`, `call_log`). RLS: `tenant_id = current_tenant_id()`. Append-only write path via `create_deal_note_v1`; no edit/delete RPC. See §56.
+- **`public.deal_activity_log`** — system and workflow activity rows for a deal (timeline). RLS: `tenant_id = current_tenant_id()`. Inserts are server-side from DEFINER RPCs (e.g. stage changes); clients read via `list_deal_activity_v1`. See §56.
 
 ### RPC surface (narrative)
 
@@ -1278,5 +1284,31 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. |
 | `return_to_acq_v1` / `return_to_dispo_v1` | Reverse handoffs (`dispo`→`under_contract`, `tc`→`dispo`). |
 | `list_deal_media_v1` / `register_deal_media_v1` / `delete_deal_media_v1` | Deal photo metadata lifecycle. |
+| `create_deal_note_v1` / `list_deal_notes_v1` / `list_deal_activity_v1` | User notes/call logs and read-only deal activity timeline (10.11A1 — §56). |
 
-**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A**.
+**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56).
+
+---
+
+## 56) Acquisition deal notes and activity log (10.11A1)
+
+**Authority:** migration `20260420000001_10_11A1_deal_notes_activity_log.sql`.
+
+**Stream separation:** User-visible notes and call logs are stored only in **`deal_notes`**. Automated/system events (for example stage transitions logged by other RPCs) are stored only in **`deal_activity_log`**. Both tables use standard tenant RLS; `anon`/`authenticated` have no direct table privileges — use the RPCs below.
+
+### Tables (summary)
+
+| Table | Role |
+|-----|------|
+| `deal_notes` | `note_type` check: `note` \| `call_log`; `content` text; `created_by` required; `updated_at` maintained. Append-only from the product surface (no row edit RPC). |
+| `deal_activity_log` | `activity_type`, `content`, optional `created_by`; append-only audit stream per deal. |
+
+### RPCs
+
+**§RPC `create_deal_note_v1(p_deal_id uuid, p_note_type text, p_content text)`** — SECURITY DEFINER. Inserts one row into `deal_notes` for the deal resolved in the current tenant. Calls `check_workspace_write_allowed_v1()` before write (§17A). Missing tenant/user JWT context → `NOT_AUTHORIZED`. Workspace not writable → `WORKSPACE_NOT_WRITABLE`. Null `p_deal_id`, invalid `p_note_type`, or blank `p_content` → `VALIDATION_ERROR`. Deal missing or not in tenant → `NOT_FOUND`. Success envelope: `data.note_id`.
+
+**§RPC `list_deal_notes_v1(p_deal_id uuid)`** — SECURITY DEFINER, **STABLE**. Returns `data.notes` (JSON array, newest first) with note fields and `created_by_name` (from `user_profiles.display_name`, empty string if absent). Deal guards match `create_deal_note_v1` (`NOT_AUTHORIZED`, `VALIDATION_ERROR`, `NOT_FOUND`).
+
+**§RPC `list_deal_activity_v1(p_deal_id uuid)`** — SECURITY DEFINER, **STABLE**. Returns `data.activity` (JSON array, newest first) from `deal_activity_log` with activity fields and `created_by_name`. Same deal validation and error set as `list_deal_notes_v1`.
+
+**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A1**.
