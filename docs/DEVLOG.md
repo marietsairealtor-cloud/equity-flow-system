@@ -9069,3 +9069,35 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-20 — Build Route v2.4 — 10.11A1
+
+Objective
+Acquisition Backend - Notes/Log Write Path and Activity Log Read Path
+
+Changes
+- Migration 20260420000001_10_11A1_deal_notes_activity_log.sql applied
+- New table: deal_notes (tenant-scoped, RLS, append-only, note_type IN (note, call_log))
+- New table: deal_activity_log (tenant-scoped, RLS, system event stream)
+- New RPC: create_deal_note_v1(p_deal_id, p_note_type, p_content)
+    SECURITY DEFINER, authenticated only, write lock enforced
+    writes to deal_notes only
+- New RPC: list_deal_notes_v1(p_deal_id)
+    STABLE SECURITY DEFINER, authenticated only
+    returns data.notes newest first with created_by_name
+- New RPC: list_deal_activity_v1(p_deal_id)
+    STABLE SECURITY DEFINER, authenticated only
+    returns data.activity newest first with created_by_name
+- Retrofit: mark_deal_dead_v1 extended to write marked_dead row to deal_activity_log
+- Stream separation enforced: user notes -> deal_notes only, system events -> deal_activity_log only
+- CONTRACTS.md sections 17, 17A, 55, 56 updated
+- rpc_contract_registry.json, execute_allowlist.json, definer_allowlist.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A1_deal_notes_activity_log_20260420T170729Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
