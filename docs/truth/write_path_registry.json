@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-19T19:06:52Z",
+    "generated":  "2026-04-20T00:36:45Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -20,6 +20,15 @@
                                            "tenant_invites",
                                            "tenant_memberships",
                                            "user_profiles"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "advance_deal_stage_v1",
+                            "tables":  [
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -123,9 +132,36 @@
                         },
                         {
                             "path_type":  "rpc",
+                            "name":  "handoff_to_dispo_v1",
+                            "tables":  [
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "handoff_to_tc_v1",
+                            "tables":  [
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
                             "name":  "invite_workspace_member_v1",
                             "tables":  [
                                            "tenant_invites"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "mark_deal_dead_v1",
+                            "tables":  [
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -141,9 +177,36 @@
                         },
                         {
                             "path_type":  "rpc",
+                            "name":  "register_deal_media_v1",
+                            "tables":  [
+                                           "deal_media"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
                             "name":  "restore_workspace_v1",
                             "tables":  [
                                            "tenants"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "return_to_acq_v1",
+                            "tables":  [
+                                           "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "return_to_dispo_v1",
+                            "tables":  [
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -207,6 +270,24 @@
                             "name":  "update_member_role_v1",
                             "tables":  [
                                            "tenant_memberships"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_property_info_v1",
+                            "tables":  [
+                                           "deal_properties"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_seller_info_v1",
+                            "tables":  [
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
