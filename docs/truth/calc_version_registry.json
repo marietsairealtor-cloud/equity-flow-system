@@ -1,5 +1,5 @@
 {
-  "version": 17,
+  "version": 18,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -62,14 +62,21 @@
       "authority": "QA ruling 2026-04-13",
       "introduced_pr": "10.8.11N",
       "released_at": "2026-04-13"
-    }
-    ,{
+    },
+    {
       "calc_version": 1,
       "migration": "20260418000001_10_9_mao_calculator.sql",
       "description": "10.9: create_deal_v1 revised to compute MAO server-side from p_assumptions inputs (arv, repair_estimate, desired_profit, multiplier). calc_version=1 preserved as authoritative DB version. assumptions.calc_version='mao_v1' added as descriptive formula label inside jsonb blob. No new calc_version integer introduced -- MAO formula is the first real calc logic registered under version 1.",
       "authority": "QA ruling 2026-04-18",
       "introduced_pr": "10.9",
       "released_at": "2026-04-18"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.11A stage normalization and acq RPCs",
+      "description": "10.11A: migrations 20260419000004 and 20260419000005 reference calc_version incidentally. Migration 4 corrects stage values in update_deal_v1; migration 5 reads calc_version in get_acq_deal_v1 for pricing payload. No calc logic changed.",
+      "introduced_pr": "feature/10.11A-acquisition-backend",
+      "released_at": "2026-04-19"
     }
   ],
   "watch_surface": {
