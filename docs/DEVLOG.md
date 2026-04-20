@@ -9027,3 +9027,45 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-04-20 — Build Route v2.4 — 10.11A
+
+Objective
+Acquisition backend — full RPC surface for deal list/detail, seller/property editing,
+stage transitions, handoff, media, and mark dead.
+
+Changes
+- Migration 1: extended deals table — canonical snake_case stage constraint, seller
+  info columns, assignee_user_id, next_action, dead_reason, created_at
+- Migration 2: deal_properties table — full V1 property condition schema including
+  repair cost drivers (roof_age, furnace_age, ac_age, foundation_type, etc.)
+- Migration 3: deal_media metadata table — Supabase Storage photo tracking,
+  UNIQUE(storage_path), server-side deletion path
+- Migration 4: corrective — normalized get_deal_health_color and update_deal_v1
+  to snake_case stages, replaced DEAL_IMMUTABLE with CONFLICT
+- Migration 5: 14 RPCs — get_acq_kpis_v1, list_acq_deals_v1, get_acq_deal_v1,
+  update_seller_info_v1, update_property_info_v1, advance_deal_stage_v1,
+  mark_deal_dead_v1, handoff_to_dispo_v1, handoff_to_tc_v1, return_to_acq_v1,
+  return_to_dispo_v1, list_deal_media_v1, register_deal_media_v1,
+  delete_deal_media_v1
+- All RPCs: SECURITY DEFINER, fixed search_path, REVOKE ALL + GRANT authenticated,
+  tenant from current_tenant_id(), write-lock enforced on all mutators
+- Stage transitions server-enforced — no freeform status mutation
+- mark_deal_dead_v1: dead_reason required, blocked on closed/dead
+- handoff_to_dispo_v1: UC only, validates assignee is workspace member
+- register_deal_media_v1: catches unique_violation, returns CONFLICT envelope
+- delete_deal_media_v1: returns storage_path for server-side Edge Function deletion
+- Updated existing tests 10_8_4, 10_8_5, 10_8_6 to use canonical stage values
+- 47 pgTAP tests: full lifecycle, tenant isolation, concurrency, immutability,
+  duplicate media, assignee persistence — all under SET LOCAL ROLE authenticated
+- definer_allowlist, execute_allowlist, privilege_truth, rpc_contract_registry,
+  expected_surface, tenant_table_selector, CONTRACTS.md §17/§17A/§55,
+  ci_write_lock_coverage, calc_version_registry all updated
+
+Proof
+docs/proofs/10.11A_acquisition_backend_20260420T005207Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
