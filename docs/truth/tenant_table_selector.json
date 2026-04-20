@@ -2,8 +2,10 @@
   "tenant_owned_tables": [
     "activity_log",
     "calc_versions",
+    "deal_activity_log",
     "deal_inputs",
     "deal_media",
+    "deal_notes",
     "deal_outputs",
     "deal_properties",
     "deal_reminders",

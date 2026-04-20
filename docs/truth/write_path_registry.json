@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-20T00:40:56Z",
+    "generated":  "2026-04-20T16:45:35Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -68,6 +68,15 @@
                                            "tenant_subscriptions",
                                            "tenants",
                                            "user_profiles"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_deal_note_v1",
+                            "tables":  [
+                                           "deal_notes"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -161,6 +170,7 @@
                             "path_type":  "rpc",
                             "name":  "mark_deal_dead_v1",
                             "tables":  [
+                                           "deal_activity_log",
                                            "deals"
                                        ],
                             "row_version_enforced":  false,

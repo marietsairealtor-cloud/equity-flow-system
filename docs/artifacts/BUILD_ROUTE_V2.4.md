@@ -6946,55 +6946,54 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ---
 
-### **10.11A1 — Acquisition Backend - Notes/Log Write Path and Activity Log Read Path**
+### **10.11A1 - Acquisition Backend - Notes/Log Write Path and Activity Log Read Path**
 
-**Deliverable:**
-Backend support for writing user-authored notes and call logs related to deals and reading system-generated activity logs for deals.
+**DoD**
 
-**DoD:**
+1. **Create `deal_notes` table**
 
-* **Notes/Log Write Path**:
+   * Columns: `id`, `tenant_id`, `deal_id`, `note_type`, `content`, `created_at`, `updated_at`, `created_by`
+   * RLS policies for tenant-scoped access
+   * `note_type` allowed values: `note`, `call_log`
 
-  * Backend supports the creation of user-authored notes and call logs for deals:
+2. **Create `deal_activity_log` table**
 
-    * `create_deal_note_v1(p_deal_id, p_note_type, p_content)` — write user notes or call logs.
-    * `list_deal_notes_v1(p_deal_id)` — fetches user notes and call logs for a specific deal.
-    * Notes and call logs are stored in a new `deal_notes` table, tenant-scoped.
+   * Columns: `id`, `tenant_id`, `deal_id`, `activity_type`, `content`, `created_at`, `created_by`
+   * RLS policies for tenant-scoped access
 
-* **Activity Log Read Path**:
+3. **Implement RPCs**
 
-  * Backend supports reading system-generated activity logs:
+   * **`create_deal_note_v1(p_deal_id, p_note_type, p_content)`** — add user notes or call logs to `deal_notes`
+   * **`list_deal_notes_v1(p_deal_id)`** — return notes and call logs for a deal
+   * **`list_deal_activity_v1(p_deal_id)`** — return system-generated activity logs for a deal from `deal_activity_log`
 
-    * `list_deal_activity_v1(p_deal_id)` — returns system-generated logs for a specific deal.
-    * Activity logs are fetched from the `foundation_log_activity_v1` table, which is tenant-scoped.
+4. **Stream separation**
 
-* **Database**:
+   * `create_deal_note_v1` writes to `deal_notes` only
+   * User notes/call logs must **not** be mirrored into `deal_activity_log`
 
-  * A new `deal_notes` table is created to store user-generated notes and call logs.
-  * The table includes fields for `deal_id`, `note_type`, `content`, `created_at`, `updated_at`, and `created_by`.
-  * Proper foreign key relationships and RLS policies are applied to ensure tenant-scoped access.
+5. **System activity write path required in this item**
 
-* **UI Support**:
+   * When a deal is marked dead via the existing deal stage update path, the system must:
 
-  * The UI will allow users to add notes and call logs, and view past notes/logs in the “Note History” section.
+     * update `deals.stage`
+     * insert an activity row into `deal_activity_log`
+   * Minimum required event for this item:
 
-* **Stage Actions**:
+     * `activity_type = 'marked_dead'`
+     * `content = 'Deal marked dead'`
 
-  * No direct mutation of deal stages related to notes/logs.
-  * Notes and logs are independent of stage transitions, except that they belong to a deal in a particular stage.
+6. **Read path output requirements**
 
-* **Backend Validations**:
+   * Both `list_deal_notes_v1` and `list_deal_activity_v1` must return:
 
-  * Ensure that all notes/logs are correctly associated with the appropriate deal and cannot be accessed by users from other tenants.
-  * Logs and notes cannot be modified or deleted by unauthorized users.
-
-* **Activity Logging**:
-
-  * Log entries are recorded whenever a note or call log is created, along with the associated `deal_id`, `note_type`, and `created_by` fields.
+     * `created_at`
+     * `created_by`
+     * `created_by_name`
+   * Results must be ordered **newest first**
 
 **Proof:** `docs/proofs/10.11A1_deal_notes_activity_log_<UTC>.log`
-
-**Gate:** `merge-blocking`
+**Gate:** Merge-Blocking
 
 ---
 
@@ -7005,86 +7004,129 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 **DoD:**
 
-- Acquisition UI is wired to live backend data
-- No mock KPI values remain
-- No mock deal list values remain
-- No mock detail values remain
+* Acquisition UI is wired to live backend data
 
-- KPI strip is wired to governed backend output
-- Filters are wired to live Acq-owned backend dataset:
-  - All
-  - New
-  - Analyzing
-  - Offer Sent
-  - Follow-ups
-  - UC
+* No mock KPI values remain
 
-- Farm area filter is wired to existing backend source
-- Deal selection loads live deal detail
+* No mock deal list values remain
 
-- Header actions are live-wired:
-  - Copy deal summary
-  - Send to Dispo when stage = `UC`
+* No mock detail values remain
 
-- Send to Dispo click opens assignee modal
-- Confirm handoff calls governed backend only
-- On success:
-  - deal leaves Acquisition view
-  - UI refreshes correctly
-  - no stale row remains visible
+* KPI strip is wired to governed backend output
 
-- Quick contact actions are live-wired:
-  - Call
-  - Text
-  - Email
+* Filters are wired to live Acq-owned backend dataset:
 
-- Edit Seller motivation opens live edit popup
-- Save calls governed backend write path
-- UI refreshes seller data after save
+  * All
+  * New
+  * Analyzing
+  * Offer Sent
+  * Follow-ups
+  * UC
 
-- Edit Property condition opens live edit popup
-- Save calls governed backend write path
-- UI refreshes property/pricing summary after save
+* Farm area filter is wired to existing backend source
 
-- Media section is wired:
-  - renders deal photos from governed backend
-  - upload action wired to governed backend/storage path
-  - delete action wired if enabled in UI
-  - no mock-only media remains
-  - no direct storage path manipulation from UI outside governed flow
+* Deal selection loads live deal detail
 
-- Stage-specific CTA wiring is live:
-  - Start analysis
-  - Send offer
-  - Mark contract signed
-  - Send to Dispo
-  - Mark dead
+* Header actions are live-wired:
 
-- No generic status dropdown exists
-- Only valid next-step buttons render for current stage
+  * Copy deal summary
+  * Send to Dispo when stage = `UC`
 
-- Notes / Log section is wired:
-  - Add note
-  - Log call
-  - note history refreshes after save
+* Send to Dispo click opens assignee modal
 
-- Follow-up reminders section is wired:
-  - list reminders
-  - set reminder
-  - complete reminder if supported in UI
-- Follow-ups filter behavior reflects live reminder state
+* Confirm handoff calls governed backend only
 
-- Activity log renders governed backend activity history only
-- No fake frontend-generated activity history
+* On success:
 
-- No direct table calls
-- All data access via governed RPC / allowed backend interfaces only
+  * deal leaves Acquisition view
+  * UI refreshes correctly
+  * no stale row remains visible
+
+* Quick contact actions are live-wired:
+
+  * Call
+  * Text
+  * Email
+
+* Edit Seller motivation opens live edit popup
+
+* Save calls governed backend write path
+
+* UI refreshes seller data after save
+
+* Edit Property condition opens live edit popup
+
+* Save calls governed backend write path
+
+* UI refreshes property/pricing summary after save
+
+* Media section is wired:
+
+  * renders deal photos from governed backend
+  * upload action wired to governed backend/storage path
+  * delete action wired if enabled in UI
+  * no mock-only media remains
+  * no direct storage path manipulation from UI outside governed flow
+
+* Stage-specific CTA wiring is live:
+
+  * Start analysis
+  * Send offer
+  * Mark contract signed
+  * Send to Dispo
+  * Mark dead
+
+* No generic status dropdown exists
+
+* Only valid next-step buttons render for current stage
+
+* **Notes / Log section is wired:**
+
+  * one shared text-entry flow with a single **Submit** button
+  * submit calls governed backend only
+  * supports saving user-entered note/log content to `deal_notes`
+  * note history refreshes after save
+  * notes/log rows display:
+
+    * content
+    * user name
+    * date/time stamp
+  * notes/log rows render **newest first**
+
+* **Activity log section is wired:**
+
+  * renders governed backend activity history only from `deal_activity_log`
+  * no fake frontend-generated activity history
+  * activity rows display:
+
+    * content
+    * user name
+    * date/time stamp
+  * activity rows render **newest first**
+
+* **Mark dead wiring is live:**
+
+  * clicking **Mark dead** updates `deals.stage`
+  * the same governed flow also writes a system activity row to `deal_activity_log`
+  * UI refreshes correctly after success
+
+* Follow-up reminders section is wired:
+
+  * list reminders
+  * set reminder
+  * complete reminder if supported in UI
+
+* Follow-ups filter behavior reflects live reminder state
+
+* No direct table calls
+
+* All data access via governed RPC / allowed backend interfaces only
 
 **Proof:** `docs/proofs/10.11B_acquisition_wiring_<UTC>.md`
 
 **Gate:** `lane-only`
 
-**Prerequisite:** 10.11 and 10.11A merged
+**Prerequisite:** 10.11 and 10.11A1 merged
 
 ---
 

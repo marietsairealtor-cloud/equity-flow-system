@@ -1,0 +1,105 @@
+PROOF_HEAD=fe16bc79817ce6c83c4e70d74ffe9437c46e631f
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A1 Acquisition Backend - Notes/Log Write Path and Activity Log Read Path -- Proof Log ===
+Date: 2026-04-20T13:17:14.1426362-04:00
+Branch: feature/10.11A1-deal-notes-activity-log-v2
+PR HEAD SHA: fe16bc79817ce6c83c4e70d74ffe9437c46e631f
+
+=== Deliverable ===
+Migration: 20260420000001_10_11A1_deal_notes_activity_log.sql -- applied
+Test file: supabase/tests/10_11A1_deal_notes_activity_log.test.sql -- PASS
+
+=== New Tables ===
+deal_notes: tenant-scoped, RLS, note_type IN (note, call_log), append-only in this item
+deal_activity_log: tenant-scoped, RLS, system event stream, separate from user notes
+
+=== New RPCs ===
+create_deal_note_v1(p_deal_id uuid, p_note_type text, p_content text)
+  - SECURITY DEFINER, authenticated only
+  - write lock enforced via check_workspace_write_allowed_v1()
+  - writes to deal_notes only
+  - note_type validated: note or call_log
+list_deal_notes_v1(p_deal_id uuid)
+  - STABLE SECURITY DEFINER, authenticated only
+  - returns data.notes, newest first
+  - includes created_by_name from user_profiles
+list_deal_activity_v1(p_deal_id uuid)
+  - STABLE SECURITY DEFINER, authenticated only
+  - returns data.activity, newest first
+  - includes created_by_name from user_profiles
+
+=== Retrofit ===
+mark_deal_dead_v1: extended to insert marked_dead row into deal_activity_log after UPDATE
+  - same inputs, same envelope, same error codes as prior version
+  - no regression to existing behavior
+
+=== Stream Separation ===
+create_deal_note_v1 writes to deal_notes only -- NOT mirrored to deal_activity_log
+System events (mark_dead) write to deal_activity_log only -- NOT in deal_notes
+Proven by test 19: activity count = 3 (2 seeded + 1 mark_dead, 0 from user notes)
+
+=== pgTAP Results ===
+supabase db test -- PASS (62 files, 675 tests, 0 failures)
+create_deal_note_v1 note type succeeds -- PASS
+create_deal_note_v1 call_log type succeeds -- PASS
+create_deal_note_v1 invalid note_type returns VALIDATION_ERROR -- PASS
+create_deal_note_v1 empty content returns VALIDATION_ERROR -- PASS
+create_deal_note_v1 cross-tenant deal returns NOT_FOUND -- PASS
+list_deal_notes_v1 returns ok -- PASS
+list_deal_notes_v1 notes array has entries -- PASS
+list_deal_notes_v1 newest note appears first -- PASS
+list_deal_notes_v1 oldest note appears last -- PASS
+list_deal_notes_v1 created_by_name exact match -- PASS
+list_deal_notes_v1 cross-tenant deal returns NOT_FOUND -- PASS
+list_deal_activity_v1 returns ok -- PASS
+list_deal_activity_v1 has activity entries -- PASS
+list_deal_activity_v1 newest activity appears first -- PASS
+list_deal_activity_v1 older activity appears after newer -- PASS
+list_deal_activity_v1 created_by_name exact match -- PASS
+list_deal_activity_v1 cross-tenant deal returns NOT_FOUND -- PASS
+mark_deal_dead_v1 succeeds -- PASS
+stream separation: user notes do not appear in activity log -- PASS
+stream separation: notes count independent from activity count -- PASS
+
+=== db push ===
+20260420000001_10_11A1_deal_notes_activity_log.sql -- applied
+
+=== DoD Checklist ===
+deal_notes table created with correct columns                          -- PASS
+deal_activity_log table created with correct columns                   -- PASS
+RLS policies on both tables                                            -- PASS
+REVOKE ALL from anon and authenticated on both tables                  -- PASS
+create_deal_note_v1 exists, SECURITY DEFINER, authenticated only       -- PASS
+list_deal_notes_v1 exists, SECURITY DEFINER, authenticated only        -- PASS
+list_deal_activity_v1 exists, SECURITY DEFINER, authenticated only     -- PASS
+note_type constrained to note or call_log                              -- PASS
+create_deal_note_v1 writes to deal_notes only                          -- PASS
+stream separation enforced                                             -- PASS
+mark_deal_dead_v1 writes marked_dead activity row                      -- PASS
+created_by_name returned on both list RPCs                             -- PASS
+results ordered newest first on both list RPCs                         -- PASS
+no direct table access from frontend required                          -- PASS
+
+=== Registration ===
+rpc_contract_registry.json -- PASS
+execute_allowlist.json -- PASS
+definer_allowlist.json -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md sections 17, 17A, 55, 56 updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260420T162949Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A1 Acquisition Backend Notes/Log Write Path and Activity Log Read Path: PASS (merge-blocking gate)

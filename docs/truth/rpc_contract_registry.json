@@ -574,6 +574,33 @@
       "notes": "Deletes metadata row; returns storage_path for Edge cleanup. Workspace write lock."
     },
     {
+      "name": "create_deal_note_v1",
+      "version": 1,
+      "build_route_owner": "10.11A1",
+      "input_contract": "CONTRACTS.md — create_deal_note_v1 (10.11A1); p_deal_id uuid, p_note_type text (note | call_log), p_content text",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "SECURITY DEFINER. Inserts deal_notes row; workspace write lock via check_workspace_write_allowed_v1. JSON envelope; ok data includes note_id."
+    },
+    {
+      "name": "list_deal_notes_v1",
+      "version": 1,
+      "build_route_owner": "10.11A1",
+      "input_contract": "CONTRACTS.md — list_deal_notes_v1 (10.11A1); p_deal_id uuid",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "STABLE SECURITY DEFINER. Returns notes array for deal in tenant (newest first)."
+    },
+    {
+      "name": "list_deal_activity_v1",
+      "version": 1,
+      "build_route_owner": "10.11A1",
+      "input_contract": "CONTRACTS.md — list_deal_activity_v1 (10.11A1); p_deal_id uuid",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "STABLE SECURITY DEFINER. Returns activity array from deal_activity_log for deal in tenant (newest first)."
+    },
+    {
       "name": "process_workspace_retention_v1",
       "version": 1,
       "build_route_owner": "10.8.11O",
