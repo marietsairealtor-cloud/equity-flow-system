@@ -1,0 +1,126 @@
+PROOF_HEAD=f1b5eafcfc522f588d3014803e805f8ff345aac6
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A Acquisition Backend -- Proof Log ===
+Date: 2026-04-19T20:50:57.4853214-04:00
+Branch: feature/10.11A-acquisition-backend
+PR HEAD SHA: f1b5eafcfc522f588d3014803e805f8ff345aac6
+
+=== Deliverable ===
+Backend support for Acquisition list/detail, seller/property editing,
+media support, stage transitions, handoff, reminders integration,
+notes/logging integration, and Mark Dead behavior.
+
+=== Migrations ===
+20260419000001_10_11A_extend_deals.sql
+  - Normalized stage check constraint to canonical snake_case values
+  - Added: created_at, address, assignee_user_id, seller_name, seller_phone,
+    seller_email, seller_pain, seller_timeline, seller_notes,
+    next_action, next_action_due, dead_reason
+
+20260419000002_10_11A_deal_properties.sql
+  - Created deal_properties table with full V1 property condition schema
+  - REVOKE ALL, RLS enabled, UNIQUE(deal_id), ON DELETE CASCADE
+
+20260419000003_10_11A_deal_media.sql
+  - Created deal_media metadata table for Supabase Storage photos
+  - REVOKE ALL, RLS enabled, UNIQUE(storage_path), ON DELETE CASCADE
+
+20260419000004_10_11A_normalize_stage_values.sql
+  - Corrective: updated get_deal_health_color to snake_case stages
+  - Corrective: updated update_deal_v1 terminal check to closed/dead
+  - Corrective: replaced DEAL_IMMUTABLE with CONFLICT (valid envelope code)
+  - Updated existing test files 10_8_4, 10_8_5, 10_8_6
+
+20260419000005_10_11A_rpcs.sql
+  - 14 RPCs implemented:
+    get_acq_kpis_v1
+    list_acq_deals_v1 (filter: all/new/analyzing/offer_sent/under_contract/follow_ups)
+    get_acq_deal_v1
+    update_seller_info_v1
+    update_property_info_v1 (upsert)
+    advance_deal_stage_v1
+    mark_deal_dead_v1
+    handoff_to_dispo_v1
+    handoff_to_tc_v1
+    return_to_acq_v1
+    return_to_dispo_v1
+    list_deal_media_v1
+    register_deal_media_v1 (catches unique_violation, returns CONFLICT)
+    delete_deal_media_v1 (returns storage_path for server-side deletion)
+  - All SECURITY DEFINER, fixed search_path, REVOKE ALL + GRANT authenticated
+  - All derive tenant from current_tenant_id()
+  - check_workspace_write_allowed_v1() on all mutators
+
+=== Stage Values (canonical, locked) ===
+new, analyzing, offer_sent, under_contract, dispo, tc, closed, dead
+
+=== Stage Transitions (server-enforced) ===
+new → analyzing (start_analysis)
+analyzing → offer_sent (send_offer)
+offer_sent → under_contract (mark_contract_signed)
+under_contract → dispo (handoff_to_dispo_v1 only)
+dispo → tc (handoff_to_tc_v1 only)
+dispo → under_contract (return_to_acq_v1)
+tc → dispo (return_to_dispo_v1)
+any active → dead (mark_deal_dead_v1, dead_reason required)
+
+=== pgTAP Results ===
+supabase db reset -- PASS (61 files, 655 tests, 0 failures)
+Test file: supabase/tests/10_11A_acquisition_backend.test.sql
+plan(47) -- PASS
+
+Coverage:
+get_acq_kpis_v1: fields present                                -- PASS
+list_acq_deals_v1: filters, exclusions, VALIDATION_ERROR       -- PASS
+get_acq_deal_v1: ok, stage, NOT_FOUND                          -- PASS
+update_seller_info_v1: write + DB state + NOT_FOUND            -- PASS
+update_property_info_v1: upsert + second upsert + DB state     -- PASS
+advance_deal_stage_v1: transitions + CONFLICT                  -- PASS
+mark_deal_dead_v1: dead + VALIDATION_ERROR + CONFLICT          -- PASS
+handoff_to_dispo_v1: ok + DB state + CONFLICT                  -- PASS
+return_to_acq_v1: ok + CONFLICT                                -- PASS
+list_deal_media_v1: ok                                         -- PASS
+register_deal_media_v1: ok + DB state + VALIDATION_ERROR       -- PASS
+delete_deal_media_v1: ok + NOT_FOUND                           -- PASS
+Tenant isolation: cross-tenant read/write/media NOT_FOUND      -- PASS
+Terminal immutability: dead deal CONFLICT                      -- PASS
+Row version concurrency: stale row_version CONFLICT            -- PASS
+Duplicate media path: CONFLICT envelope                        -- PASS
+Assignee persistence: DB state verified                        -- PASS
+SET LOCAL ROLE authenticated: RLS active during all RPC tests  -- PASS
+
+=== db push ===
+20260419000001_10_11A_extend_deals.sql                         -- PASS
+20260419000002_10_11A_deal_properties.sql                      -- PASS
+20260419000003_10_11A_deal_media.sql                           -- PASS
+20260419000004_10_11A_normalize_stage_values.sql               -- PASS
+20260419000005_10_11A_rpcs.sql                                 -- PASS
+
+=== Admin Registration ===
+definer_allowlist.json -- 14 RPCs added                        -- PASS
+execute_allowlist.json -- 14 RPCs added                        -- PASS
+privilege_truth.json -- updated                                -- PASS
+rpc_contract_registry.json -- 14 entries added                 -- PASS
+expected_surface.json -- updated                               -- PASS
+tenant_table_selector.json -- deal_properties, deal_media      -- PASS
+CONTRACTS.md -- §17 mapping, §17A write-lock, §55 new section  -- PASS
+qa_scope_map.json                                              -- PASS
+qa_claim.json                                                  -- PASS
+ci_robot_owned_guard.ps1                                       -- PASS
+ci_write_lock_coverage.ps1                                     -- PASS
+calc_version_registry.json -- incidental reference noted       -- PASS
+Governance file: GOVERNANCE_CHANGE_20260419T220000Z.md         -- PASS
+
+=== Phase 2 ===
+npm run handoff                                                -- PASS
+npm run handoff:commit                                         -- PASS
+
+=== Phase 3 ===
+green:once                                                     -- PASS
+green:twice                                                    -- PASS
+pr:preflight                                                   -- PASS
+
+=== RESULT ===
+10.11A Acquisition Backend: PASS (merge-blocking gate)
