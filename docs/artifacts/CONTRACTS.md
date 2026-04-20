@@ -281,6 +281,20 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_deal_v1 | 6.6, 10.9 | Create deal; server-computed MAO from assumptions inputs (10.9); stores assumptions snapshot | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| get_acq_kpis_v1 | 10.11A | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| get_acq_deal_v1 | 10.11A | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
+| update_seller_info_v1 | 10.11A | Partial update of seller + next-action fields on deals | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| update_property_info_v1 | 10.11A | Upsert deal_properties row for a deal (partial field merge) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| advance_deal_stage_v1 | 10.11A | Validated stage transitions (start_analysis / send_offer / mark_contract_signed) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_action |
+| mark_deal_dead_v1 | 10.11A | Mark deal dead with required reason | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_dead_reason |
+| handoff_to_dispo_v1 | 10.11A | under_contract → dispo; sets assignee_user_id | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_assignee_user_id |
+| handoff_to_tc_v1 | 10.11A | dispo → tc; sets assignee_user_id | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_assignee_user_id |
+| return_to_acq_v1 | 10.11A | dispo → under_contract (undo dispo) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| return_to_dispo_v1 | 10.11A | tc → dispo (undo tc) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| list_deal_media_v1 | 10.11A | List registered deal photo metadata for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| register_deal_media_v1 | 10.11A | Register storage_path after client upload to deal-photos bucket | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_storage_path + p_sort_order |
+| delete_deal_media_v1 | 10.11A | Delete deal_media row; returns storage_path for Edge cleanup | SECURITY DEFINER, min role: member | current_tenant_id() — p_media_id only |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
@@ -349,6 +363,16 @@ Checks: tenant context exists, caller is a member, subscription exists, subscrip
 - `update_member_role_v1`
 - `remove_member_v1`
 - `invite_workspace_member_v1`
+- `advance_deal_stage_v1`
+- `mark_deal_dead_v1`
+- `handoff_to_dispo_v1`
+- `handoff_to_tc_v1`
+- `return_to_acq_v1`
+- `return_to_dispo_v1`
+- `update_seller_info_v1`
+- `update_property_info_v1`
+- `register_deal_media_v1`
+- `delete_deal_media_v1`
 
 ### Inline subscription check (slug-based resolution)
 
@@ -1214,3 +1238,45 @@ Stored snapshot: `p_assumptions || jsonb_build_object('mao', <computed>)` so `de
 ### Success payload
 
 Standard envelope with `data` including at least: `id`, `tenant_id`, `assumptions_snapshot_id`, `mao` (matches stored snapshot).
+
+---
+
+## 55) Acquisition backend — deals schema, stages, and RPCs (10.11A)
+
+**Authority:** migrations `20260419000001`–`20260419000005` (extend `public.deals`, `deal_properties`, `deal_media`, stage normalization, SECURITY DEFINER RPCs).
+
+### Canonical deal stages
+
+`public.deals.stage` is constrained to lowercase snake_case values only:
+
+`new`, `analyzing`, `offer_sent`, `under_contract`, `dispo`, `tc`, `closed`, `dead`.
+
+Migration `20260419000004` aligns `get_deal_health_color` and `update_deal_v1` with these values; terminal immutability for `update_deal_v1` remains `closed` and `dead`.
+
+### Deals table extensions (10.11A)
+
+In addition to existing columns, Acquisition uses: `created_at`, `address`, `assignee_user_id` (FK `auth.users`), seller contact and notes fields (`seller_*`), `next_action` / `next_action_due`, `dead_reason`, and continued use of `farm_area_id`, `row_version`, `deleted_at`, etc., as defined in migration `20260419000001`.
+
+### Tenant-scoped companion tables
+
+- **`public.deal_properties`** — one row per deal (`UNIQUE(deal_id)`), property-condition fields (beds, baths, deficiency tags, repair_estimate on the property record, etc.). RLS: `tenant_id = current_tenant_id()`. No direct table grants; reads/writes go through RPCs.
+- **`public.deal_media`** — photo metadata (`storage_path`, `sort_order`, `uploaded_by`, …) keyed to `deal_id`. RLS: `tenant_id = current_tenant_id()`. Storage objects live in the existing deal-photos bucket per §31 path contract; `register_deal_media_v1` / `delete_deal_media_v1` govern metadata.
+
+### RPC surface (narrative)
+
+All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `error`), resolve tenant via `current_tenant_id()`, enforce workspace write lock via `check_workspace_write_allowed_v1()` on mutating paths, and use `require_min_role_v1` at **member** unless otherwise noted.
+
+| RPC | Role |
+|-----|------|
+| `get_acq_kpis_v1()` | Read KPI aggregates for the Acquisition dashboard. |
+| `list_acq_deals_v1(p_filter text, p_farm_area_id uuid)` | List active Acquisition pipeline deals; `p_filter` ∈ `all`, `new`, `analyzing`, `offer_sent`, `under_contract`, `follow_ups` (reminder-driven). |
+| `get_acq_deal_v1(p_deal_id uuid)` | Full detail for one deal including embedded `properties` and latest `pricing` from `deal_inputs`. |
+| `update_seller_info_v1(...)` | Partial updates to seller and next-action columns on `deals`. |
+| `update_property_info_v1(...)` | Upsert `deal_properties` with partial merge. |
+| `advance_deal_stage_v1(p_deal_id uuid, p_action text)` | Allowed forward transitions only; invalid transitions → `CONFLICT`. |
+| `mark_deal_dead_v1(p_deal_id uuid, p_dead_reason text)` | Sets stage `dead`; empty reason → `VALIDATION_ERROR`. |
+| `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. |
+| `return_to_acq_v1` / `return_to_dispo_v1` | Reverse handoffs (`dispo`→`under_contract`, `tc`→`dispo`). |
+| `list_deal_media_v1` / `register_deal_media_v1` / `delete_deal_media_v1` | Deal photo metadata lifecycle. |
+
+**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A**.

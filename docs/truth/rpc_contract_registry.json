@@ -448,6 +448,132 @@
       "notes": "SECURITY DEFINER. Callable by service_role only (REVOKE PUBLIC). Returns boolean (not JSON envelope). Existence only — no user data leakage. Used by send-invite-email Edge Function."
     },
     {
+      "name": "get_acq_kpis_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — get_acq_kpis_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED"],
+      "notes": "No parameters. Tenant from current_tenant_id(). Read-only KPIs for Acquisition dashboard. STABLE."
+    },
+    {
+      "name": "list_acq_deals_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — list_acq_deals_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "notes": "p_filter text default all; p_farm_area_id uuid optional. Excludes dispo/tc/closed/dead. follow_ups uses deal_reminders due/overdue. STABLE."
+    },
+    {
+      "name": "get_acq_deal_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — get_acq_deal_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "notes": "p_deal_id uuid. Full Acquisition deal payload: deal row, optional deal_properties JSON, pricing from latest deal_inputs. STABLE."
+    },
+    {
+      "name": "update_seller_info_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — update_seller_info_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "notes": "Partial update on deals seller + next_action fields via COALESCE. Min role: member. Workspace write lock. NOT_FOUND cross-tenant or missing deal."
+    },
+    {
+      "name": "update_property_info_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — update_property_info_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "notes": "Upsert public.deal_properties by deal_id. Partial field merge via COALESCE on conflict. Workspace write lock."
+    },
+    {
+      "name": "advance_deal_stage_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — advance_deal_stage_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
+      "notes": "p_action: start_analysis | send_offer | mark_contract_signed. Valid transitions only. UC→dispo via handoff_to_dispo_v1. Workspace write lock."
+    },
+    {
+      "name": "mark_deal_dead_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — mark_deal_dead_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
+      "notes": "p_dead_reason required non-empty. Terminal dead stage. CONFLICT if already terminal. Workspace write lock."
+    },
+    {
+      "name": "handoff_to_dispo_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — handoff_to_dispo_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
+      "notes": "under_contract only → dispo; sets assignee_user_id. Workspace write lock."
+    },
+    {
+      "name": "handoff_to_tc_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — handoff_to_tc_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
+      "notes": "dispo only → tc; sets assignee_user_id. Workspace write lock."
+    },
+    {
+      "name": "return_to_acq_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — return_to_acq_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
+      "notes": "dispo → under_contract only. Workspace write lock."
+    },
+    {
+      "name": "return_to_dispo_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — return_to_dispo_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
+      "notes": "tc → dispo only. Workspace write lock."
+    },
+    {
+      "name": "list_deal_media_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — list_deal_media_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "notes": "Lists deal_media rows for deal in tenant. STABLE."
+    },
+    {
+      "name": "register_deal_media_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — register_deal_media_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND", "CONFLICT"],
+      "notes": "Post-upload metadata; p_storage_path unique per tenant. Workspace write lock."
+    },
+    {
+      "name": "delete_deal_media_v1",
+      "version": 1,
+      "build_route_owner": "10.11A",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — delete_deal_media_v1",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "notes": "Deletes metadata row; returns storage_path for Edge cleanup. Workspace write lock."
+    },
+    {
       "name": "process_workspace_retention_v1",
       "version": 1,
       "build_route_owner": "10.8.11O",

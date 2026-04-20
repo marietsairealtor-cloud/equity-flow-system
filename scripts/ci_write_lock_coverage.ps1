@@ -11,17 +11,27 @@ Write-Host "=== write-lock-coverage: Workspace write lock enforcement gate ==="
 
 # Authoritative in-scope workspace-write RPCs that must call the helper
 $helperRequiredRpcs = @(
-  "create_deal_v1",
-  "update_deal_v1",
-  "create_farm_area_v1",
-  "delete_farm_area_v1",
-  "create_reminder_v1",
+  "advance_deal_stage_v1",
   "complete_reminder_v1",
+  "create_deal_v1",
+  "create_farm_area_v1",
+  "create_reminder_v1",
   "create_share_token_v1",
-  "update_workspace_settings_v1",
-  "update_member_role_v1",
+  "delete_deal_media_v1",
+  "delete_farm_area_v1",
+  "handoff_to_dispo_v1",
+  "handoff_to_tc_v1",
+  "invite_workspace_member_v1",
+  "mark_deal_dead_v1",
+  "register_deal_media_v1",
   "remove_member_v1",
-  "invite_workspace_member_v1"
+  "return_to_acq_v1",
+  "return_to_dispo_v1",
+  "update_deal_v1",
+  "update_member_role_v1",
+  "update_property_info_v1",
+  "update_seller_info_v1",
+  "update_workspace_settings_v1"
 )
 
 # Approved inline-check RPCs -- use subscription check without the shared helper

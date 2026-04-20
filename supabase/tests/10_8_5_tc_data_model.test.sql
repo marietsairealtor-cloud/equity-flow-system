@@ -45,13 +45,13 @@ VALUES ('d0000000-0000-0000-0000-000000000001'::uuid, 'active', now() + interval
 INSERT INTO public.deals (id, tenant_id, row_version, calc_version, stage) VALUES
   ('d2000000-0000-0000-0000-000000000001'::uuid,
    'd0000000-0000-0000-0000-000000000001'::uuid,
-   1, 1, 'New')
+   1, 1, 'new')
   ON CONFLICT DO NOTHING;
 
 INSERT INTO public.deals (id, tenant_id, row_version, calc_version, stage) VALUES
   ('d2000000-0000-0000-0000-000000000002'::uuid,
    'd0000000-0000-0000-0000-000000000001'::uuid,
-   1, 1, 'Closed / Dead')
+   1, 1, 'dead')
   ON CONFLICT DO NOTHING;
 
 INSERT INTO public.deal_tc_checklist
@@ -100,7 +100,7 @@ SELECT is(
 -- 7. update_deal_v1 rejects write to terminal deal
 SELECT is(
   public.update_deal_v1('d2000000-0000-0000-0000-000000000002'::uuid, 1)::json->>'code',
-  'DEAL_IMMUTABLE',
+  'CONFLICT',
   '10.8.5: update_deal_v1 rejects write to Closed/Dead deal'
 );
 

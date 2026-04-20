@@ -582,6 +582,9 @@
     },
     "10.11": {
       "proof_pattern": "^docs/proofs/10\\.11_acquisition_ui_"
+    },
+    "10.11A": {
+      "proof_pattern": "^docs/proofs/10\\.11A_acquisition_backend_"
     }
   }
 }

@@ -46,6 +46,10 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "advance_deal_stage_v1",
+        "privilege": "EXECUTE"
+      },
+      {
         "routine": "claim_trial_v1",
         "privilege": "EXECUTE",
         "authority": "Build Route 10.8.12 — one-time free trial reservation at checkout; EXECUTE to authenticated"
@@ -167,7 +171,59 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "delete_deal_media_v1",
+        "privilege": "EXECUTE"
+      },
+      {
         "routine": "delete_farm_area_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "get_acq_deal_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "get_acq_kpis_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "handoff_to_dispo_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "handoff_to_tc_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "list_acq_deals_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "list_deal_media_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "mark_deal_dead_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "register_deal_media_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "return_to_acq_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "return_to_dispo_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "update_property_info_v1",
+        "privilege": "EXECUTE"
+      },
+      {
+        "routine": "update_seller_info_v1",
         "privilege": "EXECUTE"
       }
     ],
@@ -228,41 +284,55 @@
     "authenticated_routines": [
       "accept_invite_v1",
       "accept_pending_invites_v1",
-      "create_deal_v1",
-      "create_farm_area_v1",
+      "advance_deal_stage_v1",
       "check_slug_access_v1",
       "claim_trial_v1",
+      "complete_reminder_v1",
+      "create_deal_v1",
+      "create_farm_area_v1",
+      "create_reminder_v1",
+      "create_share_token_v1",
       "create_tenant_v1",
-      "get_profile_settings_v1",
-      "update_display_name_v1",
-      "get_workspace_settings_v1",
-      "update_workspace_settings_v1",
-      "list_workspace_members_v1",
-      "invite_workspace_member_v1",
-      "update_member_role_v1",
-      "remove_member_v1",
-      "set_current_tenant_v1",
-      "set_tenant_slug_v1",
       "current_tenant_id",
+      "delete_deal_media_v1",
       "delete_farm_area_v1",
       "foundation_log_activity_v1",
+      "get_acq_deal_v1",
+      "get_acq_kpis_v1",
+      "get_profile_settings_v1",
       "get_user_entitlements_v1",
-      "list_pending_invites_v1",
+      "get_workspace_settings_v1",
+      "handoff_to_dispo_v1",
+      "handoff_to_tc_v1",
+      "invite_workspace_member_v1",
+      "list_acq_deals_v1",
       "list_archived_workspaces_v1",
+      "list_deal_media_v1",
       "list_deals_v1",
       "list_farm_areas_v1",
-      "lookup_share_token_v1",
-      "rescind_invite_v1",
-      "restore_workspace_v1",
-      "update_deal_v1",
-      "revoke_share_token_v1",
-      "create_share_token_v1",
-      "resolve_form_slug_v1",
-      "submit_form_v1",
+      "list_pending_invites_v1",
       "list_reminders_v1",
       "list_user_tenants_v1",
-      "create_reminder_v1",
-      "complete_reminder_v1"
+      "list_workspace_members_v1",
+      "lookup_share_token_v1",
+      "mark_deal_dead_v1",
+      "register_deal_media_v1",
+      "remove_member_v1",
+      "rescind_invite_v1",
+      "resolve_form_slug_v1",
+      "restore_workspace_v1",
+      "return_to_acq_v1",
+      "return_to_dispo_v1",
+      "revoke_share_token_v1",
+      "set_current_tenant_v1",
+      "set_tenant_slug_v1",
+      "submit_form_v1",
+      "update_deal_v1",
+      "update_display_name_v1",
+      "update_member_role_v1",
+      "update_property_info_v1",
+      "update_seller_info_v1",
+      "update_workspace_settings_v1"
     ],
     "anon_routines": [
       "resolve_form_slug_v1",
