@@ -6838,7 +6838,7 @@ Acquisition UI shell and interaction design for seller-side deal work through `U
 ### **10.11A — Acquisition Backend**
 
 **Deliverable:**
-Backend support for Acquisition list/detail data, seller/property editing, valid stage actions, handoff, reminders integration, notes/logging integration, and Mark Dead behavior.
+Backend support for Acquisition list/detail data, seller/property editing, media support, valid stage actions, handoff, reminders integration, notes/logging integration, and Mark Dead behavior.
 
 **DoD:**
 
@@ -6882,6 +6882,15 @@ Backend support for Acquisition list/detail data, seller/property editing, valid
   - condition notes
   - repair estimate
 
+- Media support for Acquisition detail:
+  - fetch deal media
+  - upload deal media
+  - delete deal media
+  - media is tenant-scoped and deal-scoped
+  - media appears in Acquisition detail payload
+  - V1 scope: photos only
+  - no image editing / annotation / transformation
+
 - Existing MAO / pricing backend is reused, not rebuilt in this item
 
 - Valid stage actions are server-enforced
@@ -6895,6 +6904,7 @@ Backend support for Acquisition list/detail data, seller/property editing, valid
 
 - Mark Dead behavior supported through governed backend path
 - Dead reason is required and logged
+- Mark dead is available for all active non-terminal stages and unavailable for Closed/Dead
 
 - Acq → Dispo handoff supported:
   - available only from `UC`
@@ -6923,6 +6933,8 @@ Backend support for Acquisition list/detail data, seller/property editing, valid
   - marked dead
   - seller info updated
   - property info updated
+  - media uploaded
+  - media deleted
 
 - No direct table calls from WeWeb
 - Contract-valid error responses enforced
@@ -6930,8 +6942,6 @@ Backend support for Acquisition list/detail data, seller/property editing, valid
 **Proof:** `docs/proofs/10.11A_acquisition_backend_<UTC>.log`
 
 **Gate:** `merge-blocking`
-
-**Prerequisite:** 10.8.3, 10.8.4, 10.8.6, 10.9, 10.11A dependencies merged as applicable
 
 ---
 
@@ -6982,6 +6992,13 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 - Edit Property condition opens live edit popup
 - Save calls governed backend write path
 - UI refreshes property/pricing summary after save
+
+- Media section is wired:
+  - renders deal photos from governed backend
+  - upload action wired to governed backend/storage path
+  - delete action wired if enabled in UI
+  - no mock-only media remains
+  - no direct storage path manipulation from UI outside governed flow
 
 - Stage-specific CTA wiring is live:
   - Start analysis

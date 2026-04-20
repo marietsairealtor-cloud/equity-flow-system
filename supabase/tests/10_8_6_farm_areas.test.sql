@@ -125,7 +125,7 @@ RESET ROLE;
 INSERT INTO public.deals (id, tenant_id, row_version, calc_version, stage) VALUES
   ('e2000000-0000-0000-0000-000000000001'::uuid,
    'e0000000-0000-0000-0000-000000000001'::uuid,
-   1, 1, 'New')
+   1, 1, 'new')
   ON CONFLICT DO NOTHING;
 
 INSERT INTO public.tenant_farm_areas (id, tenant_id, area_name) VALUES

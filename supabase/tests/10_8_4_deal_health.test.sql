@@ -19,7 +19,7 @@ INSERT INTO public.tenant_memberships (id, tenant_id, user_id, role) VALUES
 INSERT INTO public.deals (id, tenant_id, row_version, calc_version, stage, updated_at) VALUES
   ('c2000000-0000-0000-0000-000000000001'::uuid,
    'c0000000-0000-0000-0000-000000000001'::uuid,
-   1, 1, 'New', now() - INTERVAL '4 days')
+   1, 1, 'new', now() - INTERVAL '4 days')
   ON CONFLICT DO NOTHING;
 
 -- 1. list_deals_v1 function exists with new signature

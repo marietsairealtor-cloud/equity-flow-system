@@ -217,6 +217,71 @@ $$;
 
 ALTER FUNCTION "public"."activity_log_append_only"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."advance_deal_stage_v1"("p_deal_id" "uuid", "p_action" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant    uuid;
+  v_stage     text;
+  v_new_stage text;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  -- Enforce valid transitions
+  IF p_action = 'start_analysis' AND v_stage = 'new' THEN
+    v_new_stage := 'analyzing';
+  ELSIF p_action = 'send_offer' AND v_stage = 'analyzing' THEN
+    v_new_stage := 'offer_sent';
+  ELSIF p_action = 'mark_contract_signed' AND v_stage = 'offer_sent' THEN
+    v_new_stage := 'under_contract';
+  ELSE
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Invalid stage transition for current deal state', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals SET
+    stage       = v_new_stage,
+    updated_at  = now(),
+    row_version = row_version + 1
+  WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id, 'stage', v_new_stage),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."advance_deal_stage_v1"("p_deal_id" "uuid", "p_action" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."auth_user_exists_v1"("p_email" "text") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1162,6 +1227,53 @@ $$;
 
 ALTER FUNCTION "public"."current_tenant_id"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."delete_deal_media_v1"("p_media_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant       uuid;
+  v_storage_path text;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT storage_path INTO v_storage_path
+  FROM public.deal_media
+  WHERE id = p_media_id AND tenant_id = v_tenant;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Media not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  DELETE FROM public.deal_media
+  WHERE id = p_media_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('media_id', p_media_id, 'storage_path', v_storage_path),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."delete_deal_media_v1"("p_media_id" "uuid") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."delete_farm_area_v1"("p_farm_area_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1235,21 +1347,170 @@ $$;
 
 ALTER FUNCTION "public"."foundation_log_activity_v1"("p_action" "text", "p_meta" "jsonb", "p_actor_id" "uuid") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."get_acq_deal_v1"("p_deal_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_deal   record;
+  v_props  record;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT * INTO v_deal
+  FROM public.deals
+  WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT * INTO v_props
+  FROM public.deal_properties
+  WHERE deal_id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object(
+      'id',                v_deal.id,
+      'stage',             v_deal.stage,
+      'address',           v_deal.address,
+      'assignee_user_id',  v_deal.assignee_user_id,
+      'seller_name',       v_deal.seller_name,
+      'seller_phone',      v_deal.seller_phone,
+      'seller_email',      v_deal.seller_email,
+      'seller_pain',       v_deal.seller_pain,
+      'seller_timeline',   v_deal.seller_timeline,
+      'seller_notes',      v_deal.seller_notes,
+      'next_action',       v_deal.next_action,
+      'next_action_due',   v_deal.next_action_due,
+      'dead_reason',       v_deal.dead_reason,
+      'farm_area_id',      v_deal.farm_area_id,
+      'created_at',        v_deal.created_at,
+      'updated_at',        v_deal.updated_at,
+      'health_color',      public.get_deal_health_color(v_deal.stage, v_deal.updated_at),
+      'properties',        CASE WHEN v_props.id IS NULL THEN null ELSE json_build_object(
+        'property_type',   v_props.property_type,
+        'beds',            v_props.beds,
+        'baths',           v_props.baths,
+        'sqft',            v_props.sqft,
+        'lot_size',        v_props.lot_size,
+        'year_built',      v_props.year_built,
+        'occupancy',       v_props.occupancy,
+        'deficiency_tags', v_props.deficiency_tags,
+        'condition_notes', v_props.condition_notes,
+        'repair_estimate', v_props.repair_estimate,
+        'garage_parking',  v_props.garage_parking,
+        'basement_type',   v_props.basement_type,
+        'foundation_type', v_props.foundation_type,
+        'roof_age',        v_props.roof_age,
+        'furnace_age',     v_props.furnace_age,
+        'ac_age',          v_props.ac_age,
+        'heating_type',    v_props.heating_type,
+        'cooling_type',    v_props.cooling_type
+      ) END,
+      'pricing',           (
+        SELECT json_build_object(
+          'arv',            di.assumptions->>'arv',
+          'ask_price',      di.assumptions->>'ask_price',
+          'repair_estimate', di.assumptions->>'repair_estimate',
+          'assignment_fee', di.assumptions->>'assignment_fee',
+          'calc_version',   di.calc_version
+        )
+        FROM public.deal_inputs di
+        WHERE di.deal_id = p_deal_id AND di.tenant_id = v_tenant
+        ORDER BY di.created_at DESC LIMIT 1
+      )
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."get_acq_deal_v1"("p_deal_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."get_acq_kpis_v1"() RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant              uuid;
+  v_contracts_signed    integer;
+  v_leads_worked        integer;
+  v_avg_assignment_fee  numeric;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT COUNT(*) INTO v_contracts_signed
+  FROM public.deals
+  WHERE tenant_id = v_tenant
+    AND stage IN ('under_contract', 'dispo', 'tc', 'closed')
+    AND deleted_at IS NULL;
+
+  SELECT COUNT(*) INTO v_leads_worked
+  FROM public.deals
+  WHERE tenant_id = v_tenant
+    AND deleted_at IS NULL;
+
+  SELECT COALESCE(AVG(
+    (di.assumptions->>'assignment_fee')::numeric
+  ), 0) INTO v_avg_assignment_fee
+  FROM public.deals d
+  JOIN public.deal_inputs di ON di.deal_id = d.id AND di.tenant_id = v_tenant
+  WHERE d.tenant_id = v_tenant
+    AND d.stage IN ('under_contract', 'dispo', 'tc', 'closed')
+    AND d.deleted_at IS NULL
+    AND di.assumptions->>'assignment_fee' IS NOT NULL;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object(
+      'contracts_signed',       v_contracts_signed,
+      'lead_to_contract_pct',   CASE WHEN v_leads_worked = 0 THEN 0
+                                     ELSE ROUND((v_contracts_signed::numeric / v_leads_worked) * 100, 1)
+                                END,
+      'avg_assignment_fee',     ROUND(v_avg_assignment_fee, 2)
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."get_acq_kpis_v1"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."get_deal_health_color"("p_stage" "text", "p_updated_at" timestamp with time zone) RETURNS "text"
     LANGUAGE "sql" STABLE
     AS $$
   SELECT CASE
-    WHEN p_updated_at IS NULL THEN 'yellow'
-    WHEN p_stage = 'New'                 AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 3        THEN 'red'
-    WHEN p_stage = 'New'                 AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 3 * 0.7  THEN 'yellow'
-    WHEN p_stage = 'Analyzing'           AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7        THEN 'red'
-    WHEN p_stage = 'Analyzing'           AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7  THEN 'yellow'
-    WHEN p_stage = 'Offer Sent'          AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5        THEN 'red'
-    WHEN p_stage = 'Offer Sent'          AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5 * 0.7  THEN 'yellow'
-    WHEN p_stage = 'Under Contract (UC)' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14       THEN 'red'
-    WHEN p_stage = 'Under Contract (UC)' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14 * 0.7 THEN 'yellow'
-    WHEN p_stage = 'Dispo'               AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7        THEN 'red'
-    WHEN p_stage = 'Dispo'               AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7  THEN 'yellow'
+    WHEN p_updated_at IS NULL        THEN 'yellow'
+    WHEN p_stage = 'new'            AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 3         THEN 'red'
+    WHEN p_stage = 'new'            AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 3 * 0.7   THEN 'yellow'
+    WHEN p_stage = 'analyzing'      AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7         THEN 'red'
+    WHEN p_stage = 'analyzing'      AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7   THEN 'yellow'
+    WHEN p_stage = 'offer_sent'     AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5         THEN 'red'
+    WHEN p_stage = 'offer_sent'     AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 5 * 0.7   THEN 'yellow'
+    WHEN p_stage = 'under_contract' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14        THEN 'red'
+    WHEN p_stage = 'under_contract' AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14 * 0.7  THEN 'yellow'
+    WHEN p_stage = 'dispo'          AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7         THEN 'red'
+    WHEN p_stage = 'dispo'          AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 7 * 0.7   THEN 'yellow'
+    WHEN p_stage = 'tc'             AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14        THEN 'red'
+    WHEN p_stage = 'tc'             AND EXTRACT(EPOCH FROM (now() - p_updated_at))/86400 > 14 * 0.7  THEN 'yellow'
     ELSE 'green'
   END
 $$;
@@ -1570,6 +1831,143 @@ $$;
 
 ALTER FUNCTION "public"."get_workspace_settings_v1"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."handoff_to_dispo_v1"("p_deal_id" "uuid", "p_assignee_user_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_stage  text;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF v_stage <> 'under_contract' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Handoff to Dispo is only allowed from Under Contract stage', 'fields', json_build_object())
+    );
+  END IF;
+
+  -- Validate assignee is a member of this tenant
+  IF p_assignee_user_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.tenant_memberships
+    WHERE tenant_id = v_tenant AND user_id = p_assignee_user_id
+  ) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Assignee is not a member of this workspace', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals SET
+    stage              = 'dispo',
+    assignee_user_id   = p_assignee_user_id,
+    updated_at         = now(),
+    row_version        = row_version + 1
+  WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id, 'stage', 'dispo', 'assignee_user_id', p_assignee_user_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."handoff_to_dispo_v1"("p_deal_id" "uuid", "p_assignee_user_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."handoff_to_tc_v1"("p_deal_id" "uuid", "p_assignee_user_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_stage  text;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF v_stage <> 'dispo' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Handoff to TC is only allowed from Dispo stage', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_assignee_user_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.tenant_memberships
+    WHERE tenant_id = v_tenant AND user_id = p_assignee_user_id
+  ) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Assignee is not a member of this workspace', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals SET
+    stage            = 'tc',
+    assignee_user_id = p_assignee_user_id,
+    updated_at       = now(),
+    row_version      = row_version + 1
+  WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id, 'stage', 'tc', 'assignee_user_id', p_assignee_user_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."handoff_to_tc_v1"("p_deal_id" "uuid", "p_assignee_user_id" "uuid") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."invite_workspace_member_v1"("p_email" "text", "p_role" "public"."tenant_role") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1629,6 +2027,87 @@ $$;
 
 ALTER FUNCTION "public"."invite_workspace_member_v1"("p_email" "text", "p_role" "public"."tenant_role") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."list_acq_deals_v1"("p_filter" "text" DEFAULT 'all'::"text", "p_farm_area_id" "uuid" DEFAULT NULL::"uuid") RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_filter NOT IN ('all', 'new', 'analyzing', 'offer_sent', 'under_contract', 'follow_ups') THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Invalid filter value', 'fields', json_build_object())
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object(
+      'items', COALESCE(
+        (
+          SELECT json_agg(
+            json_build_object(
+              'id',              d.id,
+              'stage',           d.stage,
+              'address',         d.address,
+              'assignee_user_id', d.assignee_user_id,
+              'next_action',     d.next_action,
+              'next_action_due', d.next_action_due,
+              'farm_area_id',    d.farm_area_id,
+              'updated_at',      d.updated_at,
+              'created_at',      d.created_at,
+              'health_color',    public.get_deal_health_color(d.stage, d.updated_at),
+              'arv',             (
+                SELECT di.assumptions->>'arv'
+                FROM public.deal_inputs di
+                WHERE di.deal_id = d.id AND di.tenant_id = v_tenant
+                ORDER BY di.created_at DESC LIMIT 1
+              ),
+              'ask',             (
+                SELECT di.assumptions->>'ask_price'
+                FROM public.deal_inputs di
+                WHERE di.deal_id = d.id AND di.tenant_id = v_tenant
+                ORDER BY di.created_at DESC LIMIT 1
+              )
+            )
+            ORDER BY d.updated_at DESC
+          )
+          FROM public.deals d
+          WHERE d.tenant_id = v_tenant
+            AND d.deleted_at IS NULL
+            AND d.stage NOT IN ('dispo', 'tc', 'closed', 'dead')
+            AND (
+              p_filter = 'all'
+              OR (p_filter = 'follow_ups' AND EXISTS (
+                SELECT 1 FROM public.deal_reminders r
+                WHERE r.deal_id = d.id
+                  AND r.tenant_id = v_tenant
+                  AND r.completed_at IS NULL
+                  AND r.reminder_date <= now()
+              ))
+              OR (p_filter NOT IN ('all', 'follow_ups') AND d.stage = p_filter)
+            )
+            AND (p_farm_area_id IS NULL OR d.farm_area_id = p_farm_area_id)
+        ),
+        '[]'::json
+      )
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_acq_deals_v1"("p_filter" "text", "p_farm_area_id" "uuid") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."list_archived_workspaces_v1"() RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1686,6 +2165,60 @@ END;
 $$;
 
 ALTER FUNCTION "public"."list_archived_workspaces_v1"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."list_deal_media_v1"("p_deal_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.deals
+    WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
+  ) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object(
+      'items', COALESCE(
+        (
+          SELECT json_agg(
+            json_build_object(
+              'id',           m.id,
+              'storage_path', m.storage_path,
+              'media_type',   m.media_type,
+              'sort_order',   m.sort_order,
+              'uploaded_at',  m.uploaded_at,
+              'uploaded_by',  m.uploaded_by
+            )
+            ORDER BY m.sort_order ASC, m.uploaded_at ASC
+          )
+          FROM public.deal_media m
+          WHERE m.deal_id = p_deal_id AND m.tenant_id = v_tenant
+        ),
+        '[]'::json
+      )
+    ),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_deal_media_v1"("p_deal_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25, "p_cursor" "text" DEFAULT NULL::"text") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
@@ -2092,6 +2625,71 @@ $_$;
 
 ALTER FUNCTION "public"."lookup_share_token_v1"("p_token" "text", "p_deal_id" "uuid") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."mark_deal_dead_v1"("p_deal_id" "uuid", "p_dead_reason" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_stage  text;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_dead_reason IS NULL OR trim(p_dead_reason) = '' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Dead reason is required', 'fields', json_build_object('dead_reason', 'required'))
+    );
+  END IF;
+
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF v_stage IN ('closed', 'dead') THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal is already in a terminal stage', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals SET
+    stage       = 'dead',
+    dead_reason = p_dead_reason,
+    updated_at  = now(),
+    row_version = row_version + 1
+  WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id, 'stage', 'dead'),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."mark_deal_dead_v1"("p_deal_id" "uuid", "p_dead_reason" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."process_workspace_retention_v1"() RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -2233,6 +2831,71 @@ END;
 $$;
 
 ALTER FUNCTION "public"."process_workspace_retention_v1"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."register_deal_media_v1"("p_deal_id" "uuid", "p_storage_path" "text", "p_sort_order" integer DEFAULT 0) RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant   uuid;
+  v_media_id uuid;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_storage_path IS NULL OR trim(p_storage_path) = '' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'Storage path is required', 'fields', json_build_object('storage_path', 'required'))
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.deals
+    WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
+  ) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  BEGIN
+    INSERT INTO public.deal_media (
+      tenant_id, deal_id, storage_path, media_type, sort_order, uploaded_by
+    )
+    VALUES (
+      v_tenant, p_deal_id, p_storage_path, 'photo', p_sort_order, auth.uid()
+    )
+    RETURNING id INTO v_media_id;
+  EXCEPTION WHEN unique_violation THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'A file with this storage path already exists', 'fields', json_build_object())
+    );
+  END;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('media_id', v_media_id, 'storage_path', p_storage_path),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."register_deal_media_v1"("p_deal_id" "uuid", "p_storage_path" "text", "p_sort_order" integer) OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."remove_member_v1"("p_user_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -2531,6 +3194,120 @@ END;
 $$;
 
 ALTER FUNCTION "public"."restore_workspace_v1"("p_restore_token" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."return_to_acq_v1"("p_deal_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_stage  text;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF v_stage <> 'dispo' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Return to Acq is only allowed from Dispo stage', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals SET
+    stage       = 'under_contract',
+    updated_at  = now(),
+    row_version = row_version + 1
+  WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id, 'stage', 'under_contract'),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."return_to_acq_v1"("p_deal_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."return_to_dispo_v1"("p_deal_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_stage  text;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF v_stage <> 'tc' THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Return to Dispo is only allowed from TC stage', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals SET
+    stage       = 'dispo',
+    updated_at  = now(),
+    row_version = row_version + 1
+  WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id, 'stage', 'dispo'),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."return_to_dispo_v1"("p_deal_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."revoke_share_token_v1"("p_token" "text") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -2865,40 +3642,58 @@ CREATE OR REPLACE FUNCTION "public"."update_deal_v1"("p_id" "uuid", "p_expected_
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant      uuid;
-  v_stage       text;
+  v_tenant       uuid;
+  v_stage        text;
   v_rows_updated int;
 BEGIN
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
-    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
   END IF;
 
   IF NOT public.check_workspace_write_allowed_v1() THEN
-    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object()));
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object())
+    );
   END IF;
 
-  SELECT stage INTO v_stage FROM public.deals WHERE id = p_id AND tenant_id = v_tenant;
+  SELECT stage INTO v_stage
+  FROM public.deals
+  WHERE id = p_id AND tenant_id = v_tenant;
 
-  IF v_stage IN ('Closed / Dead') THEN
-    RETURN json_build_object('ok', false, 'code', 'DEAL_IMMUTABLE', 'data', json_build_object(),
-      'error', json_build_object('message', 'Deal is in a terminal stage and cannot be modified', 'fields', json_build_object()));
+  IF v_stage IN ('closed', 'dead') THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal is in a terminal stage and cannot be modified', 'fields', json_build_object())
+    );
   END IF;
 
   UPDATE public.deals
-  SET row_version = row_version + 1, calc_version = COALESCE(p_calc_version, calc_version)
-  WHERE id = p_id AND tenant_id = v_tenant AND row_version = p_expected_row_version;
+  SET
+    row_version  = row_version + 1,
+    calc_version = COALESCE(p_calc_version, calc_version)
+  WHERE id = p_id
+    AND tenant_id = v_tenant
+    AND row_version = p_expected_row_version;
 
   GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
 
   IF v_rows_updated = 0 THEN
-    RETURN json_build_object('ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
-      'error', json_build_object('message', 'Row version mismatch or deal not found for this tenant', 'fields', json_build_object()));
+    RETURN json_build_object(
+      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
+      'error', json_build_object('message', 'Row version mismatch or deal not found for this tenant', 'fields', json_build_object())
+    );
   END IF;
 
-  RETURN json_build_object('ok', true, 'code', 'OK', 'data', json_build_object('id', p_id), 'error', null);
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('id', p_id),
+    'error', null
+  );
 END;
 $$;
 
@@ -3000,6 +3795,139 @@ END;
 $$;
 
 ALTER FUNCTION "public"."update_member_role_v1"("p_user_id" "uuid", "p_role" "public"."tenant_role") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."update_property_info_v1"("p_deal_id" "uuid", "p_property_type" "text" DEFAULT NULL::"text", "p_beds" integer DEFAULT NULL::integer, "p_baths" numeric DEFAULT NULL::numeric, "p_sqft" integer DEFAULT NULL::integer, "p_lot_size" "text" DEFAULT NULL::"text", "p_year_built" integer DEFAULT NULL::integer, "p_occupancy" "text" DEFAULT NULL::"text", "p_deficiency_tags" "text"[] DEFAULT NULL::"text"[], "p_condition_notes" "text" DEFAULT NULL::"text", "p_repair_estimate" numeric DEFAULT NULL::numeric, "p_garage_parking" "text" DEFAULT NULL::"text", "p_basement_type" "text" DEFAULT NULL::"text", "p_foundation_type" "text" DEFAULT NULL::"text", "p_roof_age" integer DEFAULT NULL::integer, "p_furnace_age" integer DEFAULT NULL::integer, "p_ac_age" integer DEFAULT NULL::integer, "p_heating_type" "text" DEFAULT NULL::"text", "p_cooling_type" "text" DEFAULT NULL::"text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.deals
+    WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
+  ) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  INSERT INTO public.deal_properties (
+    tenant_id, deal_id,
+    property_type, beds, baths, sqft, lot_size, year_built, occupancy,
+    deficiency_tags, condition_notes, repair_estimate,
+    garage_parking, basement_type, foundation_type,
+    roof_age, furnace_age, ac_age, heating_type, cooling_type
+  )
+  VALUES (
+    v_tenant, p_deal_id,
+    p_property_type, p_beds, p_baths, p_sqft, p_lot_size, p_year_built, p_occupancy,
+    p_deficiency_tags, p_condition_notes, p_repair_estimate,
+    p_garage_parking, p_basement_type, p_foundation_type,
+    p_roof_age, p_furnace_age, p_ac_age, p_heating_type, p_cooling_type
+  )
+  ON CONFLICT (deal_id) DO UPDATE SET
+    property_type   = COALESCE(EXCLUDED.property_type,   deal_properties.property_type),
+    beds            = COALESCE(EXCLUDED.beds,            deal_properties.beds),
+    baths           = COALESCE(EXCLUDED.baths,           deal_properties.baths),
+    sqft            = COALESCE(EXCLUDED.sqft,            deal_properties.sqft),
+    lot_size        = COALESCE(EXCLUDED.lot_size,        deal_properties.lot_size),
+    year_built      = COALESCE(EXCLUDED.year_built,      deal_properties.year_built),
+    occupancy       = COALESCE(EXCLUDED.occupancy,       deal_properties.occupancy),
+    deficiency_tags = COALESCE(EXCLUDED.deficiency_tags, deal_properties.deficiency_tags),
+    condition_notes = COALESCE(EXCLUDED.condition_notes, deal_properties.condition_notes),
+    repair_estimate = COALESCE(EXCLUDED.repair_estimate, deal_properties.repair_estimate),
+    garage_parking  = COALESCE(EXCLUDED.garage_parking,  deal_properties.garage_parking),
+    basement_type   = COALESCE(EXCLUDED.basement_type,   deal_properties.basement_type),
+    foundation_type = COALESCE(EXCLUDED.foundation_type, deal_properties.foundation_type),
+    roof_age        = COALESCE(EXCLUDED.roof_age,        deal_properties.roof_age),
+    furnace_age     = COALESCE(EXCLUDED.furnace_age,     deal_properties.furnace_age),
+    ac_age          = COALESCE(EXCLUDED.ac_age,          deal_properties.ac_age),
+    heating_type    = COALESCE(EXCLUDED.heating_type,    deal_properties.heating_type),
+    cooling_type    = COALESCE(EXCLUDED.cooling_type,    deal_properties.cooling_type),
+    updated_at      = now(),
+    row_version     = deal_properties.row_version + 1;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."update_property_info_v1"("p_deal_id" "uuid", "p_property_type" "text", "p_beds" integer, "p_baths" numeric, "p_sqft" integer, "p_lot_size" "text", "p_year_built" integer, "p_occupancy" "text", "p_deficiency_tags" "text"[], "p_condition_notes" "text", "p_repair_estimate" numeric, "p_garage_parking" "text", "p_basement_type" "text", "p_foundation_type" "text", "p_roof_age" integer, "p_furnace_age" integer, "p_ac_age" integer, "p_heating_type" "text", "p_cooling_type" "text") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."update_seller_info_v1"("p_deal_id" "uuid", "p_seller_name" "text" DEFAULT NULL::"text", "p_seller_phone" "text" DEFAULT NULL::"text", "p_seller_email" "text" DEFAULT NULL::"text", "p_seller_pain" "text" DEFAULT NULL::"text", "p_seller_timeline" "text" DEFAULT NULL::"text", "p_seller_notes" "text" DEFAULT NULL::"text", "p_next_action" "text" DEFAULT NULL::"text", "p_next_action_due" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  IF v_tenant IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'This workspace is read-only.', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.deals
+    WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
+  ) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Deal not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deals SET
+    seller_name     = COALESCE(p_seller_name,     seller_name),
+    seller_phone    = COALESCE(p_seller_phone,    seller_phone),
+    seller_email    = COALESCE(p_seller_email,    seller_email),
+    seller_pain     = COALESCE(p_seller_pain,     seller_pain),
+    seller_timeline = COALESCE(p_seller_timeline, seller_timeline),
+    seller_notes    = COALESCE(p_seller_notes,    seller_notes),
+    next_action     = COALESCE(p_next_action,     next_action),
+    next_action_due = COALESCE(p_next_action_due, next_action_due),
+    updated_at      = now(),
+    row_version     = row_version + 1
+  WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('deal_id', p_deal_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."update_seller_info_v1"("p_deal_id" "uuid", "p_seller_name" "text", "p_seller_phone" "text", "p_seller_email" "text", "p_seller_pain" "text", "p_seller_timeline" "text", "p_seller_notes" "text", "p_next_action" "text", "p_next_action_due" timestamp with time zone) OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."update_workspace_settings_v1"("p_workspace_name" "text" DEFAULT NULL::"text", "p_slug" "text" DEFAULT NULL::"text", "p_country" "text" DEFAULT NULL::"text", "p_currency" "text" DEFAULT NULL::"text", "p_measurement_unit" "text" DEFAULT NULL::"text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -3217,6 +4145,22 @@ CREATE TABLE IF NOT EXISTS "public"."deal_inputs" (
 
 ALTER TABLE "public"."deal_inputs" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."deal_media" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "storage_path" "text" NOT NULL,
+    "media_type" "text" DEFAULT 'photo'::"text" NOT NULL,
+    "sort_order" integer DEFAULT 0 NOT NULL,
+    "uploaded_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "uploaded_by" "uuid" NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    CONSTRAINT "deal_media_media_type_check" CHECK (("media_type" = 'photo'::"text"))
+);
+
+ALTER TABLE "public"."deal_media" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."deal_outputs" (
     "id" "uuid" NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -3228,6 +4172,35 @@ CREATE TABLE IF NOT EXISTS "public"."deal_outputs" (
 );
 
 ALTER TABLE "public"."deal_outputs" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."deal_properties" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "row_version" bigint DEFAULT 1 NOT NULL,
+    "property_type" "text",
+    "beds" integer,
+    "baths" numeric,
+    "sqft" integer,
+    "lot_size" "text",
+    "year_built" integer,
+    "occupancy" "text",
+    "deficiency_tags" "text"[],
+    "condition_notes" "text",
+    "repair_estimate" numeric,
+    "garage_parking" "text",
+    "basement_type" "text",
+    "foundation_type" "text",
+    "roof_age" integer,
+    "furnace_age" integer,
+    "ac_age" integer,
+    "heating_type" "text",
+    "cooling_type" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."deal_properties" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."deal_reminders" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -3277,11 +4250,23 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
     "row_version" bigint DEFAULT 1 NOT NULL,
     "calc_version" integer DEFAULT 1 NOT NULL,
     "assumptions_snapshot_id" "uuid",
-    "stage" "text" DEFAULT 'New'::"text" NOT NULL,
+    "stage" "text" DEFAULT 'new'::"text" NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "deleted_at" timestamp with time zone,
     "farm_area_id" "uuid",
-    CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['New'::"text", 'Analyzing'::"text", 'Offer Sent'::"text", 'Under Contract (UC)'::"text", 'Dispo'::"text", 'Closed / Dead'::"text"])))
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "address" "text",
+    "assignee_user_id" "uuid",
+    "seller_name" "text",
+    "seller_phone" "text",
+    "seller_email" "text",
+    "seller_pain" "text",
+    "seller_timeline" "text",
+    "seller_notes" "text",
+    "next_action" "text",
+    "next_action_due" timestamp with time zone,
+    "dead_reason" "text",
+    CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['new'::"text", 'analyzing'::"text", 'offer_sent'::"text", 'under_contract'::"text", 'dispo'::"text", 'tc'::"text", 'closed'::"text", 'dead'::"text"])))
 );
 
 ALTER TABLE "public"."deals" OWNER TO "postgres";
@@ -3424,8 +4409,20 @@ ALTER TABLE ONLY "public"."calc_versions"
 ALTER TABLE ONLY "public"."deal_inputs"
     ADD CONSTRAINT "deal_inputs_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."deal_media"
+    ADD CONSTRAINT "deal_media_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."deal_media"
+    ADD CONSTRAINT "deal_media_storage_path_unique" UNIQUE ("storage_path");
+
 ALTER TABLE ONLY "public"."deal_outputs"
     ADD CONSTRAINT "deal_outputs_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."deal_properties"
+    ADD CONSTRAINT "deal_properties_deal_id_unique" UNIQUE ("deal_id");
+
+ALTER TABLE ONLY "public"."deal_properties"
+    ADD CONSTRAINT "deal_properties_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."deal_reminders"
     ADD CONSTRAINT "deal_reminders_pkey" PRIMARY KEY ("id");
@@ -3522,8 +4519,23 @@ ALTER TABLE ONLY "public"."activity_log"
 ALTER TABLE ONLY "public"."deal_inputs"
     ADD CONSTRAINT "deal_inputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
 
+ALTER TABLE ONLY "public"."deal_media"
+    ADD CONSTRAINT "deal_media_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."deal_media"
+    ADD CONSTRAINT "deal_media_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
+
+ALTER TABLE ONLY "public"."deal_media"
+    ADD CONSTRAINT "deal_media_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "auth"."users"("id");
+
 ALTER TABLE ONLY "public"."deal_outputs"
     ADD CONSTRAINT "deal_outputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
+
+ALTER TABLE ONLY "public"."deal_properties"
+    ADD CONSTRAINT "deal_properties_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."deal_properties"
+    ADD CONSTRAINT "deal_properties_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
 
 ALTER TABLE ONLY "public"."deal_reminders"
     ADD CONSTRAINT "deal_reminders_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE CASCADE;
@@ -3542,6 +4554,9 @@ ALTER TABLE ONLY "public"."deal_tc"
 
 ALTER TABLE ONLY "public"."deal_tc"
     ADD CONSTRAINT "deal_tc_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."deals"
+    ADD CONSTRAINT "deals_assignee_user_id_fkey" FOREIGN KEY ("assignee_user_id") REFERENCES "auth"."users"("id");
 
 ALTER TABLE ONLY "public"."deals"
     ADD CONSTRAINT "deals_assumptions_snapshot_fk" FOREIGN KEY ("assumptions_snapshot_id") REFERENCES "public"."deal_inputs"("id") DEFERRABLE INITIALLY DEFERRED;
@@ -3586,7 +4601,15 @@ ALTER TABLE "public"."calc_versions" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."deal_inputs" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "public"."deal_media" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "deal_media_tenant_isolation" ON "public"."deal_media" TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"())) WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
 ALTER TABLE "public"."deal_outputs" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."deal_properties" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "deal_properties_tenant_isolation" ON "public"."deal_properties" TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"())) WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."deal_reminders" ENABLE ROW LEVEL SECURITY;
 

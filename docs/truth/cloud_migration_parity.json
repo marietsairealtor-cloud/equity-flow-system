@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260418000001",
-  "migration_tip_file": "20260418000001_10_9_mao_calculator.sql",
-  "migration_count": 99,
-  "pinned_at": "2026-04-18"
+  "migration_tip": "20260419000005",
+  "migration_tip_file": "20260419000005_10_11A_rpcs.sql",
+  "migration_count": 104,
+  "pinned_at": "2026-04-20"
 }
