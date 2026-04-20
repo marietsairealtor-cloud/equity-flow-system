@@ -6943,6 +6943,59 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 **Gate:** `merge-blocking`
 
+
+---
+
+### **10.11A1 — Acquisition Backend - Notes/Log Write Path and Activity Log Read Path**
+
+**Deliverable:**
+Backend support for writing user-authored notes and call logs related to deals and reading system-generated activity logs for deals.
+
+**DoD:**
+
+* **Notes/Log Write Path**:
+
+  * Backend supports the creation of user-authored notes and call logs for deals:
+
+    * `create_deal_note_v1(p_deal_id, p_note_type, p_content)` — write user notes or call logs.
+    * `list_deal_notes_v1(p_deal_id)` — fetches user notes and call logs for a specific deal.
+    * Notes and call logs are stored in a new `deal_notes` table, tenant-scoped.
+
+* **Activity Log Read Path**:
+
+  * Backend supports reading system-generated activity logs:
+
+    * `list_deal_activity_v1(p_deal_id)` — returns system-generated logs for a specific deal.
+    * Activity logs are fetched from the `foundation_log_activity_v1` table, which is tenant-scoped.
+
+* **Database**:
+
+  * A new `deal_notes` table is created to store user-generated notes and call logs.
+  * The table includes fields for `deal_id`, `note_type`, `content`, `created_at`, `updated_at`, and `created_by`.
+  * Proper foreign key relationships and RLS policies are applied to ensure tenant-scoped access.
+
+* **UI Support**:
+
+  * The UI will allow users to add notes and call logs, and view past notes/logs in the “Note History” section.
+
+* **Stage Actions**:
+
+  * No direct mutation of deal stages related to notes/logs.
+  * Notes and logs are independent of stage transitions, except that they belong to a deal in a particular stage.
+
+* **Backend Validations**:
+
+  * Ensure that all notes/logs are correctly associated with the appropriate deal and cannot be accessed by users from other tenants.
+  * Logs and notes cannot be modified or deleted by unauthorized users.
+
+* **Activity Logging**:
+
+  * Log entries are recorded whenever a note or call log is created, along with the associated `deal_id`, `note_type`, and `created_by` fields.
+
+**Proof:** `docs/proofs/10.11A1_deal_notes_activity_log_<UTC>.log`
+
+**Gate:** `merge-blocking`
+
 ---
 
 ### **10.11B — Acquisition Wiring**
