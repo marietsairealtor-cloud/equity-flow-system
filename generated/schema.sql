@@ -773,6 +773,94 @@ $$;
 
 ALTER FUNCTION "public"."create_active_workspace_seed_v1"("p_seed_workspace" "uuid", "p_user_id" "uuid", "p_role" "public"."tenant_role") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."create_deal_note_v1"("p_deal_id" "uuid", "p_note_type" "text", "p_content" "text") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant  uuid;
+  v_user    uuid;
+  v_deal    uuid;
+  v_note_id uuid;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'No tenant or user context', 'fields', '{}'::json)
+    );
+  END IF;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'WORKSPACE_NOT_WRITABLE',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'Workspace is not active', 'fields', '{}'::json)
+    );
+  END IF;
+
+  IF p_deal_id IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'p_deal_id is required', 'fields', '{}'::json)
+    );
+  END IF;
+
+  IF p_note_type IS NULL OR p_note_type NOT IN ('note', 'call_log') THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'p_note_type must be note or call_log', 'fields', '{}'::json)
+    );
+  END IF;
+
+  IF p_content IS NULL OR trim(p_content) = '' THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'p_content is required', 'fields', '{}'::json)
+    );
+  END IF;
+
+  SELECT id INTO v_deal
+  FROM public.deals
+  WHERE id        = p_deal_id
+    AND tenant_id = v_tenant
+    AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_FOUND',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'Deal not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  INSERT INTO public.deal_notes (tenant_id, deal_id, note_type, content, created_by)
+  VALUES (v_tenant, p_deal_id, p_note_type, trim(p_content), v_user)
+  RETURNING id INTO v_note_id;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('note_id', v_note_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."create_deal_note_v1"("p_deal_id" "uuid", "p_note_type" "text", "p_content" "text") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."create_deal_v1"("p_id" "uuid", "p_calc_version" integer DEFAULT 1, "p_assumptions" "jsonb" DEFAULT '{}'::"jsonb") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -2166,6 +2254,80 @@ $$;
 
 ALTER FUNCTION "public"."list_archived_workspaces_v1"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."list_deal_activity_v1"("p_deal_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_user   uuid;
+  v_deal   uuid;
+  v_result json;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'No tenant or user context', 'fields', '{}'::json)
+    );
+  END IF;
+
+  IF p_deal_id IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'p_deal_id is required', 'fields', '{}'::json)
+    );
+  END IF;
+
+  SELECT id INTO v_deal
+  FROM public.deals
+  WHERE id        = p_deal_id
+    AND tenant_id = v_tenant
+    AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_FOUND',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'Deal not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  SELECT json_agg(
+    json_build_object(
+      'activity_id',    fa.id,
+      'deal_id',        fa.deal_id,
+      'activity_type',  fa.activity_type,
+      'content',        fa.content,
+      'created_by',     fa.created_by,
+      'created_by_name', COALESCE(up.display_name, ''),
+      'created_at',     fa.created_at
+    ) ORDER BY fa.created_at DESC
+  )
+  INTO v_result
+  FROM public.deal_activity_log fa
+  LEFT JOIN public.user_profiles up ON up.id = fa.created_by
+  WHERE fa.deal_id   = p_deal_id
+    AND fa.tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('activity', COALESCE(v_result, '[]'::json)),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_deal_activity_v1"("p_deal_id" "uuid") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."list_deal_media_v1"("p_deal_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -2219,6 +2381,81 @@ END;
 $$;
 
 ALTER FUNCTION "public"."list_deal_media_v1"("p_deal_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."list_deal_notes_v1"("p_deal_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_user   uuid;
+  v_deal   uuid;
+  v_result json;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'No tenant or user context', 'fields', '{}'::json)
+    );
+  END IF;
+
+  IF p_deal_id IS NULL THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'p_deal_id is required', 'fields', '{}'::json)
+    );
+  END IF;
+
+  SELECT id INTO v_deal
+  FROM public.deals
+  WHERE id        = p_deal_id
+    AND tenant_id = v_tenant
+    AND deleted_at IS NULL;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_FOUND',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'Deal not found', 'fields', '{}'::json)
+    );
+  END IF;
+
+  SELECT json_agg(
+    json_build_object(
+      'note_id',        dn.id,
+      'deal_id',        dn.deal_id,
+      'note_type',      dn.note_type,
+      'content',        dn.content,
+      'created_by',     dn.created_by,
+      'created_by_name', COALESCE(up.display_name, ''),
+      'created_at',     dn.created_at,
+      'updated_at',     dn.updated_at
+    ) ORDER BY dn.created_at DESC
+  )
+  INTO v_result
+  FROM public.deal_notes dn
+  LEFT JOIN public.user_profiles up ON up.id = dn.created_by
+  WHERE dn.deal_id   = p_deal_id
+    AND dn.tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok',   true,
+    'code', 'OK',
+    'data', json_build_object('notes', COALESCE(v_result, '[]'::json)),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."list_deal_notes_v1"("p_deal_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."list_deals_v1"("p_limit" integer DEFAULT 25, "p_cursor" "text" DEFAULT NULL::"text") RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
@@ -2679,6 +2916,9 @@ BEGIN
     updated_at  = now(),
     row_version = row_version + 1
   WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  INSERT INTO public.deal_activity_log (tenant_id, deal_id, activity_type, content, created_by)
+  VALUES (v_tenant, p_deal_id, 'marked_dead', 'Deal marked dead', auth.uid());
 
   RETURN json_build_object(
     'ok', true, 'code', 'OK',
@@ -4133,6 +4373,18 @@ CREATE TABLE IF NOT EXISTS "public"."calc_versions" (
 
 ALTER TABLE "public"."calc_versions" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."deal_activity_log" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "activity_type" "text" NOT NULL,
+    "content" "text" NOT NULL,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE "public"."deal_activity_log" OWNER TO "postgres";
+
 CREATE TABLE IF NOT EXISTS "public"."deal_inputs" (
     "id" "uuid" NOT NULL,
     "tenant_id" "uuid" NOT NULL,
@@ -4160,6 +4412,20 @@ CREATE TABLE IF NOT EXISTS "public"."deal_media" (
 );
 
 ALTER TABLE "public"."deal_media" OWNER TO "postgres";
+
+CREATE TABLE IF NOT EXISTS "public"."deal_notes" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "note_type" "text" NOT NULL,
+    "content" "text" NOT NULL,
+    "created_by" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "deal_notes_note_type_check" CHECK (("note_type" = ANY (ARRAY['note'::"text", 'call_log'::"text"])))
+);
+
+ALTER TABLE "public"."deal_notes" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."deal_outputs" (
     "id" "uuid" NOT NULL,
@@ -4406,6 +4672,9 @@ ALTER TABLE ONLY "public"."activity_log"
 ALTER TABLE ONLY "public"."calc_versions"
     ADD CONSTRAINT "calc_versions_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."deal_activity_log"
+    ADD CONSTRAINT "deal_activity_log_pkey" PRIMARY KEY ("id");
+
 ALTER TABLE ONLY "public"."deal_inputs"
     ADD CONSTRAINT "deal_inputs_pkey" PRIMARY KEY ("id");
 
@@ -4414,6 +4683,9 @@ ALTER TABLE ONLY "public"."deal_media"
 
 ALTER TABLE ONLY "public"."deal_media"
     ADD CONSTRAINT "deal_media_storage_path_unique" UNIQUE ("storage_path");
+
+ALTER TABLE ONLY "public"."deal_notes"
+    ADD CONSTRAINT "deal_notes_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE ONLY "public"."deal_outputs"
     ADD CONSTRAINT "deal_outputs_pkey" PRIMARY KEY ("id");
@@ -4516,6 +4788,15 @@ CREATE OR REPLACE TRIGGER "on_tenant_invite_insert" AFTER INSERT ON "public"."te
 ALTER TABLE ONLY "public"."activity_log"
     ADD CONSTRAINT "activity_log_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
 
+ALTER TABLE ONLY "public"."deal_activity_log"
+    ADD CONSTRAINT "deal_activity_log_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+ALTER TABLE ONLY "public"."deal_activity_log"
+    ADD CONSTRAINT "deal_activity_log_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
+
+ALTER TABLE ONLY "public"."deal_activity_log"
+    ADD CONSTRAINT "deal_activity_log_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
+
 ALTER TABLE ONLY "public"."deal_inputs"
     ADD CONSTRAINT "deal_inputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
 
@@ -4527,6 +4808,15 @@ ALTER TABLE ONLY "public"."deal_media"
 
 ALTER TABLE ONLY "public"."deal_media"
     ADD CONSTRAINT "deal_media_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "auth"."users"("id");
+
+ALTER TABLE ONLY "public"."deal_notes"
+    ADD CONSTRAINT "deal_notes_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+ALTER TABLE ONLY "public"."deal_notes"
+    ADD CONSTRAINT "deal_notes_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
+
+ALTER TABLE ONLY "public"."deal_notes"
+    ADD CONSTRAINT "deal_notes_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id");
 
 ALTER TABLE ONLY "public"."deal_outputs"
     ADD CONSTRAINT "deal_outputs_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id");
@@ -4599,11 +4889,19 @@ CREATE POLICY "activity_log_select_own" ON "public"."activity_log" FOR SELECT TO
 
 ALTER TABLE "public"."calc_versions" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "public"."deal_activity_log" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "deal_activity_log_tenant_isolation" ON "public"."deal_activity_log" USING (("tenant_id" = "public"."current_tenant_id"()));
+
 ALTER TABLE "public"."deal_inputs" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."deal_media" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "deal_media_tenant_isolation" ON "public"."deal_media" TO "authenticated" USING (("tenant_id" = "public"."current_tenant_id"())) WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
+
+ALTER TABLE "public"."deal_notes" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "deal_notes_tenant_isolation" ON "public"."deal_notes" USING (("tenant_id" = "public"."current_tenant_id"()));
 
 ALTER TABLE "public"."deal_outputs" ENABLE ROW LEVEL SECURITY;
 

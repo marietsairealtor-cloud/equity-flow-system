@@ -85,7 +85,13 @@
     "public.update_display_name_v1",
     "public.upsert_subscription_v1"
   ],
-  "create_deal_note_v1": { "anon_callable": false },
-  "list_deal_notes_v1": { "anon_callable": false },
-  "list_deal_activity_v1": { "anon_callable": false }
+  "create_deal_note_v1": {
+    "anon_callable": false
+  },
+  "list_deal_notes_v1": {
+    "anon_callable": false
+  },
+  "list_deal_activity_v1": {
+    "anon_callable": false
+  }
 }
