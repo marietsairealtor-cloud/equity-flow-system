@@ -6997,6 +6997,81 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ---
 
+### **10.11A2 — Acquisition Backend — Seller / Property Edit Write Paths**
+
+**DoD**
+
+1. **Implement `update_deal_seller_v1`**
+
+   * Params:
+
+     * `p_deal_id`
+     * `p_seller_name`
+     * `p_seller_phone`
+     * `p_seller_email`
+     * `p_seller_pain`
+     * `p_seller_timeline`
+     * `p_seller_notes`
+   * Updates seller fields on `public.deals`
+   * Tenant-scoped
+   * Rejects missing tenant/user context
+   * Enforces workspace write lock
+   * Rejects deal not found for current tenant
+
+2. **Implement `update_deal_property_v1`**
+
+   * Params:
+
+     * `p_deal_id`
+     * `p_address`
+     * `p_next_action`
+     * `p_next_action_due`
+   * Updates property/action fields on `public.deals`
+   * Tenant-scoped
+   * Rejects missing tenant/user context
+   * Enforces workspace write lock
+   * Rejects deal not found for current tenant
+
+3. **Mutation behavior**
+
+   * Both RPCs update:
+
+     * `updated_at`
+     * `row_version = row_version + 1`
+   * No calc/version logic added
+   * No changes to `update_deal_v1`
+
+4. **Scope boundaries**
+
+   * `dead_reason` remains owned by `mark_deal_dead_v1`
+   * This item does not modify stage transitions
+   * This item does not create new tables
+
+5. **Governance**
+
+   * RPCs are `SECURITY DEFINER`
+   * `EXECUTE` granted to `authenticated` only
+   * Register in:
+
+     * contract registry
+     * execute allowlist
+     * definer allowlist
+     * qa scope map / claim as required
+
+6. **Tests**
+
+   * Success path for both RPCs
+   * Cross-tenant `NOT_FOUND`
+   * Write lock rejection
+   * Validation coverage for any required fields
+   * Verify fields updated correctly
+   * Verify `row_version` increments
+
+**Proof:** `docs/proofs/10.11A2_deal_edit_write_paths_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
 ### **10.11B — Acquisition Wiring**
 
 **Deliverable:**

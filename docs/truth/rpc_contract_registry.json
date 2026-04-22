@@ -601,6 +601,24 @@
       "notes": "STABLE SECURITY DEFINER. Returns activity array from deal_activity_log for deal in tenant (newest first)."
     },
     {
+      "name": "update_deal_seller_v1",
+      "version": 1,
+      "build_route_owner": "10.11A2",
+      "input_contract": "CONTRACTS.md §57 update_deal_seller_v1 (10.11A2)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "SECURITY DEFINER, grants authenticated. p_fields jsonb: seller_name, seller_phone, seller_email, seller_pain, seller_timeline, seller_notes. check_workspace_write_allowed_v1. Omit key = no change; explicit json null = clear; same as current = VALIDATION_ERROR; empty/non-object/unknown keys = VALIDATION_ERROR."
+    },
+    {
+      "name": "update_deal_property_v1",
+      "version": 1,
+      "build_route_owner": "10.11A2",
+      "input_contract": "CONTRACTS.md §57 update_deal_property_v1 (10.11A2)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "SECURITY DEFINER, grants authenticated. p_fields jsonb: address, next_action, next_action_due (timestamptz). Same field contract as update_deal_seller_v1. check_workspace_write_allowed_v1."
+    },
+    {
       "name": "process_workspace_retention_v1",
       "version": 1,
       "build_route_owner": "10.8.11O",
