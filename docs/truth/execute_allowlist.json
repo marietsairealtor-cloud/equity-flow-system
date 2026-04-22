@@ -50,6 +50,8 @@
     "set_tenant_slug_v1",
     "submit_form_v1",
     "update_deal_v1",
+    "update_deal_property_v1",
+    "update_deal_seller_v1",
     "update_display_name_v1",
     "update_member_role_v1",
     "update_property_info_v1",

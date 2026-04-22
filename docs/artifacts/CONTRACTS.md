@@ -298,6 +298,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_deal_note_v1 | 10.11A1 | Append user note or call log on `deal_notes` for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_note_type + p_content |
 | list_deal_notes_v1 | 10.11A1 | List notes/call logs for a deal (newest first) | SECURITY DEFINER, STABLE, min role: member | current_tenant_id() — p_deal_id only |
 | list_deal_activity_v1 | 10.11A1 | List `deal_activity_log` rows for a deal (newest first) | SECURITY DEFINER, STABLE, min role: member | current_tenant_id() — p_deal_id only |
+| update_deal_seller_v1 | 10.11A2 | Jsonb field patch for seller columns on `deals` (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
+| update_deal_property_v1 | 10.11A2 | Jsonb field patch for address and next-action fields (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
@@ -374,6 +376,8 @@ Checks: tenant context exists, caller is a member, subscription exists, subscrip
 - `return_to_dispo_v1`
 - `update_seller_info_v1`
 - `update_property_info_v1`
+- `update_deal_seller_v1`
+- `update_deal_property_v1`
 - `register_deal_media_v1`
 - `delete_deal_media_v1`
 - `create_deal_note_v1`
@@ -1312,3 +1316,26 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 **§RPC `list_deal_activity_v1(p_deal_id uuid)`** — SECURITY DEFINER, **STABLE**. Returns `data.activity` (JSON array, newest first) from `deal_activity_log` with activity fields and `created_by_name`. Same deal validation and error set as `list_deal_notes_v1`.
 
 **§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A1**.
+
+---
+
+## 57) Deal edit write paths — jsonb field patches (10.11A2)
+
+**Authority:** migration `20260422000001_10_11A2_deal_edit_write_paths.sql`.
+
+### Shared rules (both RPCs)
+
+- **SECURITY DEFINER**, **GRANT EXECUTE** to **`authenticated` only** (no `anon`). Standard JSON RPC envelope.
+- **Tenant** from `current_tenant_id()`. **Workspace write lock:** `check_workspace_write_allowed_v1()` before any write (§17A). Failure → `NOT_AUTHORIZED` (read-only workspace messaging) or `WORKSPACE_NOT_WRITABLE` where the implementation distinguishes locked workspace from other auth failures; align with `create_deal_note_v1` (§56).
+- **`p_fields`:** must be a **JSON object** with **only** the allowed keys for that RPC. **Omitted key** → no change to that column. **Explicit JSON `null`** for a present key → clear nullable column. **Value equals current DB value** for a column being written → **`VALIDATION_ERROR`** (no-op updates rejected). **Empty object `{}`**, **non-object** `p_fields`, or **any unknown key** → **`VALIDATION_ERROR`**. **`next_action_due`**, where applicable, must parse as **timestamptz**; invalid values → **`VALIDATION_ERROR`**.
+- **Deal must exist** in the current tenant; otherwise → **`NOT_FOUND`**.
+
+### §RPC `update_deal_seller_v1(p_deal_id uuid, p_fields jsonb)`
+
+Writes seller-related columns on **`public.deals`**. Allowed keys: **`seller_name`**, **`seller_phone`**, **`seller_email`**, **`seller_pain`**, **`seller_timeline`**, **`seller_notes`** (all optional; omit-unchanged / null-clear / same-value error per shared rules).
+
+### §RPC `update_deal_property_v1(p_deal_id uuid, p_fields jsonb)`
+
+Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.deals`**. Validate **`next_action_due`** as **timestamptz** when the key is present. Same field contract as `update_deal_seller_v1` for merge semantics and validation.
+
+**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A2**.

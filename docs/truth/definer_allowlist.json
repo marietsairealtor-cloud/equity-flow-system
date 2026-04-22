@@ -57,6 +57,8 @@
     "public.trigger_invite_email",
     "public.trigger_seat_sync",
     "public.update_deal_v1",
+    "public.update_deal_property_v1",
+    "public.update_deal_seller_v1",
     "public.update_display_name_v1",
     "public.update_member_role_v1",
     "public.update_property_info_v1",
@@ -92,6 +94,12 @@
     "anon_callable": false
   },
   "list_deal_activity_v1": {
+    "anon_callable": false
+  },
+  "update_deal_seller_v1": {
+    "anon_callable": false
+  },
+  "update_deal_property_v1": {
     "anon_callable": false
   }
 }
