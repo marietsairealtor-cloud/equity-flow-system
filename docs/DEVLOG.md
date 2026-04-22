@@ -9101,3 +9101,33 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-22 — Build Route v2.4 — 10.11A2
+
+Objective
+Acquisition Backend - Seller / Property Edit Write Paths
+
+Changes
+- Migration 20260422000001_10_11A2_deal_edit_write_paths.sql applied
+- New RPC: update_deal_seller_v1(p_deal_id uuid, p_fields jsonb)
+    SECURITY DEFINER, authenticated only, write lock enforced
+    jsonb payload: seller_name, seller_phone, seller_email, seller_pain, seller_timeline, seller_notes
+    omit = no change, explicit null = clear, same value = VALIDATION_ERROR
+- New RPC: update_deal_property_v1(p_deal_id uuid, p_fields jsonb)
+    SECURITY DEFINER, authenticated only, write lock enforced
+    jsonb payload: address, next_action, next_action_due
+    next_action_due validated as timestamptz
+    same field contract as seller RPC
+- No schema changes. No new tables. update_deal_v1 unchanged.
+- dead_reason remains owned by mark_deal_dead_v1
+- CONTRACTS.md sections 17, 17A, 57 updated
+- rpc_contract_registry.json, execute_allowlist.json, definer_allowlist.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A2_deal_edit_write_paths_20260422T191026Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
