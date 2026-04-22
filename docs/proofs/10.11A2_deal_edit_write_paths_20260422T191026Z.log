@@ -1,0 +1,104 @@
+PROOF_HEAD=68f1d174dfdd3fcfd08fa00bb7358cec07f68f56
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A2 Acquisition Backend - Seller / Property Edit Write Paths -- Proof Log ===
+Date: 2026-04-22T15:09:31.2925044-04:00
+Branch: feature/10.11A2-deal-edit-write-paths
+PR HEAD SHA: 68f1d174dfdd3fcfd08fa00bb7358cec07f68f56
+
+=== Deliverable ===
+Migration: 20260422000001_10_11A2_deal_edit_write_paths.sql -- applied
+Test file: supabase/tests/10_11A2_deal_edit_write_paths.test.sql -- PASS
+
+=== New RPCs ===
+update_deal_seller_v1(p_deal_id uuid, p_fields jsonb)
+  - SECURITY DEFINER, authenticated only
+  - workspace write lock enforced via check_workspace_write_allowed_v1()
+  - jsonb payload keys: seller_name, seller_phone, seller_email, seller_pain, seller_timeline, seller_notes
+  - omit key = no change
+  - explicit null = clear field
+  - same value as current = VALIDATION_ERROR
+  - empty or non-object payload = VALIDATION_ERROR
+  - unknown keys = VALIDATION_ERROR
+  - zero rows updated disambiguated: NOT_FOUND vs VALIDATION_ERROR
+
+update_deal_property_v1(p_deal_id uuid, p_fields jsonb)
+  - SECURITY DEFINER, authenticated only
+  - workspace write lock enforced via check_workspace_write_allowed_v1()
+  - jsonb payload keys: address, next_action, next_action_due
+  - next_action_due validated as timestamptz before UPDATE
+  - same field contract as update_deal_seller_v1
+  - zero rows updated disambiguated: NOT_FOUND vs VALIDATION_ERROR
+
+=== No Changes To ===
+update_deal_v1 -- unchanged
+No schema changes. No new tables. No new columns.
+
+=== pgTAP Results ===
+supabase db test -- PASS (63 files, 702 tests, 0 failures)
+update_deal_seller_v1 success on valid field update -- PASS
+update_deal_seller_v1 row_version incremented after update -- PASS
+update_deal_seller_v1 seller_name persisted correctly -- PASS
+update_deal_seller_v1 omitted field left unchanged -- PASS
+update_deal_seller_v1 explicit null accepted -- PASS
+update_deal_seller_v1 explicit null clears field -- PASS
+update_deal_seller_v1 same-value submission returns VALIDATION_ERROR -- PASS
+update_deal_seller_v1 empty payload returns VALIDATION_ERROR -- PASS
+update_deal_seller_v1 non-object payload returns VALIDATION_ERROR -- PASS
+update_deal_seller_v1 unknown key returns VALIDATION_ERROR -- PASS
+update_deal_seller_v1 cross-tenant deal returns NOT_FOUND -- PASS
+update_deal_seller_v1 expired workspace returns WORKSPACE_NOT_WRITABLE -- PASS
+update_deal_property_v1 success on valid field update -- PASS
+update_deal_property_v1 row_version incremented after update -- PASS
+update_deal_property_v1 address persisted correctly -- PASS
+update_deal_property_v1 omitted field left unchanged -- PASS
+update_deal_property_v1 explicit null on next_action_due accepted -- PASS
+update_deal_property_v1 explicit null clears next_action_due -- PASS
+update_deal_property_v1 invalid timestamp returns VALIDATION_ERROR -- PASS
+update_deal_property_v1 same-value submission returns VALIDATION_ERROR -- PASS
+update_deal_property_v1 empty payload returns VALIDATION_ERROR -- PASS
+update_deal_property_v1 non-object payload returns VALIDATION_ERROR -- PASS
+update_deal_property_v1 unknown key returns VALIDATION_ERROR -- PASS
+update_deal_property_v1 cross-tenant deal returns NOT_FOUND -- PASS
+update_deal_property_v1 expired workspace returns WORKSPACE_NOT_WRITABLE -- PASS
+update_deal_property_v1 row_version not incremented on write lock rejection -- PASS
+update_deal_seller_v1 row_version not incremented on write lock rejection -- PASS
+
+=== db push ===
+20260422000001_10_11A2_deal_edit_write_paths.sql -- applied
+
+=== DoD Checklist ===
+update_deal_seller_v1 exists, SECURITY DEFINER, authenticated only         -- PASS
+update_deal_property_v1 exists, SECURITY DEFINER, authenticated only       -- PASS
+both RPCs enforce workspace write lock                                      -- PASS
+jsonb payload distinguishes omit vs null vs same-value                     -- PASS
+next_action_due validated as timestamptz                                   -- PASS
+row_version incremented on success                                         -- PASS
+row_version not incremented on rejection                                   -- PASS
+cross-tenant isolation enforced                                            -- PASS
+update_deal_v1 unchanged                                                   -- PASS
+no schema changes                                                          -- PASS
+dead_reason not in scope                                                   -- PASS
+
+=== Registration ===
+rpc_contract_registry.json -- PASS
+execute_allowlist.json -- PASS
+definer_allowlist.json -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md sections 17, 17A, 57 updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260422T185616Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A2 Acquisition Backend Seller / Property Edit Write Paths: PASS (merge-blocking gate)
