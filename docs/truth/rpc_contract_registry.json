@@ -472,7 +472,7 @@
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — get_acq_deal_v1",
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
-      "notes": "p_deal_id uuid. Full Acquisition deal payload: deal row, optional deal_properties JSON, pricing from latest deal_inputs. STABLE."
+      "notes": "p_deal_id uuid. Full Acquisition deal payload: deal row, optional deal_properties JSON, pricing from latest deal_inputs (returns mao and multiplier inside pricing object — 10.11A3). Returns last_contacted_at at top level of data, derived from most recent call_log note on deal_notes (10.11A3); null when no call_log exists. STABLE."
     },
     {
       "name": "update_seller_info_v1",

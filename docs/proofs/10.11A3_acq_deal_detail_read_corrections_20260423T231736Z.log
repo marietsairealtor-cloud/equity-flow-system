@@ -1,0 +1,71 @@
+PROOF_HEAD=66916635c5eb6f22fda5dba5d7d16d9a4550c05c
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A3 Acquisition Backend - Deal Detail Read Path Corrections -- Proof Log ===
+Date: 2026-04-23T19:14:19.5950419-04:00
+Branch: feature/10.11A3-acq-deal-detail-read-corrections
+PR HEAD SHA: 66916635c5eb6f22fda5dba5d7d16d9a4550c05c
+
+=== Deliverable ===
+Migration: 20260423000001_10_11A3_acq_deal_detail_read_corrections.sql -- applied
+Test file: supabase/tests/10_11A3_acq_deal_detail_read_corrections.test.sql -- PASS
+
+=== Changes to get_acq_deal_v1 ===
+Added to pricing object:
+  mao: sourced from deal_inputs.assumptions->>'mao'
+  multiplier: sourced from deal_inputs.assumptions->>'multiplier'
+Added at top level:
+  last_contacted_at: derived from most recent deal_notes.created_at where note_type = 'call_log'
+  last_contacted_at returns null when no call_log exists for the deal
+Added guard:
+  p_deal_id IS NULL returns VALIDATION_ERROR
+No existing fields removed. No signature change. No new RPC. No schema changes.
+
+=== pgTAP Results ===
+supabase db test -- PASS (64 files, 712 tests, 0 failures)
+get_acq_deal_v1 returns ok -- PASS
+get_acq_deal_v1 returns mao from assumptions -- PASS
+get_acq_deal_v1 returns multiplier from assumptions -- PASS
+get_acq_deal_v1 last_contacted_at returns newest call_log -- PASS
+get_acq_deal_v1 last_contacted_at is null when no call_log exists -- PASS
+get_acq_deal_v1 null p_deal_id returns VALIDATION_ERROR -- PASS
+get_acq_deal_v1 cross-tenant deal returns NOT_FOUND -- PASS
+get_acq_deal_v1 existing address field still returned -- PASS
+get_acq_deal_v1 existing arv field still returned -- PASS
+get_acq_deal_v1 health_color still returned -- PASS
+
+=== db push ===
+20260423000001_10_11A3_acq_deal_detail_read_corrections.sql -- applied
+
+=== DoD Checklist ===
+get_acq_deal_v1 returns mao                                            -- PASS
+get_acq_deal_v1 returns multiplier                                     -- PASS
+last_contacted_at derived from most recent call_log                    -- PASS
+last_contacted_at null when no call_log exists                         -- PASS
+cross-tenant isolation preserved                                        -- PASS
+no new tables                                                          -- PASS
+no new columns on public.deals                                         -- PASS
+no new write RPC                                                       -- PASS
+no changes to update_deal_v1                                           -- PASS
+all existing fields preserved -- no regression                         -- PASS
+
+=== Registration ===
+rpc_contract_registry.json -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260423T225106Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A3 Acquisition Backend Deal Detail Read Path Corrections: PASS (merge-blocking gate)

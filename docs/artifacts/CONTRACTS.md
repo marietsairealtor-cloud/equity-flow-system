@@ -282,7 +282,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | get_acq_kpis_v1 | 10.11A | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
-| get_acq_deal_v1 | 10.11A | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| get_acq_deal_v1 | 10.11A, read-path corrections 10.11A3 | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot including mao and multiplier; top-level last_contacted_at from latest call_log or null) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
 | update_seller_info_v1 | 10.11A | Partial update of seller + next-action fields on deals | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | update_property_info_v1 | 10.11A | Upsert deal_properties row for a deal (partial field merge) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
@@ -1251,7 +1251,7 @@ Standard envelope with `data` including at least: `id`, `tenant_id`, `assumption
 
 ## 55) Acquisition backend — deals schema, stages, and RPCs (10.11A)
 
-**Authority:** migrations `20260419000001`–`20260419000005` (extend `public.deals`, `deal_properties`, `deal_media`, stage normalization, SECURITY DEFINER RPCs). Deal notes and activity log tables/RPCs: **10.11A1** — migration `20260420000001_10_11A1_deal_notes_activity_log.sql` (see §56).
+**Authority:** migrations `20260419000001`–`20260419000005` (extend `public.deals`, `deal_properties`, `deal_media`, stage normalization, SECURITY DEFINER RPCs). Deal notes and activity log tables/RPCs: **10.11A1** — migration `20260420000001_10_11A1_deal_notes_activity_log.sql` (see §56). **`get_acq_deal_v1` read-path corrections (10.11A3):** migration `20260423000001_10_11A3_acq_deal_detail_read_corrections.sql` — no new RPC, no schema changes (function body only). Response `data.pricing` includes `mao` and `multiplier`; `data.last_contacted_at` is the timestamp of the most recent `call_log` row in `deal_notes`, or `null` when none exist.
 
 ### Canonical deal stages
 
@@ -1280,7 +1280,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 |-----|------|
 | `get_acq_kpis_v1()` | Read KPI aggregates for the Acquisition dashboard. |
 | `list_acq_deals_v1(p_filter text, p_farm_area_id uuid)` | List active Acquisition pipeline deals; `p_filter` ∈ `all`, `new`, `analyzing`, `offer_sent`, `under_contract`, `follow_ups` (reminder-driven). |
-| `get_acq_deal_v1(p_deal_id uuid)` | Full detail for one deal including embedded `properties` and latest `pricing` from `deal_inputs`. |
+| `get_acq_deal_v1(p_deal_id uuid)` | Full detail for one deal including embedded `properties` and latest `pricing` from `deal_inputs` (`pricing` includes `mao` and `multiplier` — 10.11A3). Top-level `last_contacted_at` from the most recent `call_log` on `deal_notes`, or `null` if there is no call log. No new RPC; no schema changes. |
 | `update_seller_info_v1(...)` | Partial updates to seller and next-action columns on `deals`. |
 | `update_property_info_v1(...)` | Upsert `deal_properties` with partial merge. |
 | `advance_deal_stage_v1(p_deal_id uuid, p_action text)` | Allowed forward transitions only; invalid transitions → `CONFLICT`. |

@@ -591,6 +591,9 @@
     },
     "10.11A2": {
       "proof_pattern": "^docs/proofs/10\\.11A2_deal_edit_write_paths_"
+    },
+    "10.11A3": {
+      "proof_pattern": "^docs/proofs/10\\.11A3_acq_deal_detail_read_corrections_"
     }
   }
 }
