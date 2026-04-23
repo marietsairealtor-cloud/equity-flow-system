@@ -1,5 +1,5 @@
 {
-  "version": 18,
+  "version": 19,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -77,6 +77,14 @@
       "description": "10.11A: migrations 20260419000004 and 20260419000005 reference calc_version incidentally. Migration 4 corrects stage values in update_deal_v1; migration 5 reads calc_version in get_acq_deal_v1 for pricing payload. No calc logic changed.",
       "introduced_pr": "feature/10.11A-acquisition-backend",
       "released_at": "2026-04-19"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.11A3 acq deal detail read corrections",
+      "migration": "20260423000001_10_11A3_acq_deal_detail_read_corrections.sql",
+      "description": "10.11A3: get_acq_deal_v1 pricing json still includes di.calc_version; adds mao and multiplier from assumptions snapshot only (same governed source as existing pricing fields). No new calc_version integer; no server-side MAO recompute or formula change.",
+      "introduced_pr": "10.11A3",
+      "released_at": "2026-04-23"
     }
   ],
   "watch_surface": {
