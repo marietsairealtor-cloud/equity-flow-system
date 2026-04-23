@@ -9131,3 +9131,30 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-23 — Build Route v2.4 — 10.11A3
+
+Objective
+Acquisition Backend - Deal Detail Read Path Corrections
+
+Changes
+- Migration 20260423000001_10_11A3_acq_deal_detail_read_corrections.sql applied
+- get_acq_deal_v1 extended:
+  - pricing.mao: sourced from deal_inputs.assumptions->>'mao'
+  - pricing.multiplier: sourced from deal_inputs.assumptions->>'multiplier'
+  - last_contacted_at: derived from most recent deal_notes.created_at where note_type = 'call_log'
+  - last_contacted_at returns null when no call_log exists
+  - p_deal_id IS NULL guard added returning VALIDATION_ERROR
+- No new RPC. No schema changes. No new tables. No new columns.
+- All existing get_acq_deal_v1 fields preserved -- no regression
+- CONTRACTS.md updated -- pricing and last_contacted_at documented
+- rpc_contract_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A3_acq_deal_detail_read_corrections_20260423T231736Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
