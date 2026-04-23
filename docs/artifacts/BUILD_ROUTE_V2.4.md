@@ -7070,6 +7070,48 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 **Proof:** `docs/proofs/10.11A2_deal_edit_write_paths_<UTC>.log`
 **Gate:** `merge-blocking`
 
+### **10.11A3 — Acquisition Backend — Deal Detail Read Path Corrections**
+
+**DoD**
+
+1. **Extend `get_acq_deal_v1`**
+
+   * return **`mao`**
+   * return **`multiplier`**
+   * values must come from the governed assumptions/calculation source already used by the deal detail read path
+
+2. **Add last contact to deal detail read path**
+
+   * return **`last_contacted_at`**
+   * derive from the most recent `deal_notes.created_at` for the deal where:
+
+     * `note_type = 'call_log'`
+   * if no `call_log` exists, return `null`
+
+3. **Scope boundaries**
+
+   * no new tables
+   * no new columns on `public.deals`
+   * no new write RPC for last contact
+   * do not modify `update_deal_v1`
+
+4. **Behavior**
+
+   * tenant-scoped read only
+   * cross-tenant isolation preserved
+   * output remains governed backend only
+
+5. **Tests**
+
+   * `get_acq_deal_v1` returns `mao`
+   * `get_acq_deal_v1` returns `multiplier`
+   * `last_contacted_at` returns newest `call_log` timestamp
+   * `last_contacted_at = null` when no call log exists
+   * cross-tenant isolation holds
+
+**Proof:** `docs/proofs/10.11A3_acq_deal_detail_read_corrections_<UTC>.log`
+**Gate:** `merge-blocking`
+
 ---
 
 ### **10.11B — Acquisition Wiring**
