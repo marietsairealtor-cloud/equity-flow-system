@@ -1547,7 +1547,7 @@ $$;
 
 ALTER FUNCTION "public"."get_acq_deal_v1"("p_deal_id" "uuid") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_acq_kpis_v1"() RETURNS json
+CREATE OR REPLACE FUNCTION "public"."get_acq_kpis_v1"("p_date_from" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_date_to" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS json
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -1565,42 +1565,62 @@ BEGIN
     );
   END IF;
 
+  IF p_date_from IS NOT NULL AND p_date_to IS NOT NULL AND p_date_to < p_date_from THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'p_date_to must not be before p_date_from', 'fields', json_build_object())
+    );
+  END IF;
+
+  -- contracts signed: deals in terminal stages within date range
   SELECT COUNT(*) INTO v_contracts_signed
   FROM public.deals
-  WHERE tenant_id = v_tenant
+  WHERE tenant_id  = v_tenant
     AND stage IN ('under_contract', 'dispo', 'tc', 'closed')
-    AND deleted_at IS NULL;
+    AND deleted_at IS NULL
+    AND (p_date_from IS NULL OR created_at >= p_date_from)
+    AND (p_date_to   IS NULL OR created_at <= p_date_to);
 
+  -- leads worked: all deals within date range
   SELECT COUNT(*) INTO v_leads_worked
   FROM public.deals
-  WHERE tenant_id = v_tenant
-    AND deleted_at IS NULL;
+  WHERE tenant_id  = v_tenant
+    AND deleted_at IS NULL
+    AND (p_date_from IS NULL OR created_at >= p_date_from)
+    AND (p_date_to   IS NULL OR created_at <= p_date_to);
 
-  SELECT COALESCE(AVG(
-    (di.assumptions->>'assignment_fee')::numeric
-  ), 0) INTO v_avg_assignment_fee
-  FROM public.deals d
-  JOIN public.deal_inputs di ON di.deal_id = d.id AND di.tenant_id = v_tenant
-  WHERE d.tenant_id = v_tenant
-    AND d.stage IN ('under_contract', 'dispo', 'tc', 'closed')
-    AND d.deleted_at IS NULL
-    AND di.assumptions->>'assignment_fee' IS NOT NULL;
+  -- avg assignment fee: one latest deal_inputs row per deal
+  SELECT COALESCE(AVG(latest.assignment_fee), 0) INTO v_avg_assignment_fee
+  FROM (
+    SELECT DISTINCT ON (d.id)
+      (di.assumptions->>'assignment_fee')::numeric AS assignment_fee
+    FROM public.deals d
+    JOIN public.deal_inputs di
+      ON di.deal_id = d.id AND di.tenant_id = v_tenant
+    WHERE d.tenant_id  = v_tenant
+      AND d.stage IN ('under_contract', 'dispo', 'tc', 'closed')
+      AND d.deleted_at IS NULL
+      AND (p_date_from IS NULL OR d.created_at >= p_date_from)
+      AND (p_date_to   IS NULL OR d.created_at <= p_date_to)
+      AND di.assumptions->>'assignment_fee' IS NOT NULL
+    ORDER BY d.id, di.created_at DESC, di.id DESC
+  ) latest;
 
   RETURN json_build_object(
     'ok', true, 'code', 'OK',
     'data', json_build_object(
-      'contracts_signed',       v_contracts_signed,
-      'lead_to_contract_pct',   CASE WHEN v_leads_worked = 0 THEN 0
-                                     ELSE ROUND((v_contracts_signed::numeric / v_leads_worked) * 100, 1)
-                                END,
-      'avg_assignment_fee',     ROUND(v_avg_assignment_fee, 2)
+      'contracts_signed',     v_contracts_signed,
+      'lead_to_contract_pct', CASE WHEN v_leads_worked = 0 THEN 0
+                                   ELSE ROUND((v_contracts_signed::numeric / v_leads_worked) * 100, 1)
+                              END,
+      'avg_assignment_fee',   ROUND(v_avg_assignment_fee, 2)
     ),
     'error', null
   );
 END;
 $$;
 
-ALTER FUNCTION "public"."get_acq_kpis_v1"() OWNER TO "postgres";
+ALTER FUNCTION "public"."get_acq_kpis_v1"("p_date_from" timestamp with time zone, "p_date_to" timestamp with time zone) OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_deal_health_color"("p_stage" "text", "p_updated_at" timestamp with time zone) RETURNS "text"
     LANGUAGE "sql" STABLE
