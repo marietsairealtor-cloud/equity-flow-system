@@ -1,0 +1,76 @@
+PROOF_HEAD=c7d92968dded77aafa8924146407deb85d1680a3
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A4 Acquisition Backend - KPI Date Range Filter -- Proof Log ===
+Date: 2026-04-23T20:57:23.4606374-04:00
+Branch: feature/10.11A4-acq-kpi-date-range
+PR HEAD SHA: c7d92968dded77aafa8924146407deb85d1680a3
+
+=== Deliverable ===
+Migration: 20260423000002_10_11A4_acq_kpi_date_range.sql -- applied
+Test file: supabase/tests/10_11A4_acq_kpi_date_range.test.sql -- PASS
+
+=== Changes to get_acq_kpis_v1 ===
+Old zero-arg surface dropped: get_acq_kpis_v1()
+New signature: get_acq_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL)
+Filter behavior:
+  both null -> all time (existing behavior preserved)
+  p_date_from only -> created_at >= p_date_from
+  p_date_to only -> created_at <= p_date_to
+  both provided -> filter within range
+  p_date_to < p_date_from -> VALIDATION_ERROR
+avg_assignment_fee: uses latest deal_inputs row per deal (ORDER BY created_at DESC, id DESC)
+No schema changes. No new tables. No new columns.
+
+=== pgTAP Results ===
+supabase db test -- PASS (64 files, 724 tests, 0 failures)
+get_acq_kpis_v1: all-time returns both contracts signed -- PASS
+get_acq_kpis_v1: last 7 days returns only recent contract -- PASS
+get_acq_kpis_v1: last 30 days excludes deal older than 30 days -- PASS
+get_acq_kpis_v1: one-sided lower bound from 35 days ago returns only deal 2 -- PASS
+get_acq_kpis_v1: one-sided upper bound returns only older contract -- PASS
+get_acq_kpis_v1: p_date_to before p_date_from returns VALIDATION_ERROR -- PASS
+get_acq_kpis_v1: all-time lead_to_contract_pct correct -- PASS
+get_acq_kpis_v1: last 7 days lead_to_contract_pct correct -- PASS
+get_acq_kpis_v1: avg_assignment_fee uses latest deal_inputs row per deal -- PASS
+get_acq_kpis_v1: avg_assignment_fee filtered by date range -- PASS
+get_acq_kpis_v1: cross-tenant deals not included in KPIs -- PASS
+get_acq_kpis_v1: older deal_inputs row does not pollute avg_assignment_fee -- PASS
+
+=== db push ===
+20260423000002_10_11A4_acq_kpi_date_range.sql -- applied
+
+=== DoD Checklist ===
+get_acq_kpis_v1 extended with p_date_from and p_date_to         -- PASS
+both null -> all-time behavior preserved                         -- PASS
+p_date_from only -> lower bound filter                           -- PASS
+p_date_to only -> upper bound filter                             -- PASS
+both provided -> range filter                                    -- PASS
+p_date_to < p_date_from -> VALIDATION_ERROR                      -- PASS
+avg_assignment_fee uses latest deal_inputs per deal              -- PASS
+no schema changes                                                -- PASS
+no new tables                                                    -- PASS
+no new columns                                                   -- PASS
+cross-tenant isolation preserved                                 -- PASS
+
+=== Registration ===
+rpc_contract_registry.json -- PASS
+execute_allowlist.json -- confirmed present, no change needed
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260424T005723Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A4 Acquisition Backend KPI Date Range Filter: PASS (merge-blocking gate)
