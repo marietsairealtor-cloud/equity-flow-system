@@ -9158,3 +9158,32 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-24 — Build Route v2.4 — 10.11A4
+
+Objective
+Acquisition Backend - KPI Date Range Filter
+
+Changes
+- Migration 20260423000002_10_11A4_acq_kpi_date_range.sql applied
+- Dropped old zero-arg surface: get_acq_kpis_v1()
+- New signature: get_acq_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL)
+- Filter behavior:
+  both null -> all time (existing behavior preserved)
+  p_date_from only -> created_at >= p_date_from
+  p_date_to only -> created_at <= p_date_to
+  both provided -> filter within range
+  p_date_to < p_date_from -> VALIDATION_ERROR
+- avg_assignment_fee now uses latest deal_inputs row per deal
+- No schema changes. No new tables. No new columns.
+- CONTRACTS.md updated -- get_acq_kpis_v1 signature and behavior documented
+- rpc_contract_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A4_acq_kpi_date_range_20260424T005829Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
