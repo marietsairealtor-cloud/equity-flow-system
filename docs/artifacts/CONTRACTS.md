@@ -281,7 +281,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_deal_v1 | 6.6, 10.9 | Create deal; server-computed MAO from assumptions inputs (10.9); stores assumptions snapshot | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
-| get_acq_kpis_v1 | 10.11A | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
+| get_acq_kpis_v1 | 10.11A, KPI date range 10.11A4 | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant; optional `p_date_from` / `p_date_to` filter by deal `created_at` (both NULL = all time); invalid range → `VALIDATION_ERROR`; avg fee from latest `deal_inputs` per deal | SECURITY DEFINER, min role: member | current_tenant_id() — optional `p_date_from`, `p_date_to` timestamptz |
 | get_acq_deal_v1 | 10.11A, read-path corrections 10.11A3 | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot including mao and multiplier; top-level last_contacted_at from latest call_log or null) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
 | update_seller_info_v1 | 10.11A | Partial update of seller + next-action fields on deals | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
@@ -1251,7 +1251,7 @@ Standard envelope with `data` including at least: `id`, `tenant_id`, `assumption
 
 ## 55) Acquisition backend — deals schema, stages, and RPCs (10.11A)
 
-**Authority:** migrations `20260419000001`–`20260419000005` (extend `public.deals`, `deal_properties`, `deal_media`, stage normalization, SECURITY DEFINER RPCs). Deal notes and activity log tables/RPCs: **10.11A1** — migration `20260420000001_10_11A1_deal_notes_activity_log.sql` (see §56). **`get_acq_deal_v1` read-path corrections (10.11A3):** migration `20260423000001_10_11A3_acq_deal_detail_read_corrections.sql` — no new RPC, no schema changes (function body only). Response `data.pricing` includes `mao` and `multiplier`; `data.last_contacted_at` is the timestamp of the most recent `call_log` row in `deal_notes`, or `null` when none exist.
+**Authority:** migrations `20260419000001`–`20260419000005` (extend `public.deals`, `deal_properties`, `deal_media`, stage normalization, SECURITY DEFINER RPCs). Deal notes and activity log tables/RPCs: **10.11A1** — migration `20260420000001_10_11A1_deal_notes_activity_log.sql` (see §56). **`get_acq_deal_v1` read-path corrections (10.11A3):** migration `20260423000001_10_11A3_acq_deal_detail_read_corrections.sql` — no new RPC, no schema changes (function body only). Response `data.pricing` includes `mao` and `multiplier`; `data.last_contacted_at` is the timestamp of the most recent `call_log` row in `deal_notes`, or `null` when none exist. **`get_acq_kpis_v1` KPI date range (10.11A4):** migration `20260423000002_10_11A4_acq_kpi_date_range.sql` — replaces zero-arg function with optional `p_date_from` / `p_date_to`; see RPC table below.
 
 ### Canonical deal stages
 
@@ -1278,7 +1278,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 
 | RPC | Role |
 |-----|------|
-| `get_acq_kpis_v1()` | Read KPI aggregates for the Acquisition dashboard. |
+| `get_acq_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL)` | Read KPI aggregates for the Acquisition dashboard. **Replaces** the old zero-arg surface. Both parameters NULL = all-time; otherwise counts and averages include only deals whose `created_at` falls within the range (inclusive when each bound is set). If both bounds are set and `p_date_to` is before `p_date_from`, returns `VALIDATION_ERROR`. **`avg_assignment_fee`** uses the **latest** `deal_inputs` row per qualifying deal (by `created_at`), then averages `assignment_fee` from those snapshots over terminal-stage deals in range. |
 | `list_acq_deals_v1(p_filter text, p_farm_area_id uuid)` | List active Acquisition pipeline deals; `p_filter` ∈ `all`, `new`, `analyzing`, `offer_sent`, `under_contract`, `follow_ups` (reminder-driven). |
 | `get_acq_deal_v1(p_deal_id uuid)` | Full detail for one deal including embedded `properties` and latest `pricing` from `deal_inputs` (`pricing` includes `mao` and `multiplier` — 10.11A3). Top-level `last_contacted_at` from the most recent `call_log` on `deal_notes`, or `null` if there is no call log. No new RPC; no schema changes. |
 | `update_seller_info_v1(...)` | Partial updates to seller and next-action columns on `deals`. |
@@ -1290,7 +1290,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `list_deal_media_v1` / `register_deal_media_v1` / `delete_deal_media_v1` | Deal photo metadata lifecycle. |
 | `create_deal_note_v1` / `list_deal_notes_v1` / `list_deal_activity_v1` | User notes/call logs and read-only deal activity timeline (10.11A1 — §56). |
 
-**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56).
+**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature).
 
 ---
 

@@ -7114,6 +7114,48 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ---
 
+### **10.11A4 — Acquisition Backend — KPI Date Range Filter**
+
+**DoD**
+
+1. **Extend `get_acq_kpis_v1`**
+
+   * add:
+
+     * `p_date_from timestamptz DEFAULT NULL`
+     * `p_date_to timestamptz DEFAULT NULL`
+
+2. **Filtering behavior**
+
+   * both params null → preserve current all-time behavior
+   * `p_date_from` only → filter `created_at >= p_date_from`
+   * `p_date_to` only → filter `created_at <= p_date_to`
+   * both provided → filter within range
+   * invalid range (`p_date_to < p_date_from`) returns `VALIDATION_ERROR`
+
+3. **Scope**
+
+   * no schema changes
+   * no new tables
+   * no new columns
+   * no change to non-KPI deal detail RPCs
+
+4. **Tests**
+
+   * all-time behavior unchanged when both params null
+   * last-7-days style filtered result works
+   * last-30-days style filtered result works
+   * one-sided lower-bound filter works
+   * one-sided upper-bound filter works
+   * invalid range returns `VALIDATION_ERROR`
+   * cross-tenant isolation preserved
+
+**Proof:** `docs/proofs/10.11A4_acq_kpi_date_range_<UTC>.log`
+**Gate:** `merge-blocking`
+
+
+---
+
 ### **10.11B — Acquisition Wiring**
 
 **Deliverable:**
@@ -7131,6 +7173,15 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 * KPI strip is wired to governed backend output
 
+* KPI date range UI is wired:
+
+  * Last 7 days
+  * Last 30 days
+  * Custom
+  * default = Last 30 days
+
+* On date range change, `fetch-acq-kpis` re-runs through governed backend only
+
 * Filters are wired to live Acq-owned backend dataset:
 
   * All
@@ -7143,6 +7194,12 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 * Farm area filter is wired to existing backend source
 
 * Deal selection loads live deal detail
+
+* Deal detail renders governed backend values including:
+
+  * MAO
+  * multiplier
+  * last contacted date
 
 * Header actions are live-wired:
 
@@ -7165,15 +7222,15 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
   * Text
   * Email
 
-* Edit Seller motivation opens live edit popup
+* Edit Seller opens live edit popup
 
-* Save calls governed backend write path
+* Save calls `update_deal_seller_v1`
 
 * UI refreshes seller data after save
 
-* Edit Property condition opens live edit popup
+* Edit Property opens live edit popup
 
-* Save calls governed backend write path
+* Save calls `update_deal_property_v1`
 
 * UI refreshes property/pricing summary after save
 
@@ -7202,7 +7259,7 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
   * one shared text-entry flow with a single **Submit** button
   * submit calls governed backend only
   * supports saving user-entered note/log content to `deal_notes`
-  * note history refreshes after save
+  * notes/log history refreshes after save
   * notes/log rows display:
 
     * content
@@ -7223,7 +7280,8 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 * **Mark dead wiring is live:**
 
-  * clicking **Mark dead** updates `deals.stage`
+  * clicking **Mark dead** calls governed backend only
+  * the governed flow updates `deals.stage`
   * the same governed flow also writes a system activity row to `deal_activity_log`
   * UI refreshes correctly after success
 
@@ -7243,7 +7301,7 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 **Gate:** `lane-only`
 
-**Prerequisite:** 10.11 and 10.11A1 merged
+**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, and `10.11A4` merged
 
 ---
 
