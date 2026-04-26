@@ -9187,3 +9187,30 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-26 — Build Route v2.4 — 10.11A5
+
+Objective
+Acquisition Backend - Deal Properties Schema Normalization
+
+Changes
+- Migration 20260424000001_10_11A5_deal_properties_schema_normalization.sql applied
+- Altered public.deal_properties columns:
+  - beds: integer -> text
+  - baths: numeric -> text
+  - sqft: integer -> text
+- Existing values preserved via USING ...::text cast
+- Supports shorthand display values: 3+1, 2+1, 2400/1200
+- garage_parking unchanged -- already text
+- No new columns. No new tables. No RPCs added.
+- get_acq_deal_v1 read path unaffected
+- CONTRACTS.md updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A5_deal_properties_schema_normalization_20260426T192140Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
