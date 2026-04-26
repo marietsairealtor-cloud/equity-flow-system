@@ -1268,6 +1268,7 @@ In addition to existing columns, Acquisition uses: `created_at`, `address`, `ass
 ### Tenant-scoped companion tables
 
 - **`public.deal_properties`** — one row per deal (`UNIQUE(deal_id)`), property-condition fields (beds, baths, deficiency tags, repair_estimate on the property record, etc.). RLS: `tenant_id = current_tenant_id()`. No direct table grants; reads/writes go through RPCs.
+  - **10.11A5:** `deal_properties.beds`, `baths`, and `sqft` are `text` (previously integer/numeric). Supports shorthand display values such as `3+1`, `2+1`, and `2400/1200`. Existing values were preserved via cast in migration. **`get_acq_deal_v1`** read path is unaffected (still returns `properties.beds`, `properties.baths`, `properties.sqft` as text-compatible JSON values).
 - **`public.deal_media`** — photo metadata (`storage_path`, `sort_order`, `uploaded_by`, …) keyed to `deal_id`. RLS: `tenant_id = current_tenant_id()`. Storage objects live in the existing deal-photos bucket per §31 path contract; `register_deal_media_v1` / `delete_deal_media_v1` govern metadata.
 - **`public.deal_notes`** — user-authored notes and call logs per deal (`note_type` ∈ `note`, `call_log`). RLS: `tenant_id = current_tenant_id()`. Append-only write path via `create_deal_note_v1`; no edit/delete RPC. See §56.
 - **`public.deal_activity_log`** — system and workflow activity rows for a deal (timeline). RLS: `tenant_id = current_tenant_id()`. Inserts are server-side from DEFINER RPCs (e.g. stage changes); clients read via `list_deal_activity_v1`. See §56.

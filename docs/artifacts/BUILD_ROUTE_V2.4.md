@@ -6943,6 +6943,7 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 **Gate:** `merge-blocking`
 
+**Split items (merge-blocking, defined below):** **10.11A5** — Acquisition Backend — Deal Properties Schema Normalization; **10.11A6** — Acquisition Backend — Deal Properties Write Path.
 
 ---
 
@@ -7156,6 +7157,156 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ---
 
+### **10.11A5 — Acquisition Backend — Deal Properties Schema Normalization**
+
+**Deliverable:**
+Normalize `deal_properties` column types so shorthand property-entry values are supported without breaking write-path contracts.
+
+**DoD:**
+
+* Alter `public.deal_properties` columns:
+
+  * `beds` → `text`
+  * `baths` → `text`
+  * `sqft` → `text`
+
+* Existing values are preserved via cast during migration
+
+* No new columns
+
+* No new tables
+
+* No RPCs added in this item
+
+* Post-migration contract supports shorthand display/input values such as:
+
+  * `beds = 3+1`
+  * `baths = 2+1`
+  * `sqft = 2400/1200`
+
+* `garage_parking` remains unchanged because it is already text-compatible
+
+* Existing read path remains functional after migration
+
+* No change to `get_acq_deal_v1` response shape beyond preserved compatibility
+
+**Tests:**
+
+* schema columns are text after migration
+* existing seeded numeric/scalar values survive cast correctly
+* `get_acq_deal_v1` still returns `properties.beds`
+* `get_acq_deal_v1` still returns `properties.baths`
+* `get_acq_deal_v1` still returns `properties.sqft`
+
+**Proof:** `docs/proofs/10.11A5_deal_properties_schema_normalization_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
+### **10.11A6 — Acquisition Backend — Deal Properties Write Path**
+
+**Deliverable:**
+Add governed write path for `deal_properties` using jsonb patch semantics.
+
+**DoD:**
+
+1. **Implement `update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)`**
+
+   * writes to `public.deal_properties` only
+   * does not touch `deal_inputs`
+   * does not touch assumptions/pricing
+
+2. **Allowed keys**
+
+   * `property_type`
+   * `beds`
+   * `baths`
+   * `sqft`
+   * `lot_size`
+   * `year_built`
+   * `occupancy`
+   * `deficiency_tags`
+   * `condition_notes`
+   * `repair_estimate`
+   * `garage_parking`
+   * `basement_type`
+   * `foundation_type`
+   * `roof_age`
+   * `furnace_age`
+   * `ac_age`
+   * `heating_type`
+   * `cooling_type`
+
+3. **Patch behavior**
+
+   * omitted key = no change
+   * explicit `null` = clear field
+   * same value as current = `VALIDATION_ERROR`
+   * empty payload = `VALIDATION_ERROR`
+   * non-object payload = `VALIDATION_ERROR`
+   * unknown key = `VALIDATION_ERROR`
+
+4. **v1 shorthand support**
+
+   * `beds`, `baths`, `sqft`, and `garage_parking` are treated as text-entry fields in v1
+   * examples allowed:
+
+     * `3+1`
+     * `2+1`
+     * `2400/1200`
+     * `2/4`
+   * no numeric casting for those fields in this item
+
+5. **Validation**
+
+   * tenant/user context required
+   * workspace write lock enforced
+   * `p_deal_id` required
+   * cross-tenant deal returns `NOT_FOUND`
+   * missing `deal_properties` row returns `NOT_FOUND`
+   * `deficiency_tags` rules:
+
+     * omitted = unchanged
+     * explicit `null` = clear
+     * array of text = valid
+     * any other shape = `VALIDATION_ERROR`
+   * typed fields that remain typed must return `VALIDATION_ERROR` on bad input rather than raw DB errors
+
+6. **Mutation behavior**
+
+   * update `updated_at`
+   * increment `deal_properties.row_version`
+   * only update when at least one provided field is actually different using `IS DISTINCT FROM`
+   * zero-row update after existence checks = `VALIDATION_ERROR` with no-op message
+
+7. **Scope boundaries**
+
+   * no schema changes in this item
+   * no new tables
+   * no changes to `update_deal_property_v1`
+   * `repair_estimate` in this item refers only to `deal_properties.repair_estimate`
+
+**Tests:**
+
+* success path
+* persisted value check
+* omitted field unchanged
+* explicit null clears field
+* same-value submission returns `VALIDATION_ERROR`
+* empty payload returns `VALIDATION_ERROR`
+* non-object payload returns `VALIDATION_ERROR`
+* unknown key returns `VALIDATION_ERROR`
+* `deficiency_tags` null / array / invalid-shape coverage
+* cross-tenant `NOT_FOUND`
+* missing `deal_properties` row `NOT_FOUND`
+* write-lock rejection
+* `row_version` increments only on success
+
+**Proof:** `docs/proofs/10.11A6_deal_properties_write_path_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
 ### **10.11B — Acquisition Wiring**
 
 **Deliverable:**
@@ -7230,7 +7381,33 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 * Edit Property opens live edit popup
 
-* Save calls `update_deal_property_v1`
+* Save calls governed backend only using:
+
+  * `update_deal_property_v1` for:
+
+    * `address`
+    * `next_action`
+    * `next_action_due`
+  * `update_deal_properties_v1` for:
+
+    * `property_type`
+    * `beds`
+    * `baths`
+    * `sqft`
+    * `lot_size`
+    * `year_built`
+    * `occupancy`
+    * `deficiency_tags`
+    * `condition_notes`
+    * `repair_estimate`
+    * `garage_parking`
+    * `basement_type`
+    * `foundation_type`
+    * `roof_age`
+    * `furnace_age`
+    * `ac_age`
+    * `heating_type`
+    * `cooling_type`
 
 * UI refreshes property/pricing summary after save
 
@@ -7298,10 +7475,8 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 * All data access via governed RPC / allowed backend interfaces only
 
 **Proof:** `docs/proofs/10.11B_acquisition_wiring_<UTC>.md`
-
 **Gate:** `lane-only`
-
-**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, and `10.11A4` merged
+**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, `10.11A4`, `10.11A5`, and `10.11A6` merged
 
 ---
 
