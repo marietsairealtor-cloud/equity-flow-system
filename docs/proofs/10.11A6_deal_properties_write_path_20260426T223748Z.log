@@ -1,0 +1,97 @@
+PROOF_HEAD=b0b5df2cb1254bde5b56fab32c106871b9312451
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A6 Acquisition Backend - Deal Properties Write Path -- Proof Log ===
+Date: 2026-04-26T18:37:42.8428261-04:00
+Branch: feature/10.11A6-deal-properties-write-path
+PR HEAD SHA: b0b5df2cb1254bde5b56fab32c106871b9312451
+
+=== Deliverable ===
+Migration: 20260426000001_10_11A6_deal_properties_write_path.sql -- applied
+Test file: supabase/tests/10_11A6_deal_properties_write_path.test.sql -- PASS
+
+=== New RPC ===
+update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)
+  - SECURITY DEFINER, authenticated only
+  - workspace write lock enforced via check_workspace_write_allowed_v1()
+  - writes to deal_properties only
+  - does not touch deal_inputs or assumptions
+  - allowed keys: property_type, beds, baths, sqft, lot_size, year_built, occupancy,
+    deficiency_tags, condition_notes, repair_estimate, garage_parking, basement_type,
+    foundation_type, roof_age, furnace_age, ac_age, heating_type, cooling_type
+  - beds/baths/sqft/garage_parking: text (shorthand: 3+1, 2+1, 2400/1200)
+  - deficiency_tags: null=clear, array of strings=valid, else=VALIDATION_ERROR
+  - typed fields (year_built, repair_estimate, roof_age, furnace_age, ac_age): safely validated
+  - same jsonb patch semantics as update_deal_seller_v1
+  - missing deal_properties row returns NOT_FOUND (no auto-create)
+  - row_version incremented on success only
+
+=== pgTAP Results ===
+supabase db test -- PASS (67 files, 760 tests, 0 failures)
+success on valid field update -- PASS
+row_version incremented after update -- PASS
+condition_notes persisted correctly -- PASS
+omitted field left unchanged -- PASS
+explicit null accepted -- PASS
+explicit null clears field -- PASS
+same-value submission returns VALIDATION_ERROR -- PASS
+empty payload returns VALIDATION_ERROR -- PASS
+non-object payload returns VALIDATION_ERROR -- PASS
+unknown key returns VALIDATION_ERROR -- PASS
+deficiency_tags null accepted -- PASS
+deficiency_tags null clears field in DB -- PASS
+deficiency_tags valid array accepted -- PASS
+deficiency_tags array persisted correctly -- PASS
+deficiency_tags non-array returns VALIDATION_ERROR -- PASS
+deficiency_tags array with numbers returns VALIDATION_ERROR -- PASS
+invalid year_built returns VALIDATION_ERROR -- PASS
+invalid repair_estimate returns VALIDATION_ERROR -- PASS
+invalid roof_age returns VALIDATION_ERROR -- PASS
+cross-tenant deal returns NOT_FOUND -- PASS
+missing deal_properties row returns NOT_FOUND -- PASS
+expired workspace returns WORKSPACE_NOT_WRITABLE -- PASS
+row_version not incremented on write lock rejection -- PASS
+shorthand text values accepted for beds baths sqft -- PASS
+
+=== db push ===
+20260426000001_10_11A6_deal_properties_write_path.sql -- applied
+
+=== DoD Checklist ===
+update_deal_properties_v1 exists, SECURITY DEFINER, authenticated only   -- PASS
+workspace write lock enforced                                             -- PASS
+writes to deal_properties only                                           -- PASS
+deal_inputs and assumptions untouched                                    -- PASS
+all 18 allowed keys supported                                            -- PASS
+beds/baths/sqft/garage_parking treated as text                           -- PASS
+deficiency_tags null/array/invalid-shape all handled                     -- PASS
+typed fields validated safely                                            -- PASS
+same-value no-op rejected                                                -- PASS
+missing deal_properties row returns NOT_FOUND                            -- PASS
+cross-tenant isolation enforced                                          -- PASS
+row_version incremented on success only                                  -- PASS
+no schema changes                                                        -- PASS
+no new tables                                                            -- PASS
+update_deal_property_v1 unchanged                                        -- PASS
+
+=== Registration ===
+rpc_contract_registry.json -- PASS
+execute_allowlist.json -- PASS
+definer_allowlist.json -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md sections 17, 17A, 55, 58 updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260426T221336Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A6 Acquisition Backend Deal Properties Write Path: PASS (merge-blocking gate)

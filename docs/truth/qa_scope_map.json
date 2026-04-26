@@ -600,6 +600,9 @@
     },
     "10.11A5": {
       "proof_pattern": "^docs/proofs/10\\.11A5_deal_properties_schema_normalization_"
+    },
+    "10.11A6": {
+      "proof_pattern": "^docs/proofs/10\\.11A6_deal_properties_write_path_"
     }
   }
 }

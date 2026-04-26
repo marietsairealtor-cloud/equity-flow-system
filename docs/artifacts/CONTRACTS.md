@@ -300,6 +300,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_deal_activity_v1 | 10.11A1 | List `deal_activity_log` rows for a deal (newest first) | SECURITY DEFINER, STABLE, min role: member | current_tenant_id() — p_deal_id only |
 | update_deal_seller_v1 | 10.11A2 | Jsonb field patch for seller columns on `deals` (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | update_deal_property_v1 | 10.11A2 | Jsonb field patch for address and next-action fields (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
+| update_deal_properties_v1 | 10.11A6 | Jsonb field patch for `deal_properties` only (§58); does not touch `deal_inputs` or assumptions | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
@@ -378,6 +379,7 @@ Checks: tenant context exists, caller is a member, subscription exists, subscrip
 - `update_property_info_v1`
 - `update_deal_seller_v1`
 - `update_deal_property_v1`
+- `update_deal_properties_v1`
 - `register_deal_media_v1`
 - `delete_deal_media_v1`
 - `create_deal_note_v1`
@@ -1284,6 +1286,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `get_acq_deal_v1(p_deal_id uuid)` | Full detail for one deal including embedded `properties` and latest `pricing` from `deal_inputs` (`pricing` includes `mao` and `multiplier` — 10.11A3). Top-level `last_contacted_at` from the most recent `call_log` on `deal_notes`, or `null` if there is no call log. No new RPC; no schema changes. |
 | `update_seller_info_v1(...)` | Partial updates to seller and next-action columns on `deals`. |
 | `update_property_info_v1(...)` | Upsert `deal_properties` with partial merge. |
+| `update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)` | Jsonb patch on existing `deal_properties` row only (10.11A6 — §58); does not upsert or touch `deal_inputs` / assumptions. |
 | `advance_deal_stage_v1(p_deal_id uuid, p_action text)` | Allowed forward transitions only; invalid transitions → `CONFLICT`. |
 | `mark_deal_dead_v1(p_deal_id uuid, p_dead_reason text)` | Sets stage `dead`; empty reason → `VALIDATION_ERROR`. |
 | `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. |
@@ -1291,7 +1294,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `list_deal_media_v1` / `register_deal_media_v1` / `delete_deal_media_v1` | Deal photo metadata lifecycle. |
 | `create_deal_note_v1` / `list_deal_notes_v1` / `list_deal_activity_v1` | User notes/call logs and read-only deal activity timeline (10.11A1 — §56). |
 
-**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature).
+**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature; **10.11A6** for `update_deal_properties_v1` — §58).
 
 ---
 
@@ -1340,3 +1343,23 @@ Writes seller-related columns on **`public.deals`**. Allowed keys: **`seller_nam
 Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.deals`**. Validate **`next_action_due`** as **timestamptz** when the key is present. Same field contract as `update_deal_seller_v1` for merge semantics and validation.
 
 **§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A2**.
+
+---
+
+## 58) Deal properties write path — jsonb patch on `deal_properties` (10.11A6)
+
+**Authority:** migration `20260426000001_10_11A6_deal_properties_write_path.sql`.
+
+### §RPC `update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)`
+
+- **SECURITY DEFINER**; **GRANT EXECUTE** to **`authenticated` only** (no `anon`). Standard JSON RPC envelope. **Tenant** from `current_tenant_id()` and **`auth.uid()`**; missing context → **`NOT_AUTHORIZED`** (aligned with §57 jsonb patch RPCs).
+- **Workspace write lock:** `check_workspace_write_allowed_v1()` before any write (§17A); failure → `WORKSPACE_NOT_WRITABLE` or `NOT_AUTHORIZED` per implementation alignment with other Acquisition mutators.
+- **Scope:** writes **`public.deal_properties` only**. Does **not** read or write **`deal_inputs`**, assumptions, or pricing snapshots.
+- **Row existence:** the deal must exist in the current tenant **and** a **`deal_properties`** row must already exist for that `deal_id`; otherwise → **`NOT_FOUND`** (no auto-create in this RPC).
+- **Allowed keys in `p_fields`:** `property_type`, `beds`, `baths`, `sqft`, `lot_size`, `year_built`, `occupancy`, `deficiency_tags`, `condition_notes`, `repair_estimate`, `garage_parking`, `basement_type`, `foundation_type`, `roof_age`, `furnace_age`, `ac_age`, `heating_type`, `cooling_type`.
+- **`beds`, `baths`, `sqft`, `garage_parking`:** stored as **text** (10.11A5); v1 allows shorthand display/input values such as **`3+1`**, **`2+1`**, **`2400/1200`**.
+- **`deficiency_tags`:** **explicit JSON `null`** → clear; **JSON array of strings** → valid; **any other JSON shape** → **`VALIDATION_ERROR`**.
+- **Typed fields** **`year_built`**, **`repair_estimate`**, **`roof_age`**, **`furnace_age`**, **`ac_age`:** validated to safe scalar types; bad values → **`VALIDATION_ERROR`** (no raw database errors surfaced).
+- **Patch semantics** (same contract as **`update_deal_seller_v1`**, §57): **`p_fields`** must be a **non-empty JSON object**. **Omitted key** → no change. **Explicit `null`** on a present key → clear where the column is nullable. **Value equals current** (for columns being updated) → **`VALIDATION_ERROR`**. **Empty object**, **non-object** `p_fields`, or **unknown key** → **`VALIDATION_ERROR`**.
+
+**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A6**.
