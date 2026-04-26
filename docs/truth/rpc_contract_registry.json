@@ -493,6 +493,15 @@
       "notes": "Upsert public.deal_properties by deal_id. Partial field merge via COALESCE on conflict. Workspace write lock."
     },
     {
+      "name": "update_deal_properties_v1",
+      "version": 1,
+      "build_route_owner": "10.11A6",
+      "input_contract": "CONTRACTS.md §58 update_deal_properties_v1 (10.11A6 — deal_properties jsonb patch)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "notes": "Signature update_deal_properties_v1(p_deal_id uuid, p_fields jsonb). SECURITY DEFINER; GRANT EXECUTE to authenticated only. current_tenant_id() + auth.uid() required; else NOT_AUTHORIZED. check_workspace_write_allowed_v1 before write. Updates public.deal_properties only — no deal_inputs or assumptions. Jsonb patch semantics match update_deal_seller_v1 (§57): omitted key unchanged, explicit JSON null clears nullable field, value equals current => VALIDATION_ERROR, empty object / non-object / unknown key => VALIDATION_ERROR. Missing deal_properties row for deal in tenant => NOT_FOUND (no upsert). Allowed keys: property_type, beds, baths, sqft, lot_size, year_built, occupancy, deficiency_tags, condition_notes, repair_estimate, garage_parking, basement_type, foundation_type, roof_age, furnace_age, ac_age, heating_type, cooling_type. beds/baths/sqft/garage_parking are text (v1 shorthand e.g. 3+1, 2+1, 2400/1200). deficiency_tags: explicit null clears, json array of strings valid, any other shape => VALIDATION_ERROR. year_built, repair_estimate, roof_age, furnace_age, ac_age validated to safe typed values => VALIDATION_ERROR on bad input. Increments row_version and touches updated_at on successful change."
+    },
+    {
       "name": "advance_deal_stage_v1",
       "version": 1,
       "build_route_owner": "10.11A",
