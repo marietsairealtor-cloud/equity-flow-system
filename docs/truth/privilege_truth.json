@@ -223,6 +223,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "update_deal_properties_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.11A6 — jsonb patch on deal_properties; EXECUTE to authenticated"
+      },
+      {
         "routine": "update_seller_info_v1",
         "privilege": "EXECUTE"
       }
@@ -330,6 +335,7 @@
       "set_current_tenant_v1",
       "set_tenant_slug_v1",
       "submit_form_v1",
+      "update_deal_properties_v1",
       "update_deal_property_v1",
       "update_deal_seller_v1",
       "update_deal_v1",
