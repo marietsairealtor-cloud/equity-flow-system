@@ -9214,3 +9214,32 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-26 — Build Route v2.4 — 10.11A6
+
+Objective
+Acquisition Backend - Deal Properties Write Path
+
+Changes
+- Migration 20260426000001_10_11A6_deal_properties_write_path.sql applied
+- New RPC: update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)
+    SECURITY DEFINER, authenticated only, write lock enforced
+    writes to deal_properties only -- does not touch deal_inputs or assumptions
+    18 allowed keys covering all deal_properties fields
+    beds/baths/sqft/garage_parking treated as text (shorthand support)
+    deficiency_tags: null=clear, array of strings=valid, else=VALIDATION_ERROR
+    typed fields validated safely before UPDATE
+    same jsonb patch semantics as update_deal_seller_v1
+    missing deal_properties row returns NOT_FOUND (no auto-create)
+- No schema changes. No new tables. update_deal_property_v1 unchanged.
+- CONTRACTS.md sections 17, 17A, 55, 58 updated
+- rpc_contract_registry.json, execute_allowlist.json, definer_allowlist.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A6_deal_properties_write_path_20260426T223209Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
