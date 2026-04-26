@@ -597,6 +597,9 @@
     },
     "10.11A4": {
       "proof_pattern": "^docs/proofs/10\\.11A4_acq_kpi_date_range_"
+    },
+    "10.11A5": {
+      "proof_pattern": "^docs/proofs/10\\.11A5_deal_properties_schema_normalization_"
     }
   }
 }
