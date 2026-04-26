@@ -1,0 +1,74 @@
+PROOF_HEAD=700570d17205b289a6408fbb44f141692c731bf6
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A5 Acquisition Backend - Deal Properties Schema Normalization -- Proof Log ===
+Date: 2026-04-26T15:20:32.2820443-04:00
+Branch: feature/10.11A5-deal-properties-schema-normalization
+PR HEAD SHA: 700570d17205b289a6408fbb44f141692c731bf6
+
+=== Deliverable ===
+Migration: 20260424000001_10_11A5_deal_properties_schema_normalization.sql -- applied
+Test file: supabase/tests/10_11A5_deal_properties_schema_normalization.test.sql -- PASS
+
+=== Schema Changes ===
+public.deal_properties.beds:  integer -> text (USING beds::text)
+public.deal_properties.baths: numeric -> text (USING baths::text)
+public.deal_properties.sqft:  integer -> text (USING sqft::text)
+garage_parking: unchanged -- already text
+No new columns. No new tables. No RPCs added.
+
+=== Shorthand Support ===
+beds accepts: 3+1, 3, or any text
+baths accepts: 2+1, 2.5, or any text
+sqft accepts: 2400/1200, 2400, or any text
+
+=== pgTAP Results ===
+supabase db test -- PASS (66 files, 736 tests, 0 failures)
+deal_properties.beds is text -- PASS
+deal_properties.baths is text -- PASS
+deal_properties.sqft is text -- PASS
+deal_properties.beds stores shorthand value correctly -- PASS
+deal_properties.baths stores shorthand value correctly -- PASS
+deal_properties.sqft stores shorthand value correctly -- PASS
+deal_properties.beds: legacy scalar value preserved as text -- PASS
+deal_properties.baths: legacy scalar value preserved as text -- PASS
+deal_properties.sqft: legacy scalar value preserved as text -- PASS
+get_acq_deal_v1: properties.beds still returned after schema change -- PASS
+get_acq_deal_v1: properties.baths still returned after schema change -- PASS
+get_acq_deal_v1: properties.sqft still returned after schema change -- PASS
+
+=== db push ===
+20260424000001_10_11A5_deal_properties_schema_normalization.sql -- applied
+
+=== DoD Checklist ===
+beds altered to text                                               -- PASS
+baths altered to text                                             -- PASS
+sqft altered to text                                              -- PASS
+existing values preserved via cast                                -- PASS
+shorthand text values supported                                   -- PASS
+garage_parking unchanged                                          -- PASS
+get_acq_deal_v1 read path unaffected                              -- PASS
+no new columns                                                    -- PASS
+no new tables                                                     -- PASS
+no RPCs added                                                     -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md updated -- PASS
+BUILD_ROUTE_V2.4.md updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260426T190821Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A5 Acquisition Backend Deal Properties Schema Normalization: PASS (merge-blocking gate)
