@@ -301,6 +301,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_seller_v1 | 10.11A2 | Jsonb field patch for seller columns on `deals` (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | update_deal_property_v1 | 10.11A2 | Jsonb field patch for address and next-action fields (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | update_deal_properties_v1 | 10.11A6 | Jsonb field patch for `deal_properties` only (§58); does not touch `deal_inputs` or assumptions | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
+| update_deal_pricing_v1 | 10.11A7 | Append-only pricing snapshot: merges numeric fields into new `deal_inputs` row, updates `deals.assumptions_snapshot_id` (§59) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
@@ -380,6 +381,7 @@ Checks: tenant context exists, caller is a member, subscription exists, subscrip
 - `update_deal_seller_v1`
 - `update_deal_property_v1`
 - `update_deal_properties_v1`
+- `update_deal_pricing_v1`
 - `register_deal_media_v1`
 - `delete_deal_media_v1`
 - `create_deal_note_v1`
@@ -1287,6 +1289,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `update_seller_info_v1(...)` | Partial updates to seller and next-action columns on `deals`. |
 | `update_property_info_v1(...)` | Upsert `deal_properties` with partial merge. |
 | `update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)` | Jsonb patch on existing `deal_properties` row only (10.11A6 — §58); does not upsert or touch `deal_inputs` / assumptions. |
+| `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)` | Append-only merge into `deal_inputs` assumptions; new row + `deals.assumptions_snapshot_id` update (10.11A7 — §59). |
 | `advance_deal_stage_v1(p_deal_id uuid, p_action text)` | Allowed forward transitions only; invalid transitions → `CONFLICT`. |
 | `mark_deal_dead_v1(p_deal_id uuid, p_dead_reason text)` | Sets stage `dead`; empty reason → `VALIDATION_ERROR`. |
 | `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. |
@@ -1294,7 +1297,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `list_deal_media_v1` / `register_deal_media_v1` / `delete_deal_media_v1` | Deal photo metadata lifecycle. |
 | `create_deal_note_v1` / `list_deal_notes_v1` / `list_deal_activity_v1` | User notes/call logs and read-only deal activity timeline (10.11A1 — §56). |
 
-**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature; **10.11A6** for `update_deal_properties_v1` — §58).
+**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature; **10.11A6** for `update_deal_properties_v1` — §58; **10.11A7** for `update_deal_pricing_v1` — §59).
 
 ---
 
@@ -1363,3 +1366,21 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **Patch semantics** (same contract as **`update_deal_seller_v1`**, §57): **`p_fields`** must be a **non-empty JSON object**. **Omitted key** → no change. **Explicit `null`** on a present key → clear where the column is nullable. **Value equals current** (for columns being updated) → **`VALIDATION_ERROR`**. **Empty object**, **non-object** `p_fields`, or **unknown key** → **`VALIDATION_ERROR`**.
 
 **§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A6**.
+
+---
+
+## 59) Deal pricing write path — append-only `deal_inputs` (10.11A7)
+
+**Authority:** migration `20260427000001_10_11A7_deal_pricing_write_path.sql`.
+
+### §RPC `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)`
+
+- **SECURITY DEFINER**; **GRANT EXECUTE** to **`authenticated` only** (no `anon`). Standard JSON RPC envelope. **Tenant** from `current_tenant_id()` and **`auth.uid()`**; missing context → **`NOT_AUTHORIZED`**.
+- **Workspace write lock:** `check_workspace_write_allowed_v1()` before any write (§17A); failure → **`WORKSPACE_NOT_WRITABLE`** (or aligned `NOT_AUTHORIZED` where the implementation matches other Acquisition mutators).
+- **Write scope:** **`public.deal_inputs` only**, and only by **inserting a new row** — never updates an existing `deal_inputs` row in place. Also updates **`deals.assumptions_snapshot_id`** to the new row and increments **`deals.row_version`** on success.
+- **Base snapshot:** Uses the **latest** `deal_inputs` row for the deal in the current tenant (`ORDER BY created_at DESC, id DESC`). **No row** → **`NOT_FOUND`** (no auto-create). Deal missing or wrong tenant → **`NOT_FOUND`**.
+- **Allowed keys in `p_fields`:** **`arv`**, **`ask_price`**, **`repair_estimate`**, **`mao`**, **`multiplier`** — all **numeric** when a non-null value is supplied; invalid numbers → **`VALIDATION_ERROR`**.
+- **Merge semantics:** **`p_fields`** must be a **non-empty JSON object**. **Omitted key** → value **carried forward** from the base snapshot’s `assumptions`. **Explicit JSON `null`** for a present key → **remove that key** from the merged assumptions (key absent in stored JSON — not stored as JSON null). **Unknown key**, **empty `{}`**, or **non-object** `p_fields` → **`VALIDATION_ERROR`**.
+- **No-op:** If merged assumptions are **identical** to the base snapshot → **`VALIDATION_ERROR`** (same-value submission rejected).
+
+**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A7**.

@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-26T22:19:31Z",
+    "generated":  "2026-04-28T01:22:10Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -253,6 +253,16 @@
                             "name":  "submit_form_v1",
                             "tables":  [
                                            "draft_deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_deal_pricing_v1",
+                            "tables":  [
+                                           "deal_inputs",
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
