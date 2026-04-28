@@ -3924,7 +3924,7 @@ CREATE OR REPLACE FUNCTION "public"."update_deal_pricing_v1"("p_deal_id" "uuid",
 DECLARE
   v_tenant           uuid;
   v_user             uuid;
-  v_allowed_keys     text[] := ARRAY['arv','ask_price','repair_estimate','mao','multiplier'];
+  v_allowed_keys     text[] := ARRAY['arv','ask_price','repair_estimate','assignment_fee','multiplier'];
   v_unknown_keys     text[];
   v_base_row         record;
   v_base_assumptions jsonb;
@@ -3932,9 +3932,13 @@ DECLARE
   v_arv              numeric;
   v_ask_price        numeric;
   v_repair_estimate  numeric;
-  v_mao              numeric;
+  v_assignment_fee   numeric;
   v_multiplier       numeric;
   v_new_id           uuid;
+  v_final_arv        numeric;
+  v_final_repair     numeric;
+  v_final_multiplier     numeric;
+  v_final_assignment_fee numeric;
 BEGIN
   v_tenant := public.current_tenant_id();
   v_user   := auth.uid();
@@ -3975,6 +3979,17 @@ BEGIN
     );
   END IF;
 
+  -- Reject mao if sent by client
+  IF p_fields ? 'mao' THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'VALIDATION_ERROR',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'mao is derived server-side and cannot be set directly', 'fields', '{}'::json)
+    );
+  END IF;
+
+  -- Reject unknown keys
   SELECT ARRAY(
     SELECT jsonb_object_keys(p_fields)
     EXCEPT
@@ -3990,6 +4005,7 @@ BEGIN
     );
   END IF;
 
+  -- Verify deal belongs to current tenant
   IF NOT EXISTS (
     SELECT 1 FROM public.deals
     WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
@@ -4002,6 +4018,7 @@ BEGIN
     );
   END IF;
 
+  -- Get latest deal_inputs row as base
   SELECT * INTO v_base_row
   FROM public.deal_inputs
   WHERE deal_id   = p_deal_id
@@ -4020,6 +4037,7 @@ BEGIN
 
   v_base_assumptions := COALESCE(v_base_row.assumptions, '{}'::jsonb);
 
+  -- Validate numeric fields safely
   IF p_fields ? 'arv' AND p_fields->>'arv' IS NOT NULL THEN
     BEGIN
       v_arv := (p_fields->>'arv')::numeric;
@@ -4047,12 +4065,12 @@ BEGIN
     END;
   END IF;
 
-  IF p_fields ? 'mao' AND p_fields->>'mao' IS NOT NULL THEN
+  IF p_fields ? 'assignment_fee' AND p_fields->>'assignment_fee' IS NOT NULL THEN
     BEGIN
-      v_mao := (p_fields->>'mao')::numeric;
+      v_assignment_fee := (p_fields->>'assignment_fee')::numeric;
     EXCEPTION WHEN others THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
-        'error', json_build_object('message', 'mao must be a valid number', 'fields', '{}'::json));
+        'error', json_build_object('message', 'assignment_fee must be a valid number', 'fields', '{}'::json));
     END;
   END IF;
 
@@ -4065,6 +4083,7 @@ BEGIN
     END;
   END IF;
 
+  -- Build new assumptions by merging changes onto base snapshot
   v_new_assumptions := v_base_assumptions;
 
   IF p_fields ? 'arv' THEN
@@ -4091,11 +4110,11 @@ BEGIN
     END IF;
   END IF;
 
-  IF p_fields ? 'mao' THEN
-    IF p_fields->>'mao' IS NULL THEN
-      v_new_assumptions := v_new_assumptions - 'mao';
+  IF p_fields ? 'assignment_fee' THEN
+    IF p_fields->>'assignment_fee' IS NULL THEN
+      v_new_assumptions := v_new_assumptions - 'assignment_fee';
     ELSE
-      v_new_assumptions := jsonb_set(v_new_assumptions, '{mao}', to_jsonb(v_mao));
+      v_new_assumptions := jsonb_set(v_new_assumptions, '{assignment_fee}', to_jsonb(v_assignment_fee));
     END IF;
   END IF;
 
@@ -4107,6 +4126,7 @@ BEGIN
     END IF;
   END IF;
 
+  -- Reject if new assumptions identical to base
   IF v_new_assumptions = v_base_assumptions THEN
     RETURN json_build_object(
       'ok',    false,
@@ -4116,12 +4136,27 @@ BEGIN
     );
   END IF;
 
-  -- Use clock_timestamp() not now() -- ensures unique created_at per call
-  -- even within the same transaction (critical for test determinism)
+  -- Derive MAO from post-merge snapshot -- respects explicit nulls/clears
+  -- Read from v_new_assumptions after all merges are applied
+  v_final_arv            := (v_new_assumptions->>'arv')::numeric;
+  v_final_repair         := (v_new_assumptions->>'repair_estimate')::numeric;
+  v_final_multiplier     := (v_new_assumptions->>'multiplier')::numeric;
+  v_final_assignment_fee := (v_new_assumptions->>'assignment_fee')::numeric;
+
+  IF v_final_arv IS NOT NULL AND v_final_multiplier IS NOT NULL AND v_final_repair IS NOT NULL THEN
+    v_new_assumptions := jsonb_set(v_new_assumptions, '{mao}',
+      to_jsonb((v_final_arv * v_final_multiplier) - v_final_repair - COALESCE(v_final_assignment_fee, 0)));
+  ELSE
+    -- One or more inputs missing or cleared -- remove stale mao
+    v_new_assumptions := v_new_assumptions - 'mao';
+  END IF;
+
+  -- Insert new deal_inputs row using clock_timestamp() for deterministic ordering
   INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, assumptions, created_at)
   VALUES (gen_random_uuid(), v_tenant, p_deal_id, v_base_row.calc_version, v_new_assumptions, clock_timestamp())
   RETURNING id INTO v_new_id;
 
+  -- Update snapshot pointer
   UPDATE public.deals
   SET assumptions_snapshot_id = v_new_id,
       updated_at              = now(),

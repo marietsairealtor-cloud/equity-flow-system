@@ -1,5 +1,5 @@
 {
-  "version": 21,
+  "version": 22,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -100,6 +100,14 @@
       "migration": "20260428000002_10_11A8_repair_estimate_cleanup.sql",
       "description": "10.11A8: update_deal_properties_v1 recreated — removes repair_estimate from allowed p_fields; repair estimate writes use update_deal_pricing_v1 / deal_inputs.assumptions only. Migration text references update_deal_pricing_v1 (pricing_ token match only). No deals/deal_inputs calc_version integer change; no MAO formula or merge math change.",
       "introduced_pr": "10.11A8",
+      "released_at": "2026-04-28"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.11A9 pricing contract correction",
+      "migration": "20260428000003_10_11A9_pricing_contract_correction.sql",
+      "description": "10.11A9: update_deal_pricing_v1 recreated — assignment_fee editable in p_fields; mao derived server-side from (arv * multiplier) - repair_estimate - assignment_fee; client mao rejected. Still copies calc_version from base row on insert. Corrective pricing contract only — no new calc_version integer.",
+      "introduced_pr": "10.11A9",
       "released_at": "2026-04-28"
     }
   ],

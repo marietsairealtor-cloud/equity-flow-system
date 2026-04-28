@@ -7425,6 +7425,77 @@ Make ACQ use only one repair estimate source of truth.
 
 ---
 
+### **10.11A9 — Acquisition Backend — Pricing Contract Correction (Assignment Fee Editable, MAO Derived)**
+
+**Deliverable:**
+Correct the ACQ pricing write path so `assignment_fee` is editable and `mao` is derived server-side (corrective to 10.11A7 — the prior A7 contract is not final).
+
+**DoD:**
+
+1. **Revise `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)`**
+
+   * add allowed key:
+
+     * `assignment_fee`
+   * remove writable key:
+
+     * `mao`
+
+2. **Pricing input contract**
+
+   * editable:
+
+     * `arv`
+     * `ask_price`
+     * `repair_estimate`
+     * `assignment_fee`
+     * `multiplier`
+   * derived:
+
+     * `mao`
+
+3. **Server-side derivation**
+
+   * when inserting the new latest `deal_inputs` row:
+
+     * merge editable inputs onto the latest base snapshot
+     * recompute `mao` using the same governed MAO calculator rule as deal creation
+     * store derived `mao` in the new assumptions snapshot
+   * do **not** accept client-written `mao`
+
+4. **Patch behavior**
+
+   * omitted key = carry forward prior value
+   * explicit `null` = clear field where allowed
+   * same-value no-op = `VALIDATION_ERROR`
+   * empty payload = `VALIDATION_ERROR`
+   * non-object payload = `VALIDATION_ERROR`
+   * unknown key = `VALIDATION_ERROR`
+
+5. **Scope**
+
+   * no schema changes
+   * no new tables
+   * `update_deal_pricing_v1` still appends a new `deal_inputs` row
+   * `deals.assumptions_snapshot_id` still updates to the new row
+
+6. **Tests**
+
+   * `assignment_fee` accepted and persisted
+   * `mao` rejected if sent by client
+   * new row inserted
+   * `mao` recalculated correctly from inputs
+   * omitted fields carried forward
+   * invalid numeric input rejected
+   * cross-tenant `NOT_FOUND`
+   * missing base pricing row `NOT_FOUND`
+   * write-lock rejection
+
+**Proof:** `docs/proofs/10.11A9_pricing_contract_correction_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
 ### **10.11B — Acquisition Wiring**
 
 **Deliverable:**
@@ -7530,17 +7601,21 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 * UI refreshes property summary after save
 
-* Pricing section is live-editable
+* Pricing section is live-editable (except display-only `mao`)
 
 * Save calls `update_deal_pricing_v1`
 
-* Pricing edit fields are:
+* Pricing fields — **editable:**
 
   * `arv`
   * `ask_price`
   * `repair_estimate`
-  * `mao`
+  * `assignment_fee`
   * `multiplier`
+
+* Pricing fields — **display-only (derived by backend):**
+
+  * `mao`
 
 * UI refreshes pricing summary after save
 
@@ -7609,7 +7684,7 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 **Proof:** `docs/proofs/10.11B_acquisition_wiring_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, `10.11A4`, `10.11A5`, `10.11A6`, `10.11A7`, and `10.11A8` merged
+**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, `10.11A4`, `10.11A5`, `10.11A6`, `10.11A7`, `10.11A8`, and `10.11A9` merged
 
 ---
 

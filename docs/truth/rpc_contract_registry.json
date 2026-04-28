@@ -504,8 +504,8 @@
     {
       "name": "update_deal_pricing_v1",
       "version": 1,
-      "build_route_owner": "10.11A7",
-      "input_contract": "CONTRACTS.md §59 update_deal_pricing_v1 (10.11A7 — deal_inputs pricing jsonb patch, append-only)",
+      "build_route_owner": "10.11A9",
+      "input_contract": "CONTRACTS.md §59 update_deal_pricing_v1 (10.11A7 append-only path; 10.11A9 — pricing contract correction, corrective to 10.11A7)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
@@ -513,7 +513,7 @@
         "VALIDATION_ERROR",
         "NOT_FOUND"
       ],
-      "notes": "Signature update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb). SECURITY DEFINER; GRANT EXECUTE to authenticated only. current_tenant_id() + auth.uid() required; else NOT_AUTHORIZED. check_workspace_write_allowed_v1 before write. Allowed keys in p_fields: arv, ask_price, repair_estimate, mao, multiplier (all numeric when set). Creates a new deal_inputs row only (append-only); does not update existing deal_inputs in place. Merges onto latest deal_inputs row for the deal; omitted key carries forward from that base snapshot; explicit JSON null for a present key removes that key from assumptions (not JSON null stored). Updates deals.assumptions_snapshot_id to the new row and increments deals.row_version. Same merged assumptions as base => VALIDATION_ERROR (no-op). Empty object, non-object p_fields, unknown keys, or invalid numerics => VALIDATION_ERROR. Missing deal or no deal_inputs row for deal in tenant => NOT_FOUND. Cross-tenant deal => NOT_FOUND."
+      "notes": "Signature update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb). SECURITY DEFINER; GRANT EXECUTE to authenticated only. current_tenant_id() + auth.uid() required; else NOT_AUTHORIZED. check_workspace_write_allowed_v1 before write. Corrective to 10.11A7 (build route 10.11A9). Allowed keys in p_fields: arv, ask_price, repair_estimate, assignment_fee, multiplier (numeric when set). mao is not writable — derived server-side after merge; p_fields ? mao => VALIDATION_ERROR. MAO formula on stored snapshot: (arv * multiplier) - repair_estimate - assignment_fee (assignment_fee treated as 0 when absent after merge). If arv, repair_estimate, or multiplier is missing after merge, mao is removed from the new assumptions snapshot; otherwise mao is set from the formula. Creates a new deal_inputs row only (append-only). Merges onto latest deal_inputs row; omitted key carries forward; explicit JSON null removes key from merged assumptions. Updates deals.assumptions_snapshot_id and increments deals.row_version. Same merged snapshot as base before insert => VALIDATION_ERROR (no-op). Empty object, non-object p_fields, unknown keys, invalid numerics => VALIDATION_ERROR. Missing deal or no deal_inputs row => NOT_FOUND. Cross-tenant deal => NOT_FOUND."
     },
     {
       "name": "advance_deal_stage_v1",

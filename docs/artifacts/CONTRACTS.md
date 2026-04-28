@@ -301,7 +301,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_seller_v1 | 10.11A2 | Jsonb field patch for seller columns on `deals` (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | update_deal_property_v1 | 10.11A2 | Jsonb field patch for address and next-action fields (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | update_deal_properties_v1 | 10.11A8 (corrective to 10.11A6) | Jsonb field patch for `deal_properties` only (§58); does not touch `deal_inputs` or assumptions; repair_estimate owned by `update_deal_pricing_v1` / deal_inputs (§58, §60) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
-| update_deal_pricing_v1 | 10.11A7 | Append-only pricing snapshot: merges numeric fields into new `deal_inputs` row, updates `deals.assumptions_snapshot_id` (§59) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
+| update_deal_pricing_v1 | 10.11A9 (corrective to 10.11A7) | Append-only pricing snapshot: editable assumptions + server-derived `mao` (§59, §61); updates `deals.assumptions_snapshot_id` | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
@@ -1289,7 +1289,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `update_seller_info_v1(...)` | Partial updates to seller and next-action columns on `deals`. |
 | `update_property_info_v1(...)` | Upsert `deal_properties` with partial merge. |
 | `update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)` | Jsonb patch on existing `deal_properties` row only (10.11A6 — §58; **`repair_estimate` removed §60 / 10.11A8**); does not upsert or touch `deal_inputs` / assumptions — use `update_deal_pricing_v1` for repair estimate. |
-| `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)` | Append-only merge into `deal_inputs` assumptions; new row + `deals.assumptions_snapshot_id` update (10.11A7 — §59). |
+| `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)` | Append-only merge into `deal_inputs` assumptions; **`mao` derived server-side** (10.11A9 — §59, §61); new row + `deals.assumptions_snapshot_id` update. |
 | `advance_deal_stage_v1(p_deal_id uuid, p_action text)` | Allowed forward transitions only; invalid transitions → `CONFLICT`. |
 | `mark_deal_dead_v1(p_deal_id uuid, p_dead_reason text)` | Sets stage `dead`; empty reason → `VALIDATION_ERROR`. |
 | `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. |
@@ -1297,7 +1297,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `list_deal_media_v1` / `register_deal_media_v1` / `delete_deal_media_v1` | Deal photo metadata lifecycle. |
 | `create_deal_note_v1` / `list_deal_notes_v1` / `list_deal_activity_v1` | User notes/call logs and read-only deal activity timeline (10.11A1 — §56). |
 
-**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature; **10.11A8** for `update_deal_properties_v1` — §58, §60; **10.11A7** for `update_deal_pricing_v1` — §59).
+**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature; **10.11A8** for `update_deal_properties_v1` — §58, §60; **10.11A9** for `update_deal_pricing_v1` — §59, §61).
 
 ---
 
@@ -1370,9 +1370,9 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ---
 
-## 59) Deal pricing write path — append-only `deal_inputs` (10.11A7)
+## 59) Deal pricing write path — append-only `deal_inputs` (10.11A7, corrective 10.11A9)
 
-**Authority:** migration `20260427000001_10_11A7_deal_pricing_write_path.sql`.
+**Authority:** migration `20260427000001_10_11A7_deal_pricing_write_path.sql`; pricing contract correction `20260428000003_10_11A9_pricing_contract_correction.sql` (§61).
 
 ### §RPC `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)`
 
@@ -1380,11 +1380,12 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **Workspace write lock:** `check_workspace_write_allowed_v1()` before any write (§17A); failure → **`WORKSPACE_NOT_WRITABLE`** (or aligned `NOT_AUTHORIZED` where the implementation matches other Acquisition mutators).
 - **Write scope:** **`public.deal_inputs` only**, and only by **inserting a new row** — never updates an existing `deal_inputs` row in place. Also updates **`deals.assumptions_snapshot_id`** to the new row and increments **`deals.row_version`** on success.
 - **Base snapshot:** Uses the **latest** `deal_inputs` row for the deal in the current tenant (`ORDER BY created_at DESC, id DESC`). **No row** → **`NOT_FOUND`** (no auto-create). Deal missing or wrong tenant → **`NOT_FOUND`**.
-- **Allowed keys in `p_fields`:** **`arv`**, **`ask_price`**, **`repair_estimate`**, **`mao`**, **`multiplier`** — all **numeric** when a non-null value is supplied; invalid numbers → **`VALIDATION_ERROR`**.
+- **Editable keys in `p_fields`:** **`arv`**, **`ask_price`**, **`repair_estimate`**, **`assignment_fee`**, **`multiplier`** — **numeric** when a non-null value is supplied; invalid numbers → **`VALIDATION_ERROR`**. **`mao`** is **not** an input key — it is **derived server-side** after merge. Caller-supplied **`mao`** in **`p_fields`** → **`VALIDATION_ERROR`**.
+- **Derived `mao`:** After patch merge onto the base snapshot, **`mao`** is computed and stored as **`(arv * multiplier) - repair_estimate - assignment_fee`** ( **`assignment_fee`** treated as **0** when absent after merge). If **`arv`**, **`repair_estimate`**, or **`multiplier`** is missing after merge (e.g. cleared with explicit JSON **`null`**), **`mao`** is **omitted** from the new assumptions snapshot (stale **`mao`** is not carried forward in that case).
 - **Merge semantics:** **`p_fields`** must be a **non-empty JSON object**. **Omitted key** → value **carried forward** from the base snapshot’s `assumptions`. **Explicit JSON `null`** for a present key → **remove that key** from the merged assumptions (key absent in stored JSON — not stored as JSON null). **Unknown key**, **empty `{}`**, or **non-object** `p_fields` → **`VALIDATION_ERROR`**.
-- **No-op:** If merged assumptions are **identical** to the base snapshot → **`VALIDATION_ERROR`** (same-value submission rejected).
+- **No-op:** If the merged snapshot (including derived **`mao`**) is **identical** to the base snapshot → **`VALIDATION_ERROR`** (same-value submission rejected).
 
-**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A7**.
+**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A9** (corrective to **10.11A7**).
 
 ---
 
@@ -1399,3 +1400,15 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 **Relationship:** Corrective to **10.11A6** (`deal_properties` jsonb patch RPC); aligns contract with **`update_deal_pricing_v1`** (**10.11A7**) as the owner of **`repair_estimate`** in **`deal_inputs`**.
 
 **§Registry:** `docs/truth/rpc_contract_registry.json` — `update_deal_properties_v1` **`build_route_owner`** **10.11A8**.
+
+---
+
+## 61) Pricing contract correction — assignment fee editable, MAO derived (10.11A9)
+
+**Authority:** migration `20260428000003_10_11A9_pricing_contract_correction.sql`.
+
+**Purpose:** Correct the Acquisition **`update_deal_pricing_v1`** contract introduced in **10.11A7**: **`assignment_fee`** is an editable assumption; **`mao`** is **not** client-writable and is **recomputed** on each append-only snapshot using **`mao = (arv * multiplier) - repair_estimate - assignment_fee`** (with **`assignment_fee`** as **0** when not present after merge). If any of **`arv`**, **`repair_estimate`**, or **`multiplier`** is missing after merge, **`mao`** is **cleared** from the stored assumptions on the new row.
+
+**Relationship:** Corrective to **10.11A7**; **`build_route_owner`** for **`update_deal_pricing_v1`** is **10.11A9** in `docs/truth/rpc_contract_registry.json`. **`repair_estimate`** ownership via **`update_deal_pricing_v1`** (§60) is unchanged.
+
+**§Registry:** `docs/truth/rpc_contract_registry.json` — **`update_deal_pricing_v1`** **10.11A9**.
