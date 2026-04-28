@@ -7307,6 +7307,124 @@ Add governed write path for `deal_properties` using jsonb patch semantics.
 
 ---
 
+### **10.11A7 — Acquisition Backend — Deal Pricing Write Path**
+
+**Deliverable:**
+Add governed write path for ACQ pricing fields stored in `deal_inputs.assumptions`.
+
+**DoD:**
+
+* Implement `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)`
+
+* Writes to `deal_inputs.assumptions`
+
+* Creates a **new latest `deal_inputs` row** for the deal
+
+* Does **not** update prior `deal_inputs` rows in place
+
+* Allowed keys:
+
+  * `arv`
+  * `ask_price`
+  * `repair_estimate`
+  * `mao`
+  * `multiplier`
+
+* Patch behavior:
+
+  * omitted key = carry forward existing latest value
+  * explicit `null` = clear field
+  * same-value submission across all provided fields = `VALIDATION_ERROR`
+  * empty payload = `VALIDATION_ERROR`
+  * non-object payload = `VALIDATION_ERROR`
+  * unknown key = `VALIDATION_ERROR`
+
+* Validation:
+
+  * tenant/user context required
+  * workspace write lock enforced
+  * `p_deal_id` required
+  * cross-tenant deal returns `NOT_FOUND`
+  * missing base `deal_inputs` row returns `NOT_FOUND`
+  * numeric fields validated safely
+  * bad numeric input returns `VALIDATION_ERROR`
+
+* Source-row behavior:
+
+  * use current latest `deal_inputs` row as base snapshot
+  * merge provided changes onto that snapshot
+  * insert new `deal_inputs` row
+  * latest row becomes read-path source for ACQ
+
+* Scope boundaries:
+
+  * no schema changes
+  * no new tables
+  * no changes to `update_deal_property_v1`
+  * no changes to `update_deal_properties_v1`
+
+**Tests:**
+
+* success inserts new `deal_inputs` row
+* latest row becomes read source
+* omitted fields carried forward
+* explicit null clears field in new snapshot
+* same-value submission returns `VALIDATION_ERROR`
+* empty payload returns `VALIDATION_ERROR`
+* non-object payload returns `VALIDATION_ERROR`
+* unknown key returns `VALIDATION_ERROR`
+* invalid numeric input returns `VALIDATION_ERROR`
+* cross-tenant `NOT_FOUND`
+* missing base row `NOT_FOUND`
+* write-lock rejection
+
+**Proof:** `docs/proofs/10.11A7_deal_pricing_write_path_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
+### **10.11A8 — Acquisition Backend — Repair Estimate Source-of-Truth Cleanup**
+
+**Deliverable:**
+Make ACQ use only one repair estimate source of truth.
+
+**DoD:**
+
+* ACQ contract uses only:
+
+  * `deal_inputs.assumptions.repair_estimate`
+
+* Remove `repair_estimate` from `update_deal_properties_v1`
+
+* Remove `repair_estimate` from A6 tests / proof / DoD
+
+* ACQ read/write behavior no longer treats `deal_properties.repair_estimate` as active
+
+* Property edit flow does **not** save or display a separate repair estimate
+
+* Pricing edit flow is the only place that saves repair estimate
+
+* No new tables
+
+* No new columns
+
+* Optional cleanup in this item only if confirmed safe:
+
+  * deprecate `deal_properties.repair_estimate`
+  * or leave column in place but unused by ACQ
+
+**Tests:**
+
+* property write path no longer accepts `repair_estimate`
+* pricing write path accepts and persists `repair_estimate`
+* ACQ deal detail/pricing view uses pricing repair estimate only
+* no duplicate repair estimate field appears in ACQ flow
+
+**Proof:** `docs/proofs/10.11A8_repair_estimate_source_of_truth_cleanup_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
 ### **10.11B — Acquisition Wiring**
 
 **Deliverable:**
@@ -7399,7 +7517,6 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
     * `occupancy`
     * `deficiency_tags`
     * `condition_notes`
-    * `repair_estimate`
     * `garage_parking`
     * `basement_type`
     * `foundation_type`
@@ -7409,7 +7526,23 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
     * `heating_type`
     * `cooling_type`
 
-* UI refreshes property/pricing summary after save
+* Property edit flow does **not** save repair estimate
+
+* UI refreshes property summary after save
+
+* Pricing section is live-editable
+
+* Save calls `update_deal_pricing_v1`
+
+* Pricing edit fields are:
+
+  * `arv`
+  * `ask_price`
+  * `repair_estimate`
+  * `mao`
+  * `multiplier`
+
+* UI refreshes pricing summary after save
 
 * Media section is wired:
 
@@ -7476,7 +7609,7 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 **Proof:** `docs/proofs/10.11B_acquisition_wiring_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, `10.11A4`, `10.11A5`, and `10.11A6` merged
+**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, `10.11A4`, `10.11A5`, `10.11A6`, `10.11A7`, and `10.11A8` merged
 
 ---
 

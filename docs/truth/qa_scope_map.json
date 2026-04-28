@@ -603,6 +603,10 @@
     },
     "10.11A6": {
       "proof_pattern": "^docs/proofs/10\\.11A6_deal_properties_write_path_"
+    },
+    "10.11A7": {
+      "proof_pattern": "^docs/proofs/10\\.11A7_deal_pricing_write_path_",
+      "scope": "Acquisition Backend - Deal Pricing Write Path"
     }
   }
 }
