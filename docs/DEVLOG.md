@@ -9243,3 +9243,36 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-28 — Build Route v2.4 — 10.11A7
+
+Objective
+Acquisition Backend - Deal Pricing Write Path
+
+Changes
+- Migration 20260427000001_10_11A7_deal_pricing_write_path.sql applied
+- Corrective 20260428000001_10_11A7_deal_pricing_clock_timestamp_fix.sql applied
+- New RPC: update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)
+    SECURITY DEFINER, authenticated only, write lock enforced
+    writes to deal_inputs only -- creates new row, does not overwrite history
+    updates deals.assumptions_snapshot_id to new row
+    updates deals.updated_at and deals.row_version
+    allowed keys: arv, ask_price, repair_estimate, mao, multiplier
+    all fields numeric -- validated safely before insert
+    omitted key = carry forward from base snapshot
+    explicit null = remove key from assumptions
+    same-value no-op = VALIDATION_ERROR
+    missing base deal_inputs row = NOT_FOUND (no auto-create)
+    uses clock_timestamp() for deterministic row ordering within transactions
+- No schema changes. No new tables. No existing RPCs modified.
+- CONTRACTS.md sections 17, 17A, 59 updated
+- rpc_contract_registry.json, execute_allowlist.json, definer_allowlist.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A7_deal_pricing_write_path_20260428T013806Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
