@@ -3975,7 +3975,6 @@ BEGIN
     );
   END IF;
 
-  -- Reject unknown keys
   SELECT ARRAY(
     SELECT jsonb_object_keys(p_fields)
     EXCEPT
@@ -3991,7 +3990,6 @@ BEGIN
     );
   END IF;
 
-  -- Verify deal belongs to current tenant
   IF NOT EXISTS (
     SELECT 1 FROM public.deals
     WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
@@ -4004,7 +4002,6 @@ BEGIN
     );
   END IF;
 
-  -- Get latest deal_inputs row as base
   SELECT * INTO v_base_row
   FROM public.deal_inputs
   WHERE deal_id   = p_deal_id
@@ -4023,7 +4020,6 @@ BEGIN
 
   v_base_assumptions := COALESCE(v_base_row.assumptions, '{}'::jsonb);
 
-  -- Validate numeric fields safely (only when not null)
   IF p_fields ? 'arv' AND p_fields->>'arv' IS NOT NULL THEN
     BEGIN
       v_arv := (p_fields->>'arv')::numeric;
@@ -4069,8 +4065,6 @@ BEGIN
     END;
   END IF;
 
-  -- Build new assumptions by merging changes onto base snapshot
-  -- explicit null = remove key, value = set key
   v_new_assumptions := v_base_assumptions;
 
   IF p_fields ? 'arv' THEN
@@ -4113,7 +4107,6 @@ BEGIN
     END IF;
   END IF;
 
-  -- Reject if new assumptions are identical to base (same-value no-op)
   IF v_new_assumptions = v_base_assumptions THEN
     RETURN json_build_object(
       'ok',    false,
@@ -4123,12 +4116,12 @@ BEGIN
     );
   END IF;
 
-  -- Insert new deal_inputs row
+  -- Use clock_timestamp() not now() -- ensures unique created_at per call
+  -- even within the same transaction (critical for test determinism)
   INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, assumptions, created_at)
-  VALUES (gen_random_uuid(), v_tenant, p_deal_id, v_base_row.calc_version, v_new_assumptions, now())
+  VALUES (gen_random_uuid(), v_tenant, p_deal_id, v_base_row.calc_version, v_new_assumptions, clock_timestamp())
   RETURNING id INTO v_new_id;
 
-  -- Update snapshot pointer on deals to new row
   UPDATE public.deals
   SET assumptions_snapshot_id = v_new_id,
       updated_at              = now(),
