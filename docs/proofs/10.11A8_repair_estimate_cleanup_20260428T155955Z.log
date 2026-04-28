@@ -1,0 +1,66 @@
+PROOF_HEAD=5fb35337da0f38e136c76d4089c1e95b03ba36fa
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A8 Acquisition Backend - Repair Estimate Source-of-Truth Cleanup -- Proof Log ===
+Date: 2026-04-28T11:59:22.4243081-04:00
+Branch: feature/10.11A8-repair-estimate-cleanup
+PR HEAD SHA: 5fb35337da0f38e136c76d4089c1e95b03ba36fa
+
+=== Deliverable ===
+Migration: 20260428000002_10_11A8_repair_estimate_cleanup.sql -- applied
+Test file: supabase/tests/10_11A8_repair_estimate_cleanup.test.sql -- PASS
+
+=== What changed ===
+update_deal_properties_v1: repair_estimate removed from allowed keys
+  - repair_estimate now returns VALIDATION_ERROR from update_deal_properties_v1
+  - update_deal_pricing_v1 is sole owner of repair_estimate in ACQ flow
+  - deal_properties.repair_estimate column left in place but no longer written by ACQ
+No schema changes. No new tables. No new columns.
+No other RPCs modified.
+
+=== pgTAP Results ===
+supabase db test -- PASS (69 files, 784 tests, 0 failures)
+update_deal_properties_v1: repair_estimate rejected as unknown key -- PASS
+update_deal_properties_v1: normal property update still works -- PASS
+update_deal_properties_v1: empty payload still returns VALIDATION_ERROR -- PASS
+update_deal_properties_v1: non-object payload still returns VALIDATION_ERROR -- PASS
+update_deal_properties_v1: unknown key still returns VALIDATION_ERROR -- PASS
+update_deal_properties_v1: same-value still returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: repair_estimate still accepted by pricing write path -- PASS
+update_deal_pricing_v1: repair_estimate persisted in latest deal_inputs row -- PASS
+
+=== db push ===
+20260428000002_10_11A8_repair_estimate_cleanup.sql -- applied
+
+=== DoD Checklist ===
+repair_estimate removed from update_deal_properties_v1                    -- PASS
+repair_estimate returns VALIDATION_ERROR from property write path         -- PASS
+normal property updates still work after cleanup                          -- PASS
+update_deal_pricing_v1 still accepts repair_estimate                      -- PASS
+pricing repair_estimate persisted correctly                               -- PASS
+deal_properties.repair_estimate column preserved but unused by ACQ        -- PASS
+no schema changes                                                         -- PASS
+no new tables                                                             -- PASS
+no other RPCs modified                                                    -- PASS
+
+=== Registration ===
+rpc_contract_registry.json updated -- PASS
+calc_version_registry.json updated -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md sections 17, 55, 58, 60 updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260428T144751Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A8 Acquisition Backend Repair Estimate Source-of-Truth Cleanup: PASS (merge-blocking gate)
