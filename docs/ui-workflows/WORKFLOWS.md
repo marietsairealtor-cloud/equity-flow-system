@@ -338,6 +338,79 @@ Writes: none before RPC — deal written server-side
 Branches: not authenticated → /auth | no subscription → /onboarding | entitled → save + /acquisition
 Item: 10.9
 
+---
+
+## fetch-acq-kpis
+Trigger: ACQ page load, date range pill click, custom date picker change
+Reads: kpiDateFrom, kpiDateTo variables
+Calls: get_acq_kpis_v1(p_date_from, p_date_to)
+Writes: acqKpis variable
+Branches: none
+Item: 10.11B
+
+---
+
+## fetch-all-deals
+Trigger: ACQ page load only
+Reads: none (always fetches all with p_filter=all)
+Calls: list_acq_deals_v1(p_filter='all', p_farm_area_id=null)
+Writes: allDeals variable
+Branches: none
+Item: 10.11B
+
+---
+
+## fetch-acq-deals
+Trigger: ACQ page load, stage filter click, farm area filter click
+Reads: activeFilter, activeFarmAreaId variables
+Calls: list_acq_deals_v1(p_filter=activeFilter, p_farm_area_id=activeFarmAreaId||null)
+Writes: dealList variable
+Branches: none
+Item: 10.11B
+
+---
+
+## fetch-selected-deal
+Trigger: deal row click, after save mutations
+Reads: activeDealId variable
+Calls: get_acq_deal_v1(p_deal_id=activeDealId)
+Writes: selectedDeal variable
+Branches: passthrough condition: activeDealId !== ''
+Item: 10.11B
+
+---
+
+## send-to-dispo
+Trigger: Confirm button in Send to Dispo popup
+Reads: activeDealId, dispoAssignee variables
+Calls: handoff_to_dispo_v1(p_deal_id=activeDealId, p_assignee_user_id=dispoAssignee)
+Writes: none -- triggers fetch-acq-deals on success
+Branches: success → close popup + fetch-acq-deals + clear activeDealId + clear selectedDeal
+Item: 10.11B
+
+---
+
+## save-seller
+Trigger: Save button in Edit Seller popup
+Reads: seller input field values, activeDealId
+Calls: update_deal_seller_v1(p_deal_id=activeDealId, p_fields=seller inputs)
+Writes: none -- triggers fetch-selected-deal on success
+Branches: success → fetch-selected-deal + close popup
+Item: 10.11B
+
+---
+
+## save-property
+Trigger: Save button in Edit Property popup
+Reads: property input field values, activeDealId, deficiencyTags variable
+Calls: update_deal_property_v1(p_deal_id, p_fields=address/next_action/next_action_due)
+       update_deal_properties_v1(p_deal_id, p_fields=all property fields + deficiency_tags)
+Writes: none -- triggers fetch-selected-deal on success
+Branches: success → fetch-selected-deal + close popup
+Item: 10.11B
+
+---
+
 # WeWeb Variable Registry
 
 All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolean.
@@ -377,3 +450,20 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | workspaceList | object | list_user_tenants_v1() result | fetch-workspace-list |
 | workspaceMembers | object | list_workspace_members_v1() result | fetch-workspace-members |
 | workspacesettings | object | get_workspace_settings_v1() result. Variable ID: 13fb0509-4a8f-4799-a4e8-2f491cd36ef6 | fetch-workspace-settings |
+
+## ACQ Page Variables
+
+| Variable | Type | Description | Written By |
+|----------|------|-------------|------------|
+| acqKpis | object | get_acq_kpis_v1() result — contracts_signed, leads_worked, lead_to_contract_pct, avg_assignment_fee. Variable ID: TBD | fetch-acq-kpis |
+| activeDatePill | text | Active KPI date range pill — last7, last30, custom. Default: last30. Variable ID: a7c9995f-56f7-4978-8290-b83a2c515781 | date pill on-click |
+| kpiDateFrom | text | KPI date filter start — ISO timestamp string. Variable ID: TBD | date pill on-click, custom date picker on-change |
+| kpiDateTo | text | KPI date filter end — ISO timestamp string. Variable ID: TBD | date pill on-click, custom date picker on-change |
+| activeFilter | text | Active stage filter — all, new, analyzing, offer_sent, follow_ups, under_contract. Default: all. Variable ID: TBD | stage filter pill on-click |
+| activeFarmAreaId | text | Active farm area filter — sentinel value `all` or farm area UUID. Default: all. Variable ID: TBD | farm area pill on-click |
+| allDeals | object | list_acq_deals_v1() result unfiltered — used for stage filter counts. Variable ID: TBD | fetch-all-deals |
+| dealList | object | list_acq_deals_v1() result filtered by activeFilter and activeFarmAreaId. Variable ID: TBD | fetch-acq-deals |
+| activeDealId | text | Currently selected deal UUID. Empty string when no deal selected. Variable ID: TBD | deal row on-click |
+| selectedDeal | object | get_acq_deal_v1() result for activeDealId. Variable ID: d8580b53-ee7f-4dcd-b380-ec3c64475c9a | fetch-selected-deal |
+| dispoAssignee | text | Selected assignee user_id for Send to Dispo popup. Variable ID: d93f58a4-0d4f-434d-ae5c-0f8d5e400735 | assignee repeater on-click |
+| deficiencyTags | array | Working copy of deficiency tags in Edit Property popup. Loaded from selectedDeal on popup open. Variable ID: 7d8913b8-ed90-41c8-807a-b25d35376b54 | Edit button on-click, Add/Remove tag actions |
