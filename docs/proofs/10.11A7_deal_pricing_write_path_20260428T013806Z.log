@@ -1,0 +1,100 @@
+PROOF_HEAD=f1e115319c834d51f7bd0a87ce46ba96aad341d5
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A7 Acquisition Backend - Deal Pricing Write Path -- Proof Log ===
+Date: 2026-04-27T21:36:11.1597072-04:00
+Branch: feature/10.11A7-deal-pricing-write-path
+PR HEAD SHA: f1e115319c834d51f7bd0a87ce46ba96aad341d5
+
+=== Deliverable ===
+Migration: 20260427000001_10_11A7_deal_pricing_write_path.sql -- applied
+Corrective: 20260428000001_10_11A7_deal_pricing_clock_timestamp_fix.sql -- applied
+Test file: supabase/tests/10_11A7_deal_pricing_write_path.test.sql -- PASS
+
+=== New RPC ===
+update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)
+  - SECURITY DEFINER, authenticated only
+  - workspace write lock enforced via check_workspace_write_allowed_v1()
+  - writes to deal_inputs only -- creates new row, does not overwrite history
+  - updates deals.assumptions_snapshot_id to new row
+  - updates deals.updated_at and deals.row_version
+  - allowed keys: arv, ask_price, repair_estimate, mao, multiplier
+  - all fields numeric -- validated safely before insert
+  - omitted key = carry forward from base snapshot
+  - explicit null = remove key from assumptions
+  - same-value no-op = VALIDATION_ERROR
+  - missing base deal_inputs row = NOT_FOUND (no auto-create)
+  - uses clock_timestamp() for deterministic row ordering within transactions
+
+=== Corrective Notes ===
+Two corrective fixes applied after initial migration:
+1. DROP FUNCTION added at top of migration to ensure clean replacement
+   (CREATE OR REPLACE unreliable when function evolved across multiple edits)
+2. clock_timestamp() used instead of now() for deal_inputs.created_at
+   (now() returns transaction timestamp -- same value for all calls in same transaction,
+   causing non-deterministic ORDER BY created_at DESC, id DESC in tests)
+Both fixes are in forward migrations -- no retro-edits to applied migrations.
+
+=== pgTAP Results ===
+supabase test db -- PASS (68 files, 776 tests, 0 failures)
+supabase test db --db-url -- PASS (68 files, 776 tests, 0 failures)
+update_deal_pricing_v1: success on valid field update -- PASS
+update_deal_pricing_v1: new deal_inputs row inserted -- PASS
+update_deal_pricing_v1: new row has updated arv -- PASS
+update_deal_pricing_v1: omitted field carried forward from base -- PASS
+update_deal_pricing_v1: snapshot pointer updated to new row -- PASS
+update_deal_pricing_v1: deals.row_version incremented -- PASS
+update_deal_pricing_v1: explicit null accepted -- PASS
+update_deal_pricing_v1: explicit null clears field in new snapshot -- PASS
+update_deal_pricing_v1: same-value submission returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: empty payload returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: non-object payload returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: unknown key returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: invalid numeric returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: cross-tenant deal returns NOT_FOUND -- PASS
+update_deal_pricing_v1: missing base deal_inputs row returns NOT_FOUND -- PASS
+update_deal_pricing_v1: expired workspace returns WORKSPACE_NOT_WRITABLE -- PASS
+
+=== db push ===
+20260427000001_10_11A7_deal_pricing_write_path.sql -- applied
+20260428000001_10_11A7_deal_pricing_clock_timestamp_fix.sql -- applied
+
+=== DoD Checklist ===
+update_deal_pricing_v1 exists, SECURITY DEFINER, authenticated only        -- PASS
+workspace write lock enforced                                              -- PASS
+creates new deal_inputs row (append-only)                                  -- PASS
+deals.assumptions_snapshot_id updated to new row                          -- PASS
+deals.row_version incremented on success                                   -- PASS
+allowed keys: arv, ask_price, repair_estimate, mao, multiplier            -- PASS
+numeric fields validated safely                                            -- PASS
+omitted key carried forward from base                                      -- PASS
+explicit null removes key from assumptions                                 -- PASS
+same-value no-op rejected                                                  -- PASS
+missing base row returns NOT_FOUND                                         -- PASS
+cross-tenant isolation enforced                                            -- PASS
+no schema changes                                                          -- PASS
+no new tables                                                              -- PASS
+existing RPCs unchanged                                                    -- PASS
+
+=== Registration ===
+rpc_contract_registry.json -- PASS
+execute_allowlist.json -- PASS
+definer_allowlist.json -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md sections 17, 17A, 59 updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260428T001418Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A7 Acquisition Backend Deal Pricing Write Path: PASS (merge-blocking gate)
