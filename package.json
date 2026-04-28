@@ -67,7 +67,7 @@
     "husky": "^9.1.7",
     "jsonwebtoken": "^9.0.3",
     "lint-staged": "^16.2.7",
-    "supabase": "^2.90.0",
+    "supabase": "2.90.1",
     "yaml": "^2.6.0"
   },
   "lint-staged": {
