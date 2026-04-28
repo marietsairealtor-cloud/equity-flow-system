@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS public.update_deal_pricing_v1(uuid, jsonb);
+
 -- 10.11A7: Acquisition Backend -- Deal Pricing Write Path
 -- Adds update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)
 -- Creates a new deal_inputs row with merged assumptions (does not update in place)
