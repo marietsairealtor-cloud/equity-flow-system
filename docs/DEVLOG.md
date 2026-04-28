@@ -9300,3 +9300,29 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-28 — Build Route v2.4 — 10.11A9
+
+Objective
+Acquisition Backend - Pricing Contract Correction (corrective to 10.11A7)
+
+Changes
+- Migration 20260428000003_10_11A9_pricing_contract_correction.sql applied
+- assignment_fee added to update_deal_pricing_v1 allowed keys
+- mao removed as client-writable -- now derived server-side
+- MAO formula: (arv * multiplier) - repair_estimate - assignment_fee
+- mao derived from post-merge snapshot -- respects explicit nulls/clears
+- mao removed from snapshot when any required input missing after merge
+- 10.11A7 test file updated to match new contract (tests 7-8)
+- No schema changes. No new tables. Append-only pattern unchanged.
+- CONTRACTS.md sections 17, 55, 59, 61 updated
+- rpc_contract_registry.json, calc_version_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A9_pricing_contract_correction_20260428T180327Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
