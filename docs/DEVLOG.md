@@ -9276,3 +9276,27 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-28 — Build Route v2.4 — 10.11A8
+
+Objective
+Acquisition Backend - Repair Estimate Source-of-Truth Cleanup
+
+Changes
+- Migration 20260428000002_10_11A8_repair_estimate_cleanup.sql applied
+- Removed repair_estimate from update_deal_properties_v1 allowed keys
+- repair_estimate now returns VALIDATION_ERROR from update_deal_properties_v1
+- update_deal_pricing_v1 is sole owner of repair_estimate in ACQ flow
+- deal_properties.repair_estimate column preserved but no longer written by ACQ
+- No schema changes. No new tables. No new columns. No other RPCs modified.
+- CONTRACTS.md sections 17, 55, 58, 60 updated
+- rpc_contract_registry.json, calc_version_registry.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A8_repair_estimate_cleanup_20260428T155238Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
