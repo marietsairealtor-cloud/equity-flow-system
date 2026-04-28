@@ -236,6 +236,7 @@
     "docs/proofs/10.11A5_deal_properties_schema_normalization_20260426T192140Z.log": "2b95b75b963860b2aa5e3282b5f374d7ff25ef29af4d35ab92ccc5bdc3f954ab",
     "docs/proofs/10.11A6_deal_properties_write_path_20260426T223748Z.log": "0b79d108942b1dc3c98147292c4253bdc4fdfc3b17b2e6ca94fbf60cbd247896",
     "docs/proofs/10.11A7_deal_pricing_write_path_20260428T013806Z.log": "8ebbc6c2f2b6dcab8889ce3dbc30d4f90f285911b38a41dbcdfd4437057842e4",
-    "docs/proofs/10.11A8_repair_estimate_cleanup_20260428T155955Z.log": "60705008e0d6ee747ec8ef1177198287a9b1da01e1c7d5eba51c267c0f75e1b2"
+    "docs/proofs/10.11A8_repair_estimate_cleanup_20260428T155955Z.log": "60705008e0d6ee747ec8ef1177198287a9b1da01e1c7d5eba51c267c0f75e1b2",
+    "docs/proofs/10.11A9_pricing_contract_correction_20260428T180327Z.log": "a2a57becc446ca2412e74842f7cd54ffe601c96af20308416bb2234802e5e60c"
   }
 }

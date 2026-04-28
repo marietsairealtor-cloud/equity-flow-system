@@ -1,0 +1,86 @@
+PROOF_HEAD=1d3c8874aa0acc9ebbd397828551bd3eef95a5f3
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A9 Acquisition Backend - Pricing Contract Correction -- Proof Log ===
+Date: 2026-04-28T14:01:36.6533047-04:00
+Branch: feature/10.11A9-pricing-contract-correction
+PR HEAD SHA: 1d3c8874aa0acc9ebbd397828551bd3eef95a5f3
+
+=== Deliverable ===
+Migration: 20260428000003_10_11A9_pricing_contract_correction.sql -- applied
+Test file: supabase/tests/10_11A9_pricing_contract_correction.test.sql -- PASS
+Corrective to: 10.11A7
+
+=== Contract Changes ===
+update_deal_pricing_v1 revised:
+  - assignment_fee added to allowed keys
+  - mao removed as client-writable key -- now derived server-side
+  - editable keys: arv, ask_price, repair_estimate, assignment_fee, multiplier
+  - derived: mao = (arv * multiplier) - repair_estimate - assignment_fee
+  - mao derived from post-merge snapshot -- respects explicit nulls
+  - mao removed from snapshot when any required input missing after merge
+  - no schema changes, no new tables, append-only pattern unchanged
+Also updated: 10_11A7_deal_pricing_write_path.test.sql tests 7-8 to match new contract
+
+=== pgTAP Results ===
+supabase db test -- PASS (70 files, 801 tests, 0 failures)
+update_deal_pricing_v1: assignment_fee accepted -- PASS
+update_deal_pricing_v1: assignment_fee persisted correctly -- PASS
+update_deal_pricing_v1: mao recalculated after assignment_fee change -- PASS
+update_deal_pricing_v1: assumptions_snapshot_id updated to new row -- PASS
+update_deal_pricing_v1: mao rejected if sent by client -- PASS
+update_deal_pricing_v1: clearing repair_estimate accepted -- PASS
+update_deal_pricing_v1: mao removed when repair_estimate cleared -- PASS
+update_deal_pricing_v1: repair_estimate restored accepted -- PASS
+update_deal_pricing_v1: mao recalculated correctly when repair_estimate restored -- PASS
+update_deal_pricing_v1: same-value submission returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: empty payload returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: non-object payload returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: unknown key returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: invalid numeric returns VALIDATION_ERROR -- PASS
+update_deal_pricing_v1: missing base deal_inputs row returns NOT_FOUND -- PASS
+update_deal_pricing_v1: cross-tenant deal returns NOT_FOUND -- PASS
+update_deal_pricing_v1: expired workspace returns WORKSPACE_NOT_WRITABLE -- PASS
+
+=== db push ===
+20260428000003_10_11A9_pricing_contract_correction.sql -- applied
+
+=== DoD Checklist ===
+assignment_fee added to allowed keys                                      -- PASS
+mao rejected if sent by client                                            -- PASS
+mao derived server-side from post-merge snapshot                         -- PASS
+MAO formula: (arv * multiplier) - repair_estimate - assignment_fee       -- PASS
+mao removed when required inputs missing after merge                     -- PASS
+omitted fields carried forward from base                                 -- PASS
+same-value no-op rejected                                                -- PASS
+cross-tenant isolation enforced                                          -- PASS
+missing base row returns NOT_FOUND                                       -- PASS
+write-lock enforced                                                      -- PASS
+no schema changes                                                        -- PASS
+no new tables                                                            -- PASS
+append-only deal_inputs pattern unchanged                                -- PASS
+10.11A7 test file updated to match new contract                          -- PASS
+
+=== Registration ===
+rpc_contract_registry.json updated -- PASS
+calc_version_registry.json updated -- PASS
+execute_allowlist.json -- confirmed present, no change needed
+definer_allowlist.json -- confirmed present, no change needed
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md sections 17, 55, 59, 61 updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260428T174853Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A9 Acquisition Backend Pricing Contract Correction: PASS (merge-blocking gate)
