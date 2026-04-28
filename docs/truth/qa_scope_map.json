@@ -611,6 +611,10 @@
     "10.11A8": {
       "proof_pattern": "^docs/proofs/10\\.11A8_repair_estimate_cleanup_",
       "scope": "Acquisition Backend - Repair Estimate Source-of-Truth Cleanup"
+    },
+    "10.11A9": {
+      "proof_pattern": "^docs/proofs/10\\.11A9_pricing_contract_correction_",
+      "scope": "Acquisition Backend - Pricing Contract Correction"
     }
   }
 }

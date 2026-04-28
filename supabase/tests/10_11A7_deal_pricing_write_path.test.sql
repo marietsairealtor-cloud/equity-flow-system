@@ -105,22 +105,22 @@ SELECT is(
 );
 SET LOCAL ROLE authenticated;
 
--- 7. explicit null clears field in new snapshot
+-- 7. clearing repair_estimate removes mao from new snapshot
 SELECT is(
   (public.update_deal_pricing_v1('d1170000-0000-0000-0000-000000000001',
-    '{"mao":null}'::jsonb)::json)->>'ok',
+    '{"repair_estimate":null}'::jsonb)::json)->>'ok',
   'true',
-  'update_deal_pricing_v1: explicit null accepted'
+  'update_deal_pricing_v1: clearing repair_estimate accepted'
 );
 
 SET LOCAL ROLE postgres;
--- 8. explicit null clears field in latest row
+-- 8. mao removed when repair_estimate cleared
 SELECT is(
   (SELECT assumptions->>'mao' FROM public.deal_inputs
    WHERE deal_id = 'd1170000-0000-0000-0000-000000000001'
    ORDER BY created_at DESC, id DESC LIMIT 1),
   null,
-  'update_deal_pricing_v1: explicit null clears field in new snapshot'
+  'update_deal_pricing_v1: mao removed when repair_estimate cleared'
 );
 SET LOCAL ROLE authenticated;
 
