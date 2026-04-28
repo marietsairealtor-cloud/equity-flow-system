@@ -4149,13 +4149,12 @@ DECLARE
   v_rows_updated      int;
   v_allowed_keys      text[] := ARRAY[
     'property_type','beds','baths','sqft','lot_size','year_built',
-    'occupancy','deficiency_tags','condition_notes','repair_estimate',
+    'occupancy','deficiency_tags','condition_notes',
     'garage_parking','basement_type','foundation_type',
     'roof_age','furnace_age','ac_age','heating_type','cooling_type'
   ];
   v_unknown_keys      text[];
   v_year_built        integer;
-  v_repair_estimate   numeric;
   v_roof_age          integer;
   v_furnace_age       integer;
   v_ac_age            integer;
@@ -4200,7 +4199,7 @@ BEGIN
     );
   END IF;
 
-  -- Reject unknown keys
+  -- Reject unknown keys (repair_estimate now rejected -- use update_deal_pricing_v1)
   SELECT ARRAY(
     SELECT jsonb_object_keys(p_fields)
     EXCEPT
@@ -4219,10 +4218,8 @@ BEGIN
   -- Validate deficiency_tags shape
   IF p_fields ? 'deficiency_tags' THEN
     IF jsonb_typeof(p_fields->'deficiency_tags') = 'null' THEN
-      -- explicit null = clear field
       v_deficiency_tags := NULL;
     ELSIF jsonb_typeof(p_fields->'deficiency_tags') = 'array' THEN
-      -- validate every element is a JSON string
       IF EXISTS (
         SELECT 1
         FROM jsonb_array_elements(p_fields->'deficiency_tags') elem
@@ -4246,22 +4243,13 @@ BEGIN
     END IF;
   END IF;
 
-  -- Validate typed numeric/integer fields safely
+  -- Validate typed fields safely
   IF p_fields ? 'year_built' AND p_fields->>'year_built' IS NOT NULL THEN
     BEGIN
       v_year_built := (p_fields->>'year_built')::integer;
     EXCEPTION WHEN others THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'year_built must be a valid integer', 'fields', '{}'::json));
-    END;
-  END IF;
-
-  IF p_fields ? 'repair_estimate' AND p_fields->>'repair_estimate' IS NOT NULL THEN
-    BEGIN
-      v_repair_estimate := (p_fields->>'repair_estimate')::numeric;
-    EXCEPTION WHEN others THEN
-      RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
-        'error', json_build_object('message', 'repair_estimate must be a valid number', 'fields', '{}'::json));
     END;
   END IF;
 
@@ -4318,7 +4306,6 @@ BEGIN
     );
   END IF;
 
-  -- UPDATE only if at least one provided field IS DISTINCT FROM current value
   UPDATE public.deal_properties
   SET
     property_type   = CASE WHEN p_fields ? 'property_type'   THEN (p_fields->>'property_type')   ELSE property_type   END,
@@ -4330,7 +4317,6 @@ BEGIN
     occupancy       = CASE WHEN p_fields ? 'occupancy'        THEN (p_fields->>'occupancy')        ELSE occupancy       END,
     deficiency_tags = CASE WHEN p_fields ? 'deficiency_tags'  THEN v_deficiency_tags               ELSE deficiency_tags END,
     condition_notes = CASE WHEN p_fields ? 'condition_notes'  THEN (p_fields->>'condition_notes')  ELSE condition_notes END,
-    repair_estimate = CASE WHEN p_fields ? 'repair_estimate'  THEN v_repair_estimate               ELSE repair_estimate END,
     garage_parking  = CASE WHEN p_fields ? 'garage_parking'   THEN (p_fields->>'garage_parking')   ELSE garage_parking  END,
     basement_type   = CASE WHEN p_fields ? 'basement_type'    THEN (p_fields->>'basement_type')    ELSE basement_type   END,
     foundation_type = CASE WHEN p_fields ? 'foundation_type'  THEN (p_fields->>'foundation_type')  ELSE foundation_type END,
@@ -4353,7 +4339,6 @@ BEGIN
       (p_fields ? 'occupancy'       AND (p_fields->>'occupancy')      IS DISTINCT FROM occupancy)        OR
       (p_fields ? 'deficiency_tags' AND v_deficiency_tags             IS DISTINCT FROM deficiency_tags)  OR
       (p_fields ? 'condition_notes' AND (p_fields->>'condition_notes') IS DISTINCT FROM condition_notes) OR
-      (p_fields ? 'repair_estimate' AND v_repair_estimate             IS DISTINCT FROM repair_estimate)  OR
       (p_fields ? 'garage_parking'  AND (p_fields->>'garage_parking') IS DISTINCT FROM garage_parking)   OR
       (p_fields ? 'basement_type'   AND (p_fields->>'basement_type')  IS DISTINCT FROM basement_type)    OR
       (p_fields ? 'foundation_type' AND (p_fields->>'foundation_type') IS DISTINCT FROM foundation_type) OR
