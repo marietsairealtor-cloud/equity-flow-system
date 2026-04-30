@@ -9326,3 +9326,28 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-04-30 — Build Route v2.4 — 10.11A10
+
+Objective
+Acquisition Backend - Activity Log Expansion
+
+Changes
+- Migration 20260430000001_10_11A10_activity_log_expansion.sql applied
+- advance_deal_stage_v1: now requires tenant + user context, writes stage_change to deal_activity_log
+- handoff_to_dispo_v1: now requires tenant + user context, writes handoff to deal_activity_log
+- complete_reminder_v1: writes reminder_completed on first call only, idempotent on repeat calls
+- create_deal_note_v1: unchanged -- does not write to activity log
+- deal_activity_log remains system-events only
+- No schema changes. No new tables. No new columns.
+- CONTRACTS.md section 62 added, sections 17, 55 updated
+- rpc_contract_registry.json updated for 3 RPCs
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.11A10_activity_log_expansion_20260430T170140Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
