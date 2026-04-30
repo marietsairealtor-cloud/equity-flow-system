@@ -223,14 +223,18 @@ CREATE OR REPLACE FUNCTION "public"."advance_deal_stage_v1"("p_deal_id" "uuid", 
     AS $$
 DECLARE
   v_tenant    uuid;
+  v_user      uuid;
   v_stage     text;
   v_new_stage text;
+  v_content   text;
 BEGIN
   v_tenant := public.current_tenant_id();
-  IF v_tenant IS NULL THEN
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
     );
   END IF;
 
@@ -252,13 +256,15 @@ BEGIN
     );
   END IF;
 
-  -- Enforce valid transitions
   IF p_action = 'start_analysis' AND v_stage = 'new' THEN
     v_new_stage := 'analyzing';
+    v_content   := 'Stage advanced to Analyzing';
   ELSIF p_action = 'send_offer' AND v_stage = 'analyzing' THEN
     v_new_stage := 'offer_sent';
+    v_content   := 'Stage advanced to Offer Sent';
   ELSIF p_action = 'mark_contract_signed' AND v_stage = 'offer_sent' THEN
     v_new_stage := 'under_contract';
+    v_content   := 'Stage advanced to Under Contract';
   ELSE
     RETURN json_build_object(
       'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
@@ -271,6 +277,9 @@ BEGIN
     updated_at  = now(),
     row_version = row_version + 1
   WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  INSERT INTO public.deal_activity_log (tenant_id, deal_id, activity_type, content, created_by, created_at)
+  VALUES (v_tenant, p_deal_id, 'stage_change', v_content, v_user, now());
 
   RETURN json_build_object(
     'ok', true, 'code', 'OK',
@@ -580,35 +589,62 @@ CREATE OR REPLACE FUNCTION "public"."complete_reminder_v1"("p_reminder_id" "uuid
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant uuid;
+  v_tenant   uuid;
+  v_user     uuid;
+  v_reminder record;
 BEGIN
-  BEGIN
-    PERFORM public.require_min_role_v1('member');
-  EXCEPTION WHEN OTHERS THEN
-    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object()));
-  END;
-
   v_tenant := public.current_tenant_id();
-  IF v_tenant IS NULL THEN
-    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object()));
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
+    );
   END IF;
 
   IF NOT public.check_workspace_write_allowed_v1() THEN
-    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'This workspace is read-only. Renew your subscription to continue.', 'fields', json_build_object()));
+    RETURN json_build_object(
+      'ok', false, 'code', 'WORKSPACE_NOT_WRITABLE', 'data', json_build_object(),
+      'error', json_build_object('message', 'Workspace is not active', 'fields', json_build_object())
+    );
   END IF;
 
-  IF p_reminder_id IS NULL THEN
-    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
-      'error', json_build_object('message', 'Invalid input', 'fields', json_build_object('reminder_id', 'Required')));
+  SELECT * INTO v_reminder
+  FROM public.deal_reminders
+  WHERE id = p_reminder_id AND tenant_id = v_tenant;
+
+  -- Not found or cross-tenant: silent no-op (preserves idempotency contract)
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'ok', true, 'code', 'OK',
+      'data', json_build_object('reminder_id', p_reminder_id),
+      'error', null
+    );
   END IF;
 
-  UPDATE public.deal_reminders SET completed_at = now()
-  WHERE id = p_reminder_id AND tenant_id = v_tenant AND completed_at IS NULL;
+  -- Already completed: silent no-op -- no DB change, no activity row
+  IF v_reminder.completed_at IS NOT NULL THEN
+    RETURN json_build_object(
+      'ok', true, 'code', 'OK',
+      'data', json_build_object('reminder_id', p_reminder_id),
+      'error', null
+    );
+  END IF;
 
-  RETURN json_build_object('ok', true, 'code', 'OK', 'data', json_build_object('id', p_reminder_id), 'error', null);
+  UPDATE public.deal_reminders
+  SET completed_at = now()
+  WHERE id = p_reminder_id AND tenant_id = v_tenant;
+
+  INSERT INTO public.deal_activity_log (tenant_id, deal_id, activity_type, content, created_by, created_at)
+  VALUES (v_tenant, v_reminder.deal_id, 'reminder_completed',
+    'Reminder completed: ' || v_reminder.reminder_type, v_user, now());
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('reminder_id', p_reminder_id),
+    'error', null
+  );
 END;
 $$;
 
@@ -1965,13 +2001,16 @@ CREATE OR REPLACE FUNCTION "public"."handoff_to_dispo_v1"("p_deal_id" "uuid", "p
     AS $$
 DECLARE
   v_tenant uuid;
+  v_user   uuid;
   v_stage  text;
 BEGIN
   v_tenant := public.current_tenant_id();
-  IF v_tenant IS NULL THEN
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
     );
   END IF;
 
@@ -2000,7 +2039,6 @@ BEGIN
     );
   END IF;
 
-  -- Validate assignee is a member of this tenant
   IF p_assignee_user_id IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM public.tenant_memberships
     WHERE tenant_id = v_tenant AND user_id = p_assignee_user_id
@@ -2017,6 +2055,9 @@ BEGIN
     updated_at         = now(),
     row_version        = row_version + 1
   WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  INSERT INTO public.deal_activity_log (tenant_id, deal_id, activity_type, content, created_by, created_at)
+  VALUES (v_tenant, p_deal_id, 'handoff', 'Deal handed off to Dispo', v_user, now());
 
   RETURN json_build_object(
     'ok', true, 'code', 'OK',

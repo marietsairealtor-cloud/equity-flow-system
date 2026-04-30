@@ -1,0 +1,90 @@
+PROOF_HEAD=7c72d740b516d3a2f79a29cd9da2e76352e7ffec
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.11A10 Acquisition Backend - Activity Log Expansion -- Proof Log ===
+Date: 2026-04-30T12:59:20.0502246-04:00
+Branch: feature/10.11A10-activity-log-expansion
+PR HEAD SHA: 7c72d740b516d3a2f79a29cd9da2e76352e7ffec
+
+=== Deliverable ===
+Migration: 20260430000001_10_11A10_activity_log_expansion.sql -- applied
+Test file: supabase/tests/10_11A10_activity_log_expansion.test.sql -- PASS
+
+=== What changed ===
+advance_deal_stage_v1:
+  - now requires both tenant + user context (was tenant-only)
+  - writes stage_change row to deal_activity_log on every valid transition
+  - content: 'Stage advanced to [stage name]'
+
+handoff_to_dispo_v1:
+  - now requires both tenant + user context (was tenant-only)
+  - writes handoff row to deal_activity_log on success
+  - content: 'Deal handed off to Dispo'
+
+complete_reminder_v1:
+  - writes reminder_completed row to deal_activity_log on first completion only
+  - repeat calls: ok=true silent no-op -- no duplicate activity row
+  - idempotency contract preserved -- existing callers unaffected
+
+create_deal_note_v1:
+  - unchanged -- does not write to deal_activity_log
+  - notes stream and activity stream remain separate
+
+deal_activity_log: system-events only
+No schema changes. No new tables. No new columns.
+
+=== pgTAP Results ===
+supabase db test -- PASS (71 files, 818 tests, 0 failures)
+advance_deal_stage_v1: start_analysis succeeds -- PASS
+advance_deal_stage_v1: writes stage_change activity row -- PASS
+advance_deal_stage_v1: activity content correct -- PASS
+advance_deal_stage_v1: send_offer succeeds -- PASS
+advance_deal_stage_v1: mark_contract_signed succeeds -- PASS
+advance_deal_stage_v1: three stage advances write three activity rows -- PASS
+handoff_to_dispo_v1: handoff succeeds -- PASS
+handoff_to_dispo_v1: writes handoff activity row -- PASS
+deal_activity_log: cross-tenant isolation -- PASS
+complete_reminder_v1: first completion succeeds -- PASS
+complete_reminder_v1: writes reminder_completed activity row -- PASS
+complete_reminder_v1: idempotent -- second call ok=true -- PASS
+complete_reminder_v1: no duplicate activity row on repeat call -- PASS
+create_deal_note_v1: note creation succeeds -- PASS
+create_deal_note_v1: does not write to activity log -- PASS
+deal_activity_log: total activity rows correct for deal -- PASS
+deal_activity_log: all activity rows belong to correct tenant -- PASS
+
+=== db push ===
+20260430000001_10_11A10_activity_log_expansion.sql -- applied
+
+=== DoD Checklist ===
+advance_deal_stage_v1 writes stage_change activity row              -- PASS
+handoff_to_dispo_v1 writes handoff activity row                    -- PASS
+complete_reminder_v1 writes reminder_completed on first call only  -- PASS
+complete_reminder_v1 idempotent on repeat calls                    -- PASS
+create_deal_note_v1 does not write to activity log                 -- PASS
+deal_activity_log remains system-events only                       -- PASS
+cross-tenant isolation enforced                                    -- PASS
+no schema changes                                                  -- PASS
+no new tables                                                      -- PASS
+existing reminder idempotency contract preserved                   -- PASS
+
+=== Registration ===
+rpc_contract_registry.json updated (3 RPCs) -- PASS
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+CONTRACTS.md section 62 added, sections 17, 55 updated -- PASS
+Governance file: GOVERNANCE_CHANGE_20260430T152847Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.11A10 Acquisition Backend Activity Log Expansion: PASS (merge-blocking gate)

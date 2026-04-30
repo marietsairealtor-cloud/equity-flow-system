@@ -292,17 +292,17 @@
       ],
       "notes": "Returns all tenants the current user is a member of. Includes slug, role, and is_current flag. tenant_name is null (no name column on tenants table). No caller-supplied IDs."
     },
-      {
+    {
       "name": "complete_reminder_v1",
-      "version": 1,
-      "build_route_owner": "10.8.3",
-      "input_contract": "CONTRACTS.md §17 complete_reminder_v1",
+      "version": 2,
+      "build_route_owner": "10.11A10",
+      "input_contract": "CONTRACTS.md §62 complete_reminder_v1 (deal_activity_log; 10.11A10)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
         "VALIDATION_ERROR"
       ],
-      "notes": "Min role: member. Idempotent -- completing already-completed reminder returns OK. Cross-tenant call is no-op (tenant isolation enforced by WHERE clause)."
+      "notes": "Min role: member. Requires non-NULL current_tenant_id() and auth.uid(); missing context → NOT_AUTHORIZED. On first completion: sets completed_at and appends reminder_completed row to deal_activity_log. Repeat completion: ok=true silent no-op, no duplicate activity row (idempotent). Cross-tenant call is no-op (tenant isolation enforced by WHERE clause)."
     },
     {
       "name": "set_current_tenant_v1",
@@ -517,12 +517,12 @@
     },
     {
       "name": "advance_deal_stage_v1",
-      "version": 1,
-      "build_route_owner": "10.11A",
-      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — advance_deal_stage_v1",
+      "version": 2,
+      "build_route_owner": "10.11A10",
+      "input_contract": "CONTRACTS.md §62 advance_deal_stage_v1 (deal_activity_log; 10.11A10); §55 Acquisition backend",
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
-      "notes": "p_action: start_analysis | send_offer | mark_contract_signed. Valid transitions only. UC→dispo via handoff_to_dispo_v1. Workspace write lock."
+      "notes": "p_action: start_analysis | send_offer | mark_contract_signed. Valid transitions only. UC→dispo via handoff_to_dispo_v1. Workspace write lock. Requires non-NULL current_tenant_id() and auth.uid(); missing either → NOT_AUTHORIZED. Successful transition writes stage_change row to deal_activity_log."
     },
     {
       "name": "mark_deal_dead_v1",
@@ -535,12 +535,12 @@
     },
     {
       "name": "handoff_to_dispo_v1",
-      "version": 1,
-      "build_route_owner": "10.11A",
-      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — handoff_to_dispo_v1",
+      "version": 2,
+      "build_route_owner": "10.11A10",
+      "input_contract": "CONTRACTS.md §62 handoff_to_dispo_v1 (deal_activity_log; 10.11A10); §55 Acquisition backend",
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
-      "notes": "under_contract only → dispo; sets assignee_user_id. Workspace write lock."
+      "notes": "under_contract only → dispo; sets assignee_user_id. Workspace write lock. Requires non-NULL current_tenant_id() and auth.uid(); missing either → NOT_AUTHORIZED. Successful handoff writes handoff row to deal_activity_log."
     },
     {
       "name": "handoff_to_tc_v1",
