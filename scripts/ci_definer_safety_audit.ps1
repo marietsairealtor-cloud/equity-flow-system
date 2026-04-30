@@ -1,13 +1,13 @@
 # ci_definer_safety_audit.ps1
 # Gate: definer-safety-audit (merge-blocking)
-# Build Route: 6.2 — SECURITY DEFINER Safety [HARDENED]
+# Build Route: 6.2 - SECURITY DEFINER Safety [HARDENED]
 # Scope: public and rpc schemas only. System schemas excluded.
 # In CI without live DB: stub exit per deferred_proofs.json (converts at 8.0.4).
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# CI stub removed — 8.0.4 conversion. Live DB required.
+# CI stub removed - 8.0.4 conversion. Live DB required.
 
 # --- Locate supabase_db container ---
 $cid = (docker ps --format "{{.ID}} {{.Names}}" | Select-String -Pattern "supabase_db" | Select-Object -First 1)
@@ -54,7 +54,7 @@ if ($rows -and $rows.Trim() -ne "") {
 
         # DoD 1: Must be on allowlist
         if ($allowlist -notcontains $fname) {
-            $bad += "FAIL [$fname]: not on definer_allowlist.json — unallowlisted SD function"
+            $bad += "FAIL [$fname]: not on definer_allowlist.json - unallowlisted SD function"
             Write-Host "  FAIL: not on allowlist"
             continue
         }
@@ -77,11 +77,11 @@ if ($rows -and $rows.Trim() -ne "") {
         }
 
         # DoD 2: Tenant membership check in prosrc
-        # tenant_context_exempt RPCs are exempt — they resolve tenant from slug, not JWT
+        # tenant_context_exempt RPCs are exempt - they resolve tenant from slug, not JWT
         if ($tenantcontextexempt -contains $fname) {
             Write-Host "  tenant membership: PASS (tenant_context_exempt exemption)"
         } elseif ($src -notmatch '(public\.)?current_tenant_id\(\)') {
-            $bad += "FAIL [$fname]: no current_tenant_id() call found in prosrc — tenant membership not enforced"
+            $bad += "FAIL [$fname]: no current_tenant_id() call found in prosrc - tenant membership not enforced"
             Write-Host "  tenant membership: FAIL"
         } else {
             Write-Host "  tenant membership: PASS"
@@ -96,13 +96,13 @@ if ($rows -and $rows.Trim() -ne "") {
     $found = $rows | ForEach-Object { ($_ -split "`t", 3)[0].Trim() }
     foreach ($entry in $allowlist) {
         if ($found -notcontains $entry) {
-            $bad += "WARN [$entry]: on allowlist but not found in DB — stale allowlist entry"
+            $bad += "WARN [$entry]: on allowlist but not found in DB - stale allowlist entry"
             Write-Host "WARN: $entry on allowlist but absent from DB"
         }
     }
 } elseif ($allowlist.Count -gt 0) {
     foreach ($entry in $allowlist) {
-        $bad += "WARN [$entry]: on allowlist but no SD functions found in DB — stale allowlist entry"
+        $bad += "WARN [$entry]: on allowlist but no SD functions found in DB - stale allowlist entry"
         Write-Host "WARN: $entry on allowlist but no SD functions in DB"
     }
 }
