@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-04-28T18:14:35Z",
+    "generated":  "2026-04-30T15:29:51Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -28,6 +28,7 @@
                             "path_type":  "rpc",
                             "name":  "advance_deal_stage_v1",
                             "tables":  [
+                                           "deal_activity_log",
                                            "deals"
                                        ],
                             "row_version_enforced":  false,
@@ -46,6 +47,7 @@
                             "path_type":  "rpc",
                             "name":  "complete_reminder_v1",
                             "tables":  [
+                                           "deal_activity_log",
                                            "deal_reminders"
                                        ],
                             "row_version_enforced":  false,
@@ -143,6 +145,7 @@
                             "path_type":  "rpc",
                             "name":  "handoff_to_dispo_v1",
                             "tables":  [
+                                           "deal_activity_log",
                                            "deals"
                                        ],
                             "row_version_enforced":  false,
