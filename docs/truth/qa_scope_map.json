@@ -615,6 +615,10 @@
     "10.11A9": {
       "proof_pattern": "^docs/proofs/10\\.11A9_pricing_contract_correction_",
       "scope": "Acquisition Backend - Pricing Contract Correction"
+    },
+    "10.11A10": {
+      "proof_pattern": "^docs/proofs/10\\.11A10_activity_log_expansion_",
+      "scope": "Acquisition Backend - Activity Log Expansion"
     }
   }
 }

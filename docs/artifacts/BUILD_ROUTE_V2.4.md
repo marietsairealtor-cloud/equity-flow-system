@@ -6943,7 +6943,7 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 **Gate:** `merge-blocking`
 
-**Split items (merge-blocking, defined below):** **10.11A5** — Acquisition Backend — Deal Properties Schema Normalization; **10.11A6** — Acquisition Backend — Deal Properties Write Path.
+**Split items (merge-blocking, defined below):** **10.11A5** — Acquisition Backend — Deal Properties Schema Normalization; **10.11A6** — Acquisition Backend — Deal Properties Write Path; **10.11A10** — Acquisition Backend — Activity Log Expansion.
 
 ---
 
@@ -7496,6 +7496,37 @@ Correct the ACQ pricing write path so `assignment_fee` is editable and `mao` is 
 
 ---
 
+### **10.11A10 — Acquisition Backend — Activity Log Expansion**
+
+**DoD**
+
+* `deal_activity_log` remains **system-events only**
+* `create_deal_note_v1` does **not** write to `deal_activity_log`
+* Activity log writes added on the governed RPCs listed above (where applicable per implementation), each insert including:
+
+  * `deal_id`
+  * `activity_type`
+  * `content`
+  * `created_by`
+  * `created_at`
+
+* Cross-tenant isolation preserved
+* Existing `list_deal_activity_v1` continues to return rows **newest first** with `created_by_name`
+
+**Tests**
+
+* Stage advance writes an activity row
+* Handoff writes an activity row
+* Reminder completion writes an activity row
+* Reminder creation writes an activity row when `create_reminder_v1` is in scope for deal-linked reminders on this surface
+* Note creation does **not** write an activity row
+* Cross-tenant isolation holds
+
+**Proof:** `docs/proofs/10.11A10_activity_log_expansion_<UTC>.log`
+**Gate:** `merge-blocking`
+
+---
+
 ### **10.11B — Acquisition Wiring**
 
 **Deliverable:**
@@ -7654,6 +7685,7 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 * **Activity log section is wired:**
 
+  * **Requires 10.11A10 merged first** — backend must emit meaningful **system** events (stage advance, handoff, reminders, marked dead, etc.); without A10 the section is not an acceptable real Activity Log (tombstone-only)
   * renders governed backend activity history only from `deal_activity_log`
   * no fake frontend-generated activity history
   * activity rows display:
@@ -7684,7 +7716,7 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 **Proof:** `docs/proofs/10.11B_acquisition_wiring_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, `10.11A4`, `10.11A5`, `10.11A6`, `10.11A7`, `10.11A8`, and `10.11A9` merged
+**Prerequisite:** `10.11`, `10.11A1`, `10.11A2`, `10.11A3`, `10.11A4`, `10.11A5`, `10.11A6`, `10.11A7`, `10.11A8`, `10.11A9`, and **`10.11A10`** merged
 
 ---
 
