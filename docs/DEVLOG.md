@@ -9351,3 +9351,40 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-01 — Build Route v2.4 — 10.11B
+
+Objective
+Acquisition Wiring — Live WeWeb wiring for ACQ page using governed backend only
+
+Changes
+- All ACQ page sections wired to governed backend
+- No mock data remains
+- KPI strip + date range filter wired
+- Stage + farm area filters wired
+- Deal list + selection wired
+- Deal detail fully wired including MAO, multiplier, last contacted date
+- Edit Seller, Edit Property, Pricing Edit wired
+- Notes/Log, Next Actions, Activity Log wired
+- Stage CTAs, Mark Dead, Send to Dispo wired
+- Contact actions: Call, Email wired (Text deferred from v1)
+- Media: multi-file upload via while-loop pattern, display, delete wired
+- 10.11A11 superseded -- edge function approach not adopted
+- All data access via governed RPC / allowed backend interfaces only
+
+Key patterns established
+- Multi-file upload: WeWeb while-loop with uploadIndex variable
+- Binary data only accessible live from component variable -- not storable
+- Reminders filtered client-side by activeDealId from list_reminders_v1
+- Activity log requires 10.11A10 for meaningful system events
+
+Prerequisites
+10.11, 10.11A1-A10 all merged
+
+Proof
+docs/proofs/10.11B_acquisition_wiring_20260501T005601Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
