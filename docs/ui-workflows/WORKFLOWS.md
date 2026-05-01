@@ -411,6 +411,79 @@ Item: 10.11B
 
 ---
 
+## upload-deal-photos
+Trigger: Upload button in Add Photo popup
+Reads: uploadIndex variable, uploadedFiles variable, activeDealId, entitlements.data.tenant_id
+Pattern: While loop with index variable
+
+  - While condition: uploadIndex < uploadedFiles.length
+  - Action 1: Supabase storage upload to deal-photos bucket
+  - Action 2: register_deal_media_v1(p_deal_id, p_storage_path, p_sort_order=0)
+  - Action 3: increment uploadIndex by 1
+  - After loop: fetch-deal-media + close popup
+
+Note: Binary data only accessible live from component variable, not storable in WeWeb variables.
+
+While loop with index solves multi-file upload without JavaScript.
+
+Item: 10.11B
+
+---
+
+## fetch-deal-media
+Trigger: deal row click, after upload-deal-photos, after delete photo
+Reads: activeDealId
+Calls: list_deal_media_v1(p_deal_id=activeDealId)
+Writes: dealMedia variable
+Item: 10.11B
+
+---
+
+## fetch-deal-notes
+Trigger: deal row click, after note submit
+Reads: activeDealId
+Calls: list_deal_notes_v1(p_deal_id=activeDealId)
+Writes: dealNotes variable
+Item: 10.11B
+
+---
+
+## fetch-deal-activity
+Trigger: deal row click, after stage change, after mark dead, after handoff
+Reads: activeDealId
+Calls: list_deal_activity_v1(p_deal_id=activeDealId)
+Writes: dealActivity variable
+Item: 10.11B
+
+---
+
+## fetch-deal-reminders
+Trigger: deal row click, after set reminder, after complete reminder
+Reads: none (returns all tenant reminders, filtered client-side by activeDealId)
+Calls: list_reminders_v1()
+Writes: dealReminders variable
+Item: 10.11B
+
+---
+
+## submit-deal-note
+Trigger: Submit button in Notes/Log section
+Reads: noteInput, activeDealId
+Calls: create_deal_note_v1(p_deal_id, p_note_type='note', p_content=noteInput)
+Writes: clears noteInput, triggers fetch-deal-notes
+Item: 10.11B
+
+---
+
+## delete-deal-photo
+Trigger: Delete button on each photo
+Reads: activeDealId, media item id
+Calls: delete_deal_media_v1(p_media_id)
+Triggers: fetch-deal-media
+Item: 10.11B
+
+---
+
 # WeWeb Variable Registry
 
 All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolean.
@@ -467,3 +540,9 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | selectedDeal | object | get_acq_deal_v1() result for activeDealId. Variable ID: d8580b53-ee7f-4dcd-b380-ec3c64475c9a | fetch-selected-deal |
 | dispoAssignee | text | Selected assignee user_id for Send to Dispo popup. Variable ID: d93f58a4-0d4f-434d-ae5c-0f8d5e400735 | assignee repeater on-click |
 | deficiencyTags | array | Working copy of deficiency tags in Edit Property popup. Loaded from selectedDeal on popup open. Variable ID: 7d8913b8-ed90-41c8-807a-b25d35376b54 | Edit button on-click, Add/Remove tag actions |
+| uploadIndex | number | While loop counter for multi-file photo upload. Resets to 0 before each upload session. Variable ID: a26467b7-2a07-42d7-9aba-689a70d8e479 | upload-deal-photos while loop |
+| uploadedFiles | array | File array from file upload component — used as while loop length reference. Variable ID: b7e2e745-5ebb-4c41-96e5-dae036d025ad | On change trigger of file upload element |
+| dealMedia | object | list_deal_media_v1() result — photos for selected deal. Variable ID: 51bc8113-3aa8-4913-8221-ef59cc27c376 | fetch-deal-media |
+| dealNotes | object | list_deal_notes_v1() result — notes for selected deal. Variable ID: 61f09425-563c-48ba-a62a-18de5ab34fec | fetch-deal-notes |
+| dealActivity | object | list_deal_activity_v1() result — activity log for selected deal. Variable ID: a00c6fa3-ffce-49b5-8e4c-c177855ec11e | fetch-deal-activity |
+| dealReminders | object | list_reminders_v1() result — all incomplete reminders for tenant. Variable ID: TBD | fetch-deal-reminders |

@@ -619,6 +619,10 @@
     "10.11A10": {
       "proof_pattern": "^docs/proofs/10\\.11A10_activity_log_expansion_",
       "scope": "Acquisition Backend - Activity Log Expansion"
+    },
+    "10.11B": {
+      "proof_pattern": "^docs/proofs/10\\.11B_acquisition_wiring_",
+      "scope": "Acquisition Wiring"
     }
   }
 }

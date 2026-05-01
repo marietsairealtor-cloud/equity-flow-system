@@ -234,10 +234,10 @@ Gate: renormalize-enforced (merge-blocking)
 
 ### **2.4 Branch Protection \+ Ruleset Enforced (One-Time, Stable Prerequisite)(DONE FEB 8\)**
 
-**Deliverable**:  
+**Deliverable:**
 GitHub ruleset enforces required checks \+ no admin bypass.
 
-**DoD**:
+**DoD:**
 
 1. **GitHub Branch Protection Rules**:  
    * **No direct pushes to `main`** are allowed.  
@@ -255,13 +255,13 @@ GitHub ruleset enforces required checks \+ no admin bypass.
      * **Link to the proof file and settings**.  
      * **Validation of proof via CI run**.
 
-**Proof**:
+**Proof:**
 
 * Proof Log: [docs/proofs/2.3\_repo\_rules\_enforced\_20260208\_163125.md](https://github.com/marietsairealtor-cloud/equity-flow-system/blob/main/docs/proofs/2.3_repo_rules_enforced_20260208_163125.md)  
 * **GitHub Settings Link**: [GitHub Branch Protection Settings](https://github.com/marietsairealtor-cloud/equity-flow-system/settings/branches/main)  
 * **GitHub CI Run**: [CI Run Link](https://github.com/marietsairealtor-cloud/equity-flow-system/actions/runs/21800144370)
 
-**Gate**: lane-only repo-ruleset-contract (merge-blocking)
+**Gate:** lane-only repo-ruleset-contract (merge-blocking)
 
 ### **2.5 Truth Bootstrap (mandatory)(DONE FEB 8\)**
 
@@ -402,9 +402,9 @@ Gate: governance-change-guard (merge-blocking)
 
 ### **2.16.1 — GitHub Policy Drift Attestation (Scheduled)(DONE FEB 10\)**
 
-**Deliverable** Scheduled CI workflow that detects GitHub governance drift outside repo control.
+**Deliverable:** Scheduled CI workflow that detects GitHub governance drift outside repo control.
 
-**DoD**
+**DoD:**
 
 * Workflow runs on schedule (and manual trigger).  
 * Fetches via GitHub API:  
@@ -414,23 +414,23 @@ Gate: governance-change-guard (merge-blocking)
 * Diffs against committed snapshot `docs/truth/github_policy_snapshot.json`.  
 * Any mismatch produces a loud signal (CI fail or issue).
 
-**Proof** `docs/proofs/2.16.1_policy_drift_attestation_<UTC>.log`
+**Proof:** `docs/proofs/2.16.1_policy_drift_attestation_<UTC>.log`
 
-**Gate** `policy-drift-attestation` (scheduled, non-merge-blocking)
+**Gate:** `policy-drift-attestation` (scheduled, non-merge-blocking)
 
 ---
 
 ### **2.16.2 — Proof Commit-Binding (Validity Enforcement, Minimal)(DONE FEB 10\)**
 
-**Deliverable** Proof header contract \+ validator binding proofs to reality.
+**Deliverable:** Proof header contract \+ validator binding proofs to reality.
 
-**DoD** **All must be true:**
+**DoD:** **All must be true:**
 
 1. **Build Route updated** * **`PROOF_HEAD` defined as tested SHA at runtime** * **Valid if `PROOF_HEAD` is an ancestor of PR\_HEAD** * **`git diff --name-only PROOF_HEAD..PR_HEAD` contains only:** * **`docs/proofs/**`** * **optionally `docs/DEVLOG.md`** * **SKIP rule documented: if no `docs/proofs/**` touched, gate exits `0` with `PROOF_COMMIT_BINDING_SKIP`** 2. **Validator implemented** * **Gate `proof-commit-binding` enforces the above rules** * **Fails on:** * **non-ancestor `PROOF_HEAD`** * **non-proof tail changes** * **missing/mismatched `PROOF_SCRIPTS_HASH`** * **Uses deterministic, normalized script-hash algorithm per AUTOMATION** 3. **Proof artifact committed** * **`docs/proofs/2.16.2_proof_commit_binding_<UTC>.log`** * **Contains:** * **`PROOF_HEAD`** * **`PROOF_SCRIPTS_HASH`** * **`RESULT=PASS`** 4. **Manifest updated** * **`docs/proofs/manifest.json` includes the new proof log with correct sha256** 5. **CI wired \+ merge-blocking** * **Job `proof-commit-binding` exists in `.github/workflows/ci.yml`** * **Registered as required check** * **CI is green**
 
-**Proof** `docs/proofs/2.16.2_proof_commit_binding_<UTC>.log`
+**Proof:** `docs/proofs/2.16.2_proof_commit_binding_<UTC>.log`
 
-**Gate** `proof-commit-binding` (merge-blocking)
+**Gate:** `proof-commit-binding` (merge-blocking)
 
 ---
 
@@ -455,9 +455,9 @@ Gate: governance-change-guard (merge-blocking)
 
 ### **2.16.3 — CI Semantic Contract (Targeted Anti–No-Op)(DONE FEB 11\)**
 
-**Deliverable** Semantic validation that required CI jobs actually execute gates.
+**Deliverable:** Semantic validation that required CI jobs actually execute gates.
 
-**DoD**
+**DoD:**
 
 * If `.github/workflows/**` **changes** in PR:  
   * semantic contract is **merge-blocking** * Otherwise:  
@@ -466,18 +466,18 @@ Gate: governance-change-guard (merge-blocking)
   * invoke allowlisted gate scripts  
   * are not noop / echo-only exits
 
-**Proof** `docs/proofs/2.16.3_ci_semantic_contract_<UTC>.log`
+**Proof:** `docs/proofs/2.16.3_ci_semantic_contract_<UTC>.log`
 
-**Gate** `ci-semantic-contract`  
+**Gate:** `ci-semantic-contract`
 (merge-blocking **only** on workflow changes)
 
 ---
 
 ### **2.16.4 — Waiver Debt Enforcement (Low-Ceiling Hard Fail)(DONE FEB 11\)**
 
-**Deliverable** Mechanical limit preventing waiver normalization.
+**Deliverable:** Mechanical limit preventing waiver normalization.
 
-**DoD**
+**DoD:**
 
 * CI computes waiver usage from `docs/waivers/` \+ repo history.  
 * Threshold rules:  
@@ -485,9 +485,9 @@ Gate: governance-change-guard (merge-blocking)
   * WARN \+ signal only  
 * Forces cleanup: convert to INCIDENT or remove waiver.
 
-**Proof** `docs/proofs/2.16.4_waiver_debt_enforcement_<UTC>.log`
+**Proof:** `docs/proofs/2.16.4_waiver_debt_enforcement_<UTC>.log`
 
-**Gate** `waiver-debt-enforcement` (merge-blocking at low ceiling)
+**Gate:** `waiver-debt-enforcement` (merge-blocking at low ceiling)
 
 ---
 
@@ -1330,7 +1330,7 @@ registry as a deferred item (conversion trigger: Section 6 / 8.0)
 rather than left as a silent mismatch between the governance doc and
 repo reality.
 
-**Deliverable**
+**Deliverable:**
 `docs/truth/deferred_proofs.json` — a machine-readable catalog of every
 current DB-heavy stub gate, with its deferred invariant and conversion
 trigger.
@@ -1422,7 +1422,7 @@ that audits the *coverage* of the guard's path scope. A new script or
 config file type not added to the matcher bypasses the guard with no CI
 failure.
 
-**Deliverable**
+**Deliverable:**
 A gate that fails if any governance-surface file exists in the repo
 that is not covered by any path matcher in `governance_change_guard.json`,
 plus an explicit versioned definition of what constitutes the governance
@@ -1631,7 +1631,7 @@ miscategorized as docs-only will have its governance checks skipped
 before lane enforcement fires. The ordering of these two jobs has never
 been explicitly verified or documented.
 
-**Deliverable**
+**Deliverable:**
 A structural graph validation confirming that `lane-enforcement` is a
 provable prerequisite of `docs-only-ci-skip`, with a CI gate asserting
 this ordering is maintained in perpetuity.
@@ -1726,7 +1726,7 @@ finalized.** Section 4.2 (`supabase status` output) is the first proof
 expected to contain live Supabase connection output. 3.9.5 must be on
 main before that proof is generated.
 
-**Deliverable**
+**Deliverable:**
 A pre-finalization secret scan integrated into `proof:finalize` that
 fails before normalizing or writing to manifest if any defined secret
 pattern is matched in the proof log content.
@@ -2311,7 +2311,7 @@ Operator-run local proof (verified by QA), mechanically reinforced by the `migra
 
 ### **6.1A — Handoff Preconditions Hardening (DB-State Tripwire, must_contain parity)**
 
-**Deliverable**
+**Deliverable:**
 Harden `handoff` by adding a **DB-state** precondition gate that runs **before** truth artifact generation, upgrading from schema-text regex checks to **live database** validation of the same minimum invariants currently enforced by `must_contain`.
 
 **DoD (all must be true)**
@@ -2364,7 +2364,7 @@ Harden `handoff` by adding a **DB-state** precondition gate that runs **before**
    * Workflow job exists with job id: `handoff-preconditions` (string-exact).
    * Gate is **merge-blocking** for DB/runtime lane PRs; docs-only lane may skip.
 
-**Proof**
+**Proof:**
 `docs/proofs/6.1A_handoff_preconditions_<UTC>.log`
 Must include:
 
@@ -2372,7 +2372,7 @@ Must include:
 * gate output showing each precondition PASS
 * `RESULT=PASS`
 
-**Gate**
+**Gate:**
 `handoff-preconditions` (merge-blocking)
 
 ---
@@ -2854,11 +2854,11 @@ Operator-run checks are error-prone; this item installs an automated CI job veri
 * Required check **cloud-schema-drift** appears in GitHub branch protection.
 * CI passes when no drift exists.
 
-**Gate**
+**Gate:**
 
 * `cloud-schema-drift` (merge-blocking)
 
-**Proof**
+**Proof:**
 
 `docs/proofs/7.11A_cloud_schema_drift_gate_<UTC>.log` showing schema extraction, comparison execution, and PASS result.
 
@@ -2904,7 +2904,7 @@ That PR requires docs/governance/GOVERNANCE_CHANGE_PR<NNN>.md because it modifie
 Prove that CI runners can start Supabase and reach a live database.
 This is infrastructure-only. No stub gates are converted in this PR.
 
-**Deliverable**
+**Deliverable:**
 A CI job that starts Supabase in a GitHub Actions runner and confirms DB connectivity via a smoke query. The job passes before any stub conversion work begins.
 
 **DoD (all must be true)**
@@ -2950,7 +2950,7 @@ Convert the `clean-room-replay` merge-blocking gate from a db-heavy stub to live
 3.9.1 catalogued `clean-room-replay` in `deferred_proofs.json` with `conversion_trigger: "8.0"` (updated to "8.0.1" in the
 amendment PR). This is the foundational DB gate — every other stub conversion depends on CI being able to replay migrations.
 
-**Deliverable**
+**Deliverable:**
 `clean-room-replay` gate runs full migration replay on an empty CI DB and passes.
 
 **DoD (all must be true)**
@@ -2992,7 +2992,7 @@ Convert the schema-drift merge-blocking gate from a db-heavy stub to live execut
 Context from DEVLOG
 schema-drift is currently stubbed (db-heavy pass-through) and registered in deferred_proofs.json with conversion trigger 8.0 (amended to 8.0.2). After conversion, it must become a real schema diff check.
 
-**Deliverable**
+**Deliverable:**
 A merge-blocking schema-drift gate that runs in CI against a live DB and fails on any schema delta versus generated/schema.sql.
 
 **DoD (all must be true)**
@@ -3032,9 +3032,9 @@ STUB_GATES_ACTIVE reflects remaining stubs: definer-safety-audit, handoff-idempo
 
 Prerequisite: 8.0.1 merged and main clean.
 
-**Proof**: docs/proofs/8.0.2_schema_drift_conversion_<UTC>.log
+**Proof:** docs/proofs/8.0.2_schema_drift_conversion_<UTC>.log
 
-**Gate**: schema-drift (merge-blocking, now live)
+**Gate:** schema-drift (merge-blocking, now live)
 
 Section 3.0 constraints apply.
 
@@ -3048,7 +3048,7 @@ Convert the `handoff-idempotency` merge-blocking gate from a db-heavy stub to li
 **Context from DEVLOG**
 3.8 confirmed the gate was introduced as a CI-stub: "CI stub passes (db-heavy pattern)" (DEVLOG 3.8 DoD item 3). The local proof demonstrates zero diffs on a live local DB. The CI gate currently passes the stub without running the actual handoff cycle. After conversion it will run `npm run handoff` against the CI DB and assert zero diffs in the working tree.
 
-**Deliverable**
+**Deliverable:**
 `handoff-idempotency` gate runs the full handoff cycle in CI against a live DB and asserts zero diffs.
 
 **DoD (all must be true)**
@@ -3107,7 +3107,7 @@ full 6.2 DoD additions, not just convert the stub. Opening this
 PR before 6.2 would produce a live gate less rigorous than the
 hardened spec.**
 
-**Deliverable**
+**Deliverable:**
 `definer-safety-audit` gate queries the live CI DB catalog and
 asserts all SECURITY DEFINER functions on the allowlist satisfy
 CONTRACTS.md §8 requirements.
@@ -3196,7 +3196,7 @@ forbidden pattern enumeration) are both merged to main. A live
 pgtap gate with an empty or incomplete test suite produces a
 vacuous pass — worse than a stub because it appears enforced.**
 
-**Deliverable**
+**Deliverable:**
 `.github/workflows/database-tests.yml` exists and runs the full
 pgTAP suite against a live CI DB. `pgtap` gate passes on real
 test execution. Both `deferred_proofs.json` entries removed.
@@ -4475,7 +4475,7 @@ Updates to docs/truth/robot_owned_paths.json.
 
 Updates to SOP_WORKFLOW.md redefining Phase 1 and Phase 2 operations.
 
-**DoD**
+**DoD:**
 
 1. docs/truth/tenant_table_selector.json is overwritten automatically during handoff by a Postgres catalog query finding all tables in public with Row Level Security enabled.
 
@@ -4500,9 +4500,9 @@ B. Update Policy Docs: Update SOP_WORKFLOW.md and docs/artifacts/AUTOMATION.md (
 
 C. Self-Application: The governance change file for this current PR (10.8.6A) must use the new GOVERNANCE_CHANGE_<UTC>.md format to prove the CI gate accepts it.
 
-**Proof**  docs/proofs/10.8.6A_automation_<UTC>.log
+**Proof:** docs/proofs/10.8.6A_automation_<UTC>.log
 
-**Gate**  merge-blocking
+**Gate:** merge-blocking
 ---
 
 ### **10.8.7 — TC Contract Storage Bucket**
@@ -4526,10 +4526,10 @@ Supabase Storage bucket for executed contract PDFs. One file per deal.
 
 ### **10.8.7A — Deal Photos Storage Bucket**
 
-**Deliverable**:
+**Deliverable:**
 Supabase Storage bucket for deal photos used by Acquisition and Deal Viewer.
 
-**DoD**
+**DoD:**
 
 Bucket deal-photos exists
 
@@ -5462,11 +5462,11 @@ WeWeb Workspace Settings page rendered inside authenticated shell, with role-gat
 
 ### **10.8.11I1 — Workspace Invite Email Delivery (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 *Invited users receive an email after invite_workspace_member_v1 is called
 *Email contains link to /auth and enables invite resolution via accept_pending_invites_v1 post-auth
 
-**DoD**
+**DoD:**
 *After successful invite_workspace_member_v1 call:
  email is sent to tenant_invites.email
 *Email contains:
@@ -5489,8 +5489,8 @@ WeWeb Workspace Settings page rendered inside authenticated shell, with role-gat
  entitlement logic
  onboarding logic
 
-**Proof**: docs/proofs/10.8.11I1_invite_email_<UTC>.log
-**Gate**: lane-only
+**Proof:** docs/proofs/10.8.11I1_invite_email_<UTC>.log
+**Gate:** lane-only
 
 ### **10.8.11I2 — Workspace Settings Read RPC Corrective Fix**
 
@@ -5696,10 +5696,10 @@ Update `public.get_workspace_settings_v1()` to read `name`, `country`, `currency
 
 ### **10.8.11I5 — Seat Billing Sync on Invite Acceptance**
 
-**Deliverable**
+**Deliverable:**
 Invite acceptance updates Stripe seat quantity
 
-**DoD**
+**DoD:**
 *On accept_pending_invites_v1():
  membership created
  Stripe subscription quantity updated (active members)
@@ -5711,21 +5711,21 @@ Invite acceptance updates Stripe seat quantity
 *Server-side only (no frontend role)
 *Idempotent (no duplicate billing events)
 
-**Proof**: docs/proofs/10.8.11I5_seat_billing_sync_<UTC>.log
-**Gate**: merge-blocking
+**Proof:** docs/proofs/10.8.11I5_seat_billing_sync_<UTC>.log
+**Gate:** merge-blocking
 
 ### **10.8.11I6 — Billing Seat Count UI**
 
-**Deliverable**
+**Deliverable:**
 Billing section shows seat count
 
-**DoD**
+**DoD:**
 Owner-only billing section displays active member count
 Data from existing RPCs only
 No billing mutations from UI
 
-**Proof**: docs/proofs/10.8.11I6_billing_seat_ui_<UTC>.md
-**Gate**: lane-only
+**Proof:** docs/proofs/10.8.11I6_billing_seat_ui_<UTC>.md
+**Gate:** lane-only
 
 ## **10.8.11I7 — Re-Invite Email Delivery for Existing Users**
 
@@ -5762,11 +5762,11 @@ No billing mutations from UI
 
 ### **10.8.11I8 — list_user_tenants_v1 Workspace Name Corrective Fix**
 
-**Deliverable**
+**Deliverable:**
 
 list_user_tenants_v1 returns workspace name from public.tenants.name
 
-**DoD**
+**DoD:**
 
 *list_user_tenants_v1 joins public.tenants
 *returns workspace_name from public.tenants.name
@@ -5778,16 +5778,16 @@ list_user_tenants_v1 returns workspace name from public.tenants.name
 *pgTAP proves returned workspace name is sourced from tenant row
 *contract text updated if it still says null/placeholder
 
-**Proof**: docs/proofs/10.8.11I8_list_user_tenants_workspace_name_<UTC>.log
-**Gate**: merge-blocking
+**Proof:** docs/proofs/10.8.11I8_list_user_tenants_workspace_name_<UTC>.log
+**Gate:** merge-blocking
 
 **10.8.11I9 — Workspace Switcher Name Wiring**
 
-**Deliverable**
+**Deliverable:**
 
 Workspace switcher displays workspace name from list_user_tenants_v1
 
-**DoD**
+**DoD:**
 
 *switcher uses list_user_tenants_v1 only
 *display binding uses workspace_name
@@ -5796,18 +5796,18 @@ Workspace switcher displays workspace name from list_user_tenants_v1
 *no business logic added in UI
 *slug may remain secondary display if desired
 
-**Proof**: docs/proofs/10.8.11I9_workspace_switcher_name_ui_<UTC>.md
-**Gate**: lane-only
+**Proof:** docs/proofs/10.8.11I9_workspace_switcher_name_ui_<UTC>.md
+**Gate:** lane-only
 ---
 
 ## **10.8.11J — Update Display Name RPC + UI**
 
-**Deliverable**
+**Deliverable:**
 *update_display_name_v1(p_display_name text) RPC
 *get_profile_settings_v1() returns display_name from user_profiles
 *Profile Settings UI shows + edits display name
 
-**DoD**
+**DoD:**
 *update_display_name_v1:
  SECURITY DEFINER, search_path = public
  uses auth.uid() only
@@ -5834,7 +5834,7 @@ Workspace switcher displays workspace name from list_user_tenants_v1
 
 ### **10.8.11K — Subscription Status Consistency (Bridge Fix)**
 
- **Deliverable**
+ **Deliverable:**
 
 * `get_user_entitlements_v1()` returns:
 
@@ -5844,7 +5844,7 @@ Workspace switcher displays workspace name from list_user_tenants_v1
 
 ---
 
-**DoD**
+**DoD:**
 
 * `resolveStatus()` maps Stripe → raw status:
 
@@ -5904,7 +5904,7 @@ subscription_status == 'expired'
 ---
 ### **10.8.11L — Renew Now Routing Fix (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * “Renew now” CTA routes to billing, not onboarding
 * Same billing destination used everywhere renewal is allowed
@@ -5912,7 +5912,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * “Renew now” CTA:
 
@@ -5962,7 +5962,7 @@ subscription_status == 'expired'
 
 ### **10.8.11M — Entitlement RPC Access + Retention State Extension (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * `get_user_entitlements_v1()` extended to return app access-state and retention-state fields
 * Post-auth routing, read-only mode, billing access, and retention messaging derive from this RPC only
@@ -5970,7 +5970,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * `get_user_entitlements_v1()` return type remains unchanged
 * `get_user_entitlements_v1()` continues to return:
@@ -6034,7 +6034,7 @@ subscription_status == 'expired'
 
 ### **10.8.11N — Expired Subscription Server-Side Write Lock (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * Expired workspaces become server-enforced read-only during the 60-day grace window
 * A shared internal helper enforces workspace write eligibility
@@ -6043,7 +6043,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * Add internal helper:
 
@@ -6100,14 +6100,14 @@ subscription_status == 'expired'
 
 ### **10.8.11N1 — Workspace Write Lock Coverage Gate (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * Merge-blocking gate ensures all workspace-write RPCs are protected by the expired workspace write-lock helper
 * Prevents future write RPCs from bypassing read-only enforcement
 
 ---
 
-**DoD**
+**DoD:**
 
 * Add a merge-blocking gate that validates workspace-write RPC coverage
 
@@ -6145,7 +6145,7 @@ subscription_status == 'expired'
 
 ### **10.8.11O — Expired Workspace Retention + Archive Lifecycle Automation (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * Scheduled backend automation enforces expired workspace lifecycle from read-only → archived/unreachable → hard delete
 * Archive and deletion timing are server-defined and automatic
@@ -6154,7 +6154,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * A scheduled **Supabase Edge Function** is implemented as the authoritative retention automation path
 
@@ -6228,7 +6228,7 @@ subscription_status == 'expired'
 
 ### **10.8.11O1 — Archived Workspace Restore Implementation (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * Archived workspaces can be restored only through an explicit backend restore action
 * Renewal after archive does not auto-unarchive
@@ -6236,7 +6236,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * Add a backend restore path for archived workspaces
 * Restore is **not** handled automatically by renewal alone
@@ -6280,14 +6280,14 @@ subscription_status == 'expired'
 
 ### **10.8.11O2 — Entitlement Archived-State Corrective Fix (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * `get_user_entitlements_v1()` correctly returns `app_mode = archived_unreachable` when `public.tenants.archived_at IS NOT NULL`
 * Archived workspace state overrides subscription-derived app mode until explicit restore clears archive state
 
 ---
 
-**DoD**
+**DoD:**
 
 * Update `get_user_entitlements_v1()` to read `public.tenants.archived_at`
 
@@ -6323,7 +6323,7 @@ subscription_status == 'expired'
 
 ### **10.8.11O3 — Archived Workspace Restore Targeting Corrective Fix (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * Archived workspace restore no longer depends on current tenant context
 * Restore targets a specific archived workspace selected by the owner
@@ -6331,7 +6331,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * Add a corrective backend restore path that targets a specific archived workspace
 * Restore must not rely only on `current_tenant_id()`
@@ -6367,7 +6367,7 @@ subscription_status == 'expired'
 
 ### **10.8.11P — Expired / Archived Workspace UI Wiring (Bridge Fix)**
 
-**Deliverable**
+**Deliverable:**
 
 * UI wiring reflects read-only expired, archived/unreachable, and restore-required states using backend entitlement state only
 * Onboarding includes archived workspace recovery for owners
@@ -6375,7 +6375,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * UI uses backend entitlement state as the single source of truth
 * `app_mode` is the primary routing signal
@@ -6441,12 +6441,12 @@ subscription_status == 'expired'
   `supabase/storage-api:v1.48.28 => v1.48.20`  
   That mismatch is **storage-api image drift** (local stack vs hosted fleet), not bucket RLS or app code.
 
-**Deliverable**
+**Deliverable:**
 
 * Local dev uses a storage-api image version that matches the linked Supabase project, so the warning above does not appear on a clean `supabase start`.
 * Repo documents **how** alignment is enforced (Supabase CLI version, `supabase/config.toml` image overrides if supported by the CLI in use, or `supabase link` / pull behavior per current Supabase docs).
 
-**DoD**
+**DoD:**
 
 * Reproduce the warning locally, then fix until **no** “different service versions” line appears for **`supabase/storage-api`** on `supabase start` (same check the operator uses: `npx supabase start …` with project linked).
 * `docs/truth/toolchain.json` records the **Supabase CLI** expectation used for local dev; if the CLI or `config.toml` pins a **storage-api** image tag, that pin is documented there or in `supabase/config.toml` with a one-line comment pointing to this item.
@@ -6470,7 +6470,7 @@ subscription_status == 'expired'
 * GitHub Actions will force JavaScript actions onto Node 24 by default beginning June 2, 2026.
 * This is CI/runtime compatibility work, not product behavior.
 
-**Deliverable**
+**Deliverable:**
 
 * Repo workflows are updated so GitHub Actions runs without Node 20 deprecation warnings
 * Action versions used in workflows are compatible with Node 24
@@ -6478,7 +6478,7 @@ subscription_status == 'expired'
 
 ---
 
-**DoD**
+**DoD:**
 
 * Audit GitHub Actions workflows for JavaScript actions currently running on Node 20
 * Upgrade action versions where newer Node 24-compatible versions exist
@@ -6949,7 +6949,7 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ### **10.11A1 - Acquisition Backend - Notes/Log Write Path and Activity Log Read Path**
 
-**DoD**
+**DoD:**
 
 1. **Create `deal_notes` table**
 
@@ -7000,7 +7000,7 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ### **10.11A2 — Acquisition Backend — Seller / Property Edit Write Paths**
 
-**DoD**
+**DoD:**
 
 1. **Implement `update_deal_seller_v1`**
 
@@ -7073,7 +7073,7 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ### **10.11A3 — Acquisition Backend — Deal Detail Read Path Corrections**
 
-**DoD**
+**DoD:**
 
 1. **Extend `get_acq_deal_v1`**
 
@@ -7117,7 +7117,7 @@ Backend support for Acquisition list/detail data, seller/property editing, media
 
 ### **10.11A4 — Acquisition Backend — KPI Date Range Filter**
 
-**DoD**
+**DoD:**
 
 1. **Extend `get_acq_kpis_v1`**
 
@@ -7498,7 +7498,7 @@ Correct the ACQ pricing write path so `assignment_fee` is editable and `mao` is 
 
 ### **10.11A10 — Acquisition Backend — Activity Log Expansion**
 
-**DoD**
+**DoD:**
 
 * `deal_activity_log` remains **system-events only**
 * `create_deal_note_v1` does **not** write to `deal_activity_log`
@@ -7513,7 +7513,7 @@ Correct the ACQ pricing write path so `assignment_fee` is editable and `mao` is 
 * Cross-tenant isolation preserved
 * Existing `list_deal_activity_v1` continues to return rows **newest first** with `created_by_name`
 
-**Tests**
+**Tests:**
 
 * Stage advance writes an activity row
 * Handoff writes an activity row
@@ -9090,3 +9090,4 @@ docs/proofs/13.5_incident_resolution_guard_<UTC>.log
 
 Gate:
 incident-resolution-deadline (merge-blocking)
+
