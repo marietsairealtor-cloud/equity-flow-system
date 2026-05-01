@@ -1443,3 +1443,27 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **`deal_activity_log`** remains **system-events only** — no user-note duplication through this RPC set.
 
 **§Registry:** `docs/truth/rpc_contract_registry.json` — **`advance_deal_stage_v1`**, **`handoff_to_dispo_v1`**, **`complete_reminder_v1`** **`build_route_owner`** **10.11A10**.
+
+---
+
+## 63) Acquisition Wiring — UI / WeWeb (10.11B)
+
+**Purpose:** Freeze the **Acquisition** page product contract: live WeWeb wiring against **allowlisted RPCs only** — no mocks, no direct tenant tables from the canvas, **no privileged storage path construction**. UI workflow naming and triggers are enumerated in **`docs/ui-workflows/WORKFLOWS.md`**.
+
+**Behavior (product surface):**
+
+- All **Acquisition** workflows are wired to the **governed backend only** (RPC / Supabase-invoked RPC patterns per §17); no supplemental mock datasets for ACQ KPI, list, detail, notes, reminders, activity, or media.
+- No **mock KPI**, **mock deal list**, or **mock deal detail** data remains on the Acquisition page; **KPI strip**, **deal list**, and **deal detail** are **live reads** from the governed endpoints.
+- All **writes** on the Acquisition surface use **governed RPCs only** (stage, seller/property edits, reminders, notes, media registration, handoff, dead, pricing/properties paths as routed in the UI registry).
+- **Quick contact actions:** Call, Email (**Text deferred from v1**); wired with native **`tel:`** / **`mailto:`** links per **`docs/ui-workflows/WORKFLOWS.md`**.
+
+**Deal photos / media:**
+
+- Upload is implemented in **WeWeb** using the **storage upload API** followed by **`register_deal_media_v1`** (`p_deal_id`, `p_storage_path`, `p_sort_order`) — **not** via a bespoke Edge upload handoff unless the Build Route explicitly supersedes this item.
+- **Multi-file uploads** use the **indexed while-loop pattern** documented in **`docs/ui-workflows/WORKFLOWS.md`** (counter + file array length) so batches work **without embedding raw JavaScript** in the workflow graph.
+
+**Activity log timeline:**
+
+- **Activity log requires 10.11A10 (merged):** The Acquisition activity panel reads **`deal_activity_log`** via **`list_deal_activity_v1`** (wired in **`docs/ui-workflows/WORKFLOWS.md`**); meaningful system-backed rows assume **§62** (**10.11A10** activity log expansion) merged first.
+
+**§Registry:** UI truth — **`docs/ui-workflows/WORKFLOWS.md`**; RPC truth — **`docs/truth/rpc_contract_registry.json`** (Build Route backend owners unchanged by this subsection).
