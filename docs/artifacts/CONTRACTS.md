@@ -1455,6 +1455,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - All **Acquisition** workflows are wired to the **governed backend only** (RPC / Supabase-invoked RPC patterns per §17); no supplemental mock datasets for ACQ KPI, list, detail, notes, reminders, activity, or media.
 - No **mock KPI**, **mock deal list**, or **mock deal detail** data remains on the Acquisition page; **KPI strip**, **deal list**, and **deal detail** are **live reads** from the governed endpoints.
 - All **writes** on the Acquisition surface use **governed RPCs only** (stage, seller/property edits, reminders, notes, media registration, handoff, dead, pricing/properties paths as routed in the UI registry).
+- **Quick contact actions:** Call, Email (**Text deferred from v1**); wired with native **`tel:`** / **`mailto:`** links per **`docs/ui-workflows/WORKFLOWS.md`**.
 
 **Deal photos / media:**
 

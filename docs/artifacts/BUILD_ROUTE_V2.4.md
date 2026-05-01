@@ -6767,7 +6767,7 @@ Acquisition UI shell and interaction design for seller-side deal work through `U
 - Next Action section renders:
   - current next action text
   - due date / time
-  - quick contact actions: Call / Text / Email (native `tel:` / `sms:` / `mailto:` links)
+  - quick contact actions: Call / Email (Text deferred from v1) (native `tel:` / `mailto:` links)
 
 - Main detail sections render in this order:
   - Seller motivation (with Edit button)
@@ -7590,8 +7590,7 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 * Quick contact actions are live-wired:
 
   * Call
-  * Text
-  * Email
+  * Email (**Text deferred from v1**)
 
 * Edit Seller opens live edit popup
 
