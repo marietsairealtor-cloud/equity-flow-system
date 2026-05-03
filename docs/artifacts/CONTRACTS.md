@@ -1467,3 +1467,76 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **Activity log requires 10.11A10 (merged):** The Acquisition activity panel reads **`deal_activity_log`** via **`list_deal_activity_v1`** (wired in **`docs/ui-workflows/WORKFLOWS.md`**); meaningful system-backed rows assume **§62** (**10.11A10** activity log expansion) merged first.
 
 **§Registry:** UI truth — **`docs/ui-workflows/WORKFLOWS.md`**; RPC truth — **`docs/truth/rpc_contract_registry.json`** (Build Route backend owners unchanged by this subsection).
+
+---
+
+## 64) Intake Backend — Submission Persistence (10.12A)
+
+**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**.
+
+**Purpose:** Authoritative persistence for public intake submissions under tenant context, governed list surfaces for Lead Intake / buyer ops, and **no direct `anon` / `authenticated` access** to the new product tables (EXECUTE on `SECURITY DEFINER` RPCs only).
+
+### Tables (schema `public`)
+
+#### `intake_submissions`
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `tenant_id` | uuid | NOT NULL, FK → `tenants(id)` |
+| `form_type` | text | NOT NULL, CHECK ∈ `seller`, `buyer`, `birddog` |
+| `payload` | jsonb | NOT NULL, default `{}` |
+| `source` | text | NOT NULL, default `web` |
+| `submitted_at` | timestamptz | NOT NULL, default `now()` |
+| `reviewed_at` | timestamptz | nullable |
+| `created_at` | timestamptz | NOT NULL, default `now()` |
+
+- **RLS:** enabled. Policy **tenant isolation** using `current_tenant_id()` (no elevated bypass for app roles).
+- **Grants:** `REVOKE ALL` from `anon`, `authenticated`.
+
+#### `intake_buyers`
+
+| Column | Type | Notes |
+|--------|------|--------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `tenant_id` | uuid | NOT NULL, FK → `tenants(id)` |
+| `name` | text | nullable |
+| `email` | text | nullable |
+| `phone` | text | nullable |
+| `areas_of_interest` | text | nullable |
+| `budget_range` | text | nullable |
+| `deal_type_tags` | text[] | nullable |
+| `price_range_notes` | text | nullable |
+| `notes` | text | nullable |
+| `is_active` | boolean | NOT NULL, default `true` |
+| `created_at` | timestamptz | NOT NULL, default `now()` |
+| `updated_at` | timestamptz | NOT NULL, default `now()` |
+
+- **RLS / grants:** same posture as `intake_submissions`.
+
+### `submit_form_v1(p_slug text, p_form_type text, p_payload jsonb)` → `jsonb`
+
+- **Implementation:** **DROP + CREATE** in 10.12A (same public signature). **`SECURITY DEFINER`**, **`REVOKE ALL`** from `PUBLIC`; **`GRANT EXECUTE`** to **`anon`** and **`authenticated`** (unchanged surface; see also §17).
+- **Writes:** On every successful submission:
+  1. Existing behavior preserved: insert into **`draft_deals`** (including seller `asking_price` / `repair_estimate` pre-fill where applicable).
+  2. **New:** insert into **`intake_submissions`** (`tenant_id`, `form_type`, `payload`, `source` = `web`).
+- **Response (OK):** Includes `data.draft_id` and `data.intake_id`.
+- **Errors:** `NOT_FOUND` (slug / validation shape per prior contract), `VALIDATION_ERROR` (form type, payload, spam token, etc.), **`NOT_AUTHORIZED`** when the workspace is not accepting submissions (latest `tenant_subscriptions` row missing, **`canceled`**, or **`current_period_end <= now()`**).
+
+### `list_intake_submissions_v1(p_limit int DEFAULT 25)` → `jsonb`
+
+- **Callable by:** **`authenticated` only** (`REVOKE` from `anon`, `PUBLIC`).
+- **Tenant:** `current_tenant_id()`; **`NULL` → `NOT_AUTHORIZED`**.
+- **Limits:** `COALESCE(p_limit, 25)`; must satisfy **1 ≤ p_limit ≤ 100** or **`VALIDATION_ERROR`**.
+- **OK payload:** `data.items` — JSON array of objects `{ id, form_type, payload, source, submitted_at, reviewed_at }` for the caller tenant, ordered newest first.
+
+### `list_buyers_v1(p_limit int DEFAULT 25)` → `jsonb`
+
+- **Callable by:** **`authenticated` only** — same grant and limit rules as **`list_intake_submissions_v1`**.
+- **OK payload:** `data.items` from **`intake_buyers`** (`id`, `name`, `email`, `phone`, `areas_of_interest`, `budget_range`, `deal_type_tags`, `price_range_notes`, `notes`, `is_active`, `created_at`, `updated_at`).
+
+### Direct access invariant
+
+Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
+
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`**, **`list_intake_submissions_v1`**, **`list_buyers_v1`** `build_route_owner` **10.12A**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`**.

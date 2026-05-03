@@ -623,6 +623,10 @@
     "10.11B": {
       "proof_pattern": "^docs/proofs/10\\.11B_acquisition_wiring_",
       "scope": "Acquisition Wiring"
+    },
+    "10.12A": {
+      "title": "Intake Backend — Submission Persistence",
+      "proof_pattern": "^docs/proofs/10\\.12A_intake_submission_persistence_"
     }
   }
 }
