@@ -1,0 +1,104 @@
+PROOF_HEAD=210a3b1d4da64b4af10994d43c5bd38498f097e1
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.12A Intake Backend — Submission Persistence -- Proof Log ===
+Date: 2026-05-03T15:34:55.9540833-04:00
+Branch: feature/10.12A-intake-submission-persistence
+PR HEAD SHA: 210a3b1d4da64b4af10994d43c5bd38498f097e1
+
+=== Deliverable ===
+Migration: 20260503000001_10_12A_intake_submission_persistence.sql -- applied
+Test file: supabase/tests/10_12A_intake_submission_persistence.test.sql -- PASS
+
+=== Schema Changes ===
+New table: public.intake_submissions
+  id uuid PK, tenant_id uuid FK tenants, form_type text CHECK(seller|buyer|birddog),
+  payload jsonb, source text, submitted_at timestamptz, reviewed_at timestamptz, created_at timestamptz
+  REVOKE ALL from anon/authenticated. RLS USING+WITH CHECK. Index (tenant_id, submitted_at DESC, id DESC).
+
+New table: public.intake_buyers
+  id uuid PK, tenant_id uuid FK tenants, name text, email text, phone text,
+  areas_of_interest text, budget_range text, deal_type_tags text[], price_range_notes text,
+  notes text, is_active boolean, created_at timestamptz, updated_at timestamptz
+  REVOKE ALL from anon/authenticated. RLS USING+WITH CHECK. Index (tenant_id, created_at DESC, id DESC).
+
+No existing tables modified.
+
+=== RPCs ===
+submit_form_v1(p_slug text, p_form_type text, p_payload jsonb)
+  DROP + recreate. All 10.8.11N logic preserved. Now also writes intake_submissions row.
+  Return type: jsonb. Subscription query deterministic (ORDER BY created_at DESC LIMIT 1).
+  Safe numeric cast via NULLIF. GRANT anon + authenticated.
+
+list_intake_submissions_v1(p_limit int DEFAULT 25)
+  New. Authenticated only. Tenant-scoped. Deterministic order (submitted_at DESC, id DESC).
+  p_limit validated 1-100.
+
+list_buyers_v1(p_limit int DEFAULT 25)
+  New. Authenticated only. Tenant-scoped. Deterministic order (created_at DESC, id DESC).
+  p_limit validated 1-100.
+
+=== pgTAP Results ===
+supabase db test -- PASS (72 files, 839 tests, 0 failures)
+intake_submissions table exists -- PASS
+intake_buyers table exists -- PASS
+seller submission persisted to intake_submissions -- PASS
+seller submission persisted to draft_deals (existing write path preserved) -- PASS
+buyer submission persisted to intake_submissions -- PASS
+birddog submission persisted to intake_submissions -- PASS
+intake_submissions.source stored as web -- PASS
+submit_form_v1 returns ok:true on success -- PASS
+submit_form_v1: invalid form_type returns VALIDATION_ERROR -- PASS
+submit_form_v1: unknown slug returns NOT_FOUND -- PASS
+submit_form_v1: missing spam_token returns VALIDATION_ERROR -- PASS
+submit_form_v1: expired workspace returns NOT_AUTHORIZED -- PASS
+submit_form_v1: empty asking_price/repair_estimate strings handled safely -- PASS
+intake_submissions: direct SELECT denied for authenticated -- PASS
+intake_submissions: direct INSERT denied for authenticated -- PASS
+list_intake_submissions_v1: item count matches owner-captured tenant row count -- PASS
+list_intake_submissions_v1: tenant 2 sees zero items from tenant 1 -- PASS
+list_intake_submissions_v1: no tenant context returns NOT_AUTHORIZED -- PASS
+list_intake_submissions_v1: p_limit=0 returns VALIDATION_ERROR -- PASS
+list_buyers_v1: returns empty array when no buyers exist -- PASS
+list_buyers_v1: no tenant context returns NOT_AUTHORIZED -- PASS
+
+=== db push ===
+20260503000001_10_12A_intake_submission_persistence.sql -- applied
+
+=== DoD Checklist ===
+intake_submissions table created                                    -- PASS
+intake_buyers table created                                         -- PASS
+submit_form_v1 writes intake_submissions on success                 -- PASS
+existing submit_form_v1 logic preserved (slug/spam/sub/draft)       -- PASS
+list_intake_submissions_v1 returns tenant-scoped submissions        -- PASS
+list_buyers_v1 returns tenant-scoped buyer records                  -- PASS
+seller/buyer/birddog submissions persist under tenant context       -- PASS
+submit_form_v1 returns deterministic response shape                 -- PASS
+list_intake_submissions_v1 tenant isolation enforced                -- PASS
+list_buyers_v1 tenant isolation enforced                            -- PASS
+no direct table access from authenticated role                      -- PASS
+no frontend-only persistence logic                                  -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+privilege_truth.json -- PASS
+execute_allowlist.json -- PASS
+rpc_contract_registry.json -- PASS
+write_path_registry.json -- PASS
+CONTRACTS.md §64 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260503T192305Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.12A Intake Backend Submission Persistence: PASS (merge-blocking gate)
