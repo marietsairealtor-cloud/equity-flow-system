@@ -32,10 +32,10 @@
       {
         "routine": "submit_form_v1",
         "privilege": "EXECUTE",
-        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1"
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1; §64 10.12A intake_submissions persistence"
       }
     ],
-    "anon_explicit_none": "anon holds zero routine grants except CONTRACTS.md §12 controlled exceptions: resolve_form_slug_v1 and submit_form_v1 (Build Route 10.8.1). Any other EXECUTE grant to anon is a violation.",
+    "anon_explicit_none": "anon holds zero routine grants except CONTRACTS.md §12 controlled exceptions: resolve_form_slug_v1 and submit_form_v1 (Build Route 10.8.1; submit extended per §64 / 10.12A intake_submissions). Any other EXECUTE grant to anon is a violation.",
     "authenticated": [
       {
         "routine": "create_deal_v1",
@@ -143,7 +143,18 @@
       },
       {
         "routine": "submit_form_v1",
-        "privilege": "EXECUTE"
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §12 / §64 — Build Route 10.8.1 (public forms); 10.12A (intake_submissions persistence)"
+      },
+      {
+        "routine": "list_intake_submissions_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §64 — Build Route 10.12A"
+      },
+      {
+        "routine": "list_buyers_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §64 — Build Route 10.12A"
       },
       {
         "routine": "list_reminders_v1",
@@ -279,7 +290,7 @@
       {
         "routine": "submit_form_v1",
         "privilege": "EXECUTE",
-        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1"
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1; §64 10.12A — persists intake_submissions"
       }
     ],
     "authenticated_tables": [
@@ -318,11 +329,13 @@
       "invite_workspace_member_v1",
       "list_acq_deals_v1",
       "list_archived_workspaces_v1",
+      "list_buyers_v1",
       "list_deal_activity_v1",
       "list_deal_media_v1",
       "list_deal_notes_v1",
       "list_deals_v1",
       "list_farm_areas_v1",
+      "list_intake_submissions_v1",
       "list_pending_invites_v1",
       "list_reminders_v1",
       "list_user_tenants_v1",

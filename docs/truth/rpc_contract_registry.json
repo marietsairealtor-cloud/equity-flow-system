@@ -113,15 +113,40 @@
     },
     {
       "name": "submit_form_v1",
-      "version": 1,
-      "build_route_owner": "10.8.1",
-      "input_contract": "CONTRACTS.md §17 submit_form_v1",
+      "version": 2,
+      "build_route_owner": "10.12A",
+      "input_contract": "CONTRACTS.md §64 submit_form_v1",
       "response_schema": null,
       "error_codes": [
         "NOT_FOUND",
+        "VALIDATION_ERROR",
+        "NOT_AUTHORIZED"
+      ],
+      "notes": "Anon + authenticated EXECUTE (§12 / §64). SECURITY DEFINER. Replaced in 10.12A (DROP+CREATE): on each valid submission inserts draft_deals (unchanged) plus intake_submissions (tenant_id, form_type, payload, source default web, submitted_at). NOT_AUTHORIZED when latest tenant_subscriptions row is missing, canceled, or current_period_end <= now(). OK data.draft_id + data.intake_id. Prior behavior: slug validation, spam_token, seller MAO pre-fill into draft."
+    },
+    {
+      "name": "list_intake_submissions_v1",
+      "version": 1,
+      "build_route_owner": "10.12A",
+      "input_contract": "CONTRACTS.md §64 list_intake_submissions_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
         "VALIDATION_ERROR"
       ],
-      "notes": "Anon-callable per CONTRACTS.md §12 controlled exception. Resolves tenant from slug. VALIDATION_ERROR on missing spam_token, invalid form_type, or null payload. NOT_FOUND on invalid slug. Seller submissions create draft deal with asking_price and repair_estimate pre-filled."
+      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Tenant from current_tenant_id(); NULL → NOT_AUTHORIZED. p_limit DEFAULT 25; coalesce null to 25; must satisfy 1 ≤ p_limit ≤ 100 else VALIDATION_ERROR. Returns ok + data.items JSON array of intake_submissions rows for tenant (fields: id, form_type, payload, source, submitted_at, reviewed_at), newest first. DIRECT table SELECT/INSERT by authenticated is forbidden (§64)."
+    },
+    {
+      "name": "list_buyers_v1",
+      "version": 1,
+      "build_route_owner": "10.12A",
+      "input_contract": "CONTRACTS.md §64 list_buyers_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
+      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Same limit and NOT_AUTHORIZED contract as list_intake_submissions_v1. Reads intake_buyers for tenant; items expose id, name, email, phone, areas_of_interest, budget_range, deal_type_tags, price_range_notes, notes, is_active, created_at, updated_at."
     },
     {
       "name": "list_reminders_v1",

@@ -13,6 +13,8 @@
     "deal_tc_checklist",
     "deals",
     "draft_deals",
+    "intake_buyers",
+    "intake_submissions",
     "rpc_idempotency_log",
     "share_tokens",
     "tenant_farm_areas",
