@@ -5060,7 +5060,7 @@ WeWeb onboarding page at `/onboarding` with sequential steps for workspace creat
 ### **10.8.10 — Today View (Shell)**
 
 **Deliverable:**
-Today view page shell with layout structure. Default authenticated landing page. Task synthesis wired in 10.25.
+Today view page shell with layout structure. Default authenticated landing page. Task synthesis wired in 10.16A.
 
 **DoD:**
 
@@ -7719,880 +7719,705 @@ Live WeWeb wiring for the Acquisition page using governed backend only.
 
 ---
 
-### **10.12 — Offer Generator + PDF + 48hr Expiration**
+### **10.12A — Intake Backend — Submission Persistence**
 
 **Deliverable:**
-Seller-ready copy from MAO results. Three output formats. Dynamic expiration clause. Stage auto-advance on send.
+Authoritative backend persistence model for all public intake submissions, plus the governed read surfaces consumed by internal intake and buyer operations.
 
 **DoD:**
 
-- Offer copy generated from MAO inputs + calc_version + multiplier
-- Three output formats: Copy text | Copy email | Download PDF
-- Dynamic 48-hour expiration clause auto-injected into all copy formats
-- "Send offer" triggers Analyzing → Offer Sent stage transition via `update_deal_v1`
-- Follow-up reminder auto-created on offer send (via 10.8.3 reminder engine)
-- Offer output tied to deal record — no orphaned offers
-- No direct table calls
+* Intake submissions are stored as intake records under tenant context
+* Persistence model cleanly distinguishes:
 
-**Proof:** `docs/proofs/10.12_offer_generator_<UTC>.md`
+  * seller submissions
+  * buyer submissions
+  * birddog submissions
+* One authoritative backend write path exists:
 
+  * `submit_form_v1`
+* Governed read paths are explicitly defined:
+
+  * `list_intake_submissions_v1`
+  * `list_buyers_v1`
+* Each submission persists at minimum:
+
+  * `tenant_id`
+  * `form_type`
+  * `payload`
+  * `source`
+  * `submitted_at`
+  * `reviewed_at` (nullable)
+* Lead Intake management view reads persisted submissions through `list_intake_submissions_v1` only
+* Buyer Ops reads buyer records through `list_buyers_v1` only
+* Buyer submissions are stored as intake records and may additionally create/update buyer records in downstream items
+* Seller submissions may create draft deals in downstream items
+* Birddog submissions persist as intake records and remain reviewable in Lead Intake
+* No frontend-only persistence logic
+* No direct table calls from WeWeb
+
+**Tests:**
+
+* seller, buyer, and birddog submissions persist under tenant context
+* `submit_form_v1` returns deterministic response shape
+* `list_intake_submissions_v1` returns tenant-scoped intake records only
+* `list_buyers_v1` returns tenant-scoped buyer records only
+* frontend does not require direct table access
+
+**Proof:** `docs/proofs/10.12A_intake_submission_persistence_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.8.1` merged
+
+---
+
+### **10.12C — Intake Backend — Submission Outcomes + MAO Pre-fill**
+
+**Deliverable:**
+Seller, buyer, and birddog submissions produce deterministic backend outcomes, and seller intake feeds directly into MAO analysis.
+
+**DoD:**
+
+* Seller submissions through `submit_form_v1` create or update a draft deal record
+* Draft deal stores intake-origin values including:
+
+  * address
+  * asking_price
+  * repair_estimate
+  * condition notes
+  * timeline
+* Draft deal is tenant-scoped
+* Draft deal is visible in internal Lead Intake / Today / Analyze flow as applicable
+* Buyer submissions create or update buyer records under tenant context
+* Buyer record fields include at minimum:
+
+  * name
+  * email
+  * phone
+  * areas_of_interest
+  * budget_range
+  * `deal_type_tags` (nullable / optional)
+  * `price_range_notes` (nullable / optional)
+  * `notes` (nullable / optional)
+  * `is_active`
+  * `created_at`
+  * `updated_at`
+* Buyer dedupe rule is deterministic:
+
+  * exact email match first
+  * phone fallback runs **only when the submission email is absent**
+  * if submission email is present and does not match an existing buyer, the submission does **not** merge on phone alone
+* Collision handling for mismatched email + matching phone is deterministic and documented by test
+* Birddog submissions persist as intake records and remain reviewable, but do not auto-create buyer records
+* Seller intake submissions with `asking_price` and/or `repair_estimate` pre-fill the MAO calculator at `/mao-calculator?deal_id=X`
+* Pre-fill data is stored on the deal record, not a separate table
+* No direct table calls from WeWeb
+
+**Tests:**
+
+* seller submission creates or updates deterministic draft deal
+* buyer submission creates or updates deterministic buyer record
+* buyer dedupe collision case behaves deterministically
+* birddog submission persists without creating deal/buyer side effects
+* Analyze action opens MAO calculator with pre-filled values from draft deal
+
+**Proof:** `docs/proofs/10.12C_intake_submission_outcomes_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12A` merged
+
+---
+
+### **10.12D — Intake Ops — Lead Intake + Buyer Ops UI**
+
+**Deliverable:**
+Authenticated internal Lead Intake and lean Buyer Ops surfaces for reviewing submissions and working buyer lists.
+
+**DoD:**
+
+* Authenticated Lead Intake page exists at `/lead-intake`
+* Lead Intake top KPI strip shows:
+
+  * New Leads
+  * Unreviewed Submissions
+  * Submission-to-Deal %
+* Lead Intake reads persisted submissions through `list_intake_submissions_v1` only
+* Management actions include:
+
+  * copy seller form link
+  * copy buyer form link
+  * copy birddog form link
+  * generate embed code
+  * toggle form types on / off
+* Submission list distinguishes:
+
+  * seller
+  * buyer
+  * birddog
+* Unreviewed / reviewed state is visible
+* Empty state includes prominent “Copy Seller Form Link” CTA
+* Buyer Ops surface exists and uses `list_buyers_v1` only
+* Buyer list search supports:
+
+  * name
+  * email
+  * phone
+* Quick filters support:
+
+  * area
+  * deal type
+  * budget range
+  * active / inactive
+* Buyer detail shows:
+
+  * name
+  * email
+  * phone
+  * areas of interest
+  * budget range
+  * tags / notes
+  * active status
+* Manual send workflow supports:
+
+  * send to all buyers
+  * send to filtered subset
+  * copy recipient list
+  * launch `mailto:` draft for the selected recipient set
+* Explicitly out of scope:
+
+  * buyer-deal matching logic
+  * buyer scoring
+  * buyer CRM / Rolodex expansion
+* No direct table calls
+
+**Tests:**
+
+* Lead Intake renders persisted submissions and management actions correctly
+* Buyer Ops renders list, filters, and manual send workflow correctly
+* empty states render correctly
+* UI contains no duplicated backend business logic
+
+**Proof:** `docs/proofs/10.12D_intake_ops_buyer_ops_ui_<UTC>.md`
 **Gate:** `lane-only`
-
-**Prerequisite:** 10.9, 10.11 merged
+**Prerequisite:** `10.12A`, `10.12C` merged
 
 ---
 
-### **10.13 — Dispo Dashboard (Share Links Only + Handoff Control)**
+### **10.13A — Offer Backend — Data Contract + Soft Offer Copy**
 
 **Deliverable:**
-Dispo operating surface for deals in `Dispo` stage, including share links, buyer interest, deposit tracking, and handoff to TC or back to Acq.
+Seller-ready offer communication generated from authoritative pricing data, with soft-offer outputs tied to the deal record.
 
 **DoD:**
 
-- Top KPI strip shows Dispo top 3 only:
-  - Deals Moved to TC
-  - Deposit / Earnest Money / Consideration Collected
-  - Avg Assignment Fee
-- Dashboard shows deals in `Dispo` stage only
-- Share link generation via `create_share_token_v1`
-- Share link status visible per deal
-- Revocation via `revoke_share_token_v1`
-- Buyer interest signals visible
-- No buyer-deal matching engine
-- No buyer CRM / Rolodex expansion
-- Primary handoff actions:
-  - **Send to TC**
-  - **Return to Acq**
-- `Send to TC` uses 10.11A handoff backend and is enabled only when:
-  - `assignment_agreement_signed_at` is set
-  - `earnest_money_received_at` is set
-- `Return to Acq` uses 10.11A handoff backend
-- Assigned recipient user gets notification on handoff
-- Activity log per deal
-- No direct table calls
+* Governed read path exists:
 
-**Proof:** `docs/proofs/10.13_dispo_dashboard_<UTC>.md`
+  * `get_offer_payload_v1`
+* Offer copy is generated from authoritative pricing snapshot, including:
 
+  * `calc_version`
+  * multiplier
+  * assignment fee
+  * derived MAO
+* Soft-offer outputs exist for:
+
+  * Copy text
+  * Copy email
+* Dynamic 48-hour expiration clause is auto-injected into soft-offer outputs
+* Offer output is tied to the deal record
+* No orphaned offers
+* No direct table calls
+* This item does **not** require formal PDF generation
+
+**Tests:**
+
+* `get_offer_payload_v1` returns deterministic offer payload for the deal
+* soft-offer copy is generated from `get_offer_payload_v1`
+* expiration clause is injected correctly
+* output is tied to deal record
+* no orphaned offer artifact is produced
+
+**Proof:** `docs/proofs/10.13A_offer_data_contract_soft_copy_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.9`, `10.11` merged
+
+---
+
+### **10.13B — Offer Backend — Send Offer Write Path**
+
+**Deliverable:**
+Governed send-offer mutation that advances stage and creates follow-up reminders atomically.
+
+**DoD:**
+
+* Governed send-offer write path exists:
+
+  * `send_offer_v1`
+* `send_offer_v1` performs all required mutations atomically:
+
+  * ties offer send to the deal record
+  * transitions stage from `Analyzing` to `Offer Sent`
+  * creates follow-up reminder through the reminder engine
+* UI does **not** call `advance_deal_stage_v1` separately for offer send
+* No direct table calls
+* No frontend-only business logic determines send success
+
+**Tests:**
+
+* `send_offer_v1` advances deal from `analyzing` to `offer_sent`
+* follow-up reminder is auto-created on offer send
+* repeat / invalid send path is deterministic
+* no orphaned send state exists
+
+**Proof:** `docs/proofs/10.13B_offer_send_write_path_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.13A`, `10.8.3` merged
+
+---
+
+### **10.13C — Offer Output — Formal PDF**
+
+**Deliverable:**
+Formal PDF output of offer content, derived from the same governed offer payload used in soft-offer delivery.
+
+**DoD:**
+
+* Formal PDF output exists for seller-ready offer content
+* PDF reads from the same `get_offer_payload_v1` used by `10.13A`
+* No separate offer regeneration occurs at PDF time
+* Dynamic 48-hour expiration clause is included
+* PDF is tied to the deal record
+* PDF output does not create a second source of truth
+* No direct table calls
+
+**Tests:**
+
+* PDF output is generated from `get_offer_payload_v1`
+* expiration clause appears in PDF
+* PDF is tied to the correct deal
+* PDF output does not mutate pricing or deal stage by itself
+
+**Proof:** `docs/proofs/10.13C_formal_offer_pdf_<UTC>.md`
 **Gate:** `lane-only`
-
-**Prerequisite:** 10.11, 10.11A merged
----
-
-### **10.14 — Save Deal + Reopen Deal (unchanged)**
-
-**Deliverable:**
-Saved deals are reliable and re-open exactly (no silent recompute drift).
-
-**DoD:**
-
-- Save persists inputs + outputs + `calc_version` + multiplier
-- Reopen shows identical values to what was saved
-- Activity log records mutations
-
-**Proof:** `docs/proofs/10.14_save_reopen_deal_<UTC>.md`
-
-**Gate:** `merge-blocking once Hub is in scope`
-
-**Prerequisite:** 10.9 merged
+**Prerequisite:** `10.13A` merged
 
 ---
 
-### **10.15 — Deal Viewer + Tenant Branding + Buyer CTA**
+### **10.13E — Offer Flow — Save Deal + Reopen Deal**
 
 **Deliverable:**
-Token-gated buyer deal packet with workspace branding and "I'm Interested" button. Friendly expired-token handling.
+Saved deals are reliable and reopen exactly, with no silent recompute drift.
 
 **DoD:**
 
-- Token validated via `lookup_share_token_v1` before any data renders
-- Section 8 lifecycle enforced: hash-at-rest, revocation, expiration, scope
-- Displays: ARV, repairs, assignment ask, terms, photos/notes
-- Tenant branding: workspace name auto-displayed at top of page (zero config, read from tenant context)
-- "I'm Interested" CTA at bottom: `mailto:` link pre-filled with deal address + wholesaler email + subject line
-- Notification bell pinged on buyer click (best-effort via `foundation_log_activity_v1`)
-- Mobile-friendly rendering
-- Expired/revoked/invalid token: friendly "This deal is no longer available" page (polite, not scary 404). Response shape identical regardless of failure reason (anti-enumeration).
-- No authentication required
-- No direct table calls
+* Save persists inputs + outputs + `calc_version` + multiplier
+* Reopen shows identical values to what was saved
+* Activity log records mutations
+* No silent recompute drift
+* “Hub” in this item means the authenticated save/reopen surface where saved analysis records are exposed to end users
 
-**Proof:** `docs/proofs/10.15_deal_viewer_<UTC>.md`
+**Tests:**
 
-**Gate:** `lane-only`
+* save persists pricing inputs and outputs exactly
+* reopen returns identical values
+* mutation activity is recorded
 
-**Prerequisite:** 10.13, 10.8.7A merged
+**Proof:** `docs/proofs/10.13E_save_reopen_deal_<UTC>.log`
+**Gate:** `merge-blocking once the authenticated save/reopen Hub surface is enabled`
+**Prerequisite:** `10.9` merged
 
 ---
 
-### **10.16 — Deal Packet Share-Link Smoke (unchanged)**
+### **10.14A — Dispo Backend — Dashboard Data Contract + KPI Read Path**
 
 **Deliverable:**
-Share link renders a buyer-ready packet and respects allowlist.
+Authoritative backend data contract for the Dispo operating surface.
 
 **DoD:**
 
-- Share link works unauthenticated
-- Only allowlisted fields appear
-- Negative probe: cannot access non-shared deal
+* Dispo KPI strip returns top 3 only:
 
-**Proof:** `docs/proofs/10.16_share_link_smoke_<UTC>.md`
+  * Deals Moved to TC
+  * Deposit Collected
+  * Avg Assignment Fee
+* Dashboard returns deals in `Dispo` stage only
+* Share link status is visible per deal
+* Buyer interest signals are visible
+* Activity log per deal is available
+* No buyer-deal matching engine
+* No buyer CRM / Rolodex expansion
+* No direct table calls
+* Country-specific label wording such as earnest money / consideration is a display concern, not a KPI-contract concern
 
-**Gate:** `merge-blocking (security) once enabled`
+**Tests:**
 
-**Prerequisite:** 10.15 merged
+* KPI aggregation is correct
+* only `Dispo` stage deals are returned
+* buyer interest and share-link status are included deterministically
+* no direct table access is required by frontend
 
-### **10.17 — TC + Checklist + Upload + Immutable Close**
-
-**Deliverable:**
-TC operating surface for deals in `TC` stage, with checklist, upload, closing execution, and read-only enforcement.
-
-**DoD:**
-
-- Top KPI strip shows TC top 3 only:
-  - Closings This Week
-  - Closed Assignment Fee Received
-  - At-Risk Closings
-- TC page at `/tc/:deal_id`
-- TC operates on deals in `TC` stage only
-- Entry into TC occurs only through 10.11A handoff backend
-- Assigned TC user receives notification on handoff
-- Progress % computed from checklist completion
-- Days to close computed from closing_date
-- Key dates render:
-  - APS signed date
-  - conditional deadline
-  - closing date
-- Closing checklist:
-  - APS signed
-  - deposit received
-  - sold firm
-  - docs to lawyer
-  - closing confirmed
-  - assignment fee received
-- Contract upload: single PDF slot
-- Actual assignment fee input + delta vs desired profit
-- Secondary handoff action:
-  - **Return to Dispo**
-- `Return to Dispo` uses 10.11A handoff backend
-- Assigned recipient user gets notification on return
-- Non-TC work no longer appears in Acq / Dispo after handoff
-- Entire record becomes read-only when stage = Closed or Dead
-- Activity log per deal
-- No direct table calls
-
-**Proof:** `docs/proofs/10.17_tc_dashboard_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.11A, 10.8.5, 10.8.7 merged
+**Proof:** `docs/proofs/10.14A_dispo_data_contract_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.11` merged
 
 ---
 
-### **10.18 — Intake Forms + Intake Operations**
-Section 10 intake surface split into explicit backend and UI items for seller, buyer, and birddog forms, plus internal Lead Intake operations.
-
-**Rule:**
-10.18 is a section container only. Implementation scope is defined by 10.18.1 through 10.18.6.
-
-### **10.18.1 — Public Forms UI (Seller / Buyer / Birddog)**
+### **10.14B — Dispo Backend — Share Link + Handoff Control**
 
 **Deliverable:**
-Public-facing slug-gated intake form UI at `/form/:slug/:type` for seller, buyer, and birddog forms.
+Governed backend for share links, handoffs, notification, and share-token security behavior in Dispo.
 
 **DoD:**
 
-- Public page exists at `/form/:slug/:type`
-- Form type resolves from slug + type:
-  - seller
-  - buyer
-  - birddog
-- Seller form fields:
-  - property address
-  - asking price
-  - self-reported repairs
-  - condition notes
-  - timeline
-- Buyer form fields:
-  - name
-  - email
-  - phone
-  - areas of interest
-  - budget range
-- Birddog form fields:
-  - property address
-  - owner info
-  - condition notes
-  - asking price if known
-- Form submit uses governed backend only (`submit_form_v1`)
-- No direct table calls
-- Friendly invalid slug / invalid type handling
-- Empty / success / validation states handled cleanly
-- Address autocomplete on address-based fields wired through 10.26
+* Share link generation via `create_share_token_v1`
+* Share link revocation via `revoke_share_token_v1`
+* Share-token lookup enforces identical backend response shape for:
 
-**Proof:** `docs/proofs/10.18.1_public_intake_forms_<UTC>.md`
+  * invalid token
+  * expired token
+  * revoked token
+* Primary handoff actions exist:
 
-**Gate:** `lane-only`
+  * Send to TC
+  * Return to Acq
+* `Send to TC` is enabled only when:
 
-**Prerequisite:** 10.8.1 merged
+  * `assignment_agreement_signed_at` is set
+  * `earnest_money_received_at` is set
+* `Return to Acq` uses governed handoff path
+* Assigned recipient user gets notification on handoff
+* No direct table calls
+
+**Tests:**
+
+* share token generation and revocation are deterministic
+* identical response shape is returned for invalid / expired / revoked token states
+* `Send to TC` enforces prerequisite fields
+* `Return to Acq` works through governed path
+* recipient notification is emitted on handoff
+
+**Proof:** `docs/proofs/10.14B_dispo_share_link_handoff_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14A` merged
 
 ---
 
-### **10.18.2 — Intake Submission Persistence Backend**
+### **10.15D — TC — Immutable Close Verification**
 
 **Deliverable:**
-Authoritative backend persistence model for all public intake submissions.
+Closed and dead deals become read-only in TC with deterministic backend enforcement.
 
 **DoD:**
 
-- Intake submissions are stored as intake records under tenant context
-- Persistence model cleanly distinguishes:
-  - seller submissions
-  - buyer submissions
-  - birddog submissions
-- One authoritative backend write path for public form submissions:
-  - `submit_form_v1`
-- Each submission persists at minimum:
-  - tenant_id
-  - form_type
-  - payload
-  - source
-  - submitted_at
-  - reviewed_at (nullable)
-- Lead Intake management view can read persisted submissions through governed RPC surface only
-- Buyer submissions are stored as intake records and may additionally create/update buyer records
-- Seller submissions may create draft deals
-- Birddog submissions persist as intake records and remain reviewable in Lead Intake
-- No frontend-only persistence logic
-- No direct table calls from WeWeb
+* Entire record becomes read-only when stage = `Closed` or `Dead`
+* Immutable close is enforced at backend, not just UI
+* Every TC mutation RPC in scope returns error code `DEAL_IMMUTABLE` when stage is `Closed` or `Dead`, including:
 
-**Proof:** `docs/proofs/10.18.2_intake_persistence_backend_<UTC>.log`
+  * checklist mutation path
+  * contract upload path
+  * assignment fee mutation path
+  * return-to-Dispo path
+* No silent mutation paths remain after close / dead
+* No non-TC work reappears after finalization
 
+**Tests:**
+
+* closed deals reject checklist mutation
+* closed deals reject upload / fee / return mutations
+* dead deals reject the same mutation paths
+* UI renders deterministic read-only state
+* no silent write paths remain
+
+**Proof:** `docs/proofs/10.15D_tc_immutable_close_<UTC>.log`
+**Gate:** `merge-blocking once close enforcement is enabled`
+**Prerequisite:** `10.15B`, `10.15C` merged
+
+---
+
+### **10.16A — Today View — Data Contract + RPC**
+
+**Deliverable:**
+Backend RPC providing the executive Today view: top KPIs, pipeline counts, and deterministic task items.
+
+**DoD:**
+
+* RPC exists:
+
+  * `get_today_view_v1()`
+* Summary strip returns top 3 only:
+
+  * Projected Fees
+  * Overdue Follow-Ups
+  * Closings This Week
+* Projected Fees definition:
+
+  * sum of authoritative projected assignment fee field
+  * active deals only
+  * include New through TC
+  * blank = 0
+  * exclude Closed and Dead
+* Overdue Follow-Ups definition:
+
+  * open Acq- or Dispo-owned reminder tasks whose due time has passed
+  * deal must still be active
+  * excludes TC closing deadlines and checklist items
+* Closings This Week definition:
+
+  * uses `closing_date`
+  * grouped by current tenant-local calendar week
+  * tenant-local week boundary is derived from the stored tenant timezone source used by backend
+* Pipeline counts include:
+
+  * New
+  * Analyzing
+  * Offer Sent
+  * UC
+  * Dispo
+  * TC
+* Tasks are synthesized from deterministic backend sources only:
+
+  * overdue follow-ups
+  * offers pending
+  * intake-ready analysis items from seller draft deals created by `10.12C`
+  * TC at-risk closings / near-close pressure items
+* Tasks are sorted by urgency
+* Each task includes:
+
+  * health status
+  * deal address
+  * current stage
+  * reason it is here
+  * age or due time
+  * action type
+* No frontend business logic required to interpret summary or task data
+* No direct table access required by frontend
+* RPC is registered in required truth artifacts
+
+**Tests:**
+
+* empty state
+* multiple task sources
+* correct sorting order
+* correct KPI aggregation
+* no null task rows
+* Closings This Week uses `closing_date` with tenant-local week boundary
+
+**Proof:** `docs/proofs/10.16A_today_view_data_contract_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.11`, `10.12C`, `10.14B`, `10.15A` merged
+
+---
+
+### **10.16C — Notifications — Drawer Data Contract + RPC**
+
+**Deliverable:**
+Backend notification feed for the authenticated-shell bell drawer.
+
+**DoD:**
+
+* RPC exists:
+
+  * `get_notifications_v1()`
+* Notification feed is authenticated and user-targeted
+* Rows are filtered by recipient user
+* Notifications are sourced from deterministic backend signals only:
+
+  * overdue reminders
+  * new intake submissions
+  * buyer interest signals
+  * TC / closing alerts
+  * deal handoff notifications
+* Each row includes at minimum:
+
+  * `notification_type`
+  * `severity`
+  * `title`
+  * `body` / context line
+  * `created_at`
+  * `route_target`
+  * `route_label`
+  * `recipient_user_id`
+* Deal handoff notifications support:
+
+  * Acq → Dispo
+  * Dispo → TC
+  * Dispo → Acq return
+  * TC → Dispo return
+* Notifications are sorted by urgency, then recency
+* Bell count derives from actionable notifications only
+* No frontend-constructed notification logic
+* No direct table calls
+
+**Tests:**
+
+* `get_notifications_v1` filters by recipient correctly
+* urgency / recency sorting works
+* handoff notifications render deterministic backend payload
+* bell count derives from actionable items only
+
+**Proof:** `docs/proofs/10.16C_notifications_data_contract_<UTC>.log`
 **Gate:** `merge-blocking`
 
-**Prerequisite:** 10.8.1 merged
-
 ---
 
-### **10.18.3 — Seller Draft Deal Backend**
+### **10.17C — Shared UX — Profile Settings Final Wiring**
 
 **Deliverable:**
-Seller submissions create draft deal records suitable for analysis and intake-to-MAO flow.
+Final WeWeb wiring verification for Profile Settings already implemented through prior backend items.
 
 **DoD:**
 
-- Seller submission through `submit_form_v1` creates or updates a draft deal record
-- Draft deal stores intake-origin values including:
-  - address
-  - asking_price
-  - repair_estimate
-  - condition notes
-  - timeline
-- Draft deal is tenant-scoped
-- Draft deal is visible in internal Lead Intake / Today / Analyze flow as applicable
-- Seller submission does not require auth
-- Duplicate seller submission behavior is deterministic and documented
-- No buyer submissions create deals
-- No birddog submissions auto-create buyer records
-- No direct table calls from WeWeb
+* Profile Settings page renders correctly
+* Display name loads from governed RPC
+* Display name updates through governed RPC
+* Email displays correctly
+* Password change entry point works
+* No duplicate backend implementation
+* No direct table calls
+* No new RPCs are introduced in this item
+* No governance file changes are expected in this item
+* Proof is WeWeb binding verification only
 
-**Proof:** `docs/proofs/10.18.3_seller_intake_draft_deal_<UTC>.log`
+**Tests:**
 
-**Gate:** `merge-blocking`
+* governed display-name load/update works
+* email displays correctly
+* password-change entry point works
+* no duplicate implementation scope exists
 
-**Prerequisite:** 10.18.2 merged
-
----
-
-### **10.18.4 — Buyer Records Backend**
-
-**Deliverable:**
-Buyer submissions create or update real buyer records for small-team dispo use. No buyer-deal matching logic.
-
-**DoD:**
-
-- Buyer submissions create or update buyer records under tenant context
-- Buyer records are not deals
-- Buyer record fields include at minimum:
-  - name
-  - email
-  - phone
-  - areas_of_interest
-  - budget_range
-  - deal_type_tags (nullable / optional)
-  - price_range_notes (nullable / optional)
-  - notes (nullable / optional)
-  - is_active
-  - created_at
-  - updated_at
-- Dedupe rule is deterministic:
-  - exact email match first
-  - phone fallback only when email absent
-- Repeated buyer submissions update existing buyer record instead of creating duplicates when dedupe rule matches
-- Buyer form remains public-facing
-- No buyer-deal matching, scoring, or recommendation logic
-- No buyer CRM expansion beyond lean buyer records
-- No direct table calls from WeWeb
-
-**Proof:** `docs/proofs/10.18.4_buyer_records_backend_<UTC>.log`
-
-**Gate:** `merge-blocking`
-
-**Prerequisite:** 10.18.2 merged
-
----
-
-### **10.18.5 — Public Intake Form Submit Wiring**
-
-**Deliverable:**
-Public seller, buyer, and birddog forms are wired from WeWeb UI to the governed backend submission path.
-
-**DoD:**
-
-- All public intake forms submit through `submit_form_v1`
-- Form type is passed explicitly and correctly:
-  - seller
-  - buyer
-  - birddog
-- Slug context is resolved from the public route and passed through governed flow only
-- UI does not write directly to any table
-- Submission payload matches governed contract for each form type
-- Success state shown on valid submit
-- Validation state shown on invalid submit
-- Invalid slug / invalid type / backend failure handled with friendly error state
-- Spam protection token is included in submission path when enabled
-- No duplicated submission logic across forms
-- No frontend-only persistence behavior
-
-**Proof:** `docs/proofs/10.18.5_public_intake_submit_wiring_<UTC>.md`
-
+**Proof:** `docs/proofs/10.17C_profile_settings_final_wiring_<UTC>.md`
 **Gate:** `lane-only`
+**Prerequisite:** `10.8.11D`, `10.8.11J` merged
 
 ---
 
-### **10.18.6 — Lead Intake Ops UI**
+### **10.17E — Shared UX — Quick-Copy Deal Summary + Context Links**
 
 **Deliverable:**
-Authenticated internal Lead Intake page for reviewing submissions and managing public intake links.
+Final WeWeb wiring verification for quick-copy deal summary and outbound context links already implemented in Acquisition detail.
 
 **DoD:**
 
-- Authenticated page exists at `/lead-intake`
-- Top KPI strip shows Lead Intake top 3 only:
-  - New Leads
-  - Unreviewed Submissions
-  - Submission-to-Deal %
-- Page shows persisted submissions from governed backend only
-- Management actions include:
-  - copy seller form link
-  - copy buyer form link
-  - copy birddog form link
-  - generate embed code
-  - toggle form types on / off
-- Submission list distinguishes:
-  - seller
-  - buyer
-  - birddog
-- Unreviewed / reviewed state visible
-- Empty state:
-  - prominent “Copy Seller Form Link” CTA
-- No direct table calls
-- No business logic duplicated in UI
+* Quick-copy button renders in Acquisition detail
+* Copied text matches governed teaser format
+* Zillow / Redfin / Realtor.com links render correctly from deal address
+* Links open correctly
+* No duplicate backend or UI implementation scope
+* No new RPCs are introduced in this item
+* No governance file changes are expected in this item
+* Proof is WeWeb binding verification only
 
-**Proof:** `docs/proofs/10.18.6_lead_intake_management_ui_<UTC>.md`
+**Tests:**
 
+* quick-copy output matches governed format
+* context links render and open correctly
+* no duplicate backend/UI implementation exists
+
+**Proof:** `docs/proofs/10.17E_quick_copy_context_links_<UTC>.md`
 **Gate:** `lane-only`
+**Prerequisite:** `10.11` merged
 
 ---
 
-### **10.18.7 — Buyer Ops Hybrid**
-
-**Deliverable:**
-Lean buyer operations surface for small teams with real buyer lists. Supports sorting fast and sending to all or filtered subsets. No buyer-deal matching engine.
-
-**DoD:**
-
-- Authenticated buyer list surface exists
-- Buyer list uses governed backend only
-- Search supports:
-  - name
-  - email
-  - phone
-- Quick filters support:
-  - area
-  - deal type
-  - budget range
-  - active / inactive
-- Buyer detail shows:
-  - name
-  - email
-  - phone
-  - areas of interest
-  - budget range
-  - tags / notes
-  - active status
-- Manual send workflow supports:
-  - send to all buyers
-  - send to filtered subset
-  - copy recipient list and/or launch manual outbound flow
-- Activity / send logging may be best-effort
-- Explicitly out of scope:
-  - buyer-deal matching logic
-  - buyer scoring
-  - buyer CRM / Rolodex expansion
-- No direct table calls
-
-**Proof:** `docs/proofs/10.18.7_buyer_list_manual_send_<UTC>.md`
-
-**Gate:** `lane-only`
-
----
-
-### **10.19 — Intake-to-MAO Pre-fill**
-
-**Deliverable:**
-Seller intake submissions auto-draft MAO calculator state. "Analyze →" opens pre-filled calculator.
-
-**DoD:**
-
-- When seller submits via intake form with asking_price and/or repair_estimate, those values are stored on the draft deal record (created by `submit_form_v1`)
-- Today view "Analyze →" action opens MAO calculator at /mao-calculator?deal_id=X with fields pre-filled from draft
-- ARV defaults from asking_price (user can adjust), repairs default from self-reported estimate
-- No re-entry, no loss of context
-- Pre-fill data stored on deal record, not separate table
-
-**Proof:** `docs/proofs/10.19_intake_mao_prefill_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.18, 10.9 merged
-
----
-
-### **10.20 — Frontend RPC Contract Guard (unchanged)**
+### **10.18A — Frontend Guard — RPC Contract Guard**
 
 **Deliverable:**
 Frontend cannot call RPC endpoints outside the approved contract surface.
 
 **DoD:**
 
-- RPC calls originate only from allowlisted endpoints
-- Contract surface defined by `docs/truth/execute_allowlist.json`
-- Verification harness scans frontend API usage
+* RPC calls originate only from allowlisted endpoints
+* Contract surface defined by `docs/truth/execute_allowlist.json`
+* Verification harness is explicitly defined as:
 
-**Proof:** `docs/proofs/10.20_frontend_rpc_contract_guard_<UTC>.log`
+  * `weweb:drift` contract-check mode and/or companion contract-scan against truth artifacts
+* Harness scans frontend API usage for non-allowlisted RPC calls
+* No frontend calls non-allowlisted RPCs
 
+**Tests:**
+
+* harness catches non-allowlisted RPC usage
+* allowlisted surface passes
+* no false-positive direct table allowances exist
+
+**Proof:** `docs/proofs/10.18A_frontend_rpc_contract_guard_<UTC>.log`
 **Gate:** `lane-only frontend-contract-guard`
-
-**Prerequisite:** 10.23 merged
+**Prerequisite:** target frontend pages merged and scope-ready for verification
 
 ---
 
-### **10.21 — Frontend Surface Enumeration Guard (unchanged)**
+### **10.18B — Frontend Guard — Surface Enumeration Guard**
 
 **Deliverable:**
 Frontend cannot discover or access hidden endpoints.
 
 **DoD:**
 
-- Automated probe enumerates `/rest/v1/` and `/rpc/`
-- Only allowlisted endpoints are reachable
-- Negative probes: direct table access fails, non-allowlisted RPC fails
+* Automated probe enumerates `/rest/v1/` and `/rpc/`
+* Enumeration harness is explicitly defined as:
 
-**Proof:** `docs/proofs/10.21_frontend_surface_enumeration_<UTC>.log`
+  * `weweb:drift` surface probe and/or companion endpoint-enumeration harness checked against truth artifacts
+* Only allowlisted endpoints are reachable
+* Negative probes confirm:
 
+  * direct table access fails
+  * non-allowlisted RPC fails
+
+**Tests:**
+
+* enumeration probe passes
+* direct table access fails
+* non-allowlisted RPC fails
+
+**Proof:** `docs/proofs/10.18B_frontend_surface_enumeration_guard_<UTC>.log`
 **Gate:** `lane-only surface-enumeration`
-
-**Prerequisite:** 10.23 merged
+**Prerequisite:** target frontend pages merged and scope-ready for verification
 
 ---
 
-### **10.22 — Seat Enforcement UX + API Consistency (unchanged)**
+### **10.18D — Frontend Verification — E2E WeWeb Wiring**
 
 **Deliverable:**
-Seat/entitlement enforcement is consistent between UI and API.
+All WeWeb pages and flows verified end-to-end, with no forbidden surface access.
 
 **DoD:**
 
-- Over-seat condition blocks actions at API (not just UI)
-- UI displays deterministic "blocked because entitlement" state
-- No "partial access" inconsistencies
+* Full `weweb:drift` scan passes across all pages
+* All data access via allowlisted RPCs / allowed backend interfaces only
+* Public path verified:
 
-**Proof:** `docs/proofs/10.22_seat_enforcement_consistency_<UTC>.md`
+  * `/mao-calculator`
+* Slug-gated path verified:
 
-**Gate:** `merge-blocking once billing is enabled`
+  * `/form/:slug/:type`
+* Token-gated path verified:
 
-**Prerequisite:** 10.8.9 merged
+  * `/deal/:share_token`
+* Authenticated shell routes are verified by exact implemented path string in the proof artifact; feature-name-only verification is not acceptable
+* Authenticated shell scope includes at minimum:
 
----
-### **10.23 — E2E WeWeb Wiring Verification (UPDATED scope)**
+  * Today
+  * Acquisition
+  * Dispo
+  * TC
+  * Lead Intake
+  * Workspace settings
+  * Profile settings
+* Error pages render friendly messages
+* Navigation matches architecture
+* Each stage has one primary operating owner/view
 
-**Deliverable:**
-All WeWeb pages and flows wired correctly end-to-end. No forbidden surface access. All access tiers verified.
+**Tests:**
 
-**DoD:**
+* drift scan passes
+* all key routes render and function correctly
+* proof artifact enumerates exact path strings under test
+* no forbidden surface access is reachable
+* navigation matches architecture
 
-- Full `weweb:drift` scan passes across all pages
-- All data access via allowlisted RPCs only
-- Public path:
-  - `/mao-calculator` loads without auth, full results, upgrade CTA
-- Slug-gated path:
-  - `/form/:slug/:type` resolves and renders
-  - submission routes to tenant
-- Token-gated path:
-  - `/deal/:share_token` validates, renders packet, expired token shows friendly page
-- Authenticated path:
-  - auth → gate logic → Today view (or onboarding) → all nav items functional
-- Today view renders with live task list structure
-- Acquisition:
-  - stage tabs match authoritative list
-  - deal detail loads
-  - auto-advance works
-- Dispo:
-  - share links generate and display
-- TC:
-  - checklist renders
-  - contract upload works
-  - immutable close enforced
-- Lead Intake:
-  - forms render via slug
-  - management view shows submissions
-- Workspace settings:
-  - all tabs render with correct role gating
-- Profile settings:
-  - renders
-- Error pages:
-  - 404, invalid slug, expired token all show friendly messages
-- Stage-to-view mapping rule:
-  - each stage has one primary operating owner/view
-  - supporting detail pages may still exist
-- Navigation matches architecture:
-  - Today | MAO | Acquisition | Dispo | TC | Lead intake | 🔔 | Workspace ▾
-
-**Proof:** `docs/proofs/10.23_weweb_wiring_verification_<UTC>.md`
-
+**Proof:** `docs/proofs/10.18D_weweb_wiring_verification_<UTC>.md`
 **Gate:** `lane-only`
-
-**Prerequisite:** All pages merged
-
----
-
-### **10.24 — UI Gate Promotion Execution (UPDATED list)**
-
-**Deliverable:**
-Promote frontend gates to merge-blocking via 10.7 protocol.
-
-**DoD:**
-
-- Promote: weweb-drift (10.2), frontend-contract-guard (10.20), surface-enumeration (10.21), weweb-smoke (10.1), share-link-smoke (10.16), save-reopen-deal (10.14)
-- `gate_promotion_registry.json` updated: status → merge-blocking, promoted_by → PR number
-- Gates wired into `.github/workflows/ci.yml` `required.needs`
-- `required_checks.json` synced via `truth:sync`
-
-**Proof:** `docs/proofs/10.24_ui_gate_promotion_<UTC>.log`
-
-**Gate:** `merge-blocking gate-promotion-registry`
-
-**Prerequisite:** 10.23 merged
-
----
-### **10.25 — Today View: Data Contract + RPC**
-
-**Deliverable:**
-Backend RPC providing the executive Today view: top 3 biz KPIs, pipeline stage counts, and deterministic action items. No UI wiring in this item.
-
-**DoD:**
-
-- RPC exists: `get_today_view_v1()` (single source of truth for Today view)
-- RPC returns top KPI strip with Today top 3 only:
-  - Projected Fees
-  - Overdue Follow-Ups
-  - Closings This Week
-- Projected Fees definition:
-  - sum of authoritative projected assignment fee field
-  - active deals only
-  - include New through TC
-  - blank = 0
-  - exclude Closed and Dead
-- Overdue Follow-Ups definition:
-  - open Acq- or Dispo-owned reminder tasks whose due time has passed
-  - deal must still be active
-  - excludes TC closing deadlines and checklist items
-- Closings This Week definition:
-  - current tenant-local calendar week
-- Pipeline stage counts include:
-  - New
-  - Analyzing
-  - Offer Sent
-  - UC
-  - Dispo
-  - TC
-- Tasks array synthesized from deterministic sources only:
-  - overdue follow-ups (Acq + Dispo)
-  - offers pending
-  - intake-ready analysis items
-  - TC at-risk closings / near-close pressure items
-- Tasks sorted by urgency
-- Each task object includes:
-  - health status
-  - deal address
-  - current stage
-  - reason it is here
-  - age or due time
-  - action type
-- No frontend business logic required to interpret summary or task data
-- No direct table access required by frontend
-- RPC registered in:
-  - `rpc_contract_registry.json`
-  - `execute_allowlist.json`
-  - `definer_allowlist.json`
-  - `privilege_truth.json` (if required)
-- pgTAP tests cover:
-  - empty state
-  - multiple task sources
-  - correct sorting order
-  - correct KPI aggregation
-  - no null task rows
-
-**Proof:** `docs/proofs/10.25_today_data_contract_<UTC>.log`
-
-**Gate:** `merge-blocking`
----
-### **10.25.1 — Today View: UI Wiring + Optimistic UI**
-
-**Deliverable:**
-Today view UI fully wired to `get_today_view_v1()` and rendering live executive triage data. Optimistic UI behavior implemented for one-tap actions.
-
-**DoD:**
-
-- Today view calls `get_today_view_v1()` only
-- No hardcoded values remain in UI
-- Summary strip renders Today top 3 only:
-  - Projected Fees
-  - Overdue Follow-Ups
-  - Closings This Week
-- Pipeline strip renders:
-  - New
-  - Analyzing
-  - Offer Sent
-  - UC
-  - Dispo
-  - TC
-- Task list renders:
-  - health dot
-  - deal address
-  - current stage
-  - reason it is here
-  - age or due time
-  - one action button
-- One-tap actions wired:
-  - Follow Up → opens correct Acq or Dispo follow-up path
-  - Send Offer → opens offer generation path
-  - Open TC → `/tc/:deal_id`
-  - Analyze → MAO pre-filled from intake
-- Optimistic UI:
-  - task disappears immediately on click
-  - backend call runs after UI update
-  - rollback on failure
-- Empty states handled:
-  - no tasks
-  - no active deals
-- No frontend-derived business logic
-- No direct table queries
-
-**Proof:** `docs/proofs/10.25.1_today_ui_wiring_<UTC>.md`
-
-**Gate:** `lane-only`
+**Prerequisite:** all target pages merged
 
 ---
 
-### **10.26 — Micro-Friction Bundle**
-
-**Deliverable:**
-Address autocomplete, numeric input modes, currency formatting, spam protection, copy icons.
-
-**DoD:**
-
-- Google Places API integrated for address fields on: MAO calculator, intake forms, deal detail
-- Auto-fills: street, city, state/province, zip/postal, country
-- `inputmode="numeric"` on all financial inputs (MAO, deal detail, TC fees)
-- Auto-format currency with commas as typed (350000 → 350,000)
-- Invisible spam protection on public intake forms (Cloudflare Turnstile or reCAPTCHA v3)
-- Copy address icon next to every property address (Acquisition, TC, Lead Intake)
-
-**Proof:** `docs/proofs/10.26_micro_friction_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.9, 10.18 merged
-
----
-
-### **10.27 — Workspace Settings (General + Members + Billing)**
-
-**Deliverable:**
-Workspace settings page with role-gated tabs. Accessible via Workspace ▾ dropdown.
-
-**DoD:**
-
-- General tab (admin+): workspace name, slug (editable with warning), country, currency, measurement unit, farm areas list (add/delete, text-based, no map polygons)
-- Members tab (admin+): view members, invite (email), remove, change roles (Owner/Admin/Member). Uses `tenant_memberships` + `tenant_invites`.
-- Billing tab (owner only): current plan, payment method, cancel subscription (Stripe customer portal)
-- Timezone: tenant-level setting (single dropdown)
-- No direct table calls — all via authenticated RPCs with `require_min_role_v1`
-
-**Proof:** `docs/proofs/10.27_workspace_settings_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.8, 10.8.6 merged
-
----
-### **10.28 — Profile Settings Final Wiring Verification**
-
-**Deliverable:**
-Final WeWeb wiring verification for the Profile Settings surface already implemented through 10.8.11D and 10.8.11J. No new backend scope.
-
-**DoD:**
-
-- Profile Settings page renders correctly in WeWeb
-- Display name loads from governed RPC
-- Display name updates through governed RPC
-- Email displays correctly
-- Password change entry point works
-- No duplicate backend implementation
-- No direct table calls
-
-**Proof:** `docs/proofs/10.28_profile_settings_final_wiring_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.8.11D and 10.8.11J merged
-
----
-
-### **10.29 — Error Pages + Friendly Expired Token**
-
-**Deliverable:**
-Universal error handling. Clean, non-scary error pages.
-
-**DoD:**
-
-- Invalid slug → "Workspace not found" (friendly message, not developer error)
-- Expired/revoked share token → "This deal is no longer available" (polite, anti-enumeration — identical page regardless of failure reason)
-- Invalid route → 404 page (clean design)
-- All error pages: no stack traces, no developer jargon, no "Token Expired" or "NOT_FOUND" raw responses
-
-**Proof:** `docs/proofs/10.29_error_pages_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.8 merged
-
----
-### **10.30 — Quick-Copy Deal Summary + Context Links Final Wiring Verification**
-
-**Deliverable:**
-Final WeWeb wiring verification for quick-copy deal summary and outbound context links already implemented in Acquisition detail. No duplicate implementation scope.
-
-**DoD:**
-
-- Quick-copy button renders in Acquisition deal detail
-- Copied text matches governed teaser format
-- Zillow / Redfin / Realtor.com links render correctly from deal address
-- Links open correctly
-- No duplicate backend or UI implementation scope
-
-**Proof:** `docs/proofs/10.30_quick_copy_context_final_wiring_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.11 merged
-
----
-### **10.31 — Notifications Drawer Data Contract + RPC**
-
-**Deliverable:**
-Backend notification feed for the authenticated shell bell. Drawer only, not a standalone page.
-
-**DoD:**
-
-- RPC exists: `get_notifications_v1()` (or equivalent governed RPC)
-- Notification feed is authenticated and user-targeted
-- Notification rows are filtered by recipient user
-- Notifications drawer is not a page and has no direct table access
-- RPC returns notification rows sourced from deterministic backend signals only:
-  - overdue reminders
-  - new intake submissions
-  - buyer interest signals
-  - TC / closing alerts
-  - deal handoff notifications
-- Each notification row includes at minimum:
-  - notification_type
-  - severity
-  - title
-  - body / context line
-  - created_at
-  - route_target
-  - route_label
-  - recipient_user_id
-- Deal handoff notifications support:
-  - Acq → Dispo
-  - Dispo → TC
-  - Dispo → Acq return
-  - TC → Dispo return
-- Handoff notification copy includes:
-  - deal address
-  - from who
-  - destination page
-- Notifications are sorted by urgency, then recency
-- Bell count derives from current actionable notifications only
-- No frontend-constructed notification logic
-- No direct table calls from WeWeb
-
-**Proof:** `docs/proofs/10.31_notifications_data_contract_<UTC>.log`
-
-**Gate:** `merge-blocking`
-
----
-
-### **10.32 — Notifications Drawer UI Wiring**
-
-**Deliverable:**
-Authenticated shell notification bell opens a drawer wired to governed notification data.
-
-**DoD:**
-
-- Bell in authenticated shell opens notifications drawer
-- Drawer reads from governed notification RPC only
-- User sees only notifications addressed to that user
-- Notification groups render cleanly for:
-  - reminders
-  - new submissions
-  - buyer interest
-  - closing alerts
-  - deal assigned to you
-- Rows show:
-  - severity
-  - title
-  - context line
-  - timestamp
-  - click-through action
-- Clicking a notification routes to the correct page and deal:
-  - Acquisition
-  - Dispo
-  - TC
-  - Lead Intake
-  - Today
-- Empty state handled cleanly
-- Drawer is not a standalone page
-- No direct table calls
-- No duplicated business logic in UI
-
-**Proof:** `docs/proofs/10.32_notifications_drawer_ui_<UTC>.md`
-
-**Gate:** `lane-only`
-
-**Prerequisite:** 10.31 merged
----
 
 ## **11 — Release \+ Handoff Discipline**
 
