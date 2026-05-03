@@ -9388,3 +9388,26 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+
+---
+
+## NOTE — 2026-05-03 — Build Route v2.4 — §10 roadmap rescope (documentation only)
+
+This records a **traceability and planning update**, not the closure of an implementation gate. Per the preamble, no Build Route proof item passed solely because this note exists.
+
+Objective  
+- Re-sequence §10 backlog by replacing contiguous items **10.12–10.32** with flow-aligned numbering (**10.12A–10.18D**) and satisfy governance-change justification when `BUILD_ROUTE_V2.4.md` is edited.
+
+Changes  
+- `docs/artifacts/BUILD_ROUTE_V2.4.md`: removed legacy **10.12–10.32** span; inserted rescoped deliverables (**10.12A**, **10.12C**, **10.12D**, **10.13A–10.13C**, **10.13E**, **10.14A–10.14B**, **10.15D**, **10.16A**, **10.16C**, **10.17C**, **10.17E**, **10.18A**, **10.18B**, **10.18D**) with DoD, tests, and proof paths per item.  
+- Same file: **10.8.10 — Today View (Shell)** narrative updated so task synthesis points at **10.16A** (Today data contract) instead of superseded **10.25**.  
+- `docs/governance/GOVERNANCE_CHANGE_20260503T174801Z.md`: UTC-stamped justification (scope, legacy→new mapping summary, exclusions, rollout and risk notes).
+
+Proof  
+- `docs/governance/GOVERNANCE_CHANGE_20260503T174801Z.md` (authoritative narrative for mapping and exclusions)
+
+DoD  
+- Not applicable — documentation and governance traceability only; implementation items in the new §10 slice remain to be merged and logged under their own proof artifacts.
+
+Status  
+DOCUMENTATION ONLY (no PASS / no MERGED gate for §10 rescope itself)
