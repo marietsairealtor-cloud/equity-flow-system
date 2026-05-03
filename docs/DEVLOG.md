@@ -9411,3 +9411,26 @@ DoD
 
 Status  
 DOCUMENTATION ONLY (no PASS / no MERGED gate for §10 rescope itself)
+2026-05-03 — Build Route v2.4 — 10.12A
+
+Objective
+Intake Backend — Submission Persistence
+
+Changes
+- Migration 20260503000001_10_12A_intake_submission_persistence.sql applied
+- New table: public.intake_submissions (tenant_id, form_type, payload, source, submitted_at, reviewed_at)
+- New table: public.intake_buyers (tenant_id, name, email, phone, areas_of_interest, budget_range, deal_type_tags, price_range_notes, notes, is_active)
+- submit_form_v1(p_slug, p_form_type, p_payload): DROP+recreate, now also writes intake_submissions on every successful submission. All 10.8.11N logic preserved. Return type json->jsonb. Subscription query deterministic. Safe numeric cast via NULLIF.
+- New: list_intake_submissions_v1(p_limit int) -- authenticated, tenant-scoped
+- New: list_buyers_v1(p_limit int) -- authenticated, tenant-scoped
+- CONTRACTS.md §64 added
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1, privilege_truth.json, execute_allowlist.json, rpc_contract_registry.json, write_path_registry.json registered
+
+Proof
+docs/proofs/10.12A_intake_submission_persistence_20260503T193731Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
