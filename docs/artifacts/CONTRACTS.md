@@ -308,7 +308,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | revoke_share_token_v1 | 8.6 | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
-| submit_form_v1 | 10.8.1 | Submit public intake form; creates draft deal with MAO pre-fill for seller submissions | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
+| submit_form_v1 | 10.8.1, 10.12A | Public intake submit; persists `draft_deals` + `intake_submissions` (§64); MAO pre-fill for seller | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64) | slug input only — no tenant_id param |
+| list_intake_submissions_v1 | 10.12A | List `intake_submissions` for current tenant (governed Lead Intake read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
+| list_buyers_v1 | 10.12A | List `intake_buyers` for current tenant (governed Buyer Ops read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
 | list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_reminder_v1 | 10.8.3 | Create a deal reminder for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | complete_reminder_v1 | 10.8.3; activity log 10.11A10 | Mark reminder completed (idempotent); first completion writes `reminder_completed` to `deal_activity_log`; repeat completion ok=true silent no-op (§62) | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — no tenant_id param |
