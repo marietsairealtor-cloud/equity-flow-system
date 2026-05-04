@@ -4,5 +4,5 @@
   "migration_tip": "20260503000001",
   "migration_tip_file": "20260503000001_10_12A_intake_submission_persistence.sql",
   "migration_count": 116,
-  "pinned_at": "2026-05-03"
+  "pinned_at": "2026-05-04"
 }
