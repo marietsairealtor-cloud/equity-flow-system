@@ -627,6 +627,10 @@
     "10.12A": {
       "title": "Intake Backend — Submission Persistence",
       "proof_pattern": "^docs/proofs/10\\.12A_intake_submission_persistence_"
+    },
+    "10.12B": {
+      "title": "Intake Forms — Public UI + Submit Wiring",
+      "proof_pattern": "^docs/proofs/10\\.12B_public_forms_ui_submit_wiring_"
     }
   }
 }

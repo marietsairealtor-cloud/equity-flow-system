@@ -7769,6 +7769,67 @@ Authoritative backend persistence model for all public intake submissions, plus 
 
 ---
 
+### **10.12B — Intake Forms — Public UI + Submit Wiring**
+
+**Deliverable:**
+Public-facing seller, buyer, and birddog forms wired to the governed intake submission path. This folds old public-form UI scope and public submit wiring into one UI item.
+
+**DoD:**
+
+* Public page exists at `/form/{{slug}}/{{type}}` (canonical contract: **`CONTRACTS.md`** §65)
+* Form type resolves from slug + type:
+
+  * seller
+  * buyer
+  * birddog
+* Seller payload keys (**`submit_form_v1`** **`p_payload`**, see §65):
+
+  * `address`, `name`, `phone`, `email`, `spam_token`
+
+* Buyer payload keys:
+
+  * `name`, `email`, `phone`, `areas_of_interest`, `budget_range`, `spam_token`
+
+* Birddog payload keys:
+
+  * `address`, `name`, `phone`, `email`, `condition_notes`, `asking_price`, `spam_token`
+
+* UI distinguishes states at minimum: `idle`, `validation_error`, `error`, `invalid_route`, `success` (§65)
+* All public intake forms submit through `submit_form_v1`
+* Form type is passed explicitly and correctly:
+
+  * seller
+  * buyer
+  * birddog
+* Slug context is resolved from the public route and passed through governed flow only
+* UI does not write directly to any table
+* Submission payload matches governed contract for each form type
+* Friendly invalid slug / invalid type handling exists
+* Empty / success / validation / backend-failure states are handled cleanly
+* Spam-protection token is included in submission path when enabled
+* No duplicated submission logic across forms
+* No frontend-only persistence behavior
+* Address autocomplete on address-based fields is deferred to `10.17A` so this item does not depend on shared UX polish to ship form wiring
+
+**Tests:**
+
+* seller form submits through `submit_form_v1`
+* buyer form submits through `submit_form_v1`
+* birddog form submits through `submit_form_v1`
+* form type is passed correctly for all three
+* invalid slug renders friendly error state
+* invalid type renders friendly error state
+* success state renders on valid submit
+* validation state renders on invalid submit
+* no direct table calls from UI
+* no duplicated submit logic exists across forms
+
+**Proof:** `docs/proofs/10.12B_public_forms_ui_submit_wiring_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.12A` merged
+
+---
+
 ### **10.12C — Intake Backend — Submission Outcomes + MAO Pre-fill**
 
 **Deliverable:**

@@ -484,6 +484,46 @@ Item: 10.11B
 
 ---
 
+## public-form-page-load
+Trigger: /form/{{slug}}/{{type}} page load
+Reads: globalContext.page?.['path'].type, globalContext.page?.['path'].slug
+Calls: none — route validation only
+Writes: formState variable (b33bc3a6-01ab-4da5-93b6-70d198e78880)
+Branches: type not in [seller, buyer, birddog] → formState=invalid_route | slug null/empty → formState=invalid_route | valid → formState=idle
+Item: 10.12B
+
+---
+
+## submit-seller-form
+Trigger: Seller form Submit button click on /form/{{slug}}/{{type}}
+Reads: sellerAddressInput.value, sellerNameInput.value, sellerPhoneInput.value, sellerEmailInput.value, globalContext.page?.['path'].slug
+Calls: submit_form_v1(p_slug=page.slug, p_form_type='seller', p_payload={address, name, phone, email, spam_token})
+Writes: formState variable (b33bc3a6-01ab-4da5-93b6-70d198e78880), isSubmitting variable
+Branches: any required field empty → formState=validation_error, stop | all filled → isSubmitting=true → RPC → success: formState=success, isSubmitting=false | error: formState=error, isSubmitting=false
+Item: 10.12B
+
+---
+
+## submit-buyer-form
+Trigger: Buyer form Submit button click on /form/{{slug}}/{{type}}
+Reads: buyerNameInput.value, buyerEmailInput.value, buyerPhoneInput.value, buyerAreasInput.value, buyerBudgetInput.value, globalContext.page?.['path'].slug
+Calls: submit_form_v1(p_slug=page.slug, p_form_type='buyer', p_payload={name, email, phone, areas_of_interest, budget_range, spam_token})
+Writes: formState variable (b33bc3a6-01ab-4da5-93b6-70d198e78880), isSubmitting variable
+Branches: name/email/phone empty → formState=validation_error, stop | all filled → isSubmitting=true → RPC → success: formState=success, isSubmitting=false | error: formState=error, isSubmitting=false
+Item: 10.12B
+
+---
+
+## submit-birddog-form
+Trigger: Birddog form Submit button click on /form/{{slug}}/{{type}}
+Reads: birddogAddressInput.value, birddogNameInput.value, birddogPhoneInput.value, birddogEmailInput.value, birddogConditionInput.value, birddogAskingInput.value, globalContext.page?.['path'].slug
+Calls: submit_form_v1(p_slug=page.slug, p_form_type='birddog', p_payload={address, name, phone, email, condition_notes, asking_price, spam_token})
+Writes: formState variable (b33bc3a6-01ab-4da5-93b6-70d198e78880), isSubmitting variable
+Branches: address/name/phone empty → formState=validation_error, stop | all filled → isSubmitting=true → RPC → success: formState=success, isSubmitting=false | error: formState=error, isSubmitting=false
+Item: 10.12B
+
+---
+
 # WeWeb Variable Registry
 
 All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolean.
@@ -546,3 +586,10 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | dealNotes | object | list_deal_notes_v1() result — notes for selected deal. Variable ID: 61f09425-563c-48ba-a62a-18de5ab34fec | fetch-deal-notes |
 | dealActivity | object | list_deal_activity_v1() result — activity log for selected deal. Variable ID: a00c6fa3-ffce-49b5-8e4c-c177855ec11e | fetch-deal-activity |
 | dealReminders | object | list_reminders_v1() result — all incomplete reminders for tenant. Variable ID: TBD | fetch-deal-reminders |
+
+## Public Form Variables
+
+| Variable | Type | Description | Written By |
+|----------|------|-------------|------------|
+| formState | text | Page: Public Form (/form/{{slug}}/{{type}}). Values: idle, validation_error, error, invalid_route, success. Controls visibility of SellerForm, BuyerForm, BirddogForm, ErrorState, SuccessState containers. Variable ID: b33bc3a6-01ab-4da5-93b6-70d198e78880. Item: 10.12B | public-form-page-load; submit-seller-form; submit-buyer-form; submit-birddog-form |
+| isSubmitting | boolean | Page: Public Form (/form/{{slug}}/{{type}}). Values: true, false. Controls: submit button disabled state during RPC call. Item: 10.12B | submit-seller-form; submit-buyer-form; submit-birddog-form |
