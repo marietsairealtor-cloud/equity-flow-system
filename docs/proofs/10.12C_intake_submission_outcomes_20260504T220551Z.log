@@ -1,0 +1,99 @@
+PROOF_HEAD=5cb4944be6b206f04f77ec8e8cfe8b57305d4773
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.12C Intake Backend — Submission Outcomes + MAO Pre-fill -- Proof Log ===
+Date: 2026-05-04T18:01:03.7555876-04:00
+Branch: feature/10.12C-intake-submission-outcomes
+PR HEAD SHA: 5cb4944be6b206f04f77ec8e8cfe8b57305d4773
+
+=== Deliverable ===
+Migration: 20260504000001_10_12C_intake_submission_outcomes.sql -- applied
+Test file: supabase/tests/10_12C_intake_submission_outcomes.test.sql -- PASS
+
+=== Schema Changes ===
+ALTER TABLE public.draft_deals ADD COLUMN address text
+
+=== New RPC ===
+upsert_buyer_from_intake_v1(p_resolved_tenant uuid, p_payload jsonb)
+  SECURITY DEFINER. REVOKE ALL from PUBLIC/anon/authenticated.
+  Internal helper only -- called by submit_form_v1 on buyer submissions.
+  Exempt from role/write-lock enforcement (documented in migration comment).
+  Dedupe: lower(email) match first; phone fallback only when email absent.
+  Email present + no match = new record (no phone merge).
+  Safe deal_type_tags parsing (jsonb_typeof guard).
+
+=== submit_form_v1 Changes (version 3, 10.12C) ===
+Seller path: stores address from payload; asking_price/repair_estimate always NULL
+Buyer path: calls upsert_buyer_from_intake_v1; returns buyer_id in data envelope
+Birddog path: intake record only, no side effects
+
+=== Corrected Tests ===
+supabase/tests/10_8_1_slug_system.test.sql -- test 21 updated: asserts pricing NULL
+supabase/tests/10_12A_intake_submission_persistence.test.sql -- test 20 uses actual row count
+
+=== pgTAP Results ===
+supabase db reset -- PASS (73 files, 861 tests, 0 failures)
+draft_deals.address column exists -- PASS
+seller submission: draft_deals.address stored correctly -- PASS
+seller draft_deals.payload preserves address for MAO prefill -- PASS
+seller submission: asking_price is NULL (governed paths only) -- PASS
+seller submission: repair_estimate is NULL (governed paths only) -- PASS
+buyer submission: intake_buyers record created -- PASS
+buyer submission: name stored correctly -- PASS
+buyer dedupe: same email resubmit updates record, not inserts new -- PASS
+buyer dedupe: budget_range updated on resubmit -- PASS
+buyer dedupe: new buyer created for bob@different.com -- PASS
+buyer dedupe: Alice row remains singleton after Bob added -- PASS
+buyer dedupe: exactly one shared-phone buyer row renamed on phone fallback merge -- PASS
+buyer dedupe: sibling shared-phone buyer row left unchanged during phone merge -- PASS
+buyer dedupe: email match is case-insensitive -- PASS
+birddog submission: no intake_buyers record created -- PASS
+birddog submission: intake_submissions record persisted -- PASS
+birddog submission: asking_price is NULL on draft deal -- PASS
+submit_form_v1: returns draft_id on seller success -- PASS
+submit_form_v1: buyer_id matches newly created intake_buyers row -- PASS
+submit_form_v1: resubmit same email returns same buyer_id as deduped row -- PASS
+upsert_buyer_from_intake_v1: EXECUTE revoked from anon and authenticated -- PASS
+buyer submission: draft_deals.address is NULL (address only for seller) -- PASS
+
+=== db push ===
+20260504000001_10_12C_intake_submission_outcomes.sql -- applied
+
+=== DoD Checklist ===
+seller submission creates draft deal with address                           -- PASS
+asking_price/repair_estimate NOT from public intake (NULL)                 -- PASS
+draft deal is tenant-scoped                                                -- PASS
+buyer submission creates/updates buyer record                              -- PASS
+buyer dedupe email match (lower-normalized)                                -- PASS
+buyer dedupe phone fallback only when email absent                         -- PASS
+email present + no match = new record (no phone merge)                     -- PASS
+collision handling deterministic and documented by test                    -- PASS
+birddog persists as intake record only                                     -- PASS
+birddog does not auto-create buyer record                                  -- PASS
+pre-fill data stored on deal record not separate table                     -- PASS
+no direct table calls from WeWeb                                           -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+privilege_truth.json -- PASS
+rpc_contract_registry.json -- PASS
+definer_allowlist.json -- PASS
+write_path_registry.json -- PASS
+CONTRACTS.md §66 -- PASS
+BUILD_ROUTE_V2.4.md -- PASS
+Governance file: GOVERNANCE_CHANGE_20260504T205748Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.12C Intake Backend Submission Outcomes MAO Pre-fill: PASS (merge-blocking gate)
