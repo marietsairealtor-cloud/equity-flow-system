@@ -32,7 +32,9 @@ foreach ($mig in $migrationsChanged) {
       # Exclude known internal helpers
       if ($rpcName -notin @("require_min_role_v1", "current_tenant_id", "auth_user_exists_v1",
                              "check_workspace_write_allowed_v1", "create_active_workspace_seed_v1",
-                             "process_workspace_retention_v1", "confirm_trial_v1")) {
+                             "process_workspace_retention_v1", "confirm_trial_v1",
+                             "_intake_validate_pricing_assumptions_v1", "_intake_apply_mao_to_assumptions_v1",
+                             "_intake_validate_deal_property_jsonb_v1")) {
         $newRpcs += $rpcName
       }
     }
