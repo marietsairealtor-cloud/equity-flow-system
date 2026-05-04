@@ -1542,3 +1542,45 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
 **§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`**, **`list_intake_submissions_v1`**, **`list_buyers_v1`** `build_route_owner` **10.12A**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`**.
+
+---
+
+## 65) Intake Forms — Public UI + Submit Wiring (10.12B)
+
+**Purpose:** Freeze the **WeWeb** public intake surface contract: **`/form/{{slug}}/{{type}}`** for **`seller`**, **`buyer`**, and **`birddog`** — all submits go through **`submit_form_v1(p_slug text, p_form_type text, p_payload jsonb)`** with **no direct table reads or writes** from the UI (RPC-only data path).
+
+### Route & form types
+
+- **Public URL pattern:** **`/form/{{slug}}/{{type}}`**
+- **`type`** ∈ **`seller`** | **`buyer`** | **`birddog`**
+- **`slug`** is taken from the path and passed only as **`p_slug`** into **`submit_form_v1`** (no parallel table access).
+
+### Governed submission
+
+- **`p_form_type`** must match the route **`type`**.
+- **`p_payload`** is JSON; required keys vary by **`p_form_type`** (below). Spam protection participates when enabled (**`spam_token`** in payload).
+- Submission **must not** use PostgREST table APIs for **`intake_submissions`**, **`draft_deals`**, **`intake_buyers`**, or any other tenant catalog object.
+
+### Canonical payload keys (by form type)
+
+| Form type | Keys in **`p_payload`** (string values unless noted) |
+|---|---|
+| **`seller`** | **`address`**, **`name`**, **`phone`**, **`email`**, **`spam_token`** |
+| **`buyer`** | **`name`**, **`email`**, **`phone`**, **`areas_of_interest`**, **`budget_range`**, **`spam_token`** |
+| **`birddog`** | **`address`**, **`name`**, **`phone`**, **`email`**, **`condition_notes`**, **`asking_price`**, **`spam_token`** |
+
+(Additional tolerated keys may exist in **`p_payload`** for forward compatibility but must not imply direct table persistence from the canvas.)
+
+### UI states (deterministic labeling)
+
+Minimum screen / workflow states the implementation must distinguish:
+
+| State | Meaning |
+|---|---|
+| **`idle`** | Form ready for input |
+| **`validation_error`** | Client-side or contract-visible validation rejected before/at submit |
+| **`error`** | Governed RPC returned **`ok: false`** (e.g. **`NOT_AUTHORIZED`**, **`NOT_FOUND`**, **`VALIDATION_ERROR`**) |
+| **`invalid_route`** | Bad **`slug`** or **`type`** in URL — friendly surfaced, anti-enumeration where applicable |
+| **`success`** | **`submit_form_v1`** returned **`ok: true`** |
+
+**§Registry:** Build Route **`10.12B`**; RPC contract continues under **`§64`** **`submit_form_v1`**; **`docs/truth/qa_claim.json`** / **`qa_scope_map.json`** for proof naming.

@@ -6,7 +6,7 @@ UTC: 20260503T174801Z
 
 This governance entry records a **documentation-only reorganization** of Build Route §10 in `docs/artifacts/BUILD_ROUTE_V2.4.md`.
 
-The prior contiguous roadmap span **10.12–10.32** was replaced with a new grouped structure organized by operating flow:
+The prior roadmap span **10.12–10.32** was replaced with a new grouped structure organized by operating flow:
 
 - **10.12A–10.12D** — Intake + Forms
 - **10.13A–10.13E** — Offer Flow + Save/Reopen
@@ -16,17 +16,61 @@ The prior contiguous roadmap span **10.12–10.32** was replaced with a new grou
 - **10.17A–10.17E** — Shared UX + Shell Support
 - **10.18A–10.18D** — Frontend Guards + E2E Verification
 
-This change replaces the previous flat / mixed sequencing with a backend-first, flow-aligned structure intended to reduce UI wiring thrash and hidden backend gaps.
+This replaces the previous flat / mixed sequencing with a backend-first, flow-aligned structure intended to reduce UI wiring churn and hidden backend gaps.
 
 ## Files changed
 
 - **`docs/artifacts/BUILD_ROUTE_V2.4.md`**
   - Replaced legacy items **10.12–10.32**
   - Inserted reorganized items **10.12A–10.18D**
-  - Updated internal prerequisite references where needed to point at the new numbering
-  - Updated sequencing so intake/forms precede offer flow, followed by Dispo, TC, Today/Notifications, shared UX, and verification
-- **Same file:** Updated cross-references that previously pointed at legacy roadmap items now renumbered into the new structure
-- **Same file:** Updated **10.8.10 — Today View (Shell)** text so task synthesis references **10.16A** instead of legacy **10.25**
+  - Updated prerequisite and cross-reference text where needed to point at the new numbering
+- **Same file:** Updated **10.8.10 — Today View (Shell)** so task synthesis now references **10.16A** instead of legacy **10.25**
+
+## New item inventory
+
+### 10.12 — Intake + Forms
+- **10.12A** — Intake Backend — Submission Persistence
+- **10.12B** — Intake Forms — Public UI + Submit Wiring
+- **10.12C** — Intake Backend — Submission Outcomes + MAO Pre-fill
+- **10.12D** — Intake Ops — Lead Intake + Buyer Ops UI
+
+### 10.13 — Offer Flow + Save/Reopen
+- **10.13A** — Offer Backend — Data Contract + Soft Offer Copy
+- **10.13B** — Offer Backend — Send Offer Write Path
+- **10.13C** — Offer Output — Formal PDF
+- **10.13D** — Offer Flow — UI Wiring
+- **10.13E** — Offer Flow — Save Deal + Reopen Deal
+
+### 10.14 — Dispo + Share Packet
+- **10.14A** — Dispo Backend — Dashboard Data Contract + KPI Read Path
+- **10.14B** — Dispo Backend — Share Link + Handoff Control
+- **10.14C** — Dispo Share Packet — Deal Viewer + Share-Link Verification
+- **10.14D** — Dispo — UI Wiring
+
+### 10.15 — TC
+- **10.15A** — TC Backend — Dashboard Data Contract + KPI Read Path
+- **10.15B** — TC Backend — Checklist, Upload, Fee, and Return Paths
+- **10.15C** — TC — UI Wiring
+- **10.15D** — TC — Immutable Close Verification
+
+### 10.16 — Today + Notifications
+- **10.16A** — Today View — Data Contract + RPC
+- **10.16B** — Today View — UI Wiring + Optimistic UI
+- **10.16C** — Notifications — Drawer Data Contract + RPC
+- **10.16D** — Notifications — Drawer UI Wiring
+
+### 10.17 — Shared UX + Shell Support
+- **10.17A** — Shared UX — Micro-Friction Bundle
+- **10.17B** — Shared UX — Workspace Settings
+- **10.17C** — Shared UX — Profile Settings Final Wiring
+- **10.17D** — Shared UX — Error Pages + Friendly Expired Token
+- **10.17E** — Shared UX — Quick-Copy Deal Summary + Context Links
+
+### 10.18 — Frontend Guards + E2E Verification
+- **10.18A** — Frontend Guard — RPC Contract Guard
+- **10.18B** — Frontend Guard — Surface Enumeration Guard
+- **10.18C** — Frontend Guard — Seat Enforcement UX + API Consistency
+- **10.18D** — Frontend Verification — E2E WeWeb Wiring
 
 ## Legacy-to-new mapping summary
 
@@ -70,7 +114,11 @@ This change replaces the previous flat / mixed sequencing with a backend-first, 
 - **10.21** → **10.18B**
 - **10.22** → **10.18C**
 - **10.23** → **10.18D**
-- **10.24** → removed from this rewritten span for now and must be reintroduced explicitly if gate-promotion execution remains in scope
+
+## Legacy scope intentionally not carried into the rewritten span
+
+- **10.24 — UI Gate Promotion Execution** is **not included** in the rewritten **10.12A–10.18D** span.
+- If gate-promotion work remains in scope, it must be reintroduced explicitly under a new number or as a follow-on section item.
 
 ## What did not change
 
@@ -90,7 +138,7 @@ This entry records **roadmap / traceability text only**.
 
 ## Why this change was made
 
-The prior §10 sequence mixed:
+The prior §10 sequencing mixed:
 
 - backend contracts
 - write paths
@@ -98,9 +146,9 @@ The prior §10 sequence mixed:
 - verification
 - cross-cutting hardening
 
-in a way that caused execution churn, especially during large UI items such as Acquisition wiring.
+in a way that created execution churn, especially during large UI items where backend gaps were discovered mid-wiring.
 
-The new structure is intended to make execution more deterministic by grouping work in the order the product actually flows:
+The new structure groups work in the order the product actually flows:
 
 1. Intake + Forms
 2. Offer Flow
@@ -136,22 +184,22 @@ Legacy references to **10.12–10.32** may still exist in:
 - older proof logs
 - PR descriptions
 - SOP notes
-- planner comments
 - handoff summaries
+- reviewer comments
 
 Those references may now point to superseded numbering and should be interpreted via the mapping above.
 
 ### 2. Missing carry-forward of legacy scope
 Any legacy item not explicitly represented in the new structure may be accidentally dropped from execution scope.
 
-Current known watch item:
-- legacy **10.24** gate-promotion work is not represented in the rewritten **10.12A–10.18D** span and must be restored explicitly if still required
+Known watch item:
+- legacy **10.24** is not represented in the rewritten **10.12A–10.18D** span
 
 ### 3. Prerequisite mismatch
 New prerequisites introduced in the rewritten items must remain consistent with actual merged backend surfaces. Documentation errors here can create planning confusion even when runtime behavior is unchanged.
 
-### 4. Partial rollout confusion
-During transition, some discussions / proofs may use legacy numbering while new planning uses the rewritten numbering. Teams must not assume those refer to different product scope without checking the mapping table.
+### 4. Transition-period confusion
+During transition, some discussion and proof artifacts may use legacy numbering while new planning uses rewritten numbering. Teams must not assume those refer to different product scope without checking the mapping table.
 
 ## Required follow-up checks
 
@@ -159,7 +207,8 @@ After committing the Build Route rewrite, confirm:
 
 - all internal references inside `BUILD_ROUTE_V2.4.md` point to the new numbering where applicable
 - no stale reference to legacy **10.25** remains in Today-view planning text
-- any still-required legacy item omitted from the new span is re-added explicitly
+- the new sequence contains no missing letter gaps within active grouped spans
+- legacy **10.24** is either reintroduced explicitly or intentionally left out with no hidden dependency
 - future proof files use the new numbering only
 
 ## Rollback
