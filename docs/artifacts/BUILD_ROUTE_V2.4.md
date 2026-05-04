@@ -7907,6 +7907,89 @@ Seller, buyer, and birddog submissions produce deterministic backend outcomes, a
 
 ---
 
+### **10.12C1 — Intake Backend — Manual Deal Creation + Draft Promotion**
+
+**Deliverable:**
+Governed backend write paths for internal Lead Intake users to create real Acquisition deals from manual intake entry or promote reviewed public draft submissions into real deals.
+
+**DoD:**
+
+* Governed manual intake write path exists:
+
+  * `create_deal_from_intake_v1(p_fields jsonb)`
+
+* Governed draft promotion write path exists:
+
+  * `promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb)`
+
+* `create_deal_from_intake_v1` creates a real `deals` row directly from internal Lead Intake entry
+
+* Manual-created deals are tenant-scoped
+
+* Manual-created deals enter Acquisition with stage = `new`
+
+* Manual-created deals are visible in Acquisition immediately
+
+* `promote_draft_deal_v1` promotes an existing tenant-scoped `draft_deals` row into a real `deals` row
+
+* Promotion merges draft-submitted fields with reviewed intake-user supplied fields
+
+* Promotion creates the real deal with stage = `new`
+
+* Promotion marks the linked intake submission reviewed with `reviewed_at = now()`
+
+* Promotion prevents duplicate promotion of the same draft
+
+* Promotion returns the created `deal_id`
+
+* Both RPCs support full reviewed intake payload shape sufficient for:
+
+  * seller/contact fields
+  * property/address fields
+  * pricing/MAO input fields where supplied through internal governed review
+  * notes/context fields
+
+* Writes are atomic:
+
+  * `deals`
+  * `deal_properties` when property fields are supplied
+  * `deal_inputs` when pricing fields are supplied
+  * draft promotion marker fields when promoting a draft
+  * `intake_submissions.reviewed_at` when promoting from public submission
+
+* Backend owns all tenant scoping, stage assignment, validation, and merge rules
+
+* RPCs are authenticated only
+
+* RPCs enforce member+ role
+
+* RPCs enforce workspace write lock
+
+* No direct table calls from WeWeb
+
+* No frontend-only creation, promotion, or reviewed-state logic
+
+**Tests:**
+
+* manual intake creation creates tenant-scoped `deals` row with stage = `new`
+* manual-created deal appears in Acquisition read path
+* manual creation writes seller/contact fields correctly
+* manual creation writes property fields when supplied
+* manual creation writes pricing snapshot when supplied
+* draft promotion creates tenant-scoped `deals` row with stage = `new`
+* draft promotion merges draft fields with reviewed supplied fields deterministically
+* draft promotion marks linked intake submission `reviewed_at`
+* duplicate promotion is rejected deterministically
+* cross-tenant draft promotion is rejected
+* expired/read-only workspace write attempts are rejected
+* no direct table access is required by frontend
+
+**Proof:** `docs/proofs/10.12C1_intake_deal_creation_promotion_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C` merged
+
+---
+
 ### **10.12D — Intake Ops — Lead Intake + Buyer Ops UI**
 
 **Deliverable:**
