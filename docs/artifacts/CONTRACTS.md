@@ -308,7 +308,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | revoke_share_token_v1 | 8.6 | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
-| submit_form_v1 | 10.8.1, 10.12A, 10.12C | Public intake submit; persists `draft_deals` + `intake_submissions` (§64–§66); seller address + payload for MAO prefill; governed buyer upsert via internal helper | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64 / §66) | slug input only — no tenant_id param |
+| submit_form_v1 | 10.8.1, 10.12A, 10.12C, 10.12C1 | Public intake submit; persists `draft_deals` + `intake_submissions` (§64–§67); **10.12C1** links intake row to draft via `draft_deals_id`; seller address + payload for MAO prefill; governed buyer upsert via internal helper (§66) | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64 / §66) | slug input only — no tenant_id param |
+| create_deal_from_intake_v1 | 10.12C1 | Lead Intake manual / call-in: create real `deals` row (`stage=new`) from `p_fields` jsonb; optional nested `property`, `assumptions` (server-derived MAO; no client `mao`) | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_fields` jsonb only — tenant from `current_tenant_id()` |
+| promote_draft_deal_v1 | 10.12C1 | Promote tenant `draft_deals` linked from intake into real `deals` row; merge draft payload with reviewed `p_fields`; duplicate promotion rejected | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_draft_id`, `p_fields` — tenant from `current_tenant_id()` |
 | upsert_buyer_from_intake_v1 | 10.12C | Internal helper: buyer intake upsert invoked only inside `submit_form_v1`; deterministic dedupe per §66 | SECURITY DEFINER; EXECUTE revoked on PUBLIC, anon, and authenticated — definer chaining only | `p_resolved_tenant uuid` supplied by caller from slug-resolved tenant; not PostgREST callable |
 | list_intake_submissions_v1 | 10.12A | List `intake_submissions` for current tenant (governed Lead Intake read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
 | list_buyers_v1 | 10.12A | List `intake_buyers` for current tenant (governed Buyer Ops read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
@@ -1547,7 +1549,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C**; **`list_intake_submissions_v1`**, **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`**, **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
 
 ---
 
@@ -1628,4 +1630,46 @@ Minimum screen / workflow states the implementation must distinguish:
 
 ---
 
-**§Registry:** Build Route **`10.12C`**; **`docs/truth/rpc_contract_registry.json`** (**`submit_form_v1`**, **`upsert_buyer_from_intake_v1`**); **`docs/truth/definer_allowlist.json`** (**`internal` helper posture**); **`docs/truth/privilege_truth.json`** **`internal_definer_helpers`**; **`docs/truth/qa_claim.json`** **`10.12C`**.
+**§Registry:** Build Route **`10.12C`**; **`docs/truth/rpc_contract_registry.json`** (**`submit_form_v1`** — version/owner **10.12C1** for `draft_deals_id` linkage per §67; **`upsert_buyer_from_intake_v1`**); **`docs/truth/definer_allowlist.json`** (**`internal` helper posture**); **`docs/truth/privilege_truth.json`** **`internal_definer_helpers`**; **`docs/truth/qa_claim.json`** **`10.12C1`**.
+
+---
+
+## 67) Intake Backend — Manual Deal Creation + Draft Promotion (10.12C1)
+
+**Authority:** migration **`20260505000001_10_12C1_intake_deal_creation_promotion.sql`**.
+
+**Purpose:** Governed **authenticated** paths that create **real** **`deals`** rows from Lead Intake staff input (**`create_deal_from_intake_v1`**) or by **promoting** a tenant-scoped **`draft_deals`** row that is linked from **`intake_submissions`** (**`promote_draft_deal_v1`**). Public callers **never** invoke these RPCs; **`anon`** holds **no** **`EXECUTE`** grants.
+
+### Schema changes
+
+- **`draft_deals.promoted_deal_id`** (`uuid`, nullable): FK to **`deals(id)`** — records the deal created when a draft is promoted; **ON DELETE SET NULL** on the draft side.
+- **`intake_submissions.draft_deals_id`** (`uuid`, nullable): FK to **`draft_deals(id)`** — set when the intake row is tied to the draft created by the same submission flow. **Partial unique index** on **`(draft_deals_id)`** WHERE **`draft_deals_id IS NOT NULL`** — at most one intake row per linked draft.
+
+### `submit_form_v1` (10.12C1 behavior)
+
+- Same public signature **`(p_slug text, p_form_type text, p_payload jsonb)`** — migration applies **DROP + CREATE** of the function.
+- Successful submit continues to insert **`draft_deals`** then **`intake_submissions`**; the intake insert **sets `draft_deals_id`** to the new draft’s **`id`** (§64 persistence model; **1:1** for web submissions with both rows).
+
+### `create_deal_from_intake_v1(p_fields jsonb)` → **`jsonb`**
+
+- **`GRANT EXECUTE`** to **`authenticated`** only (**`REVOKE ALL`** from **`PUBLIC`**, **`anon`**).
+- **Guards:** **`require_min_role_v1('member')`**; **`check_workspace_write_allowed_v1()`** returns boolean — workspace write lock (**10.8.11N**).
+- Creates **`deals`** with **`stage = 'new'`**, **`deal_inputs`** assumptions snapshot, and optional **`deal_properties`** from nested **`property`**. Top-level **`p_fields`** keys and nested validation are enforced in migration; **no client-supplied `mao`** in **`assumptions`**.
+
+### `promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb)` → **`jsonb`**
+
+- Same authenticated **member+** and **write-lock** posture as **`create_deal_from_intake_v1`**.
+- **Duplicate guard:** if **`draft_deals.promoted_deal_id`** is already non-null, returns **`CONFLICT`** (already promoted).
+- Loads draft in **current tenant**; merges draft **`payload`** / columns with review **`p_fields`**; creates **`deals`** + related rows; sets **`draft_deals.promoted_deal_id`**; sets **`reviewed_at`** on the linked **`intake_submissions`** row.
+
+### Internal helpers (definer-only; **REVOKE ALL** on **`PUBLIC`**, **`anon`**, **`authenticated`**)
+
+- **`_intake_validate_pricing_assumptions_v1(jsonb)`** — validates pricing-related assumption keys (no silent invalid numerics).
+- **`_intake_apply_mao_to_assumptions_v1(jsonb)`** — server MAO merge for persisted assumptions.
+- **`_intake_validate_deal_property_jsonb_v1(jsonb)`** — validates **`deal_properties`-shaped** JSON fragments.
+
+Callable **only** from **`SECURITY DEFINER`** intake RPCs — **not** PostgREST / app-direct.
+
+---
+
+**§Registry:** Build Route **`10.12C1`**; **`docs/truth/rpc_contract_registry.json`** (**`create_deal_from_intake_v1`**, **`promote_draft_deal_v1`**, **`submit_form_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/privilege_truth.json`** (**`internal_definer_helpers`**); **`docs/truth/definer_allowlist.json`**; **`docs/truth/qa_claim.json`** **`10.12C1`**.

@@ -11,6 +11,7 @@
     "public.complete_reminder_v1",
     "public.confirm_trial_v1",
     "public.create_active_workspace_seed_v1",
+    "public.create_deal_from_intake_v1",
     "public.create_deal_note_v1",
     "public.create_deal_v1",
     "public.create_farm_area_v1",
@@ -45,6 +46,7 @@
     "public.lookup_share_token_v1",
     "public.mark_deal_dead_v1",
     "public.process_workspace_retention_v1",
+    "public.promote_draft_deal_v1",
     "public.register_deal_media_v1",
     "public.remove_member_v1",
     "public.rescind_invite_v1",
@@ -68,6 +70,9 @@
     "public.update_property_info_v1",
     "public.update_seller_info_v1",
     "public.update_workspace_settings_v1",
+    "public._intake_apply_mao_to_assumptions_v1",
+    "public._intake_validate_deal_property_jsonb_v1",
+    "public._intake_validate_pricing_assumptions_v1",
     "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1"
   ],
@@ -115,6 +120,18 @@
     "anon_callable": false
   },
   "upsert_buyer_from_intake_v1": {
+    "anon_callable": false,
+    "authenticated_callable": false
+  },
+  "_intake_apply_mao_to_assumptions_v1": {
+    "anon_callable": false,
+    "authenticated_callable": false
+  },
+  "_intake_validate_deal_property_jsonb_v1": {
+    "anon_callable": false,
+    "authenticated_callable": false
+  },
+  "_intake_validate_pricing_assumptions_v1": {
     "anon_callable": false,
     "authenticated_callable": false
   }

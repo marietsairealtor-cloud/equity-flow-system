@@ -42,6 +42,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "create_deal_from_intake_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §67 — Build Route 10.12C1; authenticated only (REVOKE anon, PUBLIC); manual deal creation from Lead Intake"
+      },
+      {
         "routine": "check_slug_access_v1",
         "privilege": "EXECUTE"
       },
@@ -218,6 +223,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "promote_draft_deal_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §67 — Build Route 10.12C1; authenticated only (REVOKE anon, PUBLIC); promote intake-linked draft to deal"
+      },
+      {
         "routine": "register_deal_media_v1",
         "privilege": "EXECUTE"
       },
@@ -273,6 +283,21 @@
         "routine": "upsert_buyer_from_intake_v1",
         "signature_public": "(uuid, jsonb)",
         "authority": "CONTRACTS.md §66 (Build Route 10.12C) — buyer upsert helper called only inside submit_form_v1; REVOKE ALL FROM PUBLIC, anon, authenticated"
+      },
+      {
+        "routine": "_intake_apply_mao_to_assumptions_v1",
+        "signature_public": "(jsonb)",
+        "authority": "CONTRACTS.md §67 (Build Route 10.12C1) — MAO merge helper for intake deal paths; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
+      },
+      {
+        "routine": "_intake_validate_deal_property_jsonb_v1",
+        "signature_public": "(jsonb)",
+        "authority": "CONTRACTS.md §67 (Build Route 10.12C1) — property jsonb validation helper; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
+      },
+      {
+        "routine": "_intake_validate_pricing_assumptions_v1",
+        "signature_public": "(jsonb)",
+        "authority": "CONTRACTS.md §67 (Build Route 10.12C1) — pricing assumptions validation helper; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
       }
     ]
   },
@@ -319,6 +344,7 @@
       "check_slug_access_v1",
       "claim_trial_v1",
       "complete_reminder_v1",
+      "create_deal_from_intake_v1",
       "create_deal_note_v1",
       "create_deal_v1",
       "create_farm_area_v1",
@@ -352,6 +378,7 @@
       "list_workspace_members_v1",
       "lookup_share_token_v1",
       "mark_deal_dead_v1",
+      "promote_draft_deal_v1",
       "register_deal_media_v1",
       "remove_member_v1",
       "rescind_invite_v1",

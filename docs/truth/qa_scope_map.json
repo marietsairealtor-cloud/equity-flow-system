@@ -635,6 +635,10 @@
     "10.12C": {
       "title": "Intake Backend — Submission Outcomes + MAO Pre-fill",
       "proof_pattern": "^docs/proofs/10\\.12C_intake_submission_outcomes_"
+    },
+    "10.12C1": {
+      "title": "Intake Backend — Manual Deal Creation + Draft Promotion",
+      "proof_pattern": "^docs/proofs/10\\.12C1_intake_deal_creation_promotion_"
     }
   }
 }
