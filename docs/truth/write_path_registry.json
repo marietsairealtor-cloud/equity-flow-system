@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-04T22:13:05Z",
+    "generated":  "2026-05-04T23:21:44Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -70,6 +70,17 @@
                                            "tenant_subscriptions",
                                            "tenants",
                                            "user_profiles"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "create_deal_from_intake_v1",
+                            "tables":  [
+                                           "deal_inputs",
+                                           "deal_properties",
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -184,6 +195,19 @@
                             "name":  "process_workspace_retention_v1",
                             "tables":  [
                                            "tenants"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "promote_draft_deal_v1",
+                            "tables":  [
+                                           "deal_inputs",
+                                           "deal_properties",
+                                           "deals",
+                                           "draft_deals",
+                                           "intake_submissions"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

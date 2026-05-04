@@ -70,9 +70,6 @@
     "public.update_property_info_v1",
     "public.update_seller_info_v1",
     "public.update_workspace_settings_v1",
-    "public._intake_apply_mao_to_assumptions_v1",
-    "public._intake_validate_deal_property_jsonb_v1",
-    "public._intake_validate_pricing_assumptions_v1",
     "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1"
   ],
