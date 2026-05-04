@@ -1,0 +1,109 @@
+PROOF_HEAD=40d81c25296cdba89f78bdbafe9593bbf6efd956
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.12C1 Intake Backend — Manual Deal Creation + Draft Promotion -- Proof Log ===
+Date: 2026-05-04T19:32:00.9196274-04:00
+Branch: feature/10.12C1-intake-deal-creation-promotion
+PR HEAD SHA: 40d81c25296cdba89f78bdbafe9593bbf6efd956
+
+=== Deliverable ===
+Migration: 20260505000001_10_12C1_intake_deal_creation_promotion.sql -- applied
+Test file: supabase/tests/10_12C1_intake_deal_creation_promotion.test.sql -- PASS
+
+=== Schema Changes ===
+draft_deals.promoted_deal_id uuid -- FK to deals ON DELETE SET NULL, partial index
+intake_submissions.draft_deals_id uuid -- FK to draft_deals ON DELETE SET NULL, 1:1 unique index
+
+=== New Internal Helpers (REVOKE ALL) ===
+_intake_validate_pricing_assumptions_v1(jsonb) -- validates arv/repair/multiplier/assignment_fee/ask_price
+_intake_apply_mao_to_assumptions_v1(jsonb) -- computes MAO server-side, aligned with 10.11A9
+_intake_validate_deal_property_jsonb_v1(jsonb) -- validates typed property fields
+
+=== RPCs ===
+submit_form_v1(p_slug, p_form_type, p_payload) -- version 4
+  Now persists draft_deals_id on intake_submissions row (1:1 link)
+  All other logic unchanged from 10.12C
+
+create_deal_from_intake_v1(p_fields jsonb)
+  authenticated only, member+, write-lock enforced
+  Creates real deals row with stage=new
+  Atomic: deals + deal_inputs + deal_properties when supplied
+  MAO derived server-side via _intake_apply_mao_to_assumptions_v1
+  Field allowlist enforced -- unknown keys → VALIDATION_ERROR
+
+promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb)
+  authenticated only, member+, write-lock enforced
+  Promotes draft_deals row to real deals row with stage=new
+  Merges draft fields with reviewed intake-user supplied fields (p_fields overlays)
+  Marks intake_submissions.reviewed_at = now()
+  Duplicate promotion rejected via CONFLICT (promoted_deal_id guard)
+  Cross-tenant draft → NOT_FOUND
+  Atomic: deals + deal_inputs + deal_properties when supplied
+
+=== pgTAP Results ===
+supabase db reset -- PASS (74 files, 881 tests, 0 failures)
+draft_deals.promoted_deal_id column exists -- PASS
+intake_submissions.draft_deals_id column exists -- PASS
+submit_form_v1: intake_submissions.draft_deals_id links to draft_deals row -- PASS
+create_deal_from_intake_v1: returns code OK on success -- PASS
+create_deal_from_intake_v1: deal stage is new -- PASS
+create_deal_from_intake_v1: deal is tenant-scoped -- PASS
+create_deal_from_intake_v1: succeeds with property + assumptions -- PASS
+create_deal_from_intake_v1: deal_properties.condition_notes persisted -- PASS
+create_deal_from_intake_v1: deal_inputs.assumptions.mao computed server-side -- PASS
+create_deal_from_intake_v1: invalid arv → VALIDATION_ERROR -- PASS
+create_deal_from_intake_v1: invalid year_built → VALIDATION_ERROR -- PASS
+promote_draft_deal_v1: returns code OK -- PASS
+promote_draft_deal_v1: reviewed seller_name overlays draft payload name -- PASS
+promote_draft_deal_v1: intake_submissions.reviewed_at is set -- PASS
+promote_draft_deal_v1: draft_deals.promoted_deal_id is set -- PASS
+promote_draft_deal_v1: duplicate promote → CONFLICT -- PASS
+promote_draft_deal_v1: cross-tenant draft → NOT_FOUND -- PASS
+create_deal_from_intake_v1: missing tenant context → NOT_AUTHORIZED -- PASS
+create_deal_from_intake_v1: expired workspace → WORKSPACE_NOT_WRITABLE -- PASS
+create/promote: EXECUTE granted to authenticated only (not anon) -- PASS
+
+=== db push ===
+20260505000001_10_12C1_intake_deal_creation_promotion.sql -- applied
+
+=== DoD Checklist ===
+create_deal_from_intake_v1 exists                                          -- PASS
+promote_draft_deal_v1 exists                                               -- PASS
+manual-created deals tenant-scoped, stage=new                              -- PASS
+manual-created deals visible in ACQ read path                              -- PASS
+manual creation writes seller/contact fields                               -- PASS
+manual creation writes property fields when supplied                       -- PASS
+manual creation writes pricing snapshot when supplied                      -- PASS
+draft promotion creates tenant-scoped deal stage=new                       -- PASS
+draft promotion merges fields deterministically                            -- PASS
+draft promotion marks intake_submissions.reviewed_at                       -- PASS
+duplicate promotion rejected deterministically                             -- PASS
+cross-tenant draft promotion rejected                                       -- PASS
+expired workspace write attempts rejected                                   -- PASS
+no direct table access required by frontend                                -- PASS
+atomic writes confirmed                                                    -- PASS
+
+=== Registration ===
+qa_scope_map.json -- PASS
+qa_claim.json -- PASS
+ci_robot_owned_guard.ps1 -- PASS
+privilege_truth.json -- PASS
+execute_allowlist.json -- PASS
+rpc_contract_registry.json -- PASS
+definer_allowlist.json -- PASS
+write_path_registry.json -- PASS
+CONTRACTS.md §67 -- PASS
+Governance file: GOVERNANCE_CHANGE_20260504T232058Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+green:once -- PASS
+green:twice -- PASS
+pr:preflight -- PASS
+
+=== RESULT ===
+10.12C1 Intake Backend Manual Deal Creation + Draft Promotion: PASS (merge-blocking gate)
