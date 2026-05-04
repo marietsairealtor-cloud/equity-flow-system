@@ -7901,6 +7901,7 @@ Seller, buyer, and birddog submissions produce deterministic backend outcomes, a
 * Analyze action opens MAO calculator with pre-filled values from draft deal
 
 **Proof:** `docs/proofs/10.12C_intake_submission_outcomes_<UTC>.log`
+**§Governance truth:** **`docs/truth/qa_claim.json`** / **`qa_scope_map.json`** (item **`10.12C`**); **`CONTRACTS.md` §66**; **`rpc_contract_registry.json`** / **`privilege_truth.json`** / **`definer_allowlist.json`**
 **Gate:** `merge-blocking`
 **Prerequisite:** `10.12A` merged
 

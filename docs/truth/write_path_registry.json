@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-04T01:20:05Z",
+    "generated":  "2026-05-04T21:55:04Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -349,6 +349,15 @@
                             "tables":  [
                                            "tenant_slugs",
                                            "tenants"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "upsert_buyer_from_intake_v1",
+                            "tables":  [
+                                           "intake_buyers"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

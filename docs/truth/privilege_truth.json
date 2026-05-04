@@ -32,10 +32,10 @@
       {
         "routine": "submit_form_v1",
         "privilege": "EXECUTE",
-        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1; §64 10.12A intake_submissions persistence"
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1; §64 / §66 (10.12A persistence + 10.12C outcomes)"
       }
     ],
-    "anon_explicit_none": "anon holds zero routine grants except CONTRACTS.md §12 controlled exceptions: resolve_form_slug_v1 and submit_form_v1 (Build Route 10.8.1; submit extended per §64 / 10.12A intake_submissions). Any other EXECUTE grant to anon is a violation.",
+    "anon_explicit_none": "anon holds zero routine grants except CONTRACTS.md §12 controlled exceptions: resolve_form_slug_v1 and submit_form_v1 (Build Route 10.8.1; submit contract §64–§66 / 10.12A–10.12C). Any other EXECUTE grant to anon is a violation.",
     "authenticated": [
       {
         "routine": "create_deal_v1",
@@ -144,7 +144,7 @@
       {
         "routine": "submit_form_v1",
         "privilege": "EXECUTE",
-        "authority": "CONTRACTS.md §12 / §64 — Build Route 10.8.1 (public forms); 10.12A (intake_submissions persistence)"
+        "authority": "CONTRACTS.md §12 / §64 / §66 — Build Route 10.8.1 (public forms); 10.12A–10.12C (intake persistence + submission outcomes)"
       },
       {
         "routine": "list_intake_submissions_v1",
@@ -266,6 +266,16 @@
       }
     ]
   },
+  "internal_definer_helpers": {
+    "comment": "SECURITY DEFINER routines invoked only from other definer RPCs — REVOKE ALL EXECUTE FROM PUBLIC, anon, authenticated; zero external EXECUTE grants. Not listed under routine_grants anon/authenticated.",
+    "routines": [
+      {
+        "routine": "upsert_buyer_from_intake_v1",
+        "signature_public": "(uuid, jsonb)",
+        "authority": "CONTRACTS.md §66 (Build Route 10.12C) — buyer upsert helper called only inside submit_form_v1; REVOKE ALL FROM PUBLIC, anon, authenticated"
+      }
+    ]
+  },
   "sequence_grants": {
     "comment": "USAGE grants on public schema sequences. Source: information_schema.role_usage_grants.",
     "anon": [],
@@ -290,7 +300,7 @@
       {
         "routine": "submit_form_v1",
         "privilege": "EXECUTE",
-        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1; §64 10.12A — persists intake_submissions"
+        "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1; §64 / §66 (10.12A persistence + 10.12C outcomes)"
       }
     ],
     "authenticated_tables": [

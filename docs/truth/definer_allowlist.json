@@ -68,6 +68,7 @@
     "public.update_property_info_v1",
     "public.update_seller_info_v1",
     "public.update_workspace_settings_v1",
+    "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1"
   ],
   "tenant_context_exempt": [
@@ -89,6 +90,7 @@
     "public.trigger_invite_email",
     "public.trigger_seat_sync",
     "public.update_display_name_v1",
+    "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1"
   ],
   "create_deal_note_v1": {
@@ -111,5 +113,9 @@
   },
   "update_deal_pricing_v1": {
     "anon_callable": false
+  },
+  "upsert_buyer_from_intake_v1": {
+    "anon_callable": false,
+    "authenticated_callable": false
   }
 }

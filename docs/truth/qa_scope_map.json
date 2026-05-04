@@ -631,6 +631,10 @@
     "10.12B": {
       "title": "Intake Forms — Public UI + Submit Wiring",
       "proof_pattern": "^docs/proofs/10\\.12B_public_forms_ui_submit_wiring_"
+    },
+    "10.12C": {
+      "title": "Intake Backend — Submission Outcomes + MAO Pre-fill",
+      "proof_pattern": "^docs/proofs/10\\.12C_intake_submission_outcomes_"
     }
   }
 }

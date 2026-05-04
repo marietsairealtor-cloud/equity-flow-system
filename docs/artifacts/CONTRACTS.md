@@ -308,7 +308,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | revoke_share_token_v1 | 8.6 | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
-| submit_form_v1 | 10.8.1, 10.12A | Public intake submit; persists `draft_deals` + `intake_submissions` (§64); MAO pre-fill for seller | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64) | slug input only — no tenant_id param |
+| submit_form_v1 | 10.8.1, 10.12A, 10.12C | Public intake submit; persists `draft_deals` + `intake_submissions` (§64–§66); seller address + payload for MAO prefill; governed buyer upsert via internal helper | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64 / §66) | slug input only — no tenant_id param |
+| upsert_buyer_from_intake_v1 | 10.12C | Internal helper: buyer intake upsert invoked only inside `submit_form_v1`; deterministic dedupe per §66 | SECURITY DEFINER; EXECUTE revoked on PUBLIC, anon, and authenticated — definer chaining only | `p_resolved_tenant uuid` supplied by caller from slug-resolved tenant; not PostgREST callable |
 | list_intake_submissions_v1 | 10.12A | List `intake_submissions` for current tenant (governed Lead Intake read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
 | list_buyers_v1 | 10.12A | List `intake_buyers` for current tenant (governed Buyer Ops read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
 | list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
@@ -1516,14 +1517,19 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 - **RLS / grants:** same posture as `intake_submissions`.
 
+### `draft_deals` — intake-visible columns (`public`)
+
+- **`tenant_id`**, **`slug`**, **`form_type`**, **`payload`** (`jsonb`, NOT NULL): submission envelope as received (used for downstream MAO/analysis prefill reads).
+- **`asking_price`** / **`repair_estimate`** (`numeric`, nullable): from **public intake** these remain **`NULL`** (10.12C — governed Acquisition paths populate later).
+- **`address`** (`text`, nullable): **seller** public-intake submissions store **`trim(payload->>'address')`** only; **buyer** / **birddog** drafts keep **`address` NULL** at submit time unless a later governed path updates the row.
+
 ### `submit_form_v1(p_slug text, p_form_type text, p_payload jsonb)` → `jsonb`
 
-- **Implementation:** **DROP + CREATE** in 10.12A (same public signature). **`SECURITY DEFINER`**, **`REVOKE ALL`** from `PUBLIC`; **`GRANT EXECUTE`** to **`anon`** and **`authenticated`** (unchanged surface; see also §17).
-- **Writes:** On every successful submission:
-  1. Existing behavior preserved: insert into **`draft_deals`** (including seller `asking_price` / `repair_estimate` pre-fill where applicable).
-  2. **New:** insert into **`intake_submissions`** (`tenant_id`, `form_type`, `payload`, `source` = `web`).
-- **Response (OK):** Includes `data.draft_id` and `data.intake_id`.
-- **Errors:** `NOT_FOUND` (slug / validation shape per prior contract), `VALIDATION_ERROR` (form type, payload, spam token, etc.), **`NOT_AUTHORIZED`** when the workspace is not accepting submissions (latest `tenant_subscriptions` row missing, **`canceled`**, or **`current_period_end <= now()`**).
+- **Implementation layers:** Introduced in **10.8.1**; **`intake_submissions`** persistence added in **10.12A** (see tables above). **Submission outcomes** (seller/buyer/birddog write semantics, `draft_deals.address`, pricing NULL from public intake, buyer record upsert) are **authoritative in §66 (10.12C)** — migration **`20260504000001_10_12C_intake_submission_outcomes.sql`**.
+- **`SECURITY DEFINER`**, **`REVOKE ALL`** from `PUBLIC`; **`GRANT EXECUTE`** to **`anon`** and **`authenticated`** (unchanged surface; §12).
+- **Writes (summary):** Each successful submission inserts **`draft_deals`** and **`intake_submissions`** (`source` = `web`). Buyer path additionally upserts **`intake_buyers`** via internal **`upsert_buyer_from_intake_v1`** (§66).
+- **Response (OK):** `data.draft_id`, `data.intake_id`, and **`data.buyer_id`** (buyer submissions only; otherwise null).
+- **Errors:** `NOT_FOUND`, `VALIDATION_ERROR`, **`NOT_AUTHORIZED`** when the workspace is not accepting submissions (latest `tenant_subscriptions` missing, **`canceled`**, or **`current_period_end <= now()`**).
 
 ### `list_intake_submissions_v1(p_limit int DEFAULT 25)` → `jsonb`
 
@@ -1541,7 +1547,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`**, **`list_intake_submissions_v1`**, **`list_buyers_v1`** `build_route_owner` **10.12A**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`**.
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C**; **`list_intake_submissions_v1`**, **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
 
 ---
 
@@ -1583,4 +1589,43 @@ Minimum screen / workflow states the implementation must distinguish:
 | **`invalid_route`** | Bad **`slug`** or **`type`** in URL — friendly surfaced, anti-enumeration where applicable |
 | **`success`** | **`submit_form_v1`** returned **`ok: true`** |
 
-**§Registry:** Build Route **`10.12B`**; RPC contract continues under **`§64`** **`submit_form_v1`**; **`docs/truth/qa_claim.json`** / **`qa_scope_map.json`** for proof naming.
+**§Registry:** Build Route **`10.12B`**; **`submit_form_v1`** RPC contract **`§64`–`§66`**; **`docs/truth/qa_claim.json`** / **`qa_scope_map.json`** for proof naming.
+
+---
+
+## 66) Intake Backend — Submission Outcomes + MAO Pre-fill (10.12C)
+
+**Authority:** migration **`20260504000001_10_12C_intake_submission_outcomes.sql`**.
+
+**Purpose:** Deterministic backend outcomes per submission type — seller draft stores **address** (column + **`payload`**); **public intake never** sets **`draft_deals.asking_price`** nor **`repair_estimate`** (both **`NULL`** until governed Acquisition paths populate them). Buyer path **creates/updates `intake_buyers`** via an **internal helper** callable only from **`submit_form_v1`**. Birddog path persists **draft + intake** only (no **`intake_buyers`** write).
+
+### Schema: `draft_deals.address`
+
+- **`address`** **`text`** nullable — added **10.12C**.
+- Seller submissions: **`address`** = **`NULLIF(trim(p_payload->>'address'), '')`**.
+- Buyer / birddog submissions: **`address`** **`NULL`** on insert from public **`submit_form_v1`**.
+
+### `submit_form_v1` outcomes (same public signature as §64)
+
+| Path | **`draft_deals`** | **`intake_submissions`** | **`intake_buyers`** |
+|------|-------------------|--------------------------|---------------------|
+| **seller** | Insert: **`payload`** as submitted; **`address`** from payload; **`asking_price`**, **`repair_estimate`** **NULL** | Insert | — |
+| **buyer** | Insert (typically **`address` NULL**) | Insert | Upsert via **`upsert_buyer_from_intake_v1`** |
+| **birddog** | Insert (typically **`address` NULL**) | Insert | — |
+
+- **OK envelope:** **`data.draft_id`**, **`data.intake_id`**, **`data.buyer_id`** (buyer submissions only — UUID of reconciled **`intake_buyers`** row; otherwise JSON null).
+- **Pricing:** Seller public form (**§65**) does **not** supply **`asking_price` / `repair_estimate`** into **`draft_deals`**; **`payload`** remains available for MAO calculator prefill (e.g. **`payload->>'address'`**) alongside the **`address`** column for seller drafts.
+
+### `upsert_buyer_from_intake_v1(p_resolved_tenant uuid, p_payload jsonb)` → **`uuid`**
+
+- **INTERNAL ONLY — not PostgREST / app-callable:** **`SECURITY DEFINER`**, **`REVOKE ALL`** from **`PUBLIC`**, **`anon`**, **`authenticated`**. **`EXECUTE`** exists only for definer chaining from **`submit_form_v1`** (no external grants).
+
+**Dedupe rules (deterministic):**
+
+1. When payload has non-empty **`email`** (trimmed): match existing row by **`lower(email)`** equality for **`tenant_id`**, **`ORDER BY created_at DESC, id DESC`**, **`LIMIT 1`** — **update** that row (**`COALESCE`** merge for omitted fields).
+2. **Phone fallback:** only when the payload **omits `email`** (null or blank after trim); match **`phone`** for **`tenant_id`**, same ordering — **update** if found.
+3. **Email present and no matching row:** **insert** a new **`intake_buyers`** row — **never** merge on phone alone when **`email`** is present.
+
+---
+
+**§Registry:** Build Route **`10.12C`**; **`docs/truth/rpc_contract_registry.json`** (**`submit_form_v1`**, **`upsert_buyer_from_intake_v1`**); **`docs/truth/definer_allowlist.json`** (**`internal` helper posture**); **`docs/truth/privilege_truth.json`** **`internal_definer_helpers`**; **`docs/truth/qa_claim.json`** **`10.12C`**.

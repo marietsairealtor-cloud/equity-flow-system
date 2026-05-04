@@ -217,14 +217,21 @@ SELECT is(
   'list_intake_submissions_v1: p_limit=0 returns VALIDATION_ERROR'
 );
 
--- 20. list_buyers_v1: returns empty when no buyers seeded
+-- 20. list_buyers_v1: count matches actual tenant buyer row count
+-- (10.12C: buyer submissions now upsert intake_buyers)
+SET LOCAL ROLE postgres;
+CREATE TEMP TABLE _10_12a_owner_tenant1_buyer_count AS
+SELECT count(*)::int AS n FROM public.intake_buyers
+WHERE tenant_id = 'b1120000-0000-0000-0000-000000000001';
+GRANT SELECT ON TABLE _10_12a_owner_tenant1_buyer_count TO authenticated;
 SELECT set_config('request.jwt.claims',
   '{"sub":"a1120000-0000-0000-0000-000000000001","role":"authenticated","tenant_id":"b1120000-0000-0000-0000-000000000001"}',
   true);
+SET LOCAL ROLE authenticated;
 SELECT is(
   jsonb_array_length((public.list_buyers_v1())->'data'->'items'),
-  0,
-  'list_buyers_v1: returns empty array when no buyers exist'
+  (SELECT n FROM _10_12a_owner_tenant1_buyer_count),
+  'list_buyers_v1: item count matches actual tenant buyer row count'
 );
 
 -- 21. list_buyers_v1: no tenant context returns NOT_AUTHORIZED
