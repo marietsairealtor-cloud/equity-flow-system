@@ -9459,3 +9459,34 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-05-04 — Build Route v2.4 — 10.12C
+
+Objective
+Intake Backend — Submission Outcomes + MAO Pre-fill
+
+Changes
+- Migration 20260504000001_10_12C_intake_submission_outcomes.sql applied
+- ALTER TABLE public.draft_deals ADD COLUMN address text
+- New internal helper: upsert_buyer_from_intake_v1(p_resolved_tenant uuid, p_payload jsonb)
+  - REVOKE ALL from PUBLIC/anon/authenticated
+  - Dedupe: lower(email) match first; phone fallback only when email absent
+  - Email present + no match = new record (no phone merge)
+  - Safe deal_type_tags parsing (jsonb_typeof guard)
+- submit_form_v1 DROP + recreate (version 3):
+  - Seller: stores address only; asking_price/repair_estimate always NULL from public intake
+  - Buyer: calls upsert_buyer_from_intake_v1, returns buyer_id
+  - Birddog: intake record only, no side effects
+- Corrected: 10_8_1_slug_system.test.sql test 21 (pricing NULL assertion)
+- Corrected: 10_12A_intake_submission_persistence.test.sql test 20 (actual row count)
+- CONTRACTS.md §66 added
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1, privilege_truth.json,
+  rpc_contract_registry.json, definer_allowlist.json, write_path_registry.json updated
+
+Proof
+docs/proofs/10.12C_intake_submission_outcomes_20260504T220551Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
