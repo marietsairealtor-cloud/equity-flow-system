@@ -1,5 +1,5 @@
 {
-  "version": 22,
+  "version": 23,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -109,6 +109,14 @@
       "description": "10.11A9: update_deal_pricing_v1 recreated — assignment_fee editable in p_fields; mao derived server-side from (arv * multiplier) - repair_estimate - assignment_fee; client mao rejected. Still copies calc_version from base row on insert. Corrective pricing contract only — no new calc_version integer.",
       "introduced_pr": "10.11A9",
       "released_at": "2026-04-28"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.12C1 intake deal creation + draft promotion",
+      "migration": "20260505000001_10_12C1_intake_deal_creation_promotion.sql",
+      "description": "10.12C1: create_deal_from_intake_v1 and promote_draft_deal_v1 insert deals and deal_inputs with calc_version=1 (baseline, same as MAO calculator path). Server merges MAO into assumptions via _intake_apply_mao_to_assumptions_v1 before persist. No new calc_version integer; no change to create_deal_v1 MAO formula or calc protocol.",
+      "introduced_pr": "10.12C1",
+      "released_at": "2026-05-05"
     }
   ],
   "watch_surface": {

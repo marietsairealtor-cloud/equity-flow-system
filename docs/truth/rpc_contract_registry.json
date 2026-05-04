@@ -3,6 +3,19 @@
   "description": "Governed contract registry for all public RPCs. Every RPC in expected_surface.json and execute_allowlist.json must have an entry here. Enforced by CI gate rpc-contract-registry (Build Route 10.6).",
   "rpcs": [
     {
+      "name": "create_deal_from_intake_v1",
+      "version": 1,
+      "build_route_owner": "10.12C1",
+      "input_contract": "CONTRACTS.md §67 create_deal_from_intake_v1 (10.12C1)",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR"
+      ],
+      "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). p_fields jsonb: allowed top-level address, seller_*, optional nested property and assumptions (no client mao). require_min_role_v1(member); check_workspace_write_allowed_v1 (boolean). Creates deals row stage=new + deal_inputs assumptions snapshot; optional deal_properties. Internal helpers for validation/MAO merge with REVOKE ALL from app roles."
+    },
+    {
       "name": "create_deal_v1",
       "version": 3,
       "build_route_owner": "10.9",
@@ -113,8 +126,8 @@
     },
     {
       "name": "submit_form_v1",
-      "version": 3,
-      "build_route_owner": "10.12C",
+      "version": 4,
+      "build_route_owner": "10.12C1",
       "input_contract": "CONTRACTS.md §64 §66 submit_form_v1",
       "response_schema": null,
       "error_codes": [
@@ -122,7 +135,7 @@
         "VALIDATION_ERROR",
         "NOT_AUTHORIZED"
       ],
-      "notes": "Anon + authenticated EXECUTE (§12 / §64 / §66). SECURITY DEFINER. 10.12A: persists draft_deals + intake_submissions per tenant. 10.12C DROP+CREATE outcomes: seller inserts draft_deals with address-only from public intake — asking_price + repair_estimate forced NULL; buyer path calls internal upsert_buyer_from_intake_v1 and returns data.buyer_id; birddog inserts draft + intake only (no buyer upsert). OK data: draft_id, intake_id, buyer_id (buyer only, else null). NOT_AUTHORIZED when latest tenant_subscriptions missing, canceled, or current_period_end <= now()."
+      "notes": "Anon + authenticated EXECUTE (§12 / §64 / §66). SECURITY DEFINER. 10.12A: persists draft_deals + intake_submissions per tenant. 10.12C DROP+CREATE outcomes: seller inserts draft_deals with address-only from public intake — asking_price + repair_estimate forced NULL; buyer path calls internal upsert_buyer_from_intake_v1 and returns data.buyer_id; birddog inserts draft + intake only (no buyer upsert). 10.12C1: intake_submissions row stores draft_deals_id FK to created draft (1:1 partial unique index when set). OK data: draft_id, intake_id, buyer_id (buyer only, else null). NOT_AUTHORIZED when latest tenant_subscriptions missing, canceled, or current_period_end <= now()."
     },
     {
       "name": "upsert_buyer_from_intake_v1",
@@ -685,6 +698,21 @@
         "INTERNAL"
       ],
       "notes": "SECURITY DEFINER. Callable by service_role exclusively (REVOKE PUBLIC, authenticated). JSON envelope ok/data/error. Invoked by retention-lifecycle Edge Function only — not app-user callable. Not in execute_allowlist."
+    },
+    {
+      "name": "promote_draft_deal_v1",
+      "version": 1,
+      "build_route_owner": "10.12C1",
+      "input_contract": "CONTRACTS.md §67 promote_draft_deal_v1 (10.12C1)",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "CONFLICT"
+      ],
+      "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_draft_id uuid, p_fields jsonb). require_min_role_v1(member); check_workspace_write_allowed_v1. Merges tenant draft + optional review overrides into new deals row; links draft.promoted_deal_id; sets reviewed_at on linked intake_submissions. CONFLICT when draft already promoted. NOT_FOUND when draft missing for tenant. Same field/assumption validation posture as create_deal_from_intake_v1 (no client mao)."
     }
   ]
 }
