@@ -90,6 +90,7 @@
     "public.trigger_invite_email",
     "public.trigger_seat_sync",
     "public.update_display_name_v1",
+    "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1"
   ],
   "create_deal_note_v1": {
