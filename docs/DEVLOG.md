@@ -9490,3 +9490,27 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-04 — Build Route v2.4 — 10.12C1
+
+Objective
+Intake Backend — Manual Deal Creation + Draft Promotion
+
+Changes
+- Migration 20260505000001_10_12C1_intake_deal_creation_promotion.sql applied
+- draft_deals.promoted_deal_id uuid (FK to deals, partial index)
+- intake_submissions.draft_deals_id uuid (FK to draft_deals, 1:1 unique index)
+- submit_form_v1 DROP + recreate (version 4): persists draft_deals_id on intake row
+- New internal helpers (REVOKE ALL): _intake_validate_pricing_assumptions_v1, _intake_apply_mao_to_assumptions_v1, _intake_validate_deal_property_jsonb_v1
+- New: create_deal_from_intake_v1(p_fields jsonb) -- authenticated, member+, write-lock, atomic writes, MAO server-side
+- New: promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb) -- authenticated, member+, write-lock, duplicate guard, merge + reviewed_at
+- CONTRACTS.md §67 added
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1, privilege_truth.json, execute_allowlist.json, rpc_contract_registry.json, definer_allowlist.json updated
+
+Proof
+docs/proofs/10.12C1_intake_deal_creation_promotion_20260504T233303Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
