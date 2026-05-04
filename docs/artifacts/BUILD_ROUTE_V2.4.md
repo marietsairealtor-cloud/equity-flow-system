@@ -4145,7 +4145,7 @@ Persistent authenticated layout with navbar, workspace dropdown, notification be
 
 - `tenant_slugs` table exists: `tenant_id UUID NOT NULL`, `slug TEXT NOT NULL UNIQUE` (lowercase, URL-safe, validated)
 - `resolve_form_slug_v1(p_slug TEXT, p_form_type TEXT)` RPC exists: anon-callable, SECURITY DEFINER, fixed search_path. Resolves slug + form_type to tenant context. Returns NOT_FOUND for invalid slugs (no existence leak between form types).
-- `submit_form_v1(p_slug TEXT, p_form_type TEXT, p_payload JSONB)` RPC exists: anon-callable, SECURITY DEFINER, fixed search_path. Routes submission to tenant inbox. Creates draft deal record with pre-filled MAO fields from seller submissions (asking_price, repair_estimate).
+- `submit_form_v1(p_slug TEXT, p_form_type TEXT, p_payload JSONB)` RPC exists: anon-callable, SECURITY DEFINER, fixed search_path. Routes submission to tenant inbox per `p_form_type`; deterministic seller/buyer/birddog outcomes per CONTRACTS (`10.12B` public seller form captures address + contact only — MAO-facing scalars on the draft deal come from governed backend paths outside that form when present).
 - CONTRACTS §12 controlled exception documented for anon EXECUTE on both RPCs
 - Invisible spam protection field in payload (Turnstile/reCAPTCHA token validated server-side)
 - pgTAP tests for both RPCs: valid slug resolves, invalid slug returns NOT_FOUND, submission creates draft deal, spam token validation
@@ -7772,44 +7772,67 @@ Authoritative backend persistence model for all public intake submissions, plus 
 ### **10.12B — Intake Forms — Public UI + Submit Wiring**
 
 **Deliverable:**
-Public-facing seller, buyer, and birddog forms wired to the governed intake submission path. This folds old public-form UI scope and public submit wiring into one UI item.
+Public-facing seller, buyer, and birddog forms wired to the governed intake submission path.
 
 **DoD:**
 
-* Public page exists at `/form/{{slug}}/{{type}}` (canonical contract: **`CONTRACTS.md`** §65)
+* Public page exists at `/form/:slug/:type`
+
 * Form type resolves from slug + type:
 
   * seller
   * buyer
   * birddog
-* Seller payload keys (**`submit_form_v1`** **`p_payload`**, see §65):
 
-  * `address`, `name`, `phone`, `email`, `spam_token`
+* Seller form fields:
 
-* Buyer payload keys:
+  * address
+  * name
+  * phone
+  * email
 
-  * `name`, `email`, `phone`, `areas_of_interest`, `budget_range`, `spam_token`
+* Buyer form fields:
 
-* Birddog payload keys:
+  * name
+  * email
+  * phone
+  * areas_of_interest
+  * budget_range
 
-  * `address`, `name`, `phone`, `email`, `condition_notes`, `asking_price`, `spam_token`
+* Birddog form fields:
 
-* UI distinguishes states at minimum: `idle`, `validation_error`, `error`, `invalid_route`, `success` (§65)
+  * address
+  * name
+  * phone
+  * email
+  * condition_notes
+  * asking_price
+
 * All public intake forms submit through `submit_form_v1`
+
 * Form type is passed explicitly and correctly:
 
   * seller
   * buyer
   * birddog
+
 * Slug context is resolved from the public route and passed through governed flow only
+
 * UI does not write directly to any table
+
 * Submission payload matches governed contract for each form type
+
 * Friendly invalid slug / invalid type handling exists
+
 * Empty / success / validation / backend-failure states are handled cleanly
+
 * Spam-protection token is included in submission path when enabled
+
 * No duplicated submission logic across forms
+
 * No frontend-only persistence behavior
-* Address autocomplete on address-based fields is deferred to `10.17A` so this item does not depend on shared UX polish to ship form wiring
+
+* Address autocomplete on address-based fields is deferred to `10.17A`
 
 **Tests:**
 
@@ -7821,6 +7844,7 @@ Public-facing seller, buyer, and birddog forms wired to the governed intake subm
 * invalid type renders friendly error state
 * success state renders on valid submit
 * validation state renders on invalid submit
+* backend-failure state renders correctly
 * no direct table calls from UI
 * no duplicated submit logic exists across forms
 
@@ -7838,13 +7862,9 @@ Seller, buyer, and birddog submissions produce deterministic backend outcomes, a
 **DoD:**
 
 * Seller submissions through `submit_form_v1` create or update a draft deal record
-* Draft deal stores intake-origin values including:
-
-  * address
-  * asking_price
-  * repair_estimate
-  * condition notes
-  * timeline
+* Seller public-intake (`10.12B`) contributes draft-facing fields **at minimum**: address, name, phone, email — it does **not** capture seller-side `asking_price`, `repair_estimate`, condition-notes-as-MAO-input, or `timeline`
+* `asking_price`, `repair_estimate`, condition notes, and timeline on the draft deal MAY be populated later from governed paths (birddog intake conversion, workspace/ACQ capture, enrichment items) — never assumed solely from seller public-form submission
+* Draft deal stores what the intake type actually supplies plus any deterministic backend merges documented in **`CONTRACTS.md`**
 * Draft deal is tenant-scoped
 * Draft deal is visible in internal Lead Intake / Today / Analyze flow as applicable
 * Buyer submissions create or update buyer records under tenant context
@@ -7868,7 +7888,7 @@ Seller, buyer, and birddog submissions produce deterministic backend outcomes, a
   * if submission email is present and does not match an existing buyer, the submission does **not** merge on phone alone
 * Collision handling for mismatched email + matching phone is deterministic and documented by test
 * Birddog submissions persist as intake records and remain reviewable, but do not auto-create buyer records
-* Seller intake submissions with `asking_price` and/or `repair_estimate` pre-fill the MAO calculator at `/mao-calculator?deal_id=X`
+* MAO calculator at `/mao-calculator?deal_id=X` pre-fills from fields present on the draft deal (after seller intake, at minimum address-aligned context; pricing/repairs/condition/timeline slots fill only when sourced by governed backends, **not** from seller-only `10.12B`)
 * Pre-fill data is stored on the deal record, not a separate table
 * No direct table calls from WeWeb
 
