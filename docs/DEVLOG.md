@@ -9434,3 +9434,28 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-04 — Build Route v2.4 — 10.12B
+
+Objective
+Intake Forms — Public UI + Submit Wiring
+
+Changes
+- New WeWeb page: Public Form at /form/{{slug}}/{{type}}
+- Three public intake forms: seller, buyer, birddog
+- All forms submit through submit_form_v1(p_slug, p_form_type, p_payload)
+- Seller payload: address, name, phone, email, spam_token
+- Buyer payload: name, email, phone, areas_of_interest, budget_range, spam_token
+- Birddog payload: address, name, phone, email, condition_notes, asking_price, spam_token
+- Page states: idle, validation_error, error, invalid_route, success
+- No new RPCs. No new migrations. No schema changes.
+- CONTRACTS.md §65 added
+- WORKFLOWS.md updated: 4 workflows + 2 variables registered
+
+Proof
+docs/proofs/10.12B_public_forms_ui_submit_wiring_20260504T014106Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
