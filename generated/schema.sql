@@ -3939,15 +3939,15 @@ CREATE OR REPLACE FUNCTION "public"."submit_form_v1"("p_slug" "text", "p_form_ty
     SET "search_path" TO 'public'
     AS $_$
 DECLARE
-  v_tenant_id    uuid;
-  v_draft_id     uuid;
-  v_intake_id    uuid;
-  v_asking_price numeric;
-  v_repair_est   numeric;
-  v_valid_types  text[] := ARRAY['buyer', 'seller', 'birddog'];
-  v_spam_token   text;
-  v_sub_status   text;
-  v_period_end   timestamptz;
+  v_tenant_id   uuid;
+  v_draft_id    uuid;
+  v_intake_id   uuid;
+  v_buyer_id    uuid;
+  v_address     text;
+  v_valid_types text[] := ARRAY['buyer', 'seller', 'birddog'];
+  v_spam_token  text;
+  v_sub_status  text;
+  v_period_end  timestamptz;
 BEGIN
   -- Validate form_type
   IF p_form_type IS NULL OR NOT (p_form_type = ANY(v_valid_types)) THEN
@@ -4001,25 +4001,42 @@ BEGIN
         'fields', '{}'::jsonb));
   END IF;
 
-  -- Extract MAO pre-fill fields from seller submissions (safe cast via NULLIF)
+  -- Seller path: extract address only.
+  -- Pricing fields (asking_price, repair_estimate) are NOT populated from
+  -- public intake -- governed paths only (never seller public form 10.12B).
   IF p_form_type = 'seller' THEN
-    v_asking_price := NULLIF(p_payload->>'asking_price', '')::numeric;
-    v_repair_est   := NULLIF(p_payload->>'repair_estimate', '')::numeric;
+    v_address := NULLIF(trim(p_payload->>'address'), '');
   END IF;
 
-  -- Insert draft deal record (existing behaviour)
-  INSERT INTO public.draft_deals (tenant_id, slug, form_type, payload, asking_price, repair_estimate)
-  VALUES (v_tenant_id, p_slug, p_form_type, p_payload, v_asking_price, v_repair_est)
+  -- Insert draft deal record.
+  -- asking_price and repair_estimate always NULL from public intake.
+  -- address populated for seller only; NULL for buyer and birddog.
+  INSERT INTO public.draft_deals (
+    tenant_id, slug, form_type, payload,
+    asking_price, repair_estimate, address
+  ) VALUES (
+    v_tenant_id, p_slug, p_form_type, p_payload,
+    NULL, NULL, v_address
+  )
   RETURNING id INTO v_draft_id;
 
-  -- Persist intake record (10.12A)
+  -- Persist intake record
   INSERT INTO public.intake_submissions (tenant_id, form_type, payload, source)
   VALUES (v_tenant_id, p_form_type, p_payload, 'web')
   RETURNING id INTO v_intake_id;
 
+  -- Buyer path: upsert buyer record with deterministic dedupe
+  IF p_form_type = 'buyer' THEN
+    v_buyer_id := public.upsert_buyer_from_intake_v1(v_tenant_id, p_payload);
+  END IF;
+
   RETURN jsonb_build_object(
     'ok', true, 'code', 'OK',
-    'data', jsonb_build_object('draft_id', v_draft_id, 'intake_id', v_intake_id),
+    'data', jsonb_build_object(
+      'draft_id',  v_draft_id,
+      'intake_id', v_intake_id,
+      'buyer_id',  v_buyer_id
+    ),
     'error', null
   );
 END;
@@ -5220,6 +5237,88 @@ $_$;
 
 ALTER FUNCTION "public"."update_workspace_settings_v1"("p_workspace_name" "text", "p_slug" "text", "p_country" "text", "p_currency" "text", "p_measurement_unit" "text") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."upsert_buyer_from_intake_v1"("p_resolved_tenant" "uuid", "p_payload" "jsonb") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_buyer_id        uuid;
+  v_email           text;
+  v_phone           text;
+  v_name            text;
+  v_deal_type_tags  text[];
+BEGIN
+  v_email := NULLIF(trim(p_payload->>'email'), '');
+  v_phone := NULLIF(trim(p_payload->>'phone'), '');
+  v_name  := NULLIF(trim(p_payload->>'name'),  '');
+
+  -- Safe deal_type_tags parsing -- only when payload key is a JSON array
+  IF p_payload ? 'deal_type_tags' AND jsonb_typeof(p_payload->'deal_type_tags') = 'array' THEN
+    v_deal_type_tags := ARRAY(SELECT jsonb_array_elements_text(p_payload->'deal_type_tags'));
+  END IF;
+
+  -- Dedupe step 1: exact email match, lower-normalized (only when email present)
+  IF v_email IS NOT NULL THEN
+    SELECT id INTO v_buyer_id
+    FROM public.intake_buyers
+    WHERE tenant_id = p_resolved_tenant
+      AND lower(email) = lower(v_email)
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1;
+  END IF;
+
+  -- Dedupe step 2: phone fallback ONLY when submission email is absent
+  IF v_buyer_id IS NULL AND v_email IS NULL AND v_phone IS NOT NULL THEN
+    SELECT id INTO v_buyer_id
+    FROM public.intake_buyers
+    WHERE tenant_id = p_resolved_tenant
+      AND phone = v_phone
+    ORDER BY created_at DESC, id DESC
+    LIMIT 1;
+  END IF;
+
+  IF v_buyer_id IS NOT NULL THEN
+    -- Update existing buyer record (COALESCE preserves existing when payload omits field)
+    UPDATE public.intake_buyers SET
+      name              = COALESCE(v_name, name),
+      phone             = COALESCE(v_phone, phone),
+      areas_of_interest = COALESCE(NULLIF(trim(p_payload->>'areas_of_interest'), ''), areas_of_interest),
+      budget_range      = COALESCE(NULLIF(trim(p_payload->>'budget_range'), ''), budget_range),
+      deal_type_tags    = COALESCE(v_deal_type_tags, deal_type_tags),
+      price_range_notes = COALESCE(NULLIF(trim(p_payload->>'price_range_notes'), ''), price_range_notes),
+      notes             = COALESCE(NULLIF(trim(p_payload->>'notes'), ''), notes),
+      updated_at        = now()
+    WHERE id = v_buyer_id AND tenant_id = p_resolved_tenant;
+  ELSE
+    -- Insert new buyer record
+    INSERT INTO public.intake_buyers (
+      tenant_id, name, email, phone,
+      areas_of_interest, budget_range,
+      deal_type_tags, price_range_notes, notes,
+      is_active, created_at, updated_at
+    ) VALUES (
+      p_resolved_tenant,
+      v_name,
+      v_email,
+      v_phone,
+      NULLIF(trim(p_payload->>'areas_of_interest'), ''),
+      NULLIF(trim(p_payload->>'budget_range'), ''),
+      v_deal_type_tags,
+      NULLIF(trim(p_payload->>'price_range_notes'), ''),
+      NULLIF(trim(p_payload->>'notes'), ''),
+      true,
+      now(),
+      now()
+    )
+    RETURNING id INTO v_buyer_id;
+  END IF;
+
+  RETURN v_buyer_id;
+END;
+$$;
+
+ALTER FUNCTION "public"."upsert_buyer_from_intake_v1"("p_resolved_tenant" "uuid", "p_payload" "jsonb") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."upsert_subscription_v1"("p_tenant_id" "uuid", "p_stripe_subscription_id" "text", "p_status" "text", "p_current_period_end" timestamp with time zone) RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -5521,6 +5620,7 @@ CREATE TABLE IF NOT EXISTS "public"."draft_deals" (
     "asking_price" numeric,
     "repair_estimate" numeric,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "address" "text",
     CONSTRAINT "draft_deals_form_type_check" CHECK (("form_type" = ANY (ARRAY['buyer'::"text", 'seller'::"text", 'birddog'::"text"])))
 );
 
