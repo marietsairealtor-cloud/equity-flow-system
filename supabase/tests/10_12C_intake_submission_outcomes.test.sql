@@ -288,18 +288,15 @@ SELECT is(
 );
 
 -- ============================================================
--- 21. upsert_buyer_from_intake_v1 not callable from authenticated
+-- 21. upsert_buyer_from_intake_v1: EXECUTE revoked (internal helper)
 -- ============================================================
-SELECT set_config('request.jwt.claims',
-  '{"sub":"a1120000-0000-0000-0000-000000000011","role":"authenticated","tenant_id":"b1120000-0000-0000-0000-000000000011"}',
-  true);
-SET LOCAL ROLE authenticated;
-
-SELECT throws_ok(
-  $$SELECT public.upsert_buyer_from_intake_v1('b1120000-0000-0000-0000-000000000011'::uuid, '{}'::jsonb)$$,
-  '42501',
-  NULL,
-  'upsert_buyer_from_intake_v1: not callable from authenticated role'
+-- Catalog-only: avoid throws_ok EXECUTE-under-revoke on some CI/pg_prove setups
+-- (observed Postgres session crash + recovery cascade).
+SET LOCAL ROLE postgres;
+SELECT ok(
+  NOT has_function_privilege('authenticated', 'public.upsert_buyer_from_intake_v1(uuid, jsonb)', 'EXECUTE')
+  AND NOT has_function_privilege('anon', 'public.upsert_buyer_from_intake_v1(uuid, jsonb)', 'EXECUTE'),
+  'upsert_buyer_from_intake_v1: EXECUTE revoked from anon and authenticated (internal helper)'
 );
 
 -- ============================================================
