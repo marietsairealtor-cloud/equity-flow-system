@@ -113,16 +113,25 @@
     },
     {
       "name": "submit_form_v1",
-      "version": 2,
-      "build_route_owner": "10.12A",
-      "input_contract": "CONTRACTS.md §64 submit_form_v1",
+      "version": 3,
+      "build_route_owner": "10.12C",
+      "input_contract": "CONTRACTS.md §64 §66 submit_form_v1",
       "response_schema": null,
       "error_codes": [
         "NOT_FOUND",
         "VALIDATION_ERROR",
         "NOT_AUTHORIZED"
       ],
-      "notes": "Anon + authenticated EXECUTE (§12 / §64). SECURITY DEFINER. Replaced in 10.12A (DROP+CREATE): on each valid submission inserts draft_deals (unchanged) plus intake_submissions (tenant_id, form_type, payload, source default web, submitted_at). NOT_AUTHORIZED when latest tenant_subscriptions row is missing, canceled, or current_period_end <= now(). OK data.draft_id + data.intake_id. Prior behavior: slug validation, spam_token, seller MAO pre-fill into draft."
+      "notes": "Anon + authenticated EXECUTE (§12 / §64 / §66). SECURITY DEFINER. 10.12A: persists draft_deals + intake_submissions per tenant. 10.12C DROP+CREATE outcomes: seller inserts draft_deals with address-only from public intake — asking_price + repair_estimate forced NULL; buyer path calls internal upsert_buyer_from_intake_v1 and returns data.buyer_id; birddog inserts draft + intake only (no buyer upsert). OK data: draft_id, intake_id, buyer_id (buyer only, else null). NOT_AUTHORIZED when latest tenant_subscriptions missing, canceled, or current_period_end <= now()."
+    },
+    {
+      "name": "upsert_buyer_from_intake_v1",
+      "version": 1,
+      "build_route_owner": "10.12C",
+      "input_contract": "CONTRACTS.md §66 upsert_buyer_from_intake_v1",
+      "response_schema": null,
+      "error_codes": [],
+      "notes": "Internal SECURITY DEFINER helper — not app-callable. REVOKE ALL FROM PUBLIC, anon, authenticated. Signature (p_resolved_tenant uuid, p_payload jsonb) RETURNS uuid. Invoked only from submit_form_v1 on buyer submissions. Dedupe: lower-normalized email match first; phone fallback only when payload email absent; email present with no match inserts new intake_buyers row (no phone-only merge). Returns buyer id."
     },
     {
       "name": "list_intake_submissions_v1",

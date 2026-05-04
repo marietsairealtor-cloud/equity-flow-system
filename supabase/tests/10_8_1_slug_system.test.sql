@@ -195,16 +195,17 @@ SELECT is(
 );
 
 -- ============================================================
--- Verify draft deal was created with MAO pre-fill fields
+-- Verify draft deal was created (10.12C: pricing not from public intake)
+-- asking_price and repair_estimate are always NULL from public intake.
 -- ============================================================
 SELECT is(
   (SELECT COUNT(*)::int FROM public.draft_deals
    WHERE tenant_id = 'a0810000-0000-0000-0000-000000000001'::uuid
    AND form_type = 'seller'
-   AND asking_price = 250000
-   AND repair_estimate = 40000) >= 1,
+   AND asking_price IS NULL
+   AND repair_estimate IS NULL) >= 1,
   true,
-  'submit_form_v1: draft deal created with asking_price and repair_estimate'
+  'submit_form_v1: draft deal created with pricing NULL (governed paths only)'
 );
 
 -- ============================================================
