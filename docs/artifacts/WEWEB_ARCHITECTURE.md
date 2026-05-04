@@ -157,15 +157,27 @@ Stage and assignee are separate concepts.
 - Slug resolves tenant context via `resolve_form_slug_v1` RPC (anon-callable)
 - No expiration, no token renewal — permanent URLs suitable for website embedding
 - Submissions route to tenant inbox via `submit_form_v1` RPC (anon-callable)
-- Seller form captures: address, asking price, self-reported repairs, condition notes, timeline
+- Seller form captures: **address, name, phone, email** (10.12B public form)
 - Buyer form captures: name, email, phone, areas of interest, budget range
-- Birddog form captures: property address, owner info, condition notes, asking price if known
+- Birddog form captures: **address, name, phone, email, condition notes, asking price**
 - Address autocomplete on all address fields (Google Places)
 - Invisible spam protection (Cloudflare Turnstile or reCAPTCHA v3)
-- Address-based seller and birddog submissions may create or pre-fill MAO draft deals (intake-to-MAO pipeline); buyer submissions remain intake records only
+- **10.12C backend contract:** seller public intake creates or updates a tenant-scoped **draft deal** with **address-aligned context** only; **`asking_price`, repair/condition-as-MAO inputs, and `timeline` are not captured from the public seller form** and remain **NULL** on the draft until populated by governed non–public-intake paths. Buyer submissions create/update buyer records; birddog submissions persist as intake without auto-creating buyer records.
 - One page component, dynamic rendering based on form type
 
-### 4.3 Deal Viewer (Token-Gated) — Buyer-Ready Deal Packet
+### 4.3 Lead Intake page (Authenticated)
+
+- Route: `/lead-intake` (management surface; see also §8.4)
+- **Purpose:** tenant inbox for public submissions and internal workflows that create **real** Acquisition deals (not a duplicate of the slug-gated public forms in §4.2).
+
+**Governed flows (10.12C1 — scoped, backend-authoritative)**
+
+1. **Manual entry / call-in** — intake staff enters lead details; backend creates a real `deals` row in the current tenant with **stage = `new`** via **`create_deal_from_intake_v1(p_fields jsonb)`**. The deal is visible in Acquisition immediately.
+2. **Public submission review** — intake staff reviews a submission linked to a tenant-scoped **`draft_deals`** row; backend **promotes** that draft into a real deal with **stage = `new`**, merges draft-submitted fields with reviewed overrides, marks the linked intake submission reviewed, and returns **`deal_id`** via **`promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb)`**. Duplicate promotion of the same draft is rejected server-side.
+
+**WeWeb dependency:** both RPCs above must ship and be contract-tested **before** 10.12D UI wires these actions. No direct table writes from WeWeb; no frontend-only deal creation, promotion, or reviewed-state logic.
+
+### 4.4 Deal Viewer (Token-Gated) — Buyer-Ready Deal Packet
 
 - Route: /deal/:share_token
 - Displays: ARV, repairs, assignment ask, terms, photos/notes
@@ -177,7 +189,7 @@ Stage and assignee are separate concepts.
 - Tokens expire (≤90 days), are revocable, scoped to deal_id
 - Expired/revoked/invalid: friendly "This deal is no longer available" page (anti-enumeration)
 
-### 4.4 URL Patterns
+### 4.5 URL Patterns
 
 | URL Pattern | Type | Expires |
 |---|---|---|
@@ -185,10 +197,11 @@ Stage and assignee are separate concepts.
 | /form/acme-realty/buyer | Slug (permanent) | Never |
 | /form/acme-realty/birddog | Slug (permanent) | Never |
 | /deal/shr_9f3a... | Share token | ≤90 days |
+| /lead-intake | Auth sub-route | Session |
 | /acquisition/:deal_id | Auth sub-route | Session |
 | /tc/:deal_id | Auth sub-route | Session |
 
-### 4.5 Slugs vs Tokens (Separate Systems)
+### 4.6 Slugs vs Tokens (Separate Systems)
 
 Share tokens (Section 8) = temporary, deal-specific access. Used by Dispo for buyer deal packets. Expire ≤90 days, revocable, scoped to deal_id.
 
@@ -543,7 +556,8 @@ It is the inbox and control center for public intake forms and submissions.
 **What this page does**
 
 * shows submissions from public intake forms
-* supports internal lead-intake entry for address-based leads
+* supports internal lead-intake entry for address-based leads (**real deal creation — governed backend; see §4.3 flow 1**)
+* reviews public submissions tied to draft deals and promotes them to real deals (**see §4.3 flow 2**)
 * copies form links for buyer / seller / birddog
 * generates website embed code
 * toggles form types on or off
@@ -591,17 +605,14 @@ It lives on the MAO calculator page in authenticated context. It is not a separa
 ### 8.6 Intake-to-MAO Pre-fill
 
 **Purpose**
-Intake-to-MAO pre-fill removes duplicate entry between seller submission and first analysis. 
+Intake-to-MAO pre-fill removes duplicate entry between persisted draft-deal context and first analysis. Public seller forms (§4.2) do **not** submit pricing, repairs, condition-as-MAO, or timeline; those slots on the draft stay **NULL** until a governed backend supplies them.
 
 **What it does**
-When a seller submits a form with `asking_price` and/or `repair_estimate`:
+When **`asking_price`**, **`repair_estimate`**, condition notes, and/or timeline **exist on the draft deal** (from governed enrichment, internal capture, birddog paths, or other contract-defined writes — not from seller-only public intake):
 
-* `submit_form_v1` stores those values on the draft deal
-* Today view “Analyze →” opens MAO with those values pre-filled
-* ARV defaults from asking price and can be adjusted
-* repairs default from self-reported estimate
-* no re-entry
-* no context loss 
+* reads use that draft context when opening **`/mao-calculator?deal_id=...`**
+* MAO fields pre-fill from the draft where present; address-aligned context is available after seller public intake even when pricing columns are still NULL
+* no re-entry for fields the backend has already stored on the draft
 
 **Reporting note**
 
