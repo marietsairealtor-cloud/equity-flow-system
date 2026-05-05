@@ -203,6 +203,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "get_lead_intake_kpis_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §64 — Build Route 10.12C2; Lead Intake KPI read path"
+      },
+      {
         "routine": "handoff_to_dispo_v1",
         "privilege": "EXECUTE"
       },
@@ -357,6 +362,7 @@
       "foundation_log_activity_v1",
       "get_acq_deal_v1",
       "get_acq_kpis_v1",
+      "get_lead_intake_kpis_v1",
       "get_profile_settings_v1",
       "get_user_entitlements_v1",
       "get_workspace_settings_v1",

@@ -282,6 +282,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | get_acq_kpis_v1 | 10.11A, KPI date range 10.11A4 | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant; optional `p_date_from` / `p_date_to` filter by deal `created_at` (both NULL = all time); invalid range → `VALIDATION_ERROR`; avg fee from latest `deal_inputs` per deal | SECURITY DEFINER, min role: member | current_tenant_id() — optional `p_date_from`, `p_date_to` timestamptz |
+| get_lead_intake_kpis_v1 | 10.12C2 | Lead Intake KPIs (`new_leads`, `submission_to_deal_pct`, `avg_review_time_hours`, `unreviewed_count`); optional `p_date_from` / `p_date_to`; effective window `v_from = COALESCE(p_date_from, now()-30d)`, `v_to = COALESCE(p_date_to, now())`; filter `intake_submissions.submitted_at`; `v_to < v_from` → `VALIDATION_ERROR`; read-only — no workspace write lock | SECURITY DEFINER, min role: member, STABLE | current_tenant_id() — optional timestamps |
 | get_acq_deal_v1 | 10.11A, read-path corrections 10.11A3 | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot including mao and multiplier; top-level last_contacted_at from latest call_log or null) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
 | update_seller_info_v1 | 10.11A | Partial update of seller + next-action fields on deals | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
@@ -313,7 +314,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | promote_draft_deal_v1 | 10.12C1 | Promote tenant `draft_deals` linked from intake into real `deals` row; merge draft payload with reviewed `p_fields`; duplicate promotion rejected | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_draft_id`, `p_fields` — tenant from `current_tenant_id()` |
 | upsert_buyer_from_intake_v1 | 10.12C | Internal helper: buyer intake upsert invoked only inside `submit_form_v1`; deterministic dedupe per §66 | SECURITY DEFINER; EXECUTE revoked on PUBLIC, anon, and authenticated — definer chaining only | `p_resolved_tenant uuid` supplied by caller from slug-resolved tenant; not PostgREST callable |
 | list_intake_submissions_v1 | 10.12A | List `intake_submissions` for current tenant (governed Lead Intake read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
-| list_buyers_v1 | 10.12A | List `intake_buyers` for current tenant (governed Buyer Ops read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
+| list_buyers_v1 | 10.12A, 10.14C UI | List `intake_buyers` for current tenant (governed Dispo Buyer Ops read path; **not** Lead Intake) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
 | list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_reminder_v1 | 10.8.3 | Create a deal reminder for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | complete_reminder_v1 | 10.8.3; activity log 10.11A10 | Mark reminder completed (idempotent); first completion writes `reminder_completed` to `deal_activity_log`; repeat completion ok=true silent no-op (§62) | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — no tenant_id param |
@@ -1477,7 +1478,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ## 64) Intake Backend — Submission Persistence (10.12A)
 
-**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**.
+**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**. **Lead Intake KPI read path (10.12C2):** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`get_lead_intake_kpis_v1`).
 
 **Purpose:** Authoritative persistence for public intake submissions under tenant context, governed list surfaces for Lead Intake / buyer ops, and **no direct `anon` / `authenticated` access** to the new product tables (EXECUTE on `SECURITY DEFINER` RPCs only).
 
@@ -1533,6 +1534,14 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **Response (OK):** `data.draft_id`, `data.intake_id`, and **`data.buyer_id`** (buyer submissions only; otherwise null).
 - **Errors:** `NOT_FOUND`, `VALIDATION_ERROR`, **`NOT_AUTHORIZED`** when the workspace is not accepting submissions (latest `tenant_subscriptions` missing, **`canceled`**, or **`current_period_end <= now()`**).
 
+### `get_lead_intake_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL)` → `jsonb`
+
+- **Authority / migration:** **`20260505000002_10_12C2_lead_intake_kpis.sql`** — `DROP FUNCTION IF EXISTS` + `CREATE FUNCTION`; **`STABLE`**; **`SECURITY DEFINER`**; **`REVOKE ALL`** from `PUBLIC`, `anon`; **`GRANT EXECUTE`** to **`authenticated`** only.
+- **Role + tenant:** Wrapped **`require_min_role_v1('member')`**; **`current_tenant_id()`** **`NULL` → `NOT_AUTHORIZED`** (envelope).
+- **Reporting window:** **`v_from := COALESCE(p_date_from, now() - interval '30 days')`**, **`v_to := COALESCE(p_date_to, now())`**. Inclusive on **`intake_submissions.submitted_at`** (`>= v_from` and `<= v_to`). If **`v_to < v_from`** after defaults → **`VALIDATION_ERROR`**.
+- **Metrics (OK `data`):** **`new_leads`**, **`submission_to_deal_pct`** (integer percent; denominator = seller + birddog in window; buyer excluded; numerator = address-based rows with **`draft_deals_id`** set and linked **`draft_deals.promoted_deal_id IS NOT NULL`**; zero denominator ⇒ **0**), **`avg_review_time_hours`** (one decimal; reviewed rows only in window; none ⇒ **0**), **`unreviewed_count`** (**all-time** queue for tenant: **`reviewed_at IS NULL`**, not filtered by window). Echoes **`date_from`**, **`date_to`** (effective bounds).
+- **Not workspace-write-gated** — read RPC only.
+
 ### `list_intake_submissions_v1(p_limit int DEFAULT 25)` → `jsonb`
 
 - **Callable by:** **`authenticated` only** (`REVOKE` from `anon`, `PUBLIC`).
@@ -1549,7 +1558,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`**, **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`**, **`list_buyers_v1`** **10.12A**; **`get_lead_intake_kpis_v1`** **10.12C2**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
 
 ---
 

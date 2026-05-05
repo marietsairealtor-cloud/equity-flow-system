@@ -20,6 +20,7 @@
     "foundation_log_activity_v1",
     "get_acq_deal_v1",
     "get_acq_kpis_v1",
+    "get_lead_intake_kpis_v1",
     "get_profile_settings_v1",
     "get_user_entitlements_v1",
     "get_workspace_settings_v1",

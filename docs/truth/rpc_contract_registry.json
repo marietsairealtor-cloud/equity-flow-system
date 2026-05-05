@@ -168,7 +168,7 @@
         "NOT_AUTHORIZED",
         "VALIDATION_ERROR"
       ],
-      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Same limit and NOT_AUTHORIZED contract as list_intake_submissions_v1. Reads intake_buyers for tenant; items expose id, name, email, phone, areas_of_interest, budget_range, deal_type_tags, price_range_notes, notes, is_active, created_at, updated_at."
+      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Same limit and NOT_AUTHORIZED contract as list_intake_submissions_v1. Reads intake_buyers for tenant; items expose id, name, email, phone, areas_of_interest, budget_range, deal_type_tags, price_range_notes, notes, is_active, created_at, updated_at. Primary UI consumer: Dispo Buyer Ops (10.14C); Lead Intake must not use this as a roster."
     },
     {
       "name": "list_reminders_v1",
@@ -502,6 +502,15 @@
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
       "notes": "Old zero-arg surface dropped. Signature get_acq_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). Tenant from current_tenant_id(). Both params NULL = all-time; otherwise filters deals by created_at (inclusive bounds when set). p_date_to < p_date_from => VALIDATION_ERROR. avg_assignment_fee: latest deal_inputs row per deal (ORDER BY created_at DESC), averaged over qualifying terminal-stage deals in range. Read-only KPIs. STABLE."
+    },
+    {
+      "name": "get_lead_intake_kpis_v1",
+      "version": 1,
+      "build_route_owner": "10.12C2",
+      "input_contract": "CONTRACTS.md §64 get_lead_intake_kpis_v1 (10.12C2 Lead Intake KPI read path)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "notes": "Migration 20260505000002_10_12C2_lead_intake_kpis.sql. DROP IF EXISTS + CREATE. STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). Signature (p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). require_min_role_v1(member); wrapped NOT_AUTHORIZED. current_tenant_id() required. Effective bounds v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from => VALIDATION_ERROR. now() aligns with STABLE. OK data: new_leads, submission_to_deal_pct (seller+birddog denominator; promoted = draft.promoted_deal_id NOT NULL linked via intake.draft_deals_id), avg_review_time_hours (1 decimal; COALESCE 0), unreviewed_count (not windowed), date_from, date_to. No check_workspace_write_allowed_v1."
     },
     {
       "name": "list_acq_deals_v1",
