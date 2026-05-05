@@ -469,11 +469,10 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 
 ---
 
-### 8.2 Dispo Dashboard (Share Links Only)
+### 8.2 Dispo Dashboard
 
 **Purpose**
-Dispo is for deals already in the Dispo stage.
-Its job is to generate and manage buyer-facing share links for specific deals. 
+Dispo owns **outbound monetization**: deals in Dispo stage **and** the tenant buyer roster used to distribute opportunities. Buyers still **submit** via public intake / Lead Intake pipeline; Dispo is where persisted buyers are listed and contacted.
 
 **What this page does**
 
@@ -482,13 +481,19 @@ Its job is to generate and manage buyer-facing share links for specific deals.
 * shows link status: active / revoked / expired
 * revokes links via `revoke_share_token_v1`
 * shows activity log per deal
-* shows cross-view transition toast on stage changes 
+* shows cross-view transition toast on stage changes
+* **Buyer Ops (Build Route 10.14C):**
+
+  * buyer roster via `list_buyers_v1` (**not** on Lead Intake)
+  * search / filter buyer list; detail view
+  * activate / deactivate (**governed** mutations only — see **`10.14C`**)
+  * lean manual distribution: recipient selection, copy list, `mailto:` drafts (matching / blast workflows stay future scope)
 
 **Boundary**
 
-* no buyer CRM
-* no buyer-deal matching
-* no Rolodex 
+* buyer roster ≠ buyer CRM expansion (keep lean; **`10.14C`**)
+* no buyer-deal matching engine on this lane
+* no CRM-style Rolodex expansion
 
 **Primary KPIs (Top 3 only)**
 
@@ -558,7 +563,7 @@ It is the inbox and control center for public intake forms and submissions.
 * shows submissions from public intake forms
 * supports internal lead-intake entry for address-based leads (**real deal creation — governed backend; see §4.3 flow 1**)
 * reviews public submissions tied to draft deals and promotes them to real deals (**see §4.3 flow 2**)
-* copies form links for buyer / seller / birddog
+* copies form links for buyer / seller / birddog (**links only** — not the buyer roster; see §8.2 **10.14C**)
 * generates website embed code
 * toggles form types on or off
 * shows strong empty state CTA when there are no submissions:
@@ -569,11 +574,20 @@ It is the inbox and control center for public intake forms and submissions.
 
 * `/lead-intake`
 
-**Primary KPIs (Top 3 only)**
+**Domain boundary**
 
-* New Leads
-* Unreviewed Submissions
-* Submission-to-Deal %
+* Inbound intake only — **no buyer roster**, no **`list_buyers_v1`** for a buyer table, no Buyer Ops tab (those live on Dispo; Build Route **`10.14C`**)
+
+**Lead Intake KPI strip (time-windowed)**
+
+* Default reporting window: **Last 30 days** (user-selectable range)
+* **New Leads** — count of intake submissions created in the selected range
+* **Submission-to-Deal %** — promoted or newly created deals from submissions ÷ address-based submissions in the selected range
+* **Avg Review Time** — average elapsed time from `submitted_at` → `reviewed_at` for reviewed submissions in the selected range
+
+**Queue badge (outside KPI strip)**
+
+* **Unreviewed** — current count of submissions not yet reviewed (operational inbox stat, not a windowed KPI)
 
 ---
 
@@ -631,6 +645,7 @@ Use these definitions unless a governance PR changes them.
 **Default reporting windows**
 - **Today page KPIs:** real-time / current-state values
 - **Department page KPIs:** month-to-date values unless explicitly overridden by a reporting filter
+- **Lead Intake KPI strip:** default **Last 30 days** unless the user selects another range (exception to generic department MTD defaults for these three KPIs only; **Unreviewed** stays a current-queue badge)
 
 - **Projected Fees:** Sum of the authoritative projected assignment fee field for all active deals in stages New through TC. Blank values count as 0. Excludes Closed and Dead.
 - **Overdue Follow-Ups:** Count of open Acq- or Dispo-owned reminder tasks whose due time has passed and whose deals are still active. Excludes TC closing deadlines and checklist items.

@@ -7748,7 +7748,7 @@ Authoritative backend persistence model for all public intake submissions, plus 
   * `submitted_at`
   * `reviewed_at` (nullable)
 * Lead Intake management view reads persisted submissions through `list_intake_submissions_v1` only
-* Buyer Ops reads buyer records through `list_buyers_v1` only
+* Dispo Buyer Ops (**10.14C**) reads buyer records through `list_buyers_v1` only; Lead Intake does not expose a buyer roster
 * Buyer submissions are stored as intake records and may additionally create/update buyer records in downstream items
 * Seller submissions may create draft deals in downstream items
 * Birddog submissions persist as intake records and remain reviewable in Lead Intake
@@ -7990,19 +7990,102 @@ Governed backend write paths for internal Lead Intake users to create real Acqui
 
 ---
 
-### **10.12D — Intake Ops — Lead Intake + Buyer Ops UI**
+### **10.12C2 — Intake Backend — Lead Intake KPI Read Path**
 
 **Deliverable:**
-Authenticated internal Lead Intake and lean Buyer Ops surfaces for reviewing submissions and working buyer lists.
+Governed backend KPI read path for the Lead Intake page, with server-computed reporting-window metrics and current queue count.
+
+**DoD:**
+
+* Governed KPI read path exists:
+
+  * `get_lead_intake_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL)`
+
+* RPC is authenticated only
+
+* RPC is tenant-scoped via `current_tenant_id()`
+
+* RPC returns standard envelope
+
+* Default reporting window matches server rule: **`v_from = COALESCE(p_date_from, now() - interval '30 days')`**, **`v_to = COALESCE(p_date_to, now())`** — so **both NULL ⇒ last 30 days through `now()`**; either bound may be omitted and the complementary default applies
+
+* Invalid **effective** window returns **`VALIDATION_ERROR`** when **`v_to < v_from`** (after COALESCE); no workspace write lock — read RPC only (**`require_min_role_v1('member')`** + tenant context)
+
+**Migration:** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`DROP FUNCTION IF EXISTS …`; `CREATE FUNCTION …`; **`STABLE`**; **`now()`** for window bounds).
+
+* Custom reporting windows: caller supplies zero, one, or both bounds per the COALESCE rule above
+
+* KPI strip returns:
+
+  * `new_leads`
+  * `submission_to_deal_pct`
+  * `avg_review_time_hours`
+
+* Current queue metric returns separately:
+
+  * `unreviewed_count`
+
+* Date window applies to `intake_submissions.submitted_at`
+
+* `new_leads` = count of intake submissions in selected window
+
+* `submission_to_deal_pct` = promoted address-based submissions ÷ address-based submissions in selected window
+
+* Address-based submissions are:
+
+  * seller
+  * birddog
+
+* Buyer submissions are excluded from conversion denominator
+
+* Promoted submission means linked `draft_deals.promoted_deal_id IS NOT NULL`
+
+* `avg_review_time_hours` uses only submissions in selected window where `reviewed_at IS NOT NULL`
+
+* `unreviewed_count` is current-state count for tenant where `reviewed_at IS NULL`, not date-windowed
+
+* No KPI math in WeWeb
+
+* No direct table calls from WeWeb
+
+**Tests:**
+
+* default Last 30 days window works
+* custom date range filters by `submitted_at`
+* invalid **effective** date window returns `VALIDATION_ERROR` (`v_to < v_from` after defaults)
+* optional bound omission: **`p_date_from`** only or **`p_date_to`** only (other side defaults via **`COALESCE`** / **`now()`**) behaves per migration and pgTAP
+* `new_leads` counts all submissions in window
+* `submission_to_deal_pct` excludes buyer submissions
+* `submission_to_deal_pct` counts only seller/birddog submissions with promoted draft deals
+* zero denominator returns `0`, not null/error
+* `avg_review_time_hours` computes reviewed rows only
+* no reviewed rows returns `0`, not null/error
+* `unreviewed_count` returns current tenant queue count independent of date window
+* cross-tenant submissions are excluded
+* unauthenticated / no tenant context returns `NOT_AUTHORIZED`
+
+**Proof:** `docs/proofs/10.12C2_lead_intake_kpis_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C1` merged
+
+---
+
+### **10.12D — Intake Ops — Lead Intake UI**
+
+**Deliverable:**
+Authenticated internal Lead Intake surface for inbound pipeline work: submissions inbox, intake management, review and promote flows. Buyer roster and outbound distribution live on Dispo (**10.14C**), not Lead Intake.
 
 **DoD:**
 
 * Authenticated Lead Intake page exists at `/lead-intake`
-* Lead Intake top KPI strip shows:
+* **No buyer roster, buyer tabs, Buyer Ops list/detail, or `list_buyers_v1` usage on `/lead-intake`** (buyer capture remains via submissions + backend **`10.12A` / `10.12C`**; working those buyers belongs in Dispo)
+* Lead Intake top KPI strip supports a reporting window, default **Last 30 days**, and shows:
 
-  * New Leads
-  * Unreviewed Submissions
-  * Submission-to-Deal %
+  * **New Leads** — count of intake submissions created in the selected range
+  * **Submission-to-Deal %** — promoted or newly created deals from submissions ÷ address-based submissions in the selected range
+  * **Avg Review Time** — average elapsed time from `submitted_at` → `reviewed_at` for reviewed submissions in the selected range
+* Current queue badge shows **Unreviewed** submissions count outside the KPI strip (inbox / queue stat, not a windowed KPI)
+* KPI strip and queue badge consume **`get_lead_intake_kpis_v1`** only (**10.12C2**); no KPI math in WeWeb
 * Lead Intake reads persisted submissions through `list_intake_submissions_v1` only
 * Management actions include:
 
@@ -8018,50 +8101,19 @@ Authenticated internal Lead Intake and lean Buyer Ops surfaces for reviewing sub
   * birddog
 * Unreviewed / reviewed state is visible
 * Empty state includes prominent “Copy Seller Form Link” CTA
-* Buyer Ops surface exists and uses `list_buyers_v1` only
-* Buyer list search supports:
-
-  * name
-  * email
-  * phone
-* Quick filters support:
-
-  * area
-  * deal type
-  * budget range
-  * active / inactive
-* Buyer detail shows:
-
-  * name
-  * email
-  * phone
-  * areas of interest
-  * budget range
-  * tags / notes
-  * active status
-* Manual send workflow supports:
-
-  * send to all buyers
-  * send to filtered subset
-  * copy recipient list
-  * launch `mailto:` draft for the selected recipient set
-* Explicitly out of scope:
-
-  * buyer-deal matching logic
-  * buyer scoring
-  * buyer CRM / Rolodex expansion
 * No direct table calls
 
 **Tests:**
 
 * Lead Intake renders persisted submissions and management actions correctly
-* Buyer Ops renders list, filters, and manual send workflow correctly
+* Lead Intake KPI strip uses the selected reporting window (default Last 30 days); **Unreviewed** appears only as queue badge, not as a KPI card
+* `/lead-intake` does **not** render buyer roster / Buyer Ops surfaces
 * empty states render correctly
 * UI contains no duplicated backend business logic
 
-**Proof:** `docs/proofs/10.12D_intake_ops_buyer_ops_ui_<UTC>.md`
+**Proof:** `docs/proofs/10.12D_lead_intake_ui_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.12A`, `10.12C` merged
+**Prerequisite:** `10.12A`, `10.12C`, `10.12C1`, `10.12C2` merged
 
 ---
 
@@ -8261,6 +8313,60 @@ Governed backend for share links, handoffs, notification, and share-token securi
 **Proof:** `docs/proofs/10.14B_dispo_share_link_handoff_<UTC>.log`
 **Gate:** `merge-blocking`
 **Prerequisite:** `10.14A` merged
+
+---
+
+### **10.14C — Dispo — Buyer Ops UI**
+
+**Deliverable:**
+Authenticated **Dispo** surface for the tenant buyer roster and lean outbound distribution tools. Buyers **enter** via intake (public buyer form + submission records on Lead Intake); buyer **usage** (list, filter, reach out) belongs here.
+
+**DoD:**
+
+* Buyer Ops UI lives on **`/dispo`** (integrated with the Dispo department surface, not Lead Intake)
+* Buyer Ops reads persisted buyers through `list_buyers_v1` only
+* Buyer list search supports:
+
+  * name
+  * email
+  * phone
+* Quick filters support:
+
+  * area
+  * deal type
+  * budget range
+  * active / inactive
+* Buyer detail shows:
+
+  * name
+  * email
+  * phone
+  * areas of interest
+  * budget range
+  * tags / notes
+  * active status
+* Activate / deactivate (or equivalent **is_active** control) runs through **governed backend mutations only** — introduce contract + RPC in this lane if none exists yet (no direct table calls)
+* Manual send workflow supports:
+
+  * send to all buyers
+  * send to filtered subset
+  * copy recipient list
+  * launch `mailto:` draft for the selected recipient set
+* Explicitly out of scope:
+
+  * buyer-deal matching engine
+  * buyer scoring
+  * buyer CRM / Rolodex expansion
+  * automated blast / campaign workflows beyond manual `mailto:` (future distribution layer)
+
+**Tests:**
+
+* Buyer Ops on `/dispo` renders buyer list, filters, detail, and manual send workflow correctly
+* gated buyer actions observe governed contracts only
+
+**Proof:** `docs/proofs/10.14C_dispo_buyer_ops_ui_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.12A`, `10.14A` merged
 
 ---
 
