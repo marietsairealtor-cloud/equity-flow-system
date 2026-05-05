@@ -1,0 +1,61 @@
+PROOF_HEAD=8cb3aa1ea535198cc554e6a41fa660bff267b7f2
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.12C2 Intake Backend — Lead Intake KPI Read Path -- Proof Log ===
+Date: 2026-05-05 (local session)
+Branch: feature/10.12C2-lead-intake-kpis
+PR HEAD SHA: 8cb3aa1ea535198cc554e6a41fa660bff267b7f2
+
+=== Deliverable ===
+Migration: 20260505000002_10_12C2_lead_intake_kpis.sql -- applied
+Test file: supabase/tests/10_12C2_lead_intake_kpis.test.sql -- PASS
+
+=== RPC ===
+get_lead_intake_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL) -> jsonb
+  SECURITY DEFINER, member+, STABLE
+  Window: v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now())
+  VALIDATION_ERROR when v_to < v_from
+  Metrics: new_leads, submission_to_deal_pct, avg_review_time_hours, unreviewed_count (unreviewed_count not window-scoped)
+  No workspace write lock (read path)
+
+=== pgTAP Results (10_12C2_lead_intake_kpis.test.sql) ===
+10.12C2: default window returns OK -- PASS
+10.12C2: default 30-day window includes row submitted 5 days ago -- PASS
+10.12C2: invalid range (date_to < date_from) returns VALIDATION_ERROR -- PASS
+10.12C2: p_date_from only (p_date_to defaults to now) returns OK -- PASS
+10.12C2: custom window May 2-5 counts three submissions (two sellers + buyer) -- PASS
+10.12C2: submission_to_deal_pct 50 (1 promoted of 2 seller rows; buyer excluded from denominator) -- PASS
+10.12C2: May 2026 month window counts five tenant-A rows (excludes Jan/Jun and other tenant) -- PASS
+10.12C2: zero address-based denominator returns 0 (buyer-only day) -- PASS
+10.12C2: avg_review_time_hours is 2.0 for 2h review lag -- PASS
+10.12C2: no reviewed submissions in window yields 0 avg_review_time_hours -- PASS
+10.12C2: unreviewed_count ignores reporting window (seven unreviewed rows on tenant A) -- PASS
+10.12C2: no tenant context returns NOT_AUTHORIZED -- PASS
+
+=== Suite (preflight excerpt) ===
+All tests successful. Files=75, Tests=893, Result: PASS (local pr:preflight db test phase)
+
+=== Registration ===
+qa_scope_map.json (10.12C2) -- PASS
+qa_claim.json (10.12C2) -- PASS
+ci_robot_owned_guard.ps1 proof pattern -- PASS
+privilege_truth.json -- PASS
+execute_allowlist.json -- PASS
+rpc_contract_registry.json -- PASS
+definer_allowlist.json -- PASS
+CONTRACTS.md sec. 17 Public RPC mapping table; sec. 64 Intake KPI read path (`get_lead_intake_kpis_v1`) -- PASS
+Governance file: GOVERNANCE_CHANGE_20260505T204901Z.md -- PASS
+
+=== Phase 2 ===
+npm run handoff -- PASS (prior session; truth artifacts committed)
+npm run handoff:commit -- PASS
+
+=== Phase 3 ===
+node scripts/ci_semantic_contract.mjs -- PASS
+green:once -- PASS (local)
+green:twice -- PASS (local; two consecutive green_gate passes + lints + build)
+npm run pr:preflight -- PASS (local)
+
+=== RESULT ===
+10.12C2 Intake Backend Lead Intake KPI Read Path: PASS (merge-blocking gate)
