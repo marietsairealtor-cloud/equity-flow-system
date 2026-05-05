@@ -9514,3 +9514,31 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+
+2026-05-05 — Build Route v2.4 — 10.12C2
+
+Objective
+Intake Backend — Lead Intake KPI read path (server-computed KPIs for Lead Intake UI).
+
+Changes
+- Migration 20260505000002_10_12C2_lead_intake_kpis.sql applied
+- New RPC: public.get_lead_intake_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL) RETURNS jsonb
+  - SECURITY DEFINER, min role member, STABLE
+  - Effective window: v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from yields VALIDATION_ERROR
+  - new_leads, submission_to_deal_pct (seller rows vs buyer-only exclusion per contract), avg_review_time_hours, unreviewed_count (tenant-scoped, not date-windowed)
+  - Read-only — no workspace write lock
+- New pgTAP: supabase/tests/10_12C2_lead_intake_kpis.test.sql (plan 12)
+- CONTRACTS.md: §17 mapping row + §64 contract text for get_lead_intake_kpis_v1
+- docs/truth: rpc_contract_registry.json, privilege_truth.json, execute_allowlist.json, definer_allowlist.json; qa_claim.json, qa_scope_map.json
+- scripts/ci_robot_owned_guard.ps1 proof path for 10.12C2
+- docs/governance/GOVERNANCE_CHANGE_20260505T204901Z.md
+- BUILD_ROUTE_V2.4.md / WEWEB_ARCHITECTURE.md updated for KPI path and prerequisites for 10.12D handoff wording as applicable
+
+Proof
+docs/proofs/10.12C2_lead_intake_kpis_20260505T225401Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED

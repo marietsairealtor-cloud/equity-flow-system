@@ -1,0 +1,12 @@
+---
+description: Never commit directly to main; always use a PR branch first.
+alwaysApply: true
+---
+
+# Git workflow — no direct commits on `main`
+
+- **Never** `git commit` while checked out on `main`.
+- Before any commit, **`git checkout -b <new-branch>`** with a descriptive name (`feature/`, `fix/`, `chore/`, etc.).
+- Open or update a PR to merge into `main`; land changes via merge (or squash per repo convention).
+
+If the repo is unexpectedly on `main`, stop and create/checkout a branch **before** staging or committing.
