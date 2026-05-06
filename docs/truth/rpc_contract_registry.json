@@ -148,15 +148,15 @@
     },
     {
       "name": "list_intake_submissions_v1",
-      "version": 2,
-      "build_route_owner": "10.12C3",
-      "input_contract": "CONTRACTS.md §64 list_intake_submissions_v1",
+      "version": 3,
+      "build_route_owner": "10.12C4",
+      "input_contract": "CONTRACTS.md §64 list_intake_submissions_v1 (10.12C3 inbox filter; 10.12C4 unreviewed + review fields)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
         "VALIDATION_ERROR"
       ],
-      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Tenant from current_tenant_id(); NULL → NOT_AUTHORIZED. p_limit DEFAULT 25; coalesce null to 25; must satisfy 1 ≤ p_limit ≤ 100 else VALIDATION_ERROR. 10.12A base; 10.12C3 migration narrows Lead Intake queue: returns only intake_submissions with form_type in (seller, birddog) — buyer omitted server-side — ordered submitted_at DESC, id DESC same envelope ok + data.items. Each item includes id, form_type, payload, source, submitted_at, reviewed_at, draft_deals_id. DIRECT intake_submissions SELECT/INSERT by authenticated remains forbidden (§64)."
+      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Tenant from current_tenant_id(); NULL → NOT_AUTHORIZED. p_limit DEFAULT 25; coalesce null to 25; must satisfy 1 ≤ p_limit ≤ 100 else VALIDATION_ERROR. 10.12A base; 10.12C3 seller+birddog only; 10.12C4 filters review_status=unreviewed and adds review_status, review_outcome to each item. Ordered submitted_at DESC, id DESC. DIRECT intake_submissions SELECT/INSERT by authenticated remains forbidden (§64)."
     },
     {
       "name": "list_buyers_v1",
@@ -507,10 +507,10 @@
       "name": "get_lead_intake_kpis_v1",
       "version": 1,
       "build_route_owner": "10.12C2",
-      "input_contract": "CONTRACTS.md §64 get_lead_intake_kpis_v1 (10.12C2 Lead Intake KPI read path)",
+      "input_contract": "CONTRACTS.md §64 get_lead_intake_kpis_v1 (10.12C2 Lead Intake KPI; 10.12C4 review outcome metrics)",
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
-      "notes": "Migration 20260505000002_10_12C2_lead_intake_kpis.sql. DROP IF EXISTS + CREATE. STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). Signature (p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). require_min_role_v1(member); wrapped NOT_AUTHORIZED. current_tenant_id() required. Effective bounds v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from => VALIDATION_ERROR. now() aligns with STABLE. OK data: new_leads, submission_to_deal_pct (seller+birddog denominator; promoted = draft.promoted_deal_id NOT NULL linked via intake.draft_deals_id), avg_review_time_hours (1 decimal; COALESCE 0), unreviewed_count (not windowed), date_from, date_to. No check_workspace_write_allowed_v1."
+      "notes": "Migrations 20260505000002_10_12C2_lead_intake_kpis.sql (intro) and 20260507000001_10_12C4_submission_review_outcomes.sql (KPI payload + semantics). DROP IF EXISTS + CREATE. STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). Signature (p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). require_min_role_v1(member); wrapped NOT_AUTHORIZED. current_tenant_id() required. Effective bounds v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from => VALIDATION_ERROR. OK data (10.12C4): new_submissions, new_leads (excludes rejected_spam/test/invalid), rejected_count, submission_to_deal_pct (pct of new_leads promoted; draft.promoted_deal_id or review_outcome=promoted), avg_review_time_hours (review_status=reviewed, reviewed_at set), unreviewed_count (review_status=unreviewed, not windowed), date_from, date_to. No check_workspace_write_allowed_v1."
     },
     {
       "name": "list_acq_deals_v1",
@@ -698,6 +698,21 @@
       "notes": "SECURITY DEFINER, grants authenticated. p_fields jsonb: address, next_action, next_action_due (timestamptz). Same field contract as update_deal_seller_v1. check_workspace_write_allowed_v1."
     },
     {
+      "name": "mark_submission_reviewed_v1",
+      "version": 1,
+      "build_route_owner": "10.12C4",
+      "input_contract": "CONTRACTS.md §64 mark_submission_reviewed_v1 (10.12C4)",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "CONFLICT"
+      ],
+      "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_submission_id uuid, p_outcome text). require_min_role_v1(member); current_tenant_id before check_workspace_write_allowed_v1. Dismiss/reject outcomes only; promoted is promote_draft_deal_v1 + trigger trg_draft_deals_promoted_sync_intake_review. Idempotent OK when same outcome; CONFLICT when already reviewed with different outcome. buyer form_type rejected at validation."
+    },
+    {
       "name": "process_workspace_retention_v1",
       "version": 1,
       "build_route_owner": "10.8.11O",
@@ -721,7 +736,7 @@
         "NOT_FOUND",
         "CONFLICT"
       ],
-      "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_draft_id uuid, p_fields jsonb). require_min_role_v1(member); check_workspace_write_allowed_v1. Merges tenant draft + optional review overrides into new deals row; links draft.promoted_deal_id; sets reviewed_at on linked intake_submissions. CONFLICT when draft already promoted. NOT_FOUND when draft missing for tenant. Same field/assumption validation posture as create_deal_from_intake_v1 (no client mao)."
+      "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_draft_id uuid, p_fields jsonb). require_min_role_v1(member); check_workspace_write_allowed_v1. Merges tenant draft + optional review overrides into new deals row; links draft.promoted_deal_id. On promoted_deal_id change, trigger trg_draft_deals_promoted_sync_intake_review sets intake reviewed_at / review_status / review_outcome=promoted; promote also issues legacy reviewed_at-only UPDATE on intake. CONFLICT when draft already promoted. NOT_FOUND when draft missing for tenant. Same field/assumption validation posture as create_deal_from_intake_v1 (no client mao)."
     }
   ]
 }

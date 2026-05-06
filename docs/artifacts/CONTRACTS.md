@@ -282,7 +282,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | get_acq_kpis_v1 | 10.11A, KPI date range 10.11A4 | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant; optional `p_date_from` / `p_date_to` filter by deal `created_at` (both NULL = all time); invalid range → `VALIDATION_ERROR`; avg fee from latest `deal_inputs` per deal | SECURITY DEFINER, min role: member | current_tenant_id() — optional `p_date_from`, `p_date_to` timestamptz |
-| get_lead_intake_kpis_v1 | 10.12C2 | Lead Intake KPIs (`new_leads`, `submission_to_deal_pct`, `avg_review_time_hours`, `unreviewed_count`); optional `p_date_from` / `p_date_to`; effective window `v_from = COALESCE(p_date_from, now()-30d)`, `v_to = COALESCE(p_date_to, now())`; filter `intake_submissions.submitted_at`; `v_to < v_from` → `VALIDATION_ERROR`; read-only — no workspace write lock | SECURITY DEFINER, min role: member, STABLE | current_tenant_id() — optional timestamps |
+| get_lead_intake_kpis_v1 | 10.12C2 **+** 10.12C4 | Lead Intake KPIs: **`new_submissions`**, **`new_leads`** (seller+birddog window; excludes `rejected_spam` / `rejected_test` / `rejected_invalid`), **`rejected_count`**, **`submission_to_deal_pct`**, **`avg_review_time_hours`**, **`unreviewed_count`** (`review_status = unreviewed`); optional `p_date_from` / `p_date_to`; `v_to < v_from` → `VALIDATION_ERROR`; read-only | SECURITY DEFINER, min role: member, STABLE | current_tenant_id() — optional timestamps |
 | get_acq_deal_v1 | 10.11A, read-path corrections 10.11A3 | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot including mao and multiplier; top-level last_contacted_at from latest call_log or null) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
 | update_seller_info_v1 | 10.11A | Partial update of seller + next-action fields on deals | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
@@ -311,9 +311,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
 | submit_form_v1 | 10.8.1, 10.12A, 10.12C, 10.12C1 | Public intake submit; persists `draft_deals` + `intake_submissions` (§64–§67); **10.12C1** links intake row to draft via `draft_deals_id`; seller address + payload for MAO prefill; governed buyer upsert via internal helper (§66) | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64 / §66) | slug input only — no tenant_id param |
 | create_deal_from_intake_v1 | 10.12C1 | Lead Intake manual / call-in: create real `deals` row (`stage=new`) from `p_fields` jsonb; optional nested `property`, `assumptions` (server-derived MAO; no client `mao`) | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_fields` jsonb only — tenant from `current_tenant_id()` |
-| promote_draft_deal_v1 | 10.12C1 | Promote tenant `draft_deals` linked from intake into real `deals` row; merge draft payload with reviewed `p_fields`; duplicate promotion rejected | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_draft_id`, `p_fields` — tenant from `current_tenant_id()` |
+| promote_draft_deal_v1 | 10.12C1 **+** 10.12C4 trigger | Promote tenant `draft_deals` linked from intake into real `deals` row; merge draft payload with reviewed `p_fields`; duplicate promotion rejected; **10.12C4** `AFTER UPDATE OF promoted_deal_id` trigger sets linked intake **`review_status` / `review_outcome` / `reviewed_at`** (promote RPC body remains **10.12C1** only) | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_draft_id`, `p_fields` — tenant from `current_tenant_id()` |
 | upsert_buyer_from_intake_v1 | 10.12C | Internal helper: buyer intake upsert invoked only inside `submit_form_v1`; deterministic dedupe per §66 | SECURITY DEFINER; EXECUTE revoked on PUBLIC, anon, and authenticated — definer chaining only | `p_resolved_tenant uuid` supplied by caller from slug-resolved tenant; not PostgREST callable |
-| list_intake_submissions_v1 | 10.12A **+** 10.12C3 (seller/birddog inbox filter) | **`list_intake_submissions_v1`**: Lead Intake read path; returns tenant **`intake_submissions`** with **`draft_deals_id`**; **excludes buyer** rows server-side (buyers surfaced from Dispo, not Lead Intake queue); same envelope, ordering **`submitted_at DESC, id DESC`**, **`p_limit`** **1–100** | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25) |
+| list_intake_submissions_v1 | 10.12A **+** 10.12C3 **+** 10.12C4 | Lead Intake review queue: **`seller`** + **`birddog`** only, **`review_status = unreviewed`** only (**10.12C4**); payload includes **`draft_deals_id`**, **`review_status`**, **`review_outcome`**; ordering **`submitted_at DESC, id DESC`**, **`p_limit`** **1–100** | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25) |
 | list_buyers_v1 | 10.12A, 10.14C UI | List `intake_buyers` for current tenant (governed Dispo Buyer Ops read path; **not** Lead Intake) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
 | list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_reminder_v1 | 10.8.3 | Create a deal reminder for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
@@ -345,6 +345,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | restore_workspace_v1 | 10.8.11O3 | Restore an archived workspace by p_restore_token; clears archived_at, subscription_lapsed_at, restore_token; owner-only, requires active subscription | SECURITY DEFINER, authenticated only, owner-only (explicit membership check, not require_min_role_v1) | p_restore_token resolves tenant internally — no caller tenant_id param |
 | claim_trial_v1 | 10.8.12 | Atomically reserve one-time 30-day free trial for current authenticated user; returns trial_eligible and trial_period_days | SECURITY DEFINER, authenticated only | auth.uid() only — no caller tenant_id param; tenant context exempt |
 | update_display_name_v1 | 10.8.11J | Update display name for current authenticated user; blank returns VALIDATION_ERROR | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
+| mark_submission_reviewed_v1 | 10.12C4 | Lead Intake: set **`review_status`**, **`review_outcome`**, **`reviewed_at`** on a **seller** or **birddog** intake row (dismiss / reject outcomes only; **`promoted`** via **`promote_draft_deal_v1`**); workspace write lock; idempotent same outcome | SECURITY DEFINER, authenticated only; min role member | `p_submission_id`, `p_outcome` — tenant from **`current_tenant_id()`** |
 
 ### Mapping Rules
 
@@ -1478,7 +1479,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ## 64) Intake Backend — Submission Persistence (10.12A)
 
-**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**. **Lead Intake KPI read path (10.12C2):** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`get_lead_intake_kpis_v1`). **Lead Intake inbox list filter (10.12C3):** **`20260506000001_10_12C3_list_intake_submissions_filter.sql`** (`list_intake_submissions_v1` seller/birddog-only filtering + `draft_deals_id` in list payload).
+**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**. **Lead Intake KPI read path:** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`get_lead_intake_kpis_v1` baseline); **10.12C4** **`20260507000001_10_12C4_submission_review_outcomes.sql`** extends KPI payload + review columns + **`mark_submission_reviewed_v1`** + inbox filter + draft promotion trigger. **Lead Intake inbox list filter:** **`20260506000001_10_12C3_list_intake_submissions_filter.sql`** (`list_intake_submissions_v1` seller/birddog-only); **10.12C4** narrows list to **`review_status = unreviewed`** and adds review fields to list payload.
 
 **Purpose:** Authoritative persistence for public intake submissions under tenant context, governed list surfaces for Lead Intake / buyer ops, and **no direct `anon` / `authenticated` access** to the new product tables (EXECUTE on `SECURITY DEFINER` RPCs only).
 
@@ -1495,6 +1496,8 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 | `source` | text | NOT NULL, default `web` |
 | `submitted_at` | timestamptz | NOT NULL, default `now()` |
 | `reviewed_at` | timestamptz | nullable |
+| `review_status` | text | NOT NULL, default `unreviewed`, CHECK **`unreviewed`** \| **`reviewed`** |
+| `review_outcome` | text | nullable; when set, governed dismiss / reject / promoted values per **10.12C4** migration |
 | `created_at` | timestamptz | NOT NULL, default `now()` |
 
 - **RLS:** enabled. Policy **tenant isolation** using `current_tenant_id()` (no elevated bypass for app roles).
@@ -1536,19 +1539,28 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ### `get_lead_intake_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL)` → `jsonb`
 
-- **Authority / migration:** **`20260505000002_10_12C2_lead_intake_kpis.sql`** — `DROP FUNCTION IF EXISTS` + `CREATE FUNCTION`; **`STABLE`**; **`SECURITY DEFINER`**; **`REVOKE ALL`** from `PUBLIC`, `anon`; **`GRANT EXECUTE`** to **`authenticated`** only.
+- **Authority / migration:** Introduced **`20260505000002_10_12C2_lead_intake_kpis.sql`** — `DROP FUNCTION IF EXISTS` + `CREATE FUNCTION`; **10.12C4** **`20260507000001_10_12C4_submission_review_outcomes.sql`** **`DROP FUNCTION IF EXISTS`** + **`CREATE FUNCTION`** with extended metrics. **`STABLE`**; **`SECURITY DEFINER`**; **`REVOKE ALL`** from `PUBLIC`, `anon`; **`GRANT EXECUTE`** to **`authenticated`** only.
 - **Role + tenant:** Wrapped **`require_min_role_v1('member')`**; **`current_tenant_id()`** **`NULL` → `NOT_AUTHORIZED`** (envelope).
 - **Reporting window:** **`v_from := COALESCE(p_date_from, now() - interval '30 days')`**, **`v_to := COALESCE(p_date_to, now())`**. Inclusive on **`intake_submissions.submitted_at`** (`>= v_from` and `<= v_to`). If **`v_to < v_from`** after defaults → **`VALIDATION_ERROR`**.
-- **Metrics (OK `data`):** **`new_leads`**, **`submission_to_deal_pct`** (integer percent; denominator = seller + birddog in window; buyer excluded; numerator = address-based rows with **`draft_deals_id`** set and linked **`draft_deals.promoted_deal_id IS NOT NULL`**; zero denominator ⇒ **0**), **`avg_review_time_hours`** (one decimal; reviewed rows only in window; none ⇒ **0**), **`unreviewed_count`** (**all-time** queue for tenant: **`reviewed_at IS NULL`**, not filtered by window). Echoes **`date_from`**, **`date_to`** (effective bounds).
+- **Metrics (OK `data`, 10.12C4):** **`new_submissions`** — count of **seller + birddog** rows in window. **`new_leads`** — same scope **excluding** rows whose **`review_outcome`** is **`rejected_spam`**, **`rejected_test`**, or **`rejected_invalid`** (buyer rows still excluded from both counts). **`rejected_count`** — seller + birddog in window with those three reject outcomes. **`submission_to_deal_pct`** — integer percent; **denominator = `new_leads`**; **numerator** — in-window seller/birddog rows that count toward leads and are **promoted** (**`review_outcome = promoted`** or linked **`draft_deals.promoted_deal_id IS NOT NULL`**); zero denominator ⇒ **0**. **`avg_review_time_hours`** — one decimal; rows in window with **`review_status = reviewed`**, **`reviewed_at` IS NOT NULL**; none ⇒ **0**. **`unreviewed_count`** — **all-time** tenant rows with **`review_status = unreviewed`** (not window-filtered). Echoes **`date_from`**, **`date_to`** (effective bounds).
 - **Not workspace-write-gated** — read RPC only.
 
 ### `list_intake_submissions_v1(p_limit int DEFAULT 25)` → `jsonb`
 
-- **Implementations:** Introduced **`10.12A`**; **10.12C3** (**`20260506000001_10_12C3_list_intake_submissions_filter.sql`**) **`DROP FUNCTION IF EXISTS`** + **`CREATE FUNCTION`** returns **`data.items`** for **`form_type`** in (**`seller`**, **`birddog`**) only **(buyer rows omitted)** and includes **`draft_deals_id`** on each listed object **(Lead Intake review queue)**.
+- **Implementations:** Introduced **`10.12A`**; **10.12C3** (**`20260506000001_10_12C3_list_intake_submissions_filter.sql`**) narrows to **`form_type`** in (**`seller`**, **`birddog`**). **10.12C4** (**`20260507000001_10_12C4_submission_review_outcomes.sql`**) further filters **`review_status = unreviewed`** and adds **`review_status`**, **`review_outcome`** on each item.
 - **Callable by:** **`authenticated` only** (`REVOKE` from `anon`, `PUBLIC`).
 - **Tenant:** `current_tenant_id()`; **`NULL` → `NOT_AUTHORIZED`**.
 - **Limits:** `COALESCE(p_limit, 25)`; must satisfy **1 ≤ p_limit ≤ 100** or **`VALIDATION_ERROR`**.
-- **OK payload:** `data.items` — JSON array ordered **`submitted_at DESC, id DESC`**, objects **`{ id, form_type, payload, source, submitted_at, reviewed_at, draft_deals_id }`** for the caller tenant **(seller and birddog submissions only)**.
+- **OK payload:** `data.items` — JSON array ordered **`submitted_at DESC, id DESC`**, objects **`{ id, form_type, payload, source, submitted_at, reviewed_at, draft_deals_id, review_status, review_outcome }`** for the caller tenant **(unreviewed seller and birddog submissions only)**.
+
+### `mark_submission_reviewed_v1(p_submission_id uuid, p_outcome text)` → `jsonb`
+
+- **Authority / migration:** **`20260507000001_10_12C4_submission_review_outcomes.sql`** — `CREATE OR REPLACE FUNCTION`; **`SECURITY DEFINER`**; **`GRANT EXECUTE`** to **`authenticated`** only (`REVOKE` from `anon`, `PUBLIC`).
+- **Role + tenant + workspace:** **`require_min_role_v1('member')`**; **`current_tenant_id()`** resolved **before** **`check_workspace_write_allowed_v1()`** so missing tenant maps to **`NOT_AUTHORIZED`**, not **`WORKSPACE_NOT_WRITABLE`**. Expired / inactive workspace ⇒ **`WORKSPACE_NOT_WRITABLE`** (message: workspace not active).
+- **Scope:** **seller** and **birddog** rows only; **buyer** ⇒ **`VALIDATION_ERROR`**. Cross-tenant or unknown id ⇒ **`NOT_FOUND`** (no tenant leak).
+- **Outcomes:** Allowed dismiss/reject values only; **`promoted`** is **`VALIDATION_ERROR`** (set only via **`promote_draft_deal_v1`** + **10.12C4** draft **`promoted_deal_id`** trigger). Unknown label ⇒ **`VALIDATION_ERROR`**.
+- **Idempotency / conflict:** Same outcome on already-reviewed row ⇒ **`OK`**. Different outcome after review ⇒ **`CONFLICT`**.
+- **Errors:** **`NOT_AUTHORIZED`**, **`WORKSPACE_NOT_WRITABLE`**, **`VALIDATION_ERROR`**, **`NOT_FOUND`**, **`CONFLICT`**.
 
 ### `list_buyers_v1(p_limit int DEFAULT 25)` → `jsonb`
 
@@ -1559,7 +1571,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`** **10.12C3** (**10.12A** base persistence); **`list_buyers_v1`** **10.12A**; **`get_lead_intake_kpis_v1`** **10.12C2**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`** **10.12C3** + **10.12C4**; **`get_lead_intake_kpis_v1`** **10.12C2** + **10.12C4**; **`mark_submission_reviewed_v1`** **10.12C4**; **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
 
 ---
 
@@ -1670,7 +1682,7 @@ Minimum screen / workflow states the implementation must distinguish:
 
 - Same authenticated **member+** and **write-lock** posture as **`create_deal_from_intake_v1`**.
 - **Duplicate guard:** if **`draft_deals.promoted_deal_id`** is already non-null, returns **`CONFLICT`** (already promoted).
-- Loads draft in **current tenant**; merges draft **`payload`** / columns with review **`p_fields`**; creates **`deals`** + related rows; sets **`draft_deals.promoted_deal_id`**; sets **`reviewed_at`** on the linked **`intake_submissions`** row.
+- Loads draft in **current tenant**; merges draft **`payload`** / columns with review **`p_fields`**; creates **`deals`** + related rows; sets **`draft_deals.promoted_deal_id`**; sets **`reviewed_at`** on the linked **`intake_submissions`** row (**10.12C1**). **10.12C4** trigger on **`promoted_deal_id`** also sets **`review_status`**, **`review_outcome = promoted`** (and coalesces **`reviewed_at`**).
 
 ### Internal helpers (definer-only; **REVOKE ALL** on **`PUBLIC`**, **`anon`**, **`authenticated`**)
 

@@ -29,6 +29,8 @@ foreach ($mig in $migrationsChanged) {
     $matches = [regex]::Matches($content, $rpcPattern, "IgnoreCase")
     foreach ($m in $matches) {
       $rpcName = $m.Groups[2].Value
+      # Trigger implementations live in public.* for PostgreSQL but are not app-callable RPCs.
+      if ($rpcName -like "trg_*") { continue }
       # Exclude known internal helpers
       if ($rpcName -notin @("require_min_role_v1", "current_tenant_id", "auth_user_exists_v1",
                              "check_workspace_write_allowed_v1", "create_active_workspace_seed_v1",

@@ -1,7 +1,7 @@
 -- 10.12C2: Lead Intake KPI read path (get_lead_intake_kpis_v1)
 BEGIN;
 
-SELECT plan(12);
+SELECT plan(18);
 
 SELECT public.create_active_workspace_seed_v1(
   'ba112222-a222-4222-a222-a22222220001'::uuid,
@@ -155,6 +155,12 @@ VALUES
     NULL
   );
 
+-- Align row 105 with review columns (legacy test had reviewed_at only).
+UPDATE public.intake_submissions
+SET review_status = 'reviewed',
+    review_outcome = 'promoted'
+WHERE id = 'ea112222-a222-4222-a222-a22222220105'::uuid;
+
 SELECT set_config(
   'request.jwt.claims',
   '{"sub":"aa112222-a222-4222-a222-a22222220001","role":"authenticated","tenant_id":"ba112222-a222-4222-a222-a22222220001"}',
@@ -201,10 +207,21 @@ SELECT is(
     public.get_lead_intake_kpis_v1(
       '2026-05-02 00:00:00+00'::timestamptz,
       '2026-05-05 23:59:59+00'::timestamptz
+    )->'data'->>'new_submissions'
+  ),
+  '2',
+  '10.12C4: May 2–5 new_submissions counts two seller/birddog rows (buyer excluded)'
+);
+
+SELECT is(
+  (
+    public.get_lead_intake_kpis_v1(
+      '2026-05-02 00:00:00+00'::timestamptz,
+      '2026-05-05 23:59:59+00'::timestamptz
     )->'data'->>'new_leads'
   ),
-  '3',
-  '10.12C2: custom window May 2–5 counts three submissions (two sellers + buyer)'
+  '2',
+  '10.12C4: May 2–5 new_leads counts legitimate seller/birddog only (two sellers; buyer excluded)'
 );
 
 SELECT is(
@@ -223,10 +240,21 @@ SELECT is(
     public.get_lead_intake_kpis_v1(
       '2026-05-01 00:00:00+00'::timestamptz,
       '2026-05-31 23:59:59+00'::timestamptz
+    )->'data'->>'new_submissions'
+  ),
+  '3',
+  '10.12C4: May 2026 new_submissions = three seller/birddog rows on tenant A'
+);
+
+SELECT is(
+  (
+    public.get_lead_intake_kpis_v1(
+      '2026-05-01 00:00:00+00'::timestamptz,
+      '2026-05-31 23:59:59+00'::timestamptz
     )->'data'->>'new_leads'
   ),
-  '5',
-  '10.12C2: May 2026 month window counts five tenant-A rows (excludes Jan/Jun and other tenant)'
+  '3',
+  '10.12C4: May 2026 new_leads = three legitimate seller/birddog (excludes buyers)'
 );
 
 SELECT is(
@@ -271,6 +299,64 @@ SELECT is(
   ),
   '7',
   '10.12C2: unreviewed_count ignores reporting window (seven unreviewed rows on tenant A)'
+);
+
+SELECT is(
+  (
+    public.get_lead_intake_kpis_v1(
+      '2026-05-02 00:00:00+00'::timestamptz,
+      '2026-05-05 23:59:59+00'::timestamptz
+    )->'data'->>'rejected_count'
+  ),
+  '0',
+  '10.12C4: rejected_count 0 before spam marking'
+);
+
+SET LOCAL ROLE postgres;
+UPDATE public.intake_submissions
+SET review_status = 'reviewed',
+    review_outcome = 'rejected_spam',
+    reviewed_at = now()
+WHERE id = 'ea112222-a222-4222-a222-a22222220102'::uuid;
+
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"aa112222-a222-4222-a222-a22222220001","role":"authenticated","tenant_id":"ba112222-a222-4222-a222-a22222220001"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+
+SELECT is(
+  (
+    public.get_lead_intake_kpis_v1(
+      '2026-05-02 00:00:00+00'::timestamptz,
+      '2026-05-05 23:59:59+00'::timestamptz
+    )->'data'->>'new_leads'
+  ),
+  '1',
+  '10.12C4: rejected_spam seller row excluded from new_leads in window'
+);
+
+SELECT is(
+  (
+    public.get_lead_intake_kpis_v1(
+      '2026-05-02 00:00:00+00'::timestamptz,
+      '2026-05-05 23:59:59+00'::timestamptz
+    )->'data'->>'new_submissions'
+  ),
+  '2',
+  '10.12C4: new_submissions still counts raw seller/birddog in window (including rejected)'
+);
+
+SELECT is(
+  (
+    public.get_lead_intake_kpis_v1(
+      '2026-05-02 00:00:00+00'::timestamptz,
+      '2026-05-05 23:59:59+00'::timestamptz
+    )->'data'->>'rejected_count'
+  ),
+  '1',
+  '10.12C4: rejected_count in-window after spam marking'
 );
 
 SET LOCAL ROLE postgres;

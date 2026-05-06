@@ -46,6 +46,7 @@
     "public.list_workspace_members_v1",
     "public.lookup_share_token_v1",
     "public.mark_deal_dead_v1",
+    "public.mark_submission_reviewed_v1",
     "public.process_workspace_retention_v1",
     "public.promote_draft_deal_v1",
     "public.register_deal_media_v1",
@@ -59,6 +60,7 @@
     "public.set_current_tenant_v1",
     "public.set_tenant_slug_v1",
     "public.submit_form_v1",
+    "public.trg_draft_deals_promoted_sync_intake_review_v1",
     "public.trigger_invite_email",
     "public.trigger_seat_sync",
     "public.update_deal_pricing_v1",
@@ -92,6 +94,7 @@
     "public.set_current_tenant_v1",
     "public.trigger_invite_email",
     "public.trigger_seat_sync",
+    "public.trg_draft_deals_promoted_sync_intake_review_v1",
     "public.update_display_name_v1",
     "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1"

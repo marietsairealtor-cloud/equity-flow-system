@@ -647,6 +647,10 @@
     "10.12C3": {
       "title": "Intake Backend — Lead Intake Submission List Filter",
       "proof_pattern": "^docs/proofs/10\\.12C3_list_intake_submissions_fix_"
+    },
+    "10.12C4": {
+      "title": "Intake Backend — Submission Review Outcomes",
+      "proof_pattern": "^docs/proofs/10\\.12C4_submission_review_outcomes_"
     }
   }
 }
