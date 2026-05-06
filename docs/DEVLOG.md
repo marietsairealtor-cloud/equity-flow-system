@@ -9597,3 +9597,24 @@ All checklist items PASS. Merge-blocking gate satisfied. Post-merge ship / hando
 
 Status
 MERGED
+
+2026-05-07 — Build Route v2.4 — 10.12C5
+
+Objective
+Intake Backend — KPI queue count correction: Lead Intake `unreviewed_count` excludes buyer submissions (seller and birddog unreviewed only).
+
+Changes
+- Migration `20260508000001_10_12C5_kpi_unreviewed_count_fix.sql`: `DROP FUNCTION` + `CREATE FUNCTION` for `get_lead_intake_kpis_v1`; sole delta is `unreviewed_count` predicate (`review_status = 'unreviewed'` and `form_type IN ('seller', 'birddog')`); same owner / revoke / grant as prior revision
+- pgTAP: `supabase/tests/10_12C5_kpi_unreviewed_count_fix.test.sql`; `supabase/tests/10_12C2_lead_intake_kpis.test.sql` expectation aligned with C5 queue scope
+- `docs/artifacts/CONTRACTS.md` §64 / §17 row; `docs/truth/rpc_contract_registry.json`, `privilege_truth.json`, `qa_claim.json`, `qa_scope_map.json`; `scripts/ci_robot_owned_guard.ps1` proof allowlist for `10.12C5_kpi_unreviewed_count_fix_<UTC>.log`
+- `docs/governance/GOVERNANCE_CHANGE_20260508T160000Z.md`; `BUILD_ROUTE_V2.4.md` / `WEWEB_ARCHITECTURE.md` (10.12C5, 10.12D1/D2) as delivered on the same initiative where applicable
+- Phase 4 proof body uses repo-relative pgTAP paths after `ci_path_leak_audit` failure on `/Users/...` in `docs/proofs` (blocking scope); proof re-finalized with updated manifest hash
+
+Proof
+`docs/proofs/10.12C5_kpi_unreviewed_count_fix_20260506T200549Z.log`
+
+DoD
+Phase 1–4 complete for Build Route 10.12C5. Merge-blocking gate satisfied. Merged via PR #601.
+
+Status
+MERGED
