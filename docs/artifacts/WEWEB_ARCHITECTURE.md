@@ -165,17 +165,60 @@ Stage and assignee are separate concepts.
 - **10.12C backend contract:** seller public intake creates or updates a tenant-scoped **draft deal** with **address-aligned context** only; **`asking_price`, repair/condition-as-MAO inputs, and `timeline` are not captured from the public seller form** and remain **NULL** on the draft until populated by governed non–public-intake paths. Buyer submissions create/update buyer records; birddog submissions persist as intake without auto-creating buyer records.
 - One page component, dynamic rendering based on form type
 
+### 4.2.1 Intake record model — `intake_submissions` (AUTHORITATIVE)
+
+**Terminology — do not conflate**
+
+* **Submission** — anything that enters the form system (every persisted intake row).
+* **Lead** — seller or birddog submission that is **plausibly contactable / relevant** for Acquisition-style follow-up (operational meaning for KPIs: **qualified / non-rejected**; see review outcomes below).
+* **Junk / spam** — a submission that is **not** a real lead (after triage: **`rejected_*`** outcomes).
+* **Dismissed legitimate lead** — a real lead with a **bad outcome** (not interested, wrong number, duplicate, not a fit). These rows **remain leads** for denominator purposes; only **`rejected_spam`**, **`rejected_test`**, and **`rejected_invalid`** drop a row out of lead KPIs.
+
+**Table naming**
+
+* Persist intake as **`intake_submissions`**. UI and API copy must **not** call every row a “lead.” When surfacing KPIs, count **qualified / non-rejected seller–birddog lead submissions** unless the metric explicitly says **all submissions** (see §8.4 / §8.7).
+
+**Retention**
+
+* Do **not** hard-delete intake rows by default; retain rows for audit, reporting, and duplicate detection.
+
+**Review columns (governed backend)**
+
+* `review_status`: `unreviewed` | `reviewed`
+* `review_outcome` (when reviewed):
+  * `promoted`
+  * `dismissed_not_interested`
+  * `dismissed_wrong_number`
+  * `dismissed_duplicate`
+  * `dismissed_not_a_fit`
+  * `rejected_spam`
+  * `rejected_test`
+  * `rejected_invalid`
+
+**KPI classification**
+
+* **`rejected_spam`**, **`rejected_test`**, **`rejected_invalid`** → excluded from **lead** denominators and from **Submission-to-Deal %** denominator.
+* All **`dismissed_*`** outcomes → **included** in lead denominators (legitimate lead, undesirable outcome).
+* **`promoted`** → numerator for **Submission-to-Deal %** (see §8.7): count rows the backend treats as promoted (**`review_outcome = promoted`** and/or linked **`draft_deals.promoted_deal_id`** per **10.12C4**).
+* **`Unreviewed`** rows are not auto-classified as junk; they stay in the operational queue until triage. Windowed **New Leads** counts **include** `unreviewed` seller/birddog rows (not yet rejected).
+
+**Buyer rows**
+
+* Buyer form submissions are **not** in the Lead Intake KPI **`new_submissions`** / **`new_leads`** path (**10.12C4** — buyer remains off Lead Intake inbox and seller/birddog KPI window counts); Dispo / other surfaces own buyer metrics unless governance expands scope.
+
 ### 4.3 Lead Intake page (Authenticated)
 
 - Route: `/lead-intake` (management surface; see also §8.4)
 - **Purpose:** tenant inbox for public submissions and internal workflows that create **real** Acquisition deals (not a duplicate of the slug-gated public forms in §4.2).
 
-**Governed flows (10.12C1 — scoped, backend-authoritative)**
+**Governed flows (10.12C1 + 10.12C4 — scoped, backend-authoritative)**
 
 1. **Manual entry / call-in** — intake staff enters lead details; backend creates a real `deals` row in the current tenant with **stage = `new`** via **`create_deal_from_intake_v1(p_fields jsonb)`**. The deal is visible in Acquisition immediately.
-2. **Public submission review** — intake staff reviews a submission linked to a tenant-scoped **`draft_deals`** row; backend **promotes** that draft into a real deal with **stage = `new`**, merges draft-submitted fields with reviewed overrides, marks the linked intake submission reviewed, and returns **`deal_id`** via **`promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb)`**. Duplicate promotion of the same draft is rejected server-side.
+2. **Public submission review (promote or close queue without promotion)**
+   * **Promote to deal** — **`promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb)`** merges draft payload with reviewed **`p_fields`**, creates/returns the real deal (`stage = new`), and on success sets on the linked **`intake_submissions`** row: **`reviewed_at = now()`**, **`review_status = reviewed`**, **`review_outcome = promoted`** (**10.12C4**). Duplicate promotion of the same draft is rejected server-side (orthogonal to a **`dismissed_duplicate`** *review outcome* when the lead was a duplicate property/contact story, not a duplicate RPC).
+   * **Dismiss / reject without promoting** — **`mark_submission_reviewed_v1(p_submission_id uuid, p_outcome text)`** (**10.12C4**) sets **`reviewed_at`**, **`review_status = reviewed`**, and **`review_outcome`** to a **`dismissed_*`** or **`rejected_*`** value (§4.2.1). This RPC **rejects** **`p_outcome = promoted`** — promotion stays on **`promote_draft_deal_v1`**.
 
-**WeWeb dependency:** both RPCs above must ship and be contract-tested **before** 10.12D UI wires these actions. No direct table writes from WeWeb; no frontend-only deal creation, promotion, or reviewed-state logic.
+**WeWeb dependency:** **`create_deal_from_intake_v1`**, **`promote_draft_deal_v1`**, and **`mark_submission_reviewed_v1`** must ship and be contract-tested per Build Route **10.12C1** / **10.12C4** before **10.12D** wires Lead Intake actions. Inbox reads use **`list_intake_submissions_v1`** (seller/birddog, **`review_status = unreviewed`** after **10.12C4**). KPIs use **`get_lead_intake_kpis_v1`** only (**10.12C2** baseline + **10.12C4** fields). No direct table writes from WeWeb; no frontend-only deal creation, promotion, dismiss logic, or KPI math.
 
 ### 4.4 Deal Viewer (Token-Gated) — Buyer-Ready Deal Packet
 
@@ -560,13 +603,13 @@ It is the inbox and control center for public intake forms and submissions.
 
 **What this page does**
 
-* shows submissions from public intake forms
+* shows the **unreviewed** seller/birddog inbox from **`list_intake_submissions_v1`** only (**10.12C3** + **10.12C4** — buyer rows and reviewed rows stay off this queue)
 * supports internal lead-intake entry for address-based leads (**real deal creation — governed backend; see §4.3 flow 1**)
-* reviews public submissions tied to draft deals and promotes them to real deals (**see §4.3 flow 2**)
+* **promotes** public submissions tied to draft deals via **`promote_draft_deal_v1`** and **dismisses / rejects** via **`mark_submission_reviewed_v1`** (**see §4.3 flow 2**)
 * copies form links for buyer / seller / birddog (**links only** — not the buyer roster; see §8.2 **10.14C**)
 * generates website embed code
 * toggles form types on or off
-* shows strong empty state CTA when there are no submissions:
+* shows strong empty state CTA when the **unreviewed seller/birddog inbox** is empty:
 
   * “Copy Seller Form Link” 
 
@@ -580,14 +623,17 @@ It is the inbox and control center for public intake forms and submissions.
 
 **Lead Intake KPI strip (time-windowed)**
 
+* **RPC-only (no WeWeb math):** strip metrics and the **`Unreviewed`** badge come from **`get_lead_intake_kpis_v1`** only (**10.12C2** + **10.12C4** field semantics).
 * Default reporting window: **Last 30 days** (user-selectable range)
-* **New Leads** — count of intake submissions created in the selected range
-* **Submission-to-Deal %** — promoted or newly created deals from submissions ÷ address-based submissions in the selected range
-* **Avg Review Time** — average elapsed time from `submitted_at` → `reviewed_at` for reviewed submissions in the selected range
+* **New Submissions** — count of **seller + birddog** `intake_submissions` rows **created** in the selected range (raw intake for those form types — **`new_submissions`** in **`get_lead_intake_kpis_v1`**, **10.12C4**); **labeled clearly in UI** as raw seller/birddog intake (spam/tests may be present until triaged); buyer rows **excluded** from this KPI
+* **New Leads** — count of **seller + birddog** rows **created** in the selected range that count as **legitimate** (non-rejected) leads: **`review_outcome`** is **not** `rejected_spam`, `rejected_test`, or `rejected_invalid` (includes **`unreviewed`** and all **`dismissed_*`** — §4.2.1). **Does not** include manual **`create_deal_from_intake_v1`** deals unless the contract persists an **`intake_submissions`** row for that path
+* **Submission-to-Deal %** — promoted seller/birddog **legitimate leads** ÷ **legitimate leads** in the selected range (`submission_to_deal_pct` — **10.12C4**; **promoted** = **`review_outcome = promoted`** OR linked **`draft_deals.promoted_deal_id IS NOT NULL`**). Same **legitimate-lead** qualification as **New Leads** (§8.7). Address-based dedup applies to **legitimate** seller/birddog rows only; buyer submissions stay **out of scope** for this ratio
+* **Avg Review Time** — `avg_review_time_hours` from **`get_lead_intake_kpis_v1`**: reviewed rows only (**`review_status = reviewed`**) in the selected range
+* **Optional:** **`rejected_count`** (windowed **`rejected_spam` / `rejected_test` / `rejected_invalid`**) may surface from the same RPC for operator visibility — product choice; not required on the strip (**10.12C4**)
 
 **Queue badge (outside KPI strip)**
 
-* **Unreviewed** — current count of submissions not yet reviewed (operational inbox stat, not a windowed KPI)
+* **Unreviewed** — `unreviewed_count` from **`get_lead_intake_kpis_v1`**: current tenant rows with **`review_status = unreviewed`** (**10.12C4**), not a windowed KPI
 
 ---
 
@@ -645,15 +691,18 @@ Use these definitions unless a governance PR changes them.
 **Default reporting windows**
 - **Today page KPIs:** real-time / current-state values
 - **Department page KPIs:** month-to-date values unless explicitly overridden by a reporting filter
-- **Lead Intake KPI strip:** default **Last 30 days** unless the user selects another range (exception to generic department MTD defaults for these three KPIs only; **Unreviewed** stays a current-queue badge)
+- **Lead Intake KPI strip:** default **Last 30 days** unless the user selects another range (exception to generic department MTD defaults for these **four primary** KPIs; **`rejected_count`** optional from the same RPC — **10.12C4**; **Unreviewed** / **`unreviewed_count`** stays a current-queue badge)
 
 - **Projected Fees:** Sum of the authoritative projected assignment fee field for all active deals in stages New through TC. Blank values count as 0. Excludes Closed and Dead.
 - **Overdue Follow-Ups:** Count of open Acq- or Dispo-owned reminder tasks whose due time has passed and whose deals are still active. Excludes TC closing deadlines and checklist items.
 - **Closings This Week:** Count of deals in TC with `closing_date` within the tenant-local current calendar week and not yet Closed or Dead.
-- **New Leads:** Count of new intake submissions / internal lead-intake entries created during the selected reporting period.
-- **Unreviewed Submissions:** Count of intake submissions / internal lead-intake entries not yet marked reviewed by a user.
-- **Submission-to-Deal %:** Distinct property addresses from address-based intake sources that became deals ÷ distinct property addresses submitted through address-based intake sources during the selected reporting period. One property address counts once even if submitted multiple times. Buyer submissions are excluded because they are not property-address based in the current form design.
-- **Address dedup rule:** Address-based intake records are deduplicated by the system-normalized property address key. Street abbreviations and formatting variants collapse to the same address; distinct unit numbers count as distinct addresses; missing unit numbers do not merge with known unit-specific records unless governance changes the matching rule.
+- **New Submissions (Lead Intake strip):** Count of **seller + birddog** `intake_submissions` rows created during the selected reporting period (**`new_submissions`** — **10.12C4**). UI must label this metric as **raw seller/birddog intake**, not “leads.” Buyer submissions **excluded** (Lead Intake / KPI scope).
+- **New Leads (Lead Intake strip):** Count of **seller + birddog** `intake_submissions` rows created during the selected reporting period whose **`review_outcome`** is **not** `rejected_spam`, `rejected_test`, or `rejected_invalid` (**includes** `unreviewed` and all **`dismissed_*`** outcomes). **Spam is not a lead;** **`rejected_*`** removes a row from this count. **Junk vs lead** is determined by outcome category, not by the word “submission” alone (§4.2.1). **Excludes** manual **`create_deal_from_intake_v1`** rows unless that RPC (or a companion write) also creates the corresponding **`intake_submissions`** record — otherwise those deals appear only in **Acquisition** metrics.
+- **Unreviewed Submissions:** Count of `intake_submissions` rows (and internal intake entries if tracked in the same queue contract) with **`review_status = unreviewed`** — operational inbox, not a windowed KPI unless specified elsewhere.
+- **Submission-to-Deal % (Lead Intake strip):** `submission_to_deal_pct` — promoted **legitimate** seller/birddog leads ÷ **legitimate** seller/birddog leads in the selected reporting period (**legitimate** = same rule as **New Leads**). **Numerator:** submissions the backend counts as **promoted** (**`review_outcome = 'promoted'`** OR linked **`draft_deals.promoted_deal_id IS NOT NULL`** — **10.12C4**). **Denominator:** legitimate leads in the period. Buyer submissions are **excluded**. Manual deal creation via **`create_deal_from_intake_v1`** counts only if a future contract links it into this numerator/denominator; otherwise **out of scope** for this percentage.
+- **Rejected submissions (Lead Intake, optional):** `rejected_count` — count in the selected window where **`review_outcome`** is **`rejected_spam`**, **`rejected_test`**, or **`rejected_invalid`** (**10.12C4**). May appear on the page for ops visibility; not a required strip card.
+- **Address dedup rule:** For **Submission-to-Deal %** (and any address-scoped intake analytics), apply deduplication only after restricting to **legitimate** seller/birddog address-based records (same **legitimate-lead** rule as **New Leads**). Dedup uses the system-normalized property address key. Street abbreviations and formatting variants collapse to the same address; distinct unit numbers count as distinct addresses; missing unit numbers do not merge with known unit-specific records unless governance changes the matching rule.
+- **Avg Review Time (Lead Intake strip):** Average elapsed time from `submitted_at` to `reviewed_at` for `intake_submissions` rows that reached **`review_status = reviewed`** within the selected reporting period (all reviewed outcomes, including **`dismissed_*`**, **`rejected_*`**, and **`promoted`**).
 - **Contracts Signed:** Count of deals with contract signed date recorded during the selected reporting period.
 - **Leads Worked:** Count of deals with at least one logged Acquisition activity during the selected reporting period.
 - **Lead-to-Contract %:** Contracts Signed ÷ Leads Worked.
@@ -756,7 +805,7 @@ Zero-config features. No setup required from the user.
 ### 11.7 Safety
 - Invisible spam protection on public intake forms (Cloudflare Turnstile or reCAPTCHA v3)
 - Immutable Closed/Dead records (read-only lock on terminal states)
-- Empty state on Lead Intake: "Copy Seller Form Link" CTA when zero submissions
+- Empty state on Lead Intake: "Copy Seller Form Link" CTA when the **unreviewed** seller/birddog inbox is empty
 - Actual vs estimated assignment fee comparison on TC close
 
 ---
@@ -785,6 +834,7 @@ These apply to ALL Section 10 items. Each is explicitly rejected with rationale 
 ### 12.4 UI Complexity
 - **No custom fields or flexible schema.** Breaks aggregation, health dots, determinism. "Order = Safety."
 - **No custom form builders or drag-and-drop.** Hardcoded intake fields map predictably to database.
+- **No hard-delete UX to wipe `intake_submissions` and “clear” the inbox** — triage is **review outcomes** via governed RPCs (**10.12C4**); KPIs and audit expect rows to remain unless a separate governance-defined admin path exists.
 - **No visual map interfaces or polygon drawing for farm areas.** Text-based tags only.
 - **No in-app image editing or cropping.** Upload raw photos from phone. No rotation/filter tools.
 - **No granular user permissions.** Owner / Admin / Member only. No per-deal, per-zip, per-stage visibility matrices.

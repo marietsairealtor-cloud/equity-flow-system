@@ -1,7 +1,7 @@
 -- 10.12C1: Intake Backend -- Manual Deal Creation + Draft Promotion tests
 BEGIN;
 
-SELECT plan(20);
+SELECT plan(22);
 
 -- ============================================================
 -- Tenant A: member user + slug (primary flows)
@@ -222,6 +222,26 @@ SELECT is(
   'promote_draft_deal_v1: reviewed seller_name overlays draft payload name'
 );
 
+SELECT is(
+  (
+    SELECT review_outcome FROM public.intake_submissions
+    WHERE tenant_id = 'c12ca000-0000-4000-8000-000000000001'
+      AND draft_deals_id = (SELECT id FROM _12c1_draft_id)
+  ),
+  'promoted',
+  'promote_draft_deal_v1: intake_submissions.review_outcome is promoted'
+);
+
+SELECT is(
+  (
+    SELECT review_status FROM public.intake_submissions
+    WHERE tenant_id = 'c12ca000-0000-4000-8000-000000000001'
+      AND draft_deals_id = (SELECT id FROM _12c1_draft_id)
+  ),
+  'reviewed',
+  'promote_draft_deal_v1: intake_submissions.review_status is reviewed'
+);
+
 SELECT isnt(
   (
     SELECT reviewed_at FROM public.intake_submissions
@@ -348,8 +368,9 @@ SELECT ok(
   has_function_privilege('authenticated', 'public.create_deal_from_intake_v1(jsonb)', 'EXECUTE')
   AND has_function_privilege('authenticated', 'public.promote_draft_deal_v1(uuid, jsonb)', 'EXECUTE')
   AND NOT has_function_privilege('anon', 'public.create_deal_from_intake_v1(jsonb)', 'EXECUTE')
-  AND NOT has_function_privilege('anon', 'public.promote_draft_deal_v1(uuid, jsonb)', 'EXECUTE'),
-  'create_deal_from_intake_v1 / promote_draft_deal_v1: EXECUTE granted to authenticated only (not anon)'
+  AND has_function_privilege('authenticated', 'public.mark_submission_reviewed_v1(uuid, text)', 'EXECUTE')
+  AND NOT has_function_privilege('anon', 'public.mark_submission_reviewed_v1(uuid, text)', 'EXECUTE'),
+  'create_deal_from_intake_v1 / promote_draft_deal_v1 / mark_submission_reviewed_v1: EXECUTE granted to authenticated only (not anon)'
 );
 
 SELECT finish();

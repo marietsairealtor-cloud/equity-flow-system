@@ -7995,6 +7995,8 @@ Governed backend write paths for internal Lead Intake users to create real Acqui
 **Deliverable:**
 Governed backend KPI read path for the Lead Intake page, with server-computed reporting-window metrics and current queue count.
 
+**Supersession:** **`10.12C4`** extends **`get_lead_intake_kpis_v1`** with **`new_submissions`**, **`rejected_count`**, **`review_status` / `review_outcome`**-based semantics for **`new_leads`**, **`submission_to_deal_pct`**, and **`unreviewed_count`**. After **10.12C4** merges, treat **10.12C4** as authoritative for KPI field definitions; the DoD below is the **10.12C2** baseline.
+
 **DoD:**
 
 * Governed KPI read path exists:
@@ -8075,6 +8077,8 @@ Governed backend KPI read path for the Lead Intake page, with server-computed re
 **Purpose:**
 Keep Lead Intake focused on seller/birddog review queue. Buyer submissions should not appear there; buyers belong to Dispo.
 
+**Supersession:** **`10.12C4`** further restricts **`list_intake_submissions_v1`** to **`review_status = 'unreviewed'`** (in addition to seller/birddog-only). After **10.12C4** merges, treat **10.12C4** as authoritative for inbox eligibility.
+
 **DoD:**
 
 * `list_intake_submissions_v1(p_limit int DEFAULT 25)` is DROP + recreated
@@ -8109,6 +8113,152 @@ Keep Lead Intake focused on seller/birddog review queue. Buyer submissions shoul
 
 ---
 
+### **10.12C4 — Intake Backend — Submission Review Outcomes**
+
+**Deliverable:**
+Lead Intake submissions support governed review outcomes so the inbox can be cleared without deleting data, while KPIs distinguish legitimate leads from spam/test/invalid submissions.
+
+**DoD:**
+
+* `intake_submissions` has review outcome fields:
+
+  * `review_status text NOT NULL DEFAULT 'unreviewed'`
+  * `review_outcome text NULL`
+
+* `review_status` allowed values:
+
+  * `unreviewed`
+  * `reviewed`
+
+* `review_outcome` allowed values:
+
+  * `promoted`
+  * `dismissed_not_interested`
+  * `dismissed_wrong_number`
+  * `dismissed_duplicate`
+  * `dismissed_not_a_fit`
+  * `rejected_spam`
+  * `rejected_test`
+  * `rejected_invalid`
+
+* Existing unreviewed submissions backfill to:
+
+  * `review_status = 'unreviewed'`
+  * `review_outcome = NULL`
+
+* `promote_draft_deal_v1` sets on successful promotion:
+
+  * `reviewed_at = now()`
+  * `review_status = 'reviewed'`
+  * `review_outcome = 'promoted'`
+
+* New governed dismiss/review RPC exists:
+
+  * `mark_submission_reviewed_v1(p_submission_id uuid, p_outcome text)`
+
+* `mark_submission_reviewed_v1`:
+
+  * authenticated only
+  * member+
+  * tenant-scoped via `current_tenant_id()`
+  * workspace write-lock enforced
+  * accepts only seller/birddog submissions
+  * rejects buyer submissions
+  * rejects unknown/cross-tenant submissions
+  * rejects `p_outcome = 'promoted'`
+  * rejects invalid outcomes
+  * sets `reviewed_at = now()`
+  * sets `review_status = 'reviewed'`
+  * sets `review_outcome = p_outcome`
+  * returns standard envelope
+
+* Valid dismiss outcomes for `mark_submission_reviewed_v1`:
+
+  * `dismissed_not_interested`
+  * `dismissed_wrong_number`
+  * `dismissed_duplicate`
+  * `dismissed_not_a_fit`
+  * `rejected_spam`
+  * `rejected_test`
+  * `rejected_invalid`
+
+* Already reviewed submissions are handled deterministically:
+
+  * same outcome may return idempotent `OK`
+  * different outcome returns `CONFLICT`
+
+* `list_intake_submissions_v1` only returns inbox rows:
+
+  * `form_type IN ('seller', 'birddog')`
+  * `review_status = 'unreviewed'`
+
+* `list_intake_submissions_v1` response includes:
+
+  * `id`
+  * `form_type`
+  * `payload`
+  * `source`
+  * `submitted_at`
+  * `reviewed_at`
+  * `draft_deals_id`
+  * `review_status`
+  * `review_outcome`
+
+* Buyer submissions remain excluded from Lead Intake inbox
+
+* `get_lead_intake_kpis_v1` is updated so spam/test/invalid submissions do not count as legitimate leads
+
+* KPI definitions:
+
+  * `new_submissions` = all seller/birddog submissions in selected window
+  * `new_leads` = seller/birddog submissions in selected window excluding:
+
+    * `rejected_spam`
+    * `rejected_test`
+    * `rejected_invalid`
+  * `submission_to_deal_pct` = promoted legitimate leads ÷ legitimate leads
+  * `promoted` = `review_outcome = 'promoted'` OR linked `draft_deals.promoted_deal_id IS NOT NULL`
+  * `avg_review_time_hours` = reviewed rows only
+  * `unreviewed_count` = current tenant count where `review_status = 'unreviewed'`
+  * `rejected_count` = selected-window count where outcome is one of:
+
+    * `rejected_spam`
+    * `rejected_test`
+    * `rejected_invalid`
+
+* No hard delete for normal dismiss/junk flows
+
+* No KPI math in WeWeb
+
+* No direct table calls from WeWeb
+
+**Tests:**
+
+* default `review_status` is `unreviewed`
+* `mark_submission_reviewed_v1` dismisses seller submission and sets reviewed fields
+* dismissed submission disappears from `list_intake_submissions_v1`
+* `mark_submission_reviewed_v1` rejects `promoted`
+* `mark_submission_reviewed_v1` rejects invalid outcome
+* `mark_submission_reviewed_v1` rejects buyer submission
+* `mark_submission_reviewed_v1` rejects cross-tenant submission
+* same-outcome repeat review is idempotent `OK`
+* different-outcome repeat review returns `CONFLICT`
+* `promote_draft_deal_v1` sets `review_outcome = promoted`
+* `list_intake_submissions_v1` returns only unreviewed seller/birddog rows
+* KPI `new_submissions` includes seller/birddog raw submissions
+* KPI `new_leads` excludes rejected spam/test/invalid
+* KPI conversion denominator excludes rejected spam/test/invalid
+* KPI promoted numerator counts promoted submissions only
+* `unreviewed_count` uses `review_status = unreviewed`
+* expired/read-only workspace cannot mark reviewed
+* unauthenticated/no tenant context returns `NOT_AUTHORIZED`
+
+**Proof:** `docs/proofs/10.12C4_submission_review_outcomes_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C3` merged
+
+---
+
 ### **10.12D — Intake Ops — Lead Intake UI**
 
 **Deliverable:**
@@ -8118,14 +8268,16 @@ Authenticated internal Lead Intake surface for inbound pipeline work: submission
 
 * Authenticated Lead Intake page exists at `/lead-intake`
 * **No buyer roster, buyer tabs, Buyer Ops list/detail, or `list_buyers_v1` usage on `/lead-intake`** (buyer capture remains via submissions + backend **`10.12A` / `10.12C`**; working those buyers belongs in Dispo)
-* Lead Intake top KPI strip supports a reporting window, default **Last 30 days**, and shows:
+* Lead Intake top KPI strip supports a reporting window, default **Last 30 days**, and shows (**10.12C4** `get_lead_intake_kpis_v1` semantics):
 
-  * **New Leads** — count of intake submissions created in the selected range
-  * **Submission-to-Deal %** — promoted or newly created deals from submissions ÷ address-based submissions in the selected range
-  * **Avg Review Time** — average elapsed time from `submitted_at` → `reviewed_at` for reviewed submissions in the selected range
-* Current queue badge shows **Unreviewed** submissions count outside the KPI strip (inbox / queue stat, not a windowed KPI)
-* KPI strip and queue badge consume **`get_lead_intake_kpis_v1`** only (**10.12C2**); no KPI math in WeWeb
-* Lead Intake reads persisted submissions through `list_intake_submissions_v1` only
+  * **New Submissions** — all seller/birddog raw submissions in the selected range (`new_submissions`)
+  * **New Leads** — seller/birddog submissions in the selected range excluding `rejected_spam`, `rejected_test`, `rejected_invalid` (`new_leads`)
+  * **Submission-to-Deal %** — promoted legitimate leads ÷ legitimate leads (`submission_to_deal_pct`; same qualification as `new_leads`)
+  * **Avg Review Time** — reviewed rows only (`avg_review_time_hours`)
+* Current queue badge shows **Unreviewed** submissions count outside the KPI strip (`unreviewed_count`; inbox / queue stat, not a windowed KPI)
+* Optional ops visibility: **`rejected_count`** in-window may surface per product spec (same RPC — no KPI math in WeWeb)
+* KPI strip and queue badge consume **`get_lead_intake_kpis_v1`** only (**10.12C2** baseline + **10.12C4** review-outcome fields); no KPI math in WeWeb
+* Lead Intake reads persisted inbox queue through `list_intake_submissions_v1` only (**10.12C3** + **10.12C4** — unreviewed seller/birddog only)
 * Management actions include:
 
   * copy seller form link
@@ -8133,26 +8285,24 @@ Authenticated internal Lead Intake surface for inbound pipeline work: submission
   * copy birddog form link
   * generate embed code
   * toggle form types on / off
-* Submission list distinguishes:
-
-  * seller
-  * buyer
-  * birddog
-* Unreviewed / reviewed state is visible
+* Submission inbox list shows **seller** and **birddog** rows only (unreviewed queue); **buyer** submissions remain off Lead Intake (**10.12C3** / **10.12C4**)
+* Dismiss / junk / not-a-fit flows call **`mark_submission_reviewed_v1`** only (**10.12C4**); promotion calls **`promote_draft_deal_v1`** (**10.12C1**)
+* Review fields (`review_status`, `review_outcome`, `reviewed_at`) are visible where the UI surfaces queue detail
 * Empty state includes prominent “Copy Seller Form Link” CTA
 * No direct table calls
 
 **Tests:**
 
 * Lead Intake renders persisted submissions and management actions correctly
-* Lead Intake KPI strip uses the selected reporting window (default Last 30 days); **Unreviewed** appears only as queue badge, not as a KPI card
+* Lead Intake KPI strip uses the selected reporting window (default Last 30 days); renders **New Submissions**, **New Leads**, **Submission-to-Deal %**, and **Avg Review Time** from **`get_lead_intake_kpis_v1`** only (**10.12C4**); **Unreviewed** appears only as queue badge, not as a KPI card
+* Dismiss / triage actions use **`mark_submission_reviewed_v1`** only (no direct table calls)
 * `/lead-intake` does **not** render buyer roster / Buyer Ops surfaces
 * empty states render correctly
 * UI contains no duplicated backend business logic
 
 **Proof:** `docs/proofs/10.12D_lead_intake_ui_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.12A`, `10.12C`, `10.12C1`, `10.12C2`, `10.12C3` merged
+**Prerequisite:** `10.12A`, `10.12C`, `10.12C1`, `10.12C2`, `10.12C3`, `10.12C4` merged
 
 ---
 

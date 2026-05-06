@@ -228,6 +228,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "mark_submission_reviewed_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.12C4 — Lead Intake submission dismiss/reject; authenticated only (REVOKE anon, PUBLIC)"
+      },
+      {
         "routine": "promote_draft_deal_v1",
         "privilege": "EXECUTE",
         "authority": "CONTRACTS.md §67 — Build Route 10.12C1; authenticated only (REVOKE anon, PUBLIC); promote intake-linked draft to deal"
@@ -384,6 +389,7 @@
       "list_workspace_members_v1",
       "lookup_share_token_v1",
       "mark_deal_dead_v1",
+      "mark_submission_reviewed_v1",
       "promote_draft_deal_v1",
       "register_deal_media_v1",
       "remove_member_v1",
