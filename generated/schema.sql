@@ -1011,18 +1011,18 @@ BEGIN
       );
   END;
 
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object(
+      'ok', false, 'code', 'WORKSPACE_NOT_WRITABLE', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Workspace is not active', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
     RETURN jsonb_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
       'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
-  END IF;
-
-  IF NOT public.check_workspace_write_allowed_v1() THEN
-    RETURN jsonb_build_object(
-      'ok', false, 'code', 'WORKSPACE_NOT_WRITABLE', 'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Workspace is not active', 'fields', '{}'::jsonb)
     );
   END IF;
 
@@ -3971,18 +3971,18 @@ BEGIN
       );
   END;
 
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN jsonb_build_object(
+      'ok', false, 'code', 'WORKSPACE_NOT_WRITABLE', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Workspace is not active', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
     RETURN jsonb_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', '{}'::jsonb,
       'error', jsonb_build_object('message', 'No tenant context', 'fields', '{}'::jsonb)
-    );
-  END IF;
-
-  IF NOT public.check_workspace_write_allowed_v1() THEN
-    RETURN jsonb_build_object(
-      'ok', false, 'code', 'WORKSPACE_NOT_WRITABLE', 'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Workspace is not active', 'fields', '{}'::jsonb)
     );
   END IF;
 
