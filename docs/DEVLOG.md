@@ -9569,3 +9569,31 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+
+2026-05-07 — Build Route v2.4 — 10.12C4
+
+Objective
+Intake Backend — Submission review outcomes (dismiss / reject / promoted sync; KPI and inbox list alignment).
+
+Changes
+- Migration 20260507000001_10_12C4_submission_review_outcomes.sql applied
+- intake_submissions: review_status, review_outcome, reviewed_at (constraints + backfill); same-outcome idempotency; seller/birddog scoping for review writes
+- New RPC: public.mark_submission_reviewed_v1(p_submission_id uuid, p_outcome text) RETURNS jsonb — SECURITY DEFINER, authenticated, member+, workspace write lock; tenant via current_tenant_id()
+- get_lead_intake_kpis_v1 and list_intake_submissions_v1 extended for review fields and unreviewed-only inbox semantics per contract
+- Trigger public.trg_draft_deals_promoted_sync_intake_review_v1 on draft_deals promotion path (REVOKE ALL FROM PUBLIC; not a client RPC)
+- pgTAP: supabase/tests/10_12C4_submission_review_outcomes.test.sql (temp session table for cross-role reads; C1/C2 tests adjusted where semantics changed)
+- docs/artifacts/CONTRACTS.md §17 / §64; BUILD_ROUTE_V2.4.md; WEWEB_ARCHITECTURE.md; governance GOVERNANCE_CHANGE_20260506T220000Z.md, GOVERNANCE_CHANGE_20260507T150000Z.md
+- docs/truth: rpc_contract_registry.json, qa_claim.json, qa_scope_map.json, privilege_truth.json, execute_allowlist.json, definer_allowlist.json, write_path_registry.json, and handoff-synced artifacts as applicable
+- scripts/ci_robot_owned_guard.ps1: allowlist for finalized proof path pattern 10.12C4_submission_review_outcomes_<UTC>.log
+- scripts/ci_rpc_mapping_contract.ps1: exclude public trg_* trigger bodies from §17 mapping scan
+- generated/schema.sql refreshed (workspace write guard before current_tenant_id in C1 intake RPC bodies)
+- Phase 4 proof log repo-relative paths for ci_path_leak_audit (docs/proofs blocking scope)
+
+Proof
+docs/proofs/10.12C4_submission_review_outcomes_20260506T155215Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied. Post-merge ship / handoff idempotency PASS.
+
+Status
+MERGED
