@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-06T00:46:43Z",
+    "generated":  "2026-05-06T15:30:26Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -182,16 +182,19 @@
                         },
                         {
                             "path_type":  "rpc",
-                            "name":  "mark_submission_reviewed_v1",
+                            "name":  "mark_deal_dead_v1",
                             "tables":  [
-                                           "intake_submissions"
+                                           "deal_activity_log",
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
                         },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "mark_submission_reviewed_v1",
                             "tables":  [
-                                           "deal_activity_log",
-                                           "deals"
+                                           "intake_submissions"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -286,6 +289,15 @@
                             "name":  "submit_form_v1",
                             "tables":  [
                                            "draft_deals",
+                                           "intake_submissions"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "trg_draft_deals_promoted_sync_intake_review_v1",
+                            "tables":  [
                                            "intake_submissions"
                                        ],
                             "row_version_enforced":  false,
@@ -442,6 +454,15 @@
                             "name":  "deals_snapshot_not_null",
                             "tables":  [
                                            "deals"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "trg_draft_deals_promoted_sync_intake_review",
+                            "tables":  [
+                                           "draft_deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
