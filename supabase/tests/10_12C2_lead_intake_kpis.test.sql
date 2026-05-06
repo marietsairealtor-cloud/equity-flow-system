@@ -297,8 +297,8 @@ SELECT is(
       '2026-06-01 23:59:59+00'::timestamptz
     )->'data'->>'unreviewed_count'
   ),
-  '7',
-  '10.12C2: unreviewed_count ignores reporting window (seven unreviewed rows on tenant A)'
+  '5',
+  '10.12C5: unreviewed_count ignores reporting window; counts seller/birddog unreviewed only (five on tenant A; two buyers excluded)'
 );
 
 SELECT is(

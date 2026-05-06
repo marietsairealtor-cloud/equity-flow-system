@@ -651,6 +651,10 @@
     "10.12C4": {
       "title": "Intake Backend — Submission Review Outcomes",
       "proof_pattern": "^docs/proofs/10\\.12C4_submission_review_outcomes_"
+    },
+    "10.12C5": {
+      "title": "Intake Backend — KPI Queue Count Correction",
+      "proof_pattern": "^docs/proofs/10\\.12C5_kpi_unreviewed_count_fix_"
     }
   }
 }

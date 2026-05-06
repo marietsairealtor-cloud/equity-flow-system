@@ -2179,7 +2179,8 @@ BEGIN
   SELECT COUNT(*) INTO v_unreviewed
   FROM public.intake_submissions
   WHERE tenant_id = v_tenant
-    AND review_status = 'unreviewed';
+    AND review_status = 'unreviewed'
+    AND form_type IN ('seller', 'birddog');
 
   SELECT COUNT(*) INTO v_rejected_count
   FROM public.intake_submissions

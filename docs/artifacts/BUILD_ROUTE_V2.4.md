@@ -7995,7 +7995,7 @@ Governed backend write paths for internal Lead Intake users to create real Acqui
 **Deliverable:**
 Governed backend KPI read path for the Lead Intake page, with server-computed reporting-window metrics and current queue count.
 
-**Supersession:** **`10.12C4`** extends **`get_lead_intake_kpis_v1`** with **`new_submissions`**, **`rejected_count`**, **`review_status` / `review_outcome`**-based semantics for **`new_leads`**, **`submission_to_deal_pct`**, and **`unreviewed_count`**. After **10.12C4** merges, treat **10.12C4** as authoritative for KPI field definitions; the DoD below is the **10.12C2** baseline.
+**Supersession:** **`10.12C4`** extends **`get_lead_intake_kpis_v1`** with **`new_submissions`**, **`rejected_count`**, **`review_status` / `review_outcome`**-based semantics for **`new_leads`**, **`submission_to_deal_pct`**, and **`unreviewed_count`**. **`10.12C5`** corrects **`unreviewed_count`** so buyer submissions are excluded (**`review_status = 'unreviewed'`** and **`form_type IN ('seller', 'birddog')`** only). After **10.12C4** and **10.12C5** merge, treat them as authoritative for KPI field definitions; the DoD below is the **10.12C2** baseline.
 
 **DoD:**
 
@@ -8219,7 +8219,7 @@ Lead Intake submissions support governed review outcomes so the inbox can be cle
   * `submission_to_deal_pct` = promoted legitimate leads ÷ legitimate leads
   * `promoted` = `review_outcome = 'promoted'` OR linked `draft_deals.promoted_deal_id IS NOT NULL`
   * `avg_review_time_hours` = reviewed rows only
-  * `unreviewed_count` = current tenant count where `review_status = 'unreviewed'`
+  * `unreviewed_count` = current tenant count where `review_status = 'unreviewed'` (**10.12C5**: also **`form_type IN ('seller', 'birddog')`** — buyer submissions excluded from queue count)
   * `rejected_count` = selected-window count where outcome is one of:
 
     * `rejected_spam`
@@ -8249,7 +8249,7 @@ Lead Intake submissions support governed review outcomes so the inbox can be cle
 * KPI `new_leads` excludes rejected spam/test/invalid
 * KPI conversion denominator excludes rejected spam/test/invalid
 * KPI promoted numerator counts promoted submissions only
-* `unreviewed_count` uses `review_status = unreviewed`
+* `unreviewed_count` uses `review_status = unreviewed` and seller/birddog scope only (**10.12C5**)
 * expired/read-only workspace cannot mark reviewed
 * unauthenticated/no tenant context returns `NOT_AUTHORIZED`
 
@@ -8259,50 +8259,254 @@ Lead Intake submissions support governed review outcomes so the inbox can be cle
 
 ---
 
-### **10.12D — Intake Ops — Lead Intake UI**
+### **10.12C5 — Intake Backend — KPI Queue Count Correction**
 
 **Deliverable:**
-Authenticated internal Lead Intake surface for inbound pipeline work: submissions inbox, intake management, review and promote flows. Buyer roster and outbound distribution live on Dispo (**10.14C**), not Lead Intake.
+Lead Intake **`unreviewed_count`** excludes buyer submissions.
 
 **DoD:**
 
-* Authenticated Lead Intake page exists at `/lead-intake`
-* **No buyer roster, buyer tabs, Buyer Ops list/detail, or `list_buyers_v1` usage on `/lead-intake`** (buyer capture remains via submissions + backend **`10.12A` / `10.12C`**; working those buyers belongs in Dispo)
-* Lead Intake top KPI strip supports a reporting window, default **Last 30 days**, and shows (**10.12C4** `get_lead_intake_kpis_v1` semantics):
+* **`get_lead_intake_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL)`** is **DROP** + recreated
 
-  * **New Submissions** — all seller/birddog raw submissions in the selected range (`new_submissions`)
-  * **New Leads** — seller/birddog submissions in the selected range excluding `rejected_spam`, `rejected_test`, `rejected_invalid` (`new_leads`)
-  * **Submission-to-Deal %** — promoted legitimate leads ÷ legitimate leads (`submission_to_deal_pct`; same qualification as `new_leads`)
-  * **Avg Review Time** — reviewed rows only (`avg_review_time_hours`)
-* Current queue badge shows **Unreviewed** submissions count outside the KPI strip (`unreviewed_count`; inbox / queue stat, not a windowed KPI)
-* Optional ops visibility: **`rejected_count`** in-window may surface per product spec (same RPC — no KPI math in WeWeb)
-* KPI strip and queue badge consume **`get_lead_intake_kpis_v1`** only (**10.12C2** baseline + **10.12C4** review-outcome fields); no KPI math in WeWeb
-* Lead Intake reads persisted inbox queue through `list_intake_submissions_v1` only (**10.12C3** + **10.12C4** — unreviewed seller/birddog only)
-* Management actions include:
+* **Only change — `unreviewed_count` query counts:**
 
-  * copy seller form link
-  * copy buyer form link
-  * copy birddog form link
-  * generate embed code
-  * toggle form types on / off
-* Submission inbox list shows **seller** and **birddog** rows only (unreviewed queue); **buyer** submissions remain off Lead Intake (**10.12C3** / **10.12C4**)
-* Dismiss / junk / not-a-fit flows call **`mark_submission_reviewed_v1`** only (**10.12C4**); promotion calls **`promote_draft_deal_v1`** (**10.12C1**)
-* Review fields (`review_status`, `review_outcome`, `reviewed_at`) are visible where the UI surfaces queue detail
-* Empty state includes prominent “Copy Seller Form Link” CTA
-* No direct table calls
+  * **`review_status = 'unreviewed'`**
+  * **`form_type IN ('seller', 'birddog')`**
+
+* Buyer submissions excluded from Lead Intake queue count
+* No other KPI semantics changed
+* Same owner / revoke / grant
 
 **Tests:**
 
-* Lead Intake renders persisted submissions and management actions correctly
-* Lead Intake KPI strip uses the selected reporting window (default Last 30 days); renders **New Submissions**, **New Leads**, **Submission-to-Deal %**, and **Avg Review Time** from **`get_lead_intake_kpis_v1`** only (**10.12C4**); **Unreviewed** appears only as queue badge, not as a KPI card
-* Dismiss / triage actions use **`mark_submission_reviewed_v1`** only (no direct table calls)
-* `/lead-intake` does **not** render buyer roster / Buyer Ops surfaces
-* empty states render correctly
-* UI contains no duplicated backend business logic
+* unreviewed seller counts
+* unreviewed birddog counts
+* unreviewed buyer does not count
+* existing KPI tests still pass
 
-**Proof:** `docs/proofs/10.12D_lead_intake_ui_<UTC>.md`
-**Gate:** `lane-only`
-**Prerequisite:** `10.12A`, `10.12C`, `10.12C1`, `10.12C2`, `10.12C3`, `10.12C4` merged
+**Proof:** `docs/proofs/10.12C5_kpi_unreviewed_count_fix_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C4` merged
+
+---
+
+### **10.12D1 — Lead Intake UI — Internal Operator Queue**
+
+**Deliverable:**
+Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewing Lead Intake KPIs, dismissing non-promotable submissions, and promoting valid submissions into Acquisition.
+
+**DoD:**
+
+* `/lead-intake` page exists in WeWeb
+* Page is authenticated-only
+* Page uses governed backend RPCs only
+* No direct table calls from WeWeb
+* No frontend-only KPI math
+* No buyer-ops UI on Lead Intake page
+* Buyer submissions do not appear in Lead Intake inbox
+* KPI strip loads from:
+
+  * `get_lead_intake_kpis_v1(p_date_from, p_date_to)`
+* KPI strip supports reporting window:
+
+  * default Last 30 days
+  * Last 7 days
+  * Last 30 days
+  * Custom date range
+* KPI strip displays:
+
+  * `new_submissions`
+  * `new_leads`
+  * `submission_to_deal_pct`
+  * `avg_review_time_hours`
+  * `rejected_count`
+* Queue badge displays:
+
+  * `unreviewed_count`
+* Submission inbox loads from:
+
+  * `list_intake_submissions_v1(p_limit)`
+* Inbox displays only backend-returned unreviewed seller/birddog rows
+* Inbox row displays at minimum:
+
+  * form type
+  * submitted date/time
+  * name/contact from payload
+  * address from payload
+  * source
+  * review status
+  * action buttons
+* Inbox row includes actions:
+
+  * `Review + Promote to ACQ`
+  * `Dismiss`
+* `Review + Promote to ACQ` opens:
+
+  * `/lead-intake/new?draft_id=<draft_deals_id>`
+* Review form pre-fills from draft/submission data available in backend response or draft promotion flow
+* On save, UI calls:
+
+  * `promote_draft_deal_v1(p_draft_id, p_fields)`
+* Successful promotion:
+
+  * shows success state
+  * refreshes inbox
+  * refreshes KPI strip
+  * promoted submission disappears from inbox
+  * resulting deal appears in Acquisition
+* `Dismiss` opens small outcome selector/modal
+* Dismiss outcome options:
+
+  * Not interested → `dismissed_not_interested`
+  * Wrong number → `dismissed_wrong_number`
+  * Duplicate → `dismissed_duplicate`
+  * Not a fit → `dismissed_not_a_fit`
+  * Spam → `rejected_spam`
+  * Test → `rejected_test`
+  * Invalid → `rejected_invalid`
+* Dismiss save calls:
+
+  * `mark_submission_reviewed_v1(p_submission_id, p_outcome)`
+* Successful dismiss:
+
+  * shows success state
+  * refreshes inbox
+  * refreshes KPI strip
+  * dismissed submission disappears from inbox
+* Error handling:
+
+  * `NOT_AUTHORIZED` shows access/session message
+  * `WORKSPACE_NOT_WRITABLE` shows workspace inactive/read-only message
+  * `VALIDATION_ERROR` shows validation message
+  * `CONFLICT` shows already-reviewed message and refreshes inbox
+  * `NOT_FOUND` shows not-found/stale-row message and refreshes inbox
+* Empty inbox state exists:
+
+  * “No unreviewed seller or birddog submissions.”
+* Public form distribution controls exist on page:
+
+  * Copy Seller Form Link
+  * Copy Buyer Form Link
+  * Copy Birddog Form Link
+  * Copy Seller Embed Code
+  * Copy Buyer Embed Code
+  * Copy Birddog Embed Code
+* Link/embed controls use the current workspace slug
+* Link/embed controls do not require direct DB reads
+
+**Tests / Proof:**
+
+* KPI strip renders backend values
+* date range changes refetch KPI RPC
+* inbox renders only `list_intake_submissions_v1` rows
+* buyer submissions are not shown
+* dismiss calls `mark_submission_reviewed_v1`
+* dismiss success removes row from inbox
+* promote flow calls `promote_draft_deal_v1`
+* promote success removes row from inbox and deal appears in ACQ
+* error states render correctly
+* public form links copy correct `/form/:slug/:type` URLs
+* embed buttons copy correct standalone embed snippets
+* no direct table calls from WeWeb proof
+
+**Proof:** `docs/proofs/10.12D1_lead_intake_internal_ui_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C5` merged
+
+---
+
+### **10.12D2 — Public Intake Forms — Lightweight Embed Distribution**
+
+**Deliverable:**
+Lightweight public seller, buyer, and birddog intake forms that can be embedded on external websites without loading the WeWeb runtime, while still submitting through the governed `submit_form_v1` backend path.
+
+**DoD:**
+
+* Lightweight public form surface exists outside WeWeb iframe runtime
+* Seller, buyer, and birddog forms are supported
+* Forms are embeddable on external websites
+* Forms are mobile responsive
+* Forms are fast-loading and minimal dependency
+* Forms post only to governed backend RPC:
+
+  * `submit_form_v1(p_slug, p_form_type, p_payload)`
+* No direct table calls
+* No Supabase table insert/update from frontend
+* No frontend-created deal/draft/buyer records outside RPC
+* Supported public form types:
+
+  * seller
+  * buyer
+  * birddog
+* Form URL pattern or embed endpoint supports:
+
+  * workspace slug
+  * form type
+* Seller form captures only 10.12B-approved seller public intake fields:
+
+  * address
+  * name
+  * phone
+  * email
+* Seller form does **not** capture:
+
+  * asking_price
+  * repair_estimate
+  * condition notes
+  * seller timeline
+* Buyer form captures buyer intake fields:
+
+  * name
+  * email
+  * phone
+  * areas_of_interest
+  * budget_range
+  * optional deal_type_tags
+  * optional price_range_notes
+  * optional notes
+* Birddog form captures birddog intake fields as already governed by backend contract
+* Form payload includes spam protection token field expected by `submit_form_v1`
+* Submit button disabled while request is pending
+* Duplicate submit protection exists client-side
+* Success state appears after `ok = true`
+* Error state appears after backend envelope error
+* `NOT_AUTHORIZED` / expired workspace message is user-safe
+* `VALIDATION_ERROR` message is user-safe
+* Unknown slug / invalid slug shows not-found style message
+* Embed snippet is deterministic and copyable from Lead Intake UI
+* Embed snippet supports at minimum:
+
+  * seller form
+  * buyer form
+  * birddog form
+* Embed snippet does not load full WeWeb app runtime
+* Embed snippet can be pasted into a realtor/external website
+* Embed surface is visually neutral/simple by default
+* Form styling is self-contained enough to avoid breaking host page
+* No authentication required for public submit
+* No private tenant data exposed in embed
+
+**Tests / Proof:**
+
+* seller embed form renders without WeWeb runtime
+* buyer embed form renders without WeWeb runtime
+* birddog embed form renders without WeWeb runtime
+* seller submit calls `submit_form_v1` with correct slug/type/payload
+* seller submit does not include pricing/repair/timeline/condition fields
+* buyer submit calls `submit_form_v1` with correct buyer payload
+* birddog submit calls `submit_form_v1` with correct birddog payload
+* success envelope renders success state
+* validation envelope renders error state
+* expired workspace / `NOT_AUTHORIZED` renders safe message
+* invalid slug / `NOT_FOUND` renders safe message
+* duplicate clicking does not create duplicate client submissions
+* embed snippet generated by D1 points to D2 form correctly
+* no direct table calls from public form code
+* no WeWeb iframe/runtime in embed proof
+
+**Proof:** `docs/proofs/10.12D2_public_intake_embed_forms_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12D1` or built in same PR as `10.12D1`, plus `10.12C5` merged.
 
 ---
 
