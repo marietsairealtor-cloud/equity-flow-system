@@ -3219,15 +3219,17 @@ BEGIN
   INTO v_items
   FROM (
     SELECT jsonb_build_object(
-      'id',           id,
-      'form_type',    form_type,
-      'payload',      payload,
-      'source',       source,
-      'submitted_at', submitted_at,
-      'reviewed_at',  reviewed_at
+      'id',              id,
+      'form_type',       form_type,
+      'payload',         payload,
+      'source',          source,
+      'submitted_at',    submitted_at,
+      'reviewed_at',     reviewed_at,
+      'draft_deals_id',  draft_deals_id
     ) AS r
     FROM public.intake_submissions
     WHERE tenant_id = v_tenant_id
+      AND form_type IN ('seller', 'birddog')
     ORDER BY submitted_at DESC, id DESC
     LIMIT v_limit
   ) sub;

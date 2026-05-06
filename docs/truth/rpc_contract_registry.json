@@ -148,15 +148,15 @@
     },
     {
       "name": "list_intake_submissions_v1",
-      "version": 1,
-      "build_route_owner": "10.12A",
+      "version": 2,
+      "build_route_owner": "10.12C3",
       "input_contract": "CONTRACTS.md §64 list_intake_submissions_v1",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
         "VALIDATION_ERROR"
       ],
-      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Tenant from current_tenant_id(); NULL → NOT_AUTHORIZED. p_limit DEFAULT 25; coalesce null to 25; must satisfy 1 ≤ p_limit ≤ 100 else VALIDATION_ERROR. Returns ok + data.items JSON array of intake_submissions rows for tenant (fields: id, form_type, payload, source, submitted_at, reviewed_at), newest first. DIRECT table SELECT/INSERT by authenticated is forbidden (§64)."
+      "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Tenant from current_tenant_id(); NULL → NOT_AUTHORIZED. p_limit DEFAULT 25; coalesce null to 25; must satisfy 1 ≤ p_limit ≤ 100 else VALIDATION_ERROR. 10.12A base; 10.12C3 migration narrows Lead Intake queue: returns only intake_submissions with form_type in (seller, birddog) — buyer omitted server-side — ordered submitted_at DESC, id DESC same envelope ok + data.items. Each item includes id, form_type, payload, source, submitted_at, reviewed_at, draft_deals_id. DIRECT intake_submissions SELECT/INSERT by authenticated remains forbidden (§64)."
     },
     {
       "name": "list_buyers_v1",
