@@ -9542,3 +9542,30 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+
+2026-05-06 — Build Route v2.4 — 10.12C3
+
+Objective
+Intake Backend — Lead Intake submission list filter (seller and birddog inbox only).
+
+Changes
+- Migration 20260506000001_10_12C3_list_intake_submissions_filter.sql applied
+- list_intake_submissions_v1(p_limit int DEFAULT 25): DROP+recreate; returns only rows where form_type in (seller, birddog); buyer rows omitted server-side
+- Each returned item includes draft_deals_id alongside id, form_type, payload, source, submitted_at, reviewed_at (same envelope, ordering submitted_at DESC, id DESC; p_limit 1–100)
+- New pgTAP: supabase/tests/10_12C3_list_intake_submissions_filter.test.sql
+- supabase/tests/10_12A_intake_submission_persistence.test.sql adjusted for seller+birddog-only inbox count (aligned with filtered list RPC)
+- supabase/tests/10_12C2_lead_intake_kpis.test.sql: deterministic submitted_at seeds for May-window KPI count (eliminates flake from now()-relative seed)
+- docs/artifacts/CONTRACTS.md; docs/artifacts/BUILD_ROUTE_V2.4.md §10.12C3
+- docs/governance/GOVERNANCE_CHANGE_20260506T010000Z.md
+- docs/truth: rpc_contract_registry.json (list_intake_submissions_v1 version bump), privilege_truth.json, qa_claim.json, qa_scope_map.json
+- scripts/ci_robot_owned_guard.ps1 proof allowlist pattern for 10.12C3
+- Proof log paths normalized repo-relative post-finalize where needed for ci_path_leak_audit (blocking docs/proofs scope)
+
+Proof
+docs/proofs/10.12C3_list_intake_submissions_fix_20260506T003558Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
