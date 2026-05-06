@@ -8070,6 +8070,45 @@ Governed backend KPI read path for the Lead Intake page, with server-computed re
 
 ---
 
+### **10.12C3 — Intake Backend — Lead Intake Submission List Filter**
+
+**Purpose:**
+Keep Lead Intake focused on seller/birddog review queue. Buyer submissions should not appear there; buyers belong to Dispo.
+
+**DoD:**
+
+* `list_intake_submissions_v1(p_limit int DEFAULT 25)` is DROP + recreated
+* Response excludes buyer submissions server-side
+* Returned rows include `draft_deals_id`
+* RPC remains:
+
+  * `RETURNS jsonb`
+  * `SECURITY DEFINER`
+  * authenticated only
+  * tenant-scoped
+  * same envelope
+  * same ordering: `submitted_at DESC, id DESC`
+  * same `p_limit` validation: 1–100
+* No direct table calls from WeWeb
+* No frontend filtering required
+
+**Migration:** **`20260506000001_10_12C3_list_intake_submissions_filter.sql`** (`DROP FUNCTION IF EXISTS …`; `CREATE FUNCTION …`).
+
+**Tests:**
+
+* seller submissions appear
+* birddog submissions appear
+* buyer submissions do **not** appear
+* returned item includes `draft_deals_id`
+* tenant isolation still enforced
+* `p_limit` validation still works
+
+**Proof:** `docs/proofs/10.12C3_list_intake_submissions_fix_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C2` merged
+
+---
+
 ### **10.12D — Intake Ops — Lead Intake UI**
 
 **Deliverable:**
@@ -8113,7 +8152,7 @@ Authenticated internal Lead Intake surface for inbound pipeline work: submission
 
 **Proof:** `docs/proofs/10.12D_lead_intake_ui_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.12A`, `10.12C`, `10.12C1`, `10.12C2` merged
+**Prerequisite:** `10.12A`, `10.12C`, `10.12C1`, `10.12C2`, `10.12C3` merged
 
 ---
 

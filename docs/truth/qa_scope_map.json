@@ -643,6 +643,10 @@
     "10.12C2": {
       "title": "Intake Backend — Lead Intake KPI Read Path",
       "proof_pattern": "^docs/proofs/10\\.12C2_lead_intake_kpis_"
+    },
+    "10.12C3": {
+      "title": "Intake Backend — Lead Intake Submission List Filter",
+      "proof_pattern": "^docs/proofs/10\\.12C3_list_intake_submissions_fix_"
     }
   }
 }

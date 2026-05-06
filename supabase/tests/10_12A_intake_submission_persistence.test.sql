@@ -137,9 +137,11 @@ SELECT is(
 );
 
 -- Owner-visible row count for tenant 1 (used vs list_intake RPC; captured as postgres only)
+-- Owner-visible Lead Intake queue row count for tenant 1 (seller + birddog only; matches list_intake_submissions_v1 after 10.12C3)
 CREATE TEMP TABLE _10_12a_owner_tenant1_intake_count AS
 SELECT count(*)::int AS n FROM public.intake_submissions
-WHERE tenant_id = 'b1120000-0000-0000-0000-000000000001';
+WHERE tenant_id = 'b1120000-0000-0000-0000-000000000001'
+  AND form_type IN ('seller', 'birddog');
 GRANT SELECT ON TABLE _10_12a_owner_tenant1_intake_count TO authenticated;
 
 -- 14. intake_submissions: direct SELECT denied for authenticated (REVOKE firewall)
@@ -173,7 +175,7 @@ SET LOCAL ROLE authenticated;
 SELECT is(
   jsonb_array_length((public.list_intake_submissions_v1())->'data'->'items'),
   (SELECT n FROM _10_12a_owner_tenant1_intake_count),
-  'list_intake_submissions_v1: item count matches owner-captured tenant row count'
+  'list_intake_submissions_v1: item count matches tenant seller+birddog rows (Lead Intake queue; excludes buyer)'
 );
 
 -- 17. list_intake_submissions_v1: no cross-tenant leakage

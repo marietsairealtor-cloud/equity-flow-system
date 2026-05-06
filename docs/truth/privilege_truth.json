@@ -154,7 +154,7 @@
       {
         "routine": "list_intake_submissions_v1",
         "privilege": "EXECUTE",
-        "authority": "CONTRACTS.md §64 — Build Route 10.12A"
+        "authority": "CONTRACTS.md §64 — Build Route 10.12A inbox read; Lead Intake list filter Build Route 10.12C3 (seller+birddog only; buyer omitted)"
       },
       {
         "routine": "list_buyers_v1",

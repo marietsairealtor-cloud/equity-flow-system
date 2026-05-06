@@ -130,7 +130,7 @@ VALUES
     'seller',
     '{}'::jsonb,
     'test',
-    now() - interval '5 days',
+    '2026-04-15 12:00:00+00',
     NULL
   );
 
@@ -168,9 +168,15 @@ SELECT is(
   '10.12C2: default window returns OK'
 );
 
-SELECT ok(
-  (public.get_lead_intake_kpis_v1()->'data'->>'new_leads')::bigint >= 1,
-  '10.12C2: default 30-day window includes row submitted 5 days ago'
+SELECT is(
+  (
+    public.get_lead_intake_kpis_v1(
+      '2026-04-01 00:00:00+00'::timestamptz,
+      '2026-04-30 23:59:59+00'::timestamptz
+    )->'data'->>'new_leads'
+  ),
+  '1',
+  '10.12C2: April-only window counts one pinned tenant-A row (deterministic)'
 );
 
 SELECT is(

@@ -313,7 +313,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_deal_from_intake_v1 | 10.12C1 | Lead Intake manual / call-in: create real `deals` row (`stage=new`) from `p_fields` jsonb; optional nested `property`, `assumptions` (server-derived MAO; no client `mao`) | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_fields` jsonb only — tenant from `current_tenant_id()` |
 | promote_draft_deal_v1 | 10.12C1 | Promote tenant `draft_deals` linked from intake into real `deals` row; merge draft payload with reviewed `p_fields`; duplicate promotion rejected | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_draft_id`, `p_fields` — tenant from `current_tenant_id()` |
 | upsert_buyer_from_intake_v1 | 10.12C | Internal helper: buyer intake upsert invoked only inside `submit_form_v1`; deterministic dedupe per §66 | SECURITY DEFINER; EXECUTE revoked on PUBLIC, anon, and authenticated — definer chaining only | `p_resolved_tenant uuid` supplied by caller from slug-resolved tenant; not PostgREST callable |
-| list_intake_submissions_v1 | 10.12A | List `intake_submissions` for current tenant (governed Lead Intake read path) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
+| list_intake_submissions_v1 | 10.12A **+** 10.12C3 (seller/birddog inbox filter) | **`list_intake_submissions_v1`**: Lead Intake read path; returns tenant **`intake_submissions`** with **`draft_deals_id`**; **excludes buyer** rows server-side (buyers surfaced from Dispo, not Lead Intake queue); same envelope, ordering **`submitted_at DESC, id DESC`**, **`p_limit`** **1–100** | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25) |
 | list_buyers_v1 | 10.12A, 10.14C UI | List `intake_buyers` for current tenant (governed Dispo Buyer Ops read path; **not** Lead Intake) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
 | list_reminders_v1 | 10.8.3 | List overdue and upcoming reminders for current tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | create_reminder_v1 | 10.8.3 | Create a deal reminder for current tenant | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
@@ -1478,7 +1478,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ## 64) Intake Backend — Submission Persistence (10.12A)
 
-**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**. **Lead Intake KPI read path (10.12C2):** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`get_lead_intake_kpis_v1`).
+**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**. **Lead Intake KPI read path (10.12C2):** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`get_lead_intake_kpis_v1`). **Lead Intake inbox list filter (10.12C3):** **`20260506000001_10_12C3_list_intake_submissions_filter.sql`** (`list_intake_submissions_v1` seller/birddog-only filtering + `draft_deals_id` in list payload).
 
 **Purpose:** Authoritative persistence for public intake submissions under tenant context, governed list surfaces for Lead Intake / buyer ops, and **no direct `anon` / `authenticated` access** to the new product tables (EXECUTE on `SECURITY DEFINER` RPCs only).
 
@@ -1544,10 +1544,11 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ### `list_intake_submissions_v1(p_limit int DEFAULT 25)` → `jsonb`
 
+- **Implementations:** Introduced **`10.12A`**; **10.12C3** (**`20260506000001_10_12C3_list_intake_submissions_filter.sql`**) **`DROP FUNCTION IF EXISTS`** + **`CREATE FUNCTION`** returns **`data.items`** for **`form_type`** in (**`seller`**, **`birddog`**) only **(buyer rows omitted)** and includes **`draft_deals_id`** on each listed object **(Lead Intake review queue)**.
 - **Callable by:** **`authenticated` only** (`REVOKE` from `anon`, `PUBLIC`).
 - **Tenant:** `current_tenant_id()`; **`NULL` → `NOT_AUTHORIZED`**.
 - **Limits:** `COALESCE(p_limit, 25)`; must satisfy **1 ≤ p_limit ≤ 100** or **`VALIDATION_ERROR`**.
-- **OK payload:** `data.items` — JSON array of objects `{ id, form_type, payload, source, submitted_at, reviewed_at }` for the caller tenant, ordered newest first.
+- **OK payload:** `data.items` — JSON array ordered **`submitted_at DESC, id DESC`**, objects **`{ id, form_type, payload, source, submitted_at, reviewed_at, draft_deals_id }`** for the caller tenant **(seller and birddog submissions only)**.
 
 ### `list_buyers_v1(p_limit int DEFAULT 25)` → `jsonb`
 
@@ -1558,7 +1559,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`**, **`list_buyers_v1`** **10.12A**; **`get_lead_intake_kpis_v1`** **10.12C2**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`** **10.12C3** (**10.12A** base persistence); **`list_buyers_v1`** **10.12A**; **`get_lead_intake_kpis_v1`** **10.12C2**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
 
 ---
 
