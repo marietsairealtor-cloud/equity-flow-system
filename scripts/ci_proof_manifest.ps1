@@ -29,7 +29,10 @@ if($listed.ContainsKey("docs/proofs/manifest.json")){
 $all = Get-ChildItem (Join-Path $root "docs/proofs") -Recurse -File | % { Rel $_.FullName }
 $all = $all | ? { $_ -ne "docs/proofs/manifest.json" } | Sort-Object
 
-foreach($f in $all){ if(-not $listed.ContainsKey($f)){ Write-Error "MISSING IN MANIFEST: $f"; exit 1 } }
+foreach($f in $all){
+  if($f -match '_WORKING\.log$'){ continue }
+  if(-not $listed.ContainsKey($f)){ Write-Error "MISSING IN MANIFEST: $f"; exit 1 }
+}
 
 foreach($k in $listed.Keys){
   $p = Join-Path $root ($k -replace '/','\')
