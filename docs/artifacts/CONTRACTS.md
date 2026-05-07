@@ -1697,8 +1697,8 @@ Minimum screen / workflow states the implementation must distinguish:
 
 ### Internal helpers (definer-only; **REVOKE ALL** on **`PUBLIC`**, **`anon`**, **`authenticated`**)
 
-- **`_parse_money_input_v1(text)`** — **STABLE** **SECURITY DEFINER**; normalizes a single money token (strip **`$`**, commas, spaces; **`K`/`k`** ×1000, **`M`/`m`** ×1e6); invalid token → **SQL NULL** (callers surface **`VALIDATION_ERROR`** on governed paths).
-- **`_intake_canonicalize_pricing_assumptions_v1(jsonb)`** — produces numeric **jsonb** for **`arv`**, **`ask_price`**, **`repair_estimate`**, **`assignment_fee`**, **`multiplier`** using **`_parse_money_input_v1`** and multiplier rules (**`%`** strip; **> 1** → divide by **100**; enforce **0 < m < 1**); invalid → **SQL NULL**.
+- **`_parse_money_input_v1(text)`** — **STABLE** **SECURITY DEFINER**; normalizes a single money token (strip **`$`**, commas, spaces; **`K`/`k`** ×1000, **`M`/`m`** ×1e6); invalid token → **SQL NULL** (callers surface **`VALIDATION_ERROR`** on governed paths). **`tenant_context_exempt`** in **`definer_allowlist.json`** (no **`current_tenant_id()`** in body; definer-chained only from tenant-enforcing RPCs).
+- **`_intake_canonicalize_pricing_assumptions_v1(jsonb)`** — produces numeric **jsonb** for **`arv`**, **`ask_price`**, **`repair_estimate`**, **`assignment_fee`**, **`multiplier`** using **`_parse_money_input_v1`** and multiplier rules (**`%`** strip; **> 1** → divide by **100**; enforce **0 < m < 1**); invalid → **SQL NULL**. **`tenant_context_exempt`** in **`definer_allowlist.json`** (same chaining posture as **`_parse_money_input_v1`**).
 - **`_intake_validate_pricing_assumptions_v1(jsonb)`** — validates pricing-related assumption keys on **numeric** assumptions after canonicalization (**10.12C7** DROP+CREATE).
 - **`_intake_apply_mao_to_assumptions_v1(jsonb)`** — server MAO merge for persisted assumptions (**10.12C7** DROP+CREATE; formula unchanged).
 - **`_intake_validate_deal_property_jsonb_v1(jsonb)`** — validates **`deal_properties`-shaped** JSON fragments.

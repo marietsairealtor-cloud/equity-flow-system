@@ -36,7 +36,8 @@ foreach ($mig in $migrationsChanged) {
                              "check_workspace_write_allowed_v1", "create_active_workspace_seed_v1",
                              "process_workspace_retention_v1", "confirm_trial_v1",
                              "_intake_validate_pricing_assumptions_v1", "_intake_apply_mao_to_assumptions_v1",
-                             "_intake_validate_deal_property_jsonb_v1")) {
+                             "_intake_validate_deal_property_jsonb_v1",
+                             "_parse_money_input_v1", "_intake_canonicalize_pricing_assumptions_v1")) {
         $newRpcs += $rpcName
       }
     }
@@ -91,7 +92,7 @@ foreach ($rpc in $newRpcs) {
   # Find the table row for this RPC
   $rowPattern = "\|\s*" + [regex]::Escape($rpc) + "\s*\|([^|]*\|){4}"
   if ($contractsContent -notmatch $rowPattern) {
-    $incomplete += "$rpc — missing or malformed table row (need 5 fields)"
+    $incomplete += "$rpc - missing or malformed table row (need 5 fields)"
   }
 }
 

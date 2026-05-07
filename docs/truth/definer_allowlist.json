@@ -80,6 +80,8 @@
     "public.upsert_subscription_v1"
   ],
   "tenant_context_exempt": [
+    "public._intake_canonicalize_pricing_assumptions_v1",
+    "public._parse_money_input_v1",
     "public.auth_user_exists_v1",
     "public.check_slug_access_v1",
     "public.check_workspace_write_allowed_v1",
