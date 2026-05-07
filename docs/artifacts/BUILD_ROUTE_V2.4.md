@@ -8337,6 +8337,62 @@ Governed backend read path for loading a draft deal by `draft_id` so Lead Intake
 
 ---
 
+### **10.12C7 — Intake Backend — Money Input Normalizer**
+
+**Deliverable:**
+Governed money input parsing helper and application across all RPCs that accept numeric financial inputs from user or public form submissions, so dirty strings like "580K", "$185,000", "1.2M" are normalized server-side without errors or data loss.
+
+**DoD:**
+
+* New internal helper exists:
+
+  * `_parse_money_input_v1(p_input text) RETURNS numeric`
+
+* Helper is STABLE, SECURITY DEFINER, REVOKE ALL from PUBLIC/anon/authenticated
+* Helper normalizes:
+
+  * NULL or empty → NULL
+  * Strips: $, commas, spaces
+  * K/k suffix → multiply by 1000
+  * M/m suffix → multiply by 1000000
+  * Valid numeric string → cast to numeric
+  * Uncastable → NULL (no error, no exception)
+
+* `_intake_validate_pricing_assumptions_v1` updated to strip formatting before regex check
+* `promote_draft_deal_v1` updated to use `_parse_money_input_v1` for birddog payload asking_price
+* `create_deal_from_intake_v1` updated to use `_parse_money_input_v1` for all assumption fields from p_fields
+* `update_deal_pricing_v1` updated to use `_parse_money_input_v1` for all numeric pricing inputs
+* `submit_form_v1` — no change needed (payload stores raw string as-is, parser applied at read time)
+* multiplier handling: strip % sign, if value > 1 divide by 100 (e.g. 70% → 0.70, 0.70 → 0.70)
+* No schema changes
+* No new tables
+* No new RPC surfaces
+* All affected RPCs DROP + recreate
+
+**Tests:**
+
+* `_parse_money_input_v1` returns NULL for NULL input
+* `_parse_money_input_v1` returns NULL for empty string
+* `_parse_money_input_v1` parses "580K" → 580000
+* `_parse_money_input_v1` parses "1.2M" → 1200000
+* `_parse_money_input_v1` parses "$185,000" → 185000
+* `_parse_money_input_v1` parses "185000" → 185000
+* `_parse_money_input_v1` returns NULL for "unknown"
+* `_parse_money_input_v1` returns NULL for "N/A"
+* `promote_draft_deal_v1` promotes birddog draft with "580K" asking_price without error
+* `promote_draft_deal_v1` promotes birddog draft with "$185,000" asking_price without error
+* `create_deal_from_intake_v1` accepts "$350,000" arv without error
+* `create_deal_from_intake_v1` accepts "70%" multiplier and stores as 0.70
+* `update_deal_pricing_v1` accepts "1.2M" arv without error
+* `_intake_validate_pricing_assumptions_v1` passes "580K" after normalization
+* existing pgTAP suite passes
+
+**Proof:** `docs/proofs/10.12C7_money_input_normalizer_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C6` merged
+
+---
+
 ### **10.12D1 — Lead Intake UI — Internal Operator Queue**
 
 **Deliverable:**
@@ -8446,6 +8502,7 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
   * Copy Birddog Embed Code
 * Link/embed controls use the current workspace slug
 * Link/embed controls do not require direct DB reads
+* Financial fields sent in **`p_fields`** to **`promote_draft_deal_v1`** (and on Lead Intake manual entry via **`create_deal_from_intake_v1`**) may include user-typed display strings; **10.12C7** applies **`_parse_money_input_v1`** server-side on governed intake/pricing RPCs (WeWeb may still normalize **`$`/commas** for UX; backend parsing is authoritative)
 
 **Tests / Proof:**
 
@@ -8465,7 +8522,7 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
 
 **Proof:** `docs/proofs/10.12D1_lead_intake_internal_ui_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** **`10.12C6`** merged (includes **`10.12C5`** dependency chain)
+**Prerequisite:** **`10.12C7`** merged (**`10.12C6`** draft read path and earlier intake chain are prerequisites of **10.12C7** per Build Route)
 
 ---
 
@@ -8539,6 +8596,7 @@ Lightweight public seller, buyer, and birddog intake forms that can be embedded 
 * Form styling is self-contained enough to avoid breaking host page
 * No authentication required for public submit
 * No private tenant data exposed in embed
+* **`submit_form_v1`** behavior unchanged (**10.12C7**): public payloads (e.g. birddog **asking_price** as free text) may remain raw JSON strings in **`draft_deals.payload`**; money normalization runs on governed **read/promote/intake/pricing** RPCs when numbers are consumed, not at public submit time
 
 **Tests / Proof:**
 
@@ -8560,7 +8618,7 @@ Lightweight public seller, buyer, and birddog intake forms that can be embedded 
 
 **Proof:** `docs/proofs/10.12D2_public_intake_embed_forms_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** `10.12D1` or built in same PR as `10.12D1`, plus **`10.12C6`** merged (Lead Intake review screen depends on **`get_draft_deal_v1`**).
+**Prerequisite:** `10.12D1` or built in same PR as `10.12D1`, plus **`10.12C7`** merged (**`10.12C6`** for **`get_draft_deal_v1`**; **`10.12C7`** for server-side money parsing on promotion and intake pricing paths when public/embed inputs carry formatted strings).
 
 ---
 

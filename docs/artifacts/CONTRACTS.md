@@ -303,7 +303,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_seller_v1 | 10.11A2 | Jsonb field patch for seller columns on `deals` (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | update_deal_property_v1 | 10.11A2 | Jsonb field patch for address and next-action fields (§57) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | update_deal_properties_v1 | 10.11A8 (corrective to 10.11A6) | Jsonb field patch for `deal_properties` only (§58); does not touch `deal_inputs` or assumptions; repair_estimate owned by `update_deal_pricing_v1` / deal_inputs (§58, §60) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
-| update_deal_pricing_v1 | 10.11A9 (corrective to 10.11A7) | Append-only pricing snapshot: editable assumptions + server-derived `mao` (§59, §61); updates `deals.assumptions_snapshot_id` | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
+| update_deal_pricing_v1 | 10.11A9 (corrective to 10.11A7) **+** 10.12C7 | Append-only pricing snapshot: editable assumptions + server-derived `mao` (§59, §61); updates `deals.assumptions_snapshot_id`; **10.12C7** parses formatted money strings in `p_fields` | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
@@ -311,8 +311,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
 | submit_form_v1 | 10.8.1, 10.12A, 10.12C, 10.12C1 | Public intake submit; persists `draft_deals` + `intake_submissions` (§64–§67); **10.12C1** links intake row to draft via `draft_deals_id`; seller address + payload for MAO prefill; governed buyer upsert via internal helper (§66) | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64 / §66) | slug input only — no tenant_id param |
-| create_deal_from_intake_v1 | 10.12C1 | Lead Intake manual / call-in: create real `deals` row (`stage=new`) from `p_fields` jsonb; optional nested `property`, `assumptions` (server-derived MAO; no client `mao`) | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_fields` jsonb only — tenant from `current_tenant_id()` |
-| promote_draft_deal_v1 | 10.12C1 **+** 10.12C4 trigger | Promote tenant `draft_deals` linked from intake into real `deals` row; merge draft payload with reviewed `p_fields`; duplicate promotion rejected; **10.12C4** `AFTER UPDATE OF promoted_deal_id` trigger sets linked intake **`review_status` / `review_outcome` / `reviewed_at`** (promote RPC body remains **10.12C1** only) | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_draft_id`, `p_fields` — tenant from `current_tenant_id()` |
+| create_deal_from_intake_v1 | 10.12C1 **+** 10.12C7 | Lead Intake manual / call-in: create real `deals` row (`stage=new`) from `p_fields` jsonb; optional nested `property`, `assumptions` (server-derived MAO; no client `mao`); **10.12C7** canonicalizes assumption money strings server-side | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_fields` jsonb only — tenant from `current_tenant_id()` |
+| promote_draft_deal_v1 | 10.12C1 **+** 10.12C4 trigger **+** 10.12C7 | Promote tenant `draft_deals` linked from intake into real `deals` row; merge draft payload with reviewed `p_fields`; duplicate promotion rejected; **10.12C4** `AFTER UPDATE OF promoted_deal_id` trigger sets linked intake **`review_status` / `review_outcome` / `reviewed_at`** (promote RPC body remains **10.12C1** only); **10.12C7** normalizes birddog **`asking_price`** text and overlay assumptions before persist | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_draft_id`, `p_fields` — tenant from `current_tenant_id()` |
 | upsert_buyer_from_intake_v1 | 10.12C | Internal helper: buyer intake upsert invoked only inside `submit_form_v1`; deterministic dedupe per §66 | SECURITY DEFINER; EXECUTE revoked on PUBLIC, anon, and authenticated — definer chaining only | `p_resolved_tenant uuid` supplied by caller from slug-resolved tenant; not PostgREST callable |
 | list_intake_submissions_v1 | 10.12A **+** 10.12C3 **+** 10.12C4 | Lead Intake review queue: **`seller`** + **`birddog`** only, **`review_status = unreviewed`** only (**10.12C4**); payload includes **`draft_deals_id`**, **`review_status`**, **`review_outcome`**; ordering **`submitted_at DESC, id DESC`**, **`p_limit`** **1–100** | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25) |
 | list_buyers_v1 | 10.12A, 10.14C UI | List `intake_buyers` for current tenant (governed Dispo Buyer Ops read path; **not** Lead Intake) | SECURITY DEFINER, authenticated only | current_tenant_id() — optional `p_limit` (default 25, clamp 1–100) |
@@ -1297,7 +1297,7 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `update_seller_info_v1(...)` | Partial updates to seller and next-action columns on `deals`. |
 | `update_property_info_v1(...)` | Upsert `deal_properties` with partial merge. |
 | `update_deal_properties_v1(p_deal_id uuid, p_fields jsonb)` | Jsonb patch on existing `deal_properties` row only (10.11A6 — §58; **`repair_estimate` removed §60 / 10.11A8**); does not upsert or touch `deal_inputs` / assumptions — use `update_deal_pricing_v1` for repair estimate. |
-| `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)` | Append-only merge into `deal_inputs` assumptions; **`mao` derived server-side** (10.11A9 — §59, §61); new row + `deals.assumptions_snapshot_id` update. |
+| `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)` | Append-only merge into `deal_inputs` assumptions; **`mao` derived server-side** (10.11A9 — §59, §61); **10.12C7** accepts formatted money strings in `p_fields`; new row + `deals.assumptions_snapshot_id` update. |
 | `advance_deal_stage_v1(p_deal_id uuid, p_action text)` | Allowed forward transitions only; invalid transitions → `CONFLICT`. **10.11A10:** successful transition appends **`stage_change`** to **`deal_activity_log`**; requires tenant + user JWT context (**§62**). |
 | `mark_deal_dead_v1(p_deal_id uuid, p_dead_reason text)` | Sets stage `dead`; empty reason → `VALIDATION_ERROR`. |
 | `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. **`handoff_to_dispo_v1` (10.11A10):** successful path appends **`handoff`** to **`deal_activity_log`**; requires tenant + user JWT context (**§62**). |
@@ -1380,7 +1380,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ## 59) Deal pricing write path — append-only `deal_inputs` (10.11A7, corrective 10.11A9)
 
-**Authority:** migration `20260427000001_10_11A7_deal_pricing_write_path.sql`; pricing contract correction `20260428000003_10_11A9_pricing_contract_correction.sql` (§61).
+**Authority:** migration `20260427000001_10_11A7_deal_pricing_write_path.sql`; pricing contract correction `20260428000003_10_11A9_pricing_contract_correction.sql` (§61); money input normalizer `20260510000001_10_12C7_money_input_normalizer.sql` (**10.12C7** — formatted **`p_fields`** strings only; append-only and MAO contract unchanged).
 
 ### §RPC `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)`
 
@@ -1391,9 +1391,10 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **Editable keys in `p_fields`:** **`arv`**, **`ask_price`**, **`repair_estimate`**, **`assignment_fee`**, **`multiplier`** — **numeric** when a non-null value is supplied; invalid numbers → **`VALIDATION_ERROR`**. **`mao`** is **not** an input key — it is **derived server-side** after merge. Caller-supplied **`mao`** in **`p_fields`** → **`VALIDATION_ERROR`**.
 - **Derived `mao`:** After patch merge onto the base snapshot, **`mao`** is computed and stored as **`(arv * multiplier) - repair_estimate - assignment_fee`** ( **`assignment_fee`** treated as **0** when absent after merge). If **`arv`**, **`repair_estimate`**, or **`multiplier`** is missing after merge (e.g. cleared with explicit JSON **`null`**), **`mao`** is **omitted** from the new assumptions snapshot (stale **`mao`** is not carried forward in that case).
 - **Merge semantics:** **`p_fields`** must be a **non-empty JSON object**. **Omitted key** → value **carried forward** from the base snapshot’s `assumptions`. **Explicit JSON `null`** for a present key → **remove that key** from the merged assumptions (key absent in stored JSON — not stored as JSON null). **Unknown key**, **empty `{}`**, or **non-object** `p_fields` → **`VALIDATION_ERROR`**.
+- **10.12C7 money input:** Caller-supplied **string** values for **`arv`**, **`ask_price`**, **`repair_estimate`**, **`assignment_fee`**, and **`multiplier`** may use human formatting (e.g. **`$320,000`**, **`15k`**, **`68%`**). The server normalizes via internal **`_parse_money_input_v1`** (and multiplier rules: strip trailing **`%`**, divide by **100** when **> 1**) before merge and validation. **Blank or whitespace-only string** for a present key **clears** that assumption, same as explicit JSON **`null`**.
 - **No-op:** If the merged snapshot (including derived **`mao`**) is **identical** to the base snapshot → **`VALIDATION_ERROR`** (same-value submission rejected).
 
-**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A9** (corrective to **10.11A7**).
+**§Registry:** `docs/truth/rpc_contract_registry.json` — `build_route_owner` **10.11A9** (corrective to **10.11A7**); **10.12C7** documents formatted-string behavior in **`notes`** (see §67 helpers).
 
 ---
 
@@ -1579,7 +1580,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`** **10.12C3** + **10.12C4**; **`get_lead_intake_kpis_v1`** **10.12C2** + **10.12C4** + **10.12C5**; **`get_draft_deal_v1`** **10.12C6**; **`mark_submission_reviewed_v1`** **10.12C4**; **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`** **10.12C3** + **10.12C4**; **`get_lead_intake_kpis_v1`** **10.12C2** + **10.12C4** + **10.12C5**; **`get_draft_deal_v1`** **10.12C6**; **`mark_submission_reviewed_v1`** **10.12C4**; **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper and **10.12C7** money normalizer helpers).
 
 ---
 
@@ -1660,13 +1661,13 @@ Minimum screen / workflow states the implementation must distinguish:
 
 ---
 
-**§Registry:** Build Route **`10.12C`**; **`docs/truth/rpc_contract_registry.json`** (**`submit_form_v1`** — version/owner **10.12C1** for `draft_deals_id` linkage per §67; **`upsert_buyer_from_intake_v1`**); **`docs/truth/definer_allowlist.json`** (**`internal` helper posture**); **`docs/truth/privilege_truth.json`** **`internal_definer_helpers`**; **`docs/truth/qa_claim.json`** **`10.12C1`**.
+**§Registry:** Build Route **`10.12C`**; **`docs/truth/rpc_contract_registry.json`** (**`submit_form_v1`** — version/owner **10.12C1** for `draft_deals_id` linkage per §67; **`upsert_buyer_from_intake_v1`**); **`docs/truth/definer_allowlist.json`** (**`internal` helper posture**); **`docs/truth/privilege_truth.json`** **`internal_definer_helpers`** (includes **10.12C7** money parsers); **`docs/truth/qa_claim.json`** (active build-route item).
 
 ---
 
 ## 67) Intake Backend — Manual Deal Creation + Draft Promotion (10.12C1)
 
-**Authority:** migration **`20260505000001_10_12C1_intake_deal_creation_promotion.sql`**.
+**Authority:** migration **`20260505000001_10_12C1_intake_deal_creation_promotion.sql`**; money input normalizer **`20260510000001_10_12C7_money_input_normalizer.sql`** (**10.12C7** — DROP+CREATE of intake/pricing consumers and internal validators; **`submit_form_v1`** unchanged).
 
 **Purpose:** Governed **authenticated** paths that create **real** **`deals`** rows from Lead Intake staff input (**`create_deal_from_intake_v1`**) or by **promoting** a tenant-scoped **`draft_deals`** row that is linked from **`intake_submissions`** (**`promote_draft_deal_v1`**). Public callers **never** invoke these RPCs; **`anon`** holds **no** **`EXECUTE`** grants.
 
@@ -1685,21 +1686,25 @@ Minimum screen / workflow states the implementation must distinguish:
 - **`GRANT EXECUTE`** to **`authenticated`** only (**`REVOKE ALL`** from **`PUBLIC`**, **`anon`**).
 - **Guards:** **`require_min_role_v1('member')`**; **`check_workspace_write_allowed_v1()`** returns boolean — workspace write lock (**10.8.11N**).
 - Creates **`deals`** with **`stage = 'new'`**, **`deal_inputs`** assumptions snapshot, and optional **`deal_properties`** from nested **`property`**. Top-level **`p_fields`** keys and nested validation are enforced in migration; **no client-supplied `mao`** in **`assumptions`**.
+- **10.12C7:** Nested **`assumptions`** string values are **`_intake_canonicalize_pricing_assumptions_v1`**’d before validate/MAO; unparseable monetary text → **`VALIDATION_ERROR`** (canonicalize **NULL**).
 
 ### `promote_draft_deal_v1(p_draft_id uuid, p_fields jsonb)` → **`jsonb`**
 
 - Same authenticated **member+** and **write-lock** posture as **`create_deal_from_intake_v1`**.
 - **Duplicate guard:** if **`draft_deals.promoted_deal_id`** is already non-null, returns **`CONFLICT`** (already promoted).
 - Loads draft in **current tenant**; merges draft **`payload`** / columns with review **`p_fields`**; creates **`deals`** + related rows; sets **`draft_deals.promoted_deal_id`**; sets **`reviewed_at`** on the linked **`intake_submissions`** row (**10.12C1**). **10.12C4** trigger on **`promoted_deal_id`** also sets **`review_status`**, **`review_outcome = promoted`** (and coalesces **`reviewed_at`**).
+- **10.12C7:** Birddog **`payload->>'asking_price'`** may remain human-formatted text in **`draft_deals`**; promotion merges it into the working assumptions map (**without** requiring public **`submit_form_v1`** to parse), then **full** snapshot is canonicalized before validate/MAO.
 
 ### Internal helpers (definer-only; **REVOKE ALL** on **`PUBLIC`**, **`anon`**, **`authenticated`**)
 
-- **`_intake_validate_pricing_assumptions_v1(jsonb)`** — validates pricing-related assumption keys (no silent invalid numerics).
-- **`_intake_apply_mao_to_assumptions_v1(jsonb)`** — server MAO merge for persisted assumptions.
+- **`_parse_money_input_v1(text)`** — **STABLE** **SECURITY DEFINER**; normalizes a single money token (strip **`$`**, commas, spaces; **`K`/`k`** ×1000, **`M`/`m`** ×1e6); invalid token → **SQL NULL** (callers surface **`VALIDATION_ERROR`** on governed paths). **`tenant_context_exempt`** in **`definer_allowlist.json`** (no **`current_tenant_id()`** in body; definer-chained only from tenant-enforcing RPCs).
+- **`_intake_canonicalize_pricing_assumptions_v1(jsonb)`** — produces numeric **jsonb** for **`arv`**, **`ask_price`**, **`repair_estimate`**, **`assignment_fee`**, **`multiplier`** using **`_parse_money_input_v1`** and multiplier rules (**`%`** strip; **> 1** → divide by **100**; enforce **0 < m < 1**); invalid → **SQL NULL**. **`tenant_context_exempt`** in **`definer_allowlist.json`** (same chaining posture as **`_parse_money_input_v1`**).
+- **`_intake_validate_pricing_assumptions_v1(jsonb)`** — validates pricing-related assumption keys on **numeric** assumptions after canonicalization (**10.12C7** DROP+CREATE).
+- **`_intake_apply_mao_to_assumptions_v1(jsonb)`** — server MAO merge for persisted assumptions (**10.12C7** DROP+CREATE; formula unchanged).
 - **`_intake_validate_deal_property_jsonb_v1(jsonb)`** — validates **`deal_properties`-shaped** JSON fragments.
 
 Callable **only** from **`SECURITY DEFINER`** intake RPCs — **not** PostgREST / app-direct.
 
 ---
 
-**§Registry:** Build Route **`10.12C1`** **+** **`10.12C6`** (draft read); **`docs/truth/rpc_contract_registry.json`** (**`create_deal_from_intake_v1`**, **`get_draft_deal_v1`**, **`promote_draft_deal_v1`**, **`submit_form_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/privilege_truth.json`** (**`internal_definer_helpers`**); **`docs/truth/definer_allowlist.json`**; **`docs/truth/qa_claim.json`** **`10.12C1`** (see active **`qa_claim.json`** for current build-route item).
+**§Registry:** Build Route **`10.12C1`** **+** **`10.12C6`** (draft read) **+** **`10.12C7`** (money normalization helpers and recreated consumers); **`docs/truth/rpc_contract_registry.json`** (**`create_deal_from_intake_v1`**, **`get_draft_deal_v1`**, **`promote_draft_deal_v1`**, **`submit_form_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/privilege_truth.json`** (**`internal_definer_helpers`**); **`docs/truth/definer_allowlist.json`**; **`docs/truth/qa_claim.json`** (see active **`qa_claim.json`** for current build-route item).

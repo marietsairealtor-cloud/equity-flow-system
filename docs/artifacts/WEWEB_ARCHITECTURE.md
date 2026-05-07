@@ -162,7 +162,7 @@ Stage and assignee are separate concepts.
 - Birddog form captures: **address, name, phone, email, condition notes, asking price**
 - Address autocomplete on all address fields (Google Places)
 - Invisible spam protection (Cloudflare Turnstile or reCAPTCHA v3)
-- **10.12C backend contract:** seller public intake creates or updates a tenant-scoped **draft deal** with **address-aligned context** only; **`asking_price`, repair/condition-as-MAO inputs, and `timeline` are not captured from the public seller form** and remain **NULL** on the draft until populated by governed non–public-intake paths. Buyer submissions create/update buyer records; birddog submissions persist as intake without auto-creating buyer records.
+- **10.12C backend contract:** seller public intake creates or updates a tenant-scoped **draft deal** with **address-aligned context** only; **`asking_price`, repair/condition-as-MAO inputs, and `timeline` are not captured from the public seller form** and remain **NULL** on the draft until populated by governed non–public-intake paths. Buyer submissions create/update buyer records; birddog submissions persist as intake without auto-creating buyer records. **10.12C7** normalizes monetary strings server-side when **`promote_draft_deal_v1`**, **`create_deal_from_intake_v1`**, **`update_deal_pricing_v1`**, and related validators consume numeric financial fields; **`submit_form_v1`** continues to persist **`p_payload`** as submitted (including human-typed birddog **asking_price** text).
 - **Build Route 10.12D2** delivers **lightweight** seller / buyer / birddog surfaces (minimal dependencies, mobile-friendly) that post **only** through **`submit_form_v1`** and **do not** load the full WeWeb app runtime — suitable for paste-into-site embeds. **10.12D1** (Lead Intake) provides deterministic link/embed copy that targets those public surfaces; no direct table reads for distribution controls.
 - The **`/form/:slug/:type`** route remains the canonical slug URL pattern; implementation may be WeWeb-hosted and/or aligned with the **10.12D2** embed host per Build Route.
 - One page component when the form is served inside WeWeb, dynamic rendering based on form type
@@ -221,7 +221,7 @@ Stage and assignee are separate concepts.
    * **Dismiss / reject without promoting** — **`mark_submission_reviewed_v1(p_submission_id uuid, p_outcome text)`** (**10.12C4**) sets **`reviewed_at`**, **`review_status = reviewed`**, and **`review_outcome`** to a **`dismissed_*`** or **`rejected_*`** value (§4.2.1). This RPC **rejects** **`p_outcome = promoted`** — promotion stays on **`promote_draft_deal_v1`**.
    * **Draft detail for promote/review screen** — **`get_draft_deal_v1(p_draft_id uuid)`** (**10.12C6**) returns the tenant-scoped **`draft_deals`** row fields needed to pre-fill the review form when the operator opens **`/lead-intake/new`** (or equivalent) with **`draft_id`**; RPC-only (no WeWeb table reads on **`draft_deals`**).
 
-**WeWeb / UI sequencing (Build Route):** **`create_deal_from_intake_v1`**, **`get_draft_deal_v1`** (**10.12C6**), **`promote_draft_deal_v1`**, and **`mark_submission_reviewed_v1`** must ship and be contract-tested per **10.12C1** / **10.12C4** / **10.12C6** before **10.12D1** implements the internal **`/lead-intake`** operator queue (KPI strip + inbox + promote / dismiss flows). Inbox reads use **`list_intake_submissions_v1`** (seller/birddog, **`review_status = unreviewed`** after **10.12C4**). KPIs use **`get_lead_intake_kpis_v1`** only (**10.12C2** baseline + **10.12C4** fields; **`unreviewed_count`** queue scope = seller/birddog unreviewed only after **10.12C5**). **10.12D2** covers lightweight public intake forms/embeds that call **`submit_form_v1`** only (same PR as **10.12D1** allowed — see Build Route prerequisites). No direct table writes from WeWeb; no frontend-only deal creation, promotion, dismiss logic, or KPI math.
+**WeWeb / UI sequencing (Build Route):** **`create_deal_from_intake_v1`**, **`get_draft_deal_v1`** (**10.12C6**), **`promote_draft_deal_v1`**, and **`mark_submission_reviewed_v1`** must ship and be contract-tested per **10.12C1** / **10.12C4** / **10.12C6** before **10.12D1** implements the internal **`/lead-intake`** operator queue (KPI strip + inbox + promote / dismiss flows). **10.12C7** (money input normalizer) must ship before **10.12D1** / **10.12D2** so formatted public or operator money strings (e.g. **`$185,000`**, **`580K`**, **`70%`**) are parsed consistently on governed RPCs while **`submit_form_v1`** remains raw-payload storage. Inbox reads use **`list_intake_submissions_v1`** (seller/birddog, **`review_status = unreviewed`** after **10.12C4**). KPIs use **`get_lead_intake_kpis_v1`** only (**10.12C2** baseline + **10.12C4** fields; **`unreviewed_count`** queue scope = seller/birddog unreviewed only after **10.12C5**). **10.12D2** covers lightweight public intake forms/embeds that call **`submit_form_v1`** only (same PR as **10.12D1** allowed — see Build Route prerequisites). No direct table writes from WeWeb; no frontend-only deal creation, promotion, dismiss logic, or KPI math.
 
 ### 4.4 Deal Viewer (Token-Gated) — Buyer-Ready Deal Packet
 
@@ -596,7 +596,7 @@ A deal enters TC only through Dispo handoff:
 
 ### 8.4 Lead Intake (Management)
 
-**Build Route:** Internal operator UI is **10.12D1**; lightweight public forms/embeds are **10.12D2** (prerequisite chain in Build Route: **10.12C5** and **10.12C6** before **10.12D1** so KPI queue scope and **`get_draft_deal_v1`** read path exist for the review screen).
+**Build Route:** Internal operator UI is **10.12D1**; lightweight public forms/embeds are **10.12D2** (prerequisite chain: **10.12C5**, **10.12C6**, and **10.12C7** before **10.12D1** / **10.12D2** — KPI queue scope, **`get_draft_deal_v1`**, and server-side money normalization for intake/pricing RPCs).
 
 **Purpose**
 Lead Intake is the authenticated intake-management page.
@@ -611,7 +611,7 @@ It is the inbox and control center for public intake forms and submissions.
 
 * shows the **unreviewed** seller/birddog inbox from **`list_intake_submissions_v1`** only (**10.12C3** + **10.12C4** — buyer rows and reviewed rows stay off this queue)
 * supports internal lead-intake entry for address-based leads (**real deal creation — governed backend; see §4.3 flow 1**)
-* **promotes** public submissions tied to draft deals via **`promote_draft_deal_v1`** and **dismisses / rejects** via **`mark_submission_reviewed_v1`** (**see §4.3 flow 2**)
+* **promotes** public submissions tied to draft deals via **`promote_draft_deal_v1`** and **dismisses / rejects** via **`mark_submission_reviewed_v1`** (**see §4.3 flow 2**); promoted assumptions and overlay **`p_fields`** money fields are parsed server-side per **10.12C7** (**`_parse_money_input_v1`**) — WeWeb stripping of **`$`/commas** remains optional UX polish, not the security boundary
 * **Review + Promote** deep link (**`/lead-intake/new?draft_id=...`**, Build Route **10.12D1**): loads the draft row for form pre-fill via **`get_draft_deal_v1(p_draft_id)`** (**10.12C6**) before submit — RPC-only; no **`draft_deals`** table reads from WeWeb
 * copies seller / buyer / birddog **form links** and **standalone embed snippets** (**10.12D1** — distribution only; not the buyer roster; see §8.2 **10.14C**)
 * embed snippets **do not** load the full WeWeb runtime; they point at **10.12D2** public form surfaces that post via **`submit_form_v1`** only
@@ -677,6 +677,7 @@ When **`asking_price`**, **`repair_estimate`**, condition notes, and/or timeline
 * reads use that draft context when opening **`/mao-calculator?deal_id=...`**
 * MAO fields pre-fill from the draft where present; address-aligned context is available after seller public intake even when pricing columns are still NULL
 * no re-entry for fields the backend has already stored on the draft
+* **10.12C7:** values promoted from **`draft_deals`** / **`p_fields`** into **`deal_inputs.assumptions`** pass through the governed money parser; public **`submit_form_v1`** payloads may still store birddog **asking_price** as raw text until promotion
 
 **Reporting note**
 

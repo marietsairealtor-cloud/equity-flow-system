@@ -61,6 +61,75 @@ $$;
 
 ALTER FUNCTION "public"."_intake_apply_mao_to_assumptions_v1"("p_assumptions" "jsonb") OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."_intake_canonicalize_pricing_assumptions_v1"("p_assumptions" "jsonb") RETURNS "jsonb"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+DECLARE
+  v_out  jsonb := '{}'::jsonb;
+  v_t    text;
+  v_n    numeric;
+  v_mult numeric;
+BEGIN
+  IF p_assumptions IS NULL OR p_assumptions = '{}'::jsonb THEN
+    RETURN '{}'::jsonb;
+  END IF;
+
+  IF p_assumptions ? 'arv' THEN
+    v_t := trim(p_assumptions->>'arv');
+    IF v_t <> '' THEN
+      v_n := public._parse_money_input_v1(v_t);
+      IF v_n IS NULL THEN RETURN NULL; END IF;
+      v_out := v_out || jsonb_build_object('arv', v_n);
+    END IF;
+  END IF;
+
+  IF p_assumptions ? 'ask_price' THEN
+    v_t := trim(p_assumptions->>'ask_price');
+    IF v_t <> '' THEN
+      v_n := public._parse_money_input_v1(v_t);
+      IF v_n IS NULL THEN RETURN NULL; END IF;
+      v_out := v_out || jsonb_build_object('ask_price', v_n);
+    END IF;
+  END IF;
+
+  IF p_assumptions ? 'repair_estimate' THEN
+    v_t := trim(p_assumptions->>'repair_estimate');
+    IF v_t <> '' THEN
+      v_n := public._parse_money_input_v1(v_t);
+      IF v_n IS NULL THEN RETURN NULL; END IF;
+      v_out := v_out || jsonb_build_object('repair_estimate', v_n);
+    END IF;
+  END IF;
+
+  IF p_assumptions ? 'assignment_fee' THEN
+    v_t := trim(p_assumptions->>'assignment_fee');
+    IF v_t <> '' THEN
+      v_n := public._parse_money_input_v1(v_t);
+      IF v_n IS NULL THEN RETURN NULL; END IF;
+      v_out := v_out || jsonb_build_object('assignment_fee', v_n);
+    END IF;
+  END IF;
+
+  IF p_assumptions ? 'multiplier' THEN
+    v_t := trim(regexp_replace(trim(p_assumptions->>'multiplier'), '%[[:space:]]*$', ''));
+    IF v_t <> '' THEN
+      v_mult := public._parse_money_input_v1(v_t);
+      IF v_mult IS NULL THEN RETURN NULL; END IF;
+      IF v_mult > 1 THEN
+        v_mult := v_mult / 100;
+      END IF;
+      IF v_mult <= 0 OR v_mult >= 1 THEN RETURN NULL; END IF;
+      v_out := v_out || jsonb_build_object('multiplier', v_mult);
+    END IF;
+  END IF;
+
+  RETURN v_out;
+END;
+$_$;
+
+ALTER FUNCTION "public"."_intake_canonicalize_pricing_assumptions_v1"("p_assumptions" "jsonb") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."_intake_validate_deal_property_jsonb_v1"("p_property" "jsonb") RETURNS "text"
     LANGUAGE "plpgsql" STABLE
     SET "search_path" TO 'public'
@@ -131,52 +200,52 @@ BEGIN
   END IF;
 
   IF p_assumptions ? 'arv' AND p_assumptions->>'arv' IS NOT NULL AND trim(p_assumptions->>'arv') <> '' THEN
-    v_raw := trim(p_assumptions->>'arv');
-    IF v_raw !~ '^\d+(\.\d+)?$' THEN
+    v_num := public._parse_money_input_v1(trim(p_assumptions->>'arv'));
+    IF v_num IS NULL THEN
       RETURN 'arv must be a valid non-negative number';
     END IF;
-    v_num := v_raw::numeric;
     IF v_num < 0 THEN
       RETURN 'arv must be non-negative';
     END IF;
   END IF;
 
   IF p_assumptions ? 'ask_price' AND p_assumptions->>'ask_price' IS NOT NULL AND trim(p_assumptions->>'ask_price') <> '' THEN
-    v_raw := trim(p_assumptions->>'ask_price');
-    IF v_raw !~ '^\d+(\.\d+)?$' THEN
+    v_num := public._parse_money_input_v1(trim(p_assumptions->>'ask_price'));
+    IF v_num IS NULL THEN
       RETURN 'ask_price must be a valid number';
     END IF;
   END IF;
 
   IF p_assumptions ? 'repair_estimate' AND p_assumptions->>'repair_estimate' IS NOT NULL AND trim(p_assumptions->>'repair_estimate') <> '' THEN
-    v_raw := trim(p_assumptions->>'repair_estimate');
-    IF v_raw !~ '^\d+(\.\d+)?$' THEN
+    v_num := public._parse_money_input_v1(trim(p_assumptions->>'repair_estimate'));
+    IF v_num IS NULL THEN
       RETURN 'repair_estimate must be a valid non-negative number';
     END IF;
-    v_num := v_raw::numeric;
     IF v_num < 0 THEN
       RETURN 'repair_estimate must be non-negative';
     END IF;
   END IF;
 
   IF p_assumptions ? 'assignment_fee' AND p_assumptions->>'assignment_fee' IS NOT NULL AND trim(p_assumptions->>'assignment_fee') <> '' THEN
-    v_raw := trim(p_assumptions->>'assignment_fee');
-    IF v_raw !~ '^\d+(\.\d+)?$' THEN
+    v_num := public._parse_money_input_v1(trim(p_assumptions->>'assignment_fee'));
+    IF v_num IS NULL THEN
       RETURN 'assignment_fee must be a valid number';
     END IF;
-    v_num := v_raw::numeric;
     IF v_num < 0 THEN
       RETURN 'assignment_fee must be non-negative';
     END IF;
   END IF;
 
   IF p_assumptions ? 'multiplier' AND p_assumptions->>'multiplier' IS NOT NULL AND trim(p_assumptions->>'multiplier') <> '' THEN
-    v_raw := trim(p_assumptions->>'multiplier');
-    IF v_raw !~ '^\d+(\.\d+)?$' THEN
+    v_raw := trim(regexp_replace(trim(p_assumptions->>'multiplier'), '%[[:space:]]*$', ''));
+    v_num := public._parse_money_input_v1(v_raw);
+    IF v_num IS NULL THEN
       RETURN 'multiplier must be a valid number';
     END IF;
-    v_num := v_raw::numeric;
-    IF v_num <= 0 OR v_num > 1 THEN
+    IF v_num > 1 THEN
+      v_num := v_num / 100;
+    END IF;
+    IF v_num <= 0 OR v_num >= 1 THEN
       RETURN 'multiplier must be between 0 and 1 exclusive';
     END IF;
   END IF;
@@ -186,6 +255,46 @@ END;
 $_$;
 
 ALTER FUNCTION "public"."_intake_validate_pricing_assumptions_v1"("p_assumptions" "jsonb") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."_parse_money_input_v1"("p_input" "text") RETURNS numeric
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+DECLARE
+  s     text;
+  mul   numeric := 1;
+  last1 text;
+BEGIN
+  IF p_input IS NULL THEN
+    RETURN NULL;
+  END IF;
+  s := trim(p_input);
+  IF s = '' THEN
+    RETURN NULL;
+  END IF;
+  last1 := right(s, 1);
+  IF last1 IN ('K','k') THEN
+    mul := 1000;
+    s := trim(substring(s FROM 1 FOR length(s) - 1));
+  ELSIF last1 IN ('M','m') THEN
+    mul := 1000000;
+    s := trim(substring(s FROM 1 FOR length(s) - 1));
+  END IF;
+  IF s IS NULL OR s = '' THEN
+    RETURN NULL;
+  END IF;
+  s := regexp_replace(s, '[\$,[:space:]]', '', 'g');
+  IF s = '' OR s IS NULL THEN
+    RETURN NULL;
+  END IF;
+  IF s !~ '^[0-9]+(\.[0-9]+)?$' THEN
+    RETURN NULL;
+  END IF;
+  RETURN (s::numeric) * mul;
+END;
+$_$;
+
+ALTER FUNCTION "public"."_parse_money_input_v1"("p_input" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."accept_invite_v1"("p_token" "text") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -1109,7 +1218,15 @@ BEGIN
     END IF;
   END IF;
 
-  v_err := public._intake_validate_pricing_assumptions_v1(COALESCE(p_fields->'assumptions', '{}'::jsonb));
+  v_asm := public._intake_canonicalize_pricing_assumptions_v1(COALESCE(p_fields->'assumptions', '{}'::jsonb));
+  IF v_asm IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Invalid monetary value in assumptions', 'fields', '{}'::jsonb)
+    );
+  END IF;
+
+  v_err := public._intake_validate_pricing_assumptions_v1(v_asm);
   IF v_err IS NOT NULL THEN
     RETURN jsonb_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
@@ -1119,7 +1236,7 @@ BEGIN
 
   v_id := gen_random_uuid();
   v_snapshot_id := gen_random_uuid();
-  v_asm := public._intake_apply_mao_to_assumptions_v1(COALESCE(p_fields->'assumptions', '{}'::jsonb));
+  v_asm := public._intake_apply_mao_to_assumptions_v1(v_asm);
 
   INSERT INTO public.deals (
     id, tenant_id, row_version, calc_version,
@@ -4033,7 +4150,6 @@ DECLARE
   v_unknown     text[];
   v_prop        jsonb;
   v_def_tags    text[];
-  v_ask_num     numeric;
   v_err         text;
 BEGIN
   BEGIN
@@ -4202,20 +4318,18 @@ BEGIN
     v_asm := v_asm || jsonb_build_object('repair_estimate', d.repair_estimate);
   END IF;
   IF d.form_type = 'birddog' AND (d.payload->>'asking_price') IS NOT NULL AND trim(d.payload->>'asking_price') <> '' THEN
-    v_err := public._intake_validate_pricing_assumptions_v1(
-      jsonb_build_object('ask_price', trim(d.payload->>'asking_price'))
-    );
-    IF v_err IS NOT NULL THEN
-      RETURN jsonb_build_object(
-        'ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
-        'error', jsonb_build_object('message', 'draft payload asking_price: ' || v_err, 'fields', '{}'::jsonb)
-      );
-    END IF;
-    v_ask_num := (trim(d.payload->>'asking_price'))::numeric;
-    v_asm := v_asm || jsonb_build_object('ask_price', v_ask_num);
+    v_asm := v_asm || jsonb_build_object('ask_price', trim(d.payload->>'asking_price'));
   END IF;
 
   v_asm := v_asm || COALESCE(v_pf->'assumptions', '{}'::jsonb);
+
+  v_asm := public._intake_canonicalize_pricing_assumptions_v1(v_asm);
+  IF v_asm IS NULL THEN
+    RETURN jsonb_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
+      'error', jsonb_build_object('message', 'Invalid monetary value in assumptions', 'fields', '{}'::jsonb)
+    );
+  END IF;
 
   v_err := public._intake_validate_pricing_assumptions_v1(v_asm);
   IF v_err IS NOT NULL THEN
@@ -5187,7 +5301,7 @@ ALTER FUNCTION "public"."trigger_seat_sync"() OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."update_deal_pricing_v1"("p_deal_id" "uuid", "p_fields" "jsonb") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
-    AS $$
+    AS $_$
 DECLARE
   v_tenant           uuid;
   v_user             uuid;
@@ -5206,6 +5320,7 @@ DECLARE
   v_final_repair     numeric;
   v_final_multiplier     numeric;
   v_final_assignment_fee numeric;
+  v_raw              text;
 BEGIN
   v_tenant := public.current_tenant_id();
   v_user   := auth.uid();
@@ -5246,7 +5361,6 @@ BEGIN
     );
   END IF;
 
-  -- Reject mao if sent by client
   IF p_fields ? 'mao' THEN
     RETURN json_build_object(
       'ok',    false,
@@ -5256,7 +5370,6 @@ BEGIN
     );
   END IF;
 
-  -- Reject unknown keys
   SELECT ARRAY(
     SELECT jsonb_object_keys(p_fields)
     EXCEPT
@@ -5272,7 +5385,6 @@ BEGIN
     );
   END IF;
 
-  -- Verify deal belongs to current tenant
   IF NOT EXISTS (
     SELECT 1 FROM public.deals
     WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
@@ -5285,7 +5397,6 @@ BEGIN
     );
   END IF;
 
-  -- Get latest deal_inputs row as base
   SELECT * INTO v_base_row
   FROM public.deal_inputs
   WHERE deal_id   = p_deal_id
@@ -5304,57 +5415,70 @@ BEGIN
 
   v_base_assumptions := COALESCE(v_base_row.assumptions, '{}'::jsonb);
 
-  -- Validate numeric fields safely
-  IF p_fields ? 'arv' AND p_fields->>'arv' IS NOT NULL THEN
-    BEGIN
-      v_arv := (p_fields->>'arv')::numeric;
-    EXCEPTION WHEN others THEN
+  IF p_fields ? 'arv' AND p_fields->>'arv' IS NOT NULL AND btrim(p_fields->>'arv') <> '' THEN
+    v_arv := public._parse_money_input_v1(btrim(p_fields->>'arv'));
+    IF v_arv IS NULL THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'arv must be a valid number', 'fields', '{}'::json));
-    END;
+    END IF;
+    IF v_arv < 0 THEN
+      RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
+        'error', json_build_object('message', 'arv must be non-negative', 'fields', '{}'::json));
+    END IF;
   END IF;
 
-  IF p_fields ? 'ask_price' AND p_fields->>'ask_price' IS NOT NULL THEN
-    BEGIN
-      v_ask_price := (p_fields->>'ask_price')::numeric;
-    EXCEPTION WHEN others THEN
+  IF p_fields ? 'ask_price' AND p_fields->>'ask_price' IS NOT NULL AND btrim(p_fields->>'ask_price') <> '' THEN
+    v_ask_price := public._parse_money_input_v1(btrim(p_fields->>'ask_price'));
+    IF v_ask_price IS NULL THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'ask_price must be a valid number', 'fields', '{}'::json));
-    END;
+    END IF;
   END IF;
 
-  IF p_fields ? 'repair_estimate' AND p_fields->>'repair_estimate' IS NOT NULL THEN
-    BEGIN
-      v_repair_estimate := (p_fields->>'repair_estimate')::numeric;
-    EXCEPTION WHEN others THEN
+  IF p_fields ? 'repair_estimate' AND p_fields->>'repair_estimate' IS NOT NULL AND btrim(p_fields->>'repair_estimate') <> '' THEN
+    v_repair_estimate := public._parse_money_input_v1(btrim(p_fields->>'repair_estimate'));
+    IF v_repair_estimate IS NULL THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'repair_estimate must be a valid number', 'fields', '{}'::json));
-    END;
+    END IF;
+    IF v_repair_estimate < 0 THEN
+      RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
+        'error', json_build_object('message', 'repair_estimate must be non-negative', 'fields', '{}'::json));
+    END IF;
   END IF;
 
-  IF p_fields ? 'assignment_fee' AND p_fields->>'assignment_fee' IS NOT NULL THEN
-    BEGIN
-      v_assignment_fee := (p_fields->>'assignment_fee')::numeric;
-    EXCEPTION WHEN others THEN
+  IF p_fields ? 'assignment_fee' AND p_fields->>'assignment_fee' IS NOT NULL AND btrim(p_fields->>'assignment_fee') <> '' THEN
+    v_assignment_fee := public._parse_money_input_v1(btrim(p_fields->>'assignment_fee'));
+    IF v_assignment_fee IS NULL THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'assignment_fee must be a valid number', 'fields', '{}'::json));
-    END;
+    END IF;
+    IF v_assignment_fee < 0 THEN
+      RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
+        'error', json_build_object('message', 'assignment_fee must be non-negative', 'fields', '{}'::json));
+    END IF;
   END IF;
 
-  IF p_fields ? 'multiplier' AND p_fields->>'multiplier' IS NOT NULL THEN
-    BEGIN
-      v_multiplier := (p_fields->>'multiplier')::numeric;
-    EXCEPTION WHEN others THEN
+  IF p_fields ? 'multiplier' AND p_fields->>'multiplier' IS NOT NULL AND btrim(p_fields->>'multiplier') <> '' THEN
+    v_raw := btrim(regexp_replace(btrim(p_fields->>'multiplier'), '%[[:space:]]*$', ''));
+    v_multiplier := public._parse_money_input_v1(v_raw);
+    IF v_multiplier IS NULL THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'multiplier must be a valid number', 'fields', '{}'::json));
-    END;
+    END IF;
+    IF v_multiplier > 1 THEN
+      v_multiplier := v_multiplier / 100;
+    END IF;
+    IF v_multiplier <= 0 OR v_multiplier >= 1 THEN
+      RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
+        'error', json_build_object('message', 'multiplier must be between 0 and 1 exclusive', 'fields', '{}'::json));
+    END IF;
   END IF;
 
-  -- Build new assumptions by merging changes onto base snapshot
   v_new_assumptions := v_base_assumptions;
 
   IF p_fields ? 'arv' THEN
-    IF p_fields->>'arv' IS NULL THEN
+    IF p_fields->>'arv' IS NULL OR btrim(COALESCE(p_fields->>'arv', '')) = '' THEN
       v_new_assumptions := v_new_assumptions - 'arv';
     ELSE
       v_new_assumptions := jsonb_set(v_new_assumptions, '{arv}', to_jsonb(v_arv));
@@ -5362,7 +5486,7 @@ BEGIN
   END IF;
 
   IF p_fields ? 'ask_price' THEN
-    IF p_fields->>'ask_price' IS NULL THEN
+    IF p_fields->>'ask_price' IS NULL OR btrim(COALESCE(p_fields->>'ask_price', '')) = '' THEN
       v_new_assumptions := v_new_assumptions - 'ask_price';
     ELSE
       v_new_assumptions := jsonb_set(v_new_assumptions, '{ask_price}', to_jsonb(v_ask_price));
@@ -5370,7 +5494,7 @@ BEGIN
   END IF;
 
   IF p_fields ? 'repair_estimate' THEN
-    IF p_fields->>'repair_estimate' IS NULL THEN
+    IF p_fields->>'repair_estimate' IS NULL OR btrim(COALESCE(p_fields->>'repair_estimate', '')) = '' THEN
       v_new_assumptions := v_new_assumptions - 'repair_estimate';
     ELSE
       v_new_assumptions := jsonb_set(v_new_assumptions, '{repair_estimate}', to_jsonb(v_repair_estimate));
@@ -5378,7 +5502,7 @@ BEGIN
   END IF;
 
   IF p_fields ? 'assignment_fee' THEN
-    IF p_fields->>'assignment_fee' IS NULL THEN
+    IF p_fields->>'assignment_fee' IS NULL OR btrim(COALESCE(p_fields->>'assignment_fee', '')) = '' THEN
       v_new_assumptions := v_new_assumptions - 'assignment_fee';
     ELSE
       v_new_assumptions := jsonb_set(v_new_assumptions, '{assignment_fee}', to_jsonb(v_assignment_fee));
@@ -5386,14 +5510,13 @@ BEGIN
   END IF;
 
   IF p_fields ? 'multiplier' THEN
-    IF p_fields->>'multiplier' IS NULL THEN
+    IF p_fields->>'multiplier' IS NULL OR btrim(COALESCE(p_fields->>'multiplier', '')) = '' THEN
       v_new_assumptions := v_new_assumptions - 'multiplier';
     ELSE
       v_new_assumptions := jsonb_set(v_new_assumptions, '{multiplier}', to_jsonb(v_multiplier));
     END IF;
   END IF;
 
-  -- Reject if new assumptions identical to base
   IF v_new_assumptions = v_base_assumptions THEN
     RETURN json_build_object(
       'ok',    false,
@@ -5403,8 +5526,6 @@ BEGIN
     );
   END IF;
 
-  -- Derive MAO from post-merge snapshot -- respects explicit nulls/clears
-  -- Read from v_new_assumptions after all merges are applied
   v_final_arv            := (v_new_assumptions->>'arv')::numeric;
   v_final_repair         := (v_new_assumptions->>'repair_estimate')::numeric;
   v_final_multiplier     := (v_new_assumptions->>'multiplier')::numeric;
@@ -5414,16 +5535,13 @@ BEGIN
     v_new_assumptions := jsonb_set(v_new_assumptions, '{mao}',
       to_jsonb((v_final_arv * v_final_multiplier) - v_final_repair - COALESCE(v_final_assignment_fee, 0)));
   ELSE
-    -- One or more inputs missing or cleared -- remove stale mao
     v_new_assumptions := v_new_assumptions - 'mao';
   END IF;
 
-  -- Insert new deal_inputs row using clock_timestamp() for deterministic ordering
   INSERT INTO public.deal_inputs (id, tenant_id, deal_id, calc_version, assumptions, created_at)
   VALUES (gen_random_uuid(), v_tenant, p_deal_id, v_base_row.calc_version, v_new_assumptions, clock_timestamp())
   RETURNING id INTO v_new_id;
 
-  -- Update snapshot pointer
   UPDATE public.deals
   SET assumptions_snapshot_id = v_new_id,
       updated_at              = now(),
@@ -5437,7 +5555,7 @@ BEGIN
     'error', null
   );
 END;
-$$;
+$_$;
 
 ALTER FUNCTION "public"."update_deal_pricing_v1"("p_deal_id" "uuid", "p_fields" "jsonb") OWNER TO "postgres";
 
