@@ -9618,3 +9618,27 @@ Phase 1–4 complete for Build Route 10.12C5. Merge-blocking gate satisfied. Mer
 
 Status
 MERGED
+
+2026-05-09 — Build Route v2.4 — 10.12C6
+
+Objective
+Intake Backend — Draft deal read path: governed `get_draft_deal_v1(p_draft_id)` for tenant-scoped draft load (Lead Intake D1 review / pre-fill).
+
+Changes
+- Migration `20260509000001_10_12C6_get_draft_deal_read_path.sql`: `public.get_draft_deal_v1(p_draft_id uuid)` — `RETURNS jsonb`, `SECURITY DEFINER`, `STABLE`; authenticated `member+`; `current_tenant_id()` scope; `NOT_AUTHORIZED` / `NOT_FOUND` envelopes; grants to `authenticated` only
+- pgTAP: `supabase/tests/10_12C6_get_draft_deal.test.sql`
+- `docs/artifacts/CONTRACTS.md` §17 / §64 / registry; `docs/artifacts/BUILD_ROUTE_V2.4.md` and `docs/artifacts/WEWEB_ARCHITECTURE.md` (10.12C6 + 10.12D1 draft_id / `get_draft_deal_v1` alignment)
+- `docs/truth`: `rpc_contract_registry.json`, `execute_allowlist.json`, `expected_surface.json`, `privilege_truth.json`, `definer_allowlist.json`, `qa_claim.json`, `qa_scope_map.json`, `cloud_migration_parity.json`; `scripts/ci_robot_owned_guard.ps1` proof pattern `10.12C6_get_draft_deal_<UTC>.log`
+- `docs/governance/GOVERNANCE_CHANGE_20260509T210000Z.md`
+- Phase 4: `npm run pr:preflight` captured in finalized proof; `proof:finalize` with manifest hash; `PROOF_HEAD` advanced after non-proof commits so `proof-commit-binding` stays green
+
+Proof
+`docs/proofs/10.12C6_get_draft_deal_20260507T141128Z.log`
+
+DoD
+- `get_draft_deal_v1` per Build Route 10.12C6 (jsonb, SECURITY DEFINER, STABLE, authenticated, member+, tenant-scoped, no write lock, NOT_AUTHORIZED / NOT_FOUND, field bundle for pre-fill)
+- pgTAP coverage: own draft, cross-tenant / missing NOT_FOUND, no tenant NOT_AUTHORIZED, anon denied / authenticated granted
+- Phase 1–4 complete; merge-blocking proof path finalized
+
+Status
+PASS
