@@ -659,6 +659,10 @@
     "10.12C6": {
       "title": "Intake Backend — Draft Deal Read Path",
       "proof_pattern": "^docs/proofs/10\\.12C6_get_draft_deal_"
+    },
+    "10.12C7": {
+      "title": "Intake Backend — Money Input Normalizer",
+      "proof_pattern": "^docs/proofs/10\\.12C7_money_input_normalizer_"
     }
   }
 }

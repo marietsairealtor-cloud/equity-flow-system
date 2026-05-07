@@ -302,7 +302,7 @@
       {
         "routine": "_intake_apply_mao_to_assumptions_v1",
         "signature_public": "(jsonb)",
-        "authority": "CONTRACTS.md §67 (Build Route 10.12C1) — MAO merge helper for intake deal paths; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
+        "authority": "CONTRACTS.md §67 (Build Route 10.12C1; 10.12C7 DROP+CREATE) — MAO merge helper for intake deal paths; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
       },
       {
         "routine": "_intake_validate_deal_property_jsonb_v1",
@@ -312,7 +312,17 @@
       {
         "routine": "_intake_validate_pricing_assumptions_v1",
         "signature_public": "(jsonb)",
-        "authority": "CONTRACTS.md §67 (Build Route 10.12C1) — pricing assumptions validation helper; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
+        "authority": "CONTRACTS.md §67 (Build Route 10.12C1; 10.12C7 DROP+CREATE) — pricing assumptions validation after canonical numeric assumptions; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
+      },
+      {
+        "routine": "_parse_money_input_v1",
+        "signature_public": "(text)",
+        "authority": "CONTRACTS.md §67 (Build Route 10.12C7) — human-formatted money string to numeric; STABLE SECURITY DEFINER; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
+      },
+      {
+        "routine": "_intake_canonicalize_pricing_assumptions_v1",
+        "signature_public": "(jsonb)",
+        "authority": "CONTRACTS.md §67 (Build Route 10.12C7) — assumptions-shaped jsonb to numeric jsonb using _parse_money_input_v1 + multiplier rules; REVOKE ALL FROM PUBLIC, anon, authenticated — definer chaining only"
       }
     ]
   },
