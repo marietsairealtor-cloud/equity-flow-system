@@ -1,6 +1,8 @@
 {
   "version": 1,
   "allow": [
+    "public._intake_canonicalize_pricing_assumptions_v1",
+    "public._parse_money_input_v1",
     "public.accept_invite_v1",
     "public.accept_pending_invites_v1",
     "public.advance_deal_stage_v1",

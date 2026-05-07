@@ -4,5 +4,5 @@
   "migration_tip": "20260510000001",
   "migration_tip_file": "20260510000001_10_12C7_money_input_normalizer.sql",
   "migration_count": 124,
-  "pinned_at": "2026-05-10"
+  "pinned_at": "2026-05-07"
 }
