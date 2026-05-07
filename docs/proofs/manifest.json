@@ -248,6 +248,7 @@
     "docs/proofs/10.12C3_list_intake_submissions_fix_20260506T003558Z.log": "28b28cc7dac13d4ee7c0dc02450e84c77fec0a3115382c7a2add0db27a09f246",
     "docs/proofs/10.12C4_submission_review_outcomes_20260506T155215Z.log": "dbe12b2f6dcb00dd29fc7371a7e23f02b8b522e3915bd1d8922acefd3b7c166b",
     "docs/proofs/10.12C5_kpi_unreviewed_count_fix_20260506T200549Z.log": "b2980bf51ed5986ce559795a6b65fab4b49e2548fb265b8784865d26c4eb9f76",
-    "docs/proofs/10.12C6_get_draft_deal_20260507T141128Z.log": "d6eefb9f74826417cfb5b7967a5d4495b811ed18b7725c4ce9094c00ed18967f"
+    "docs/proofs/10.12C6_get_draft_deal_20260507T141128Z.log": "d6eefb9f74826417cfb5b7967a5d4495b811ed18b7725c4ce9094c00ed18967f",
+    "docs/proofs/10.12C7_money_input_normalizer_WORKING.log": "78591597916627a8c9770834504cf15bf5d6beea8a9ca64e69f941fcfd0d7c91"
   }
 }
