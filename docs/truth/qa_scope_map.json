@@ -655,6 +655,10 @@
     "10.12C5": {
       "title": "Intake Backend — KPI Queue Count Correction",
       "proof_pattern": "^docs/proofs/10\\.12C5_kpi_unreviewed_count_fix_"
+    },
+    "10.12C6": {
+      "title": "Intake Backend — Draft Deal Read Path",
+      "proof_pattern": "^docs/proofs/10\\.12C6_get_draft_deal_"
     }
   }
 }
