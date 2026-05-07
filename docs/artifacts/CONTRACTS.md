@@ -282,6 +282,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_v1 | 6.6 | Update existing deal with optimistic concurrency | SECURITY DEFINER, min role: member | current_tenant_id() — no tenant_id param |
 | list_deals_v1 | 5A | List deals for current tenant with cursor pagination | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | get_acq_kpis_v1 | 10.11A, KPI date range 10.11A4 | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant; optional `p_date_from` / `p_date_to` filter by deal `created_at` (both NULL = all time); invalid range → `VALIDATION_ERROR`; avg fee from latest `deal_inputs` per deal | SECURITY DEFINER, min role: member | current_tenant_id() — optional `p_date_from`, `p_date_to` timestamptz |
+| get_draft_deal_v1 | 10.12C6 | Read a tenant-scoped `draft_deals` row by `p_draft_id` for Lead Intake review/promote UI pre-fill (`id`, `form_type`, `payload`, `address`, `asking_price`, `repair_estimate`, `promoted_deal_id`, `created_at`); **no** workspace write lock; `NULL` or unknown/cross-tenant id → `NOT_FOUND` | SECURITY DEFINER, authenticated only (REVOKE anon), min role member, **STABLE** | current_tenant_id() — `p_draft_id` only |
 | get_lead_intake_kpis_v1 | 10.12C2 **+** 10.12C4 **+** 10.12C5 | Lead Intake KPIs: **`new_submissions`**, **`new_leads`** (seller+birddog window; excludes `rejected_spam` / `rejected_test` / `rejected_invalid`), **`rejected_count`**, **`submission_to_deal_pct`**, **`avg_review_time_hours`**, **`unreviewed_count`** (**10.12C5:** `review_status = unreviewed` **and** `form_type` **seller** / **birddog** only; buyer rows excluded); optional `p_date_from` / `p_date_to`; `v_to < v_from` → `VALIDATION_ERROR`; read-only | SECURITY DEFINER, min role: member, STABLE | current_tenant_id() — optional timestamps |
 | get_acq_deal_v1 | 10.11A, read-path corrections 10.11A3 | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot including mao and multiplier; top-level last_contacted_at from latest call_log or null) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
@@ -1479,7 +1480,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 ## 64) Intake Backend — Submission Persistence (10.12A)
 
-**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**. **Lead Intake KPI read path:** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`get_lead_intake_kpis_v1` baseline); **10.12C4** **`20260507000001_10_12C4_submission_review_outcomes.sql`** extends KPI payload + review columns + **`mark_submission_reviewed_v1`** + inbox filter + draft promotion trigger; **10.12C5** **`20260508000001_10_12C5_kpi_unreviewed_count_fix.sql`** recreates **`get_lead_intake_kpis_v1`** only to narrow **`unreviewed_count`** to **seller** + **birddog** with **`review_status = unreviewed`**. **Lead Intake inbox list filter:** **`20260506000001_10_12C3_list_intake_submissions_filter.sql`** (`list_intake_submissions_v1` seller/birddog-only); **10.12C4** narrows list to **`review_status = unreviewed`** and adds review fields to list payload.
+**Authority:** migration **`20260503000001_10_12A_intake_submission_persistence.sql`**. **Lead Intake KPI read path:** **`20260505000002_10_12C2_lead_intake_kpis.sql`** (`get_lead_intake_kpis_v1` baseline); **10.12C4** **`20260507000001_10_12C4_submission_review_outcomes.sql`** extends KPI payload + review columns + **`mark_submission_reviewed_v1`** + inbox filter + draft promotion trigger; **10.12C5** **`20260508000001_10_12C5_kpi_unreviewed_count_fix.sql`** recreates **`get_lead_intake_kpis_v1`** only to narrow **`unreviewed_count`** to **seller** + **birddog** with **`review_status = unreviewed`**. **Draft read for Lead Intake UI pre-fill:** **`20260509000001_10_12C6_get_draft_deal_read_path.sql`** introduces **`get_draft_deal_v1(p_draft_id uuid)`**. **Lead Intake inbox list filter:** **`20260506000001_10_12C3_list_intake_submissions_filter.sql`** (`list_intake_submissions_v1` seller/birddog-only); **10.12C4** narrows list to **`review_status = unreviewed`** and adds review fields to list payload.
 
 **Purpose:** Authoritative persistence for public intake submissions under tenant context, governed list surfaces for Lead Intake / buyer ops, and **no direct `anon` / `authenticated` access** to the new product tables (EXECUTE on `SECURITY DEFINER` RPCs only).
 
@@ -1553,6 +1554,13 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **Limits:** `COALESCE(p_limit, 25)`; must satisfy **1 ≤ p_limit ≤ 100** or **`VALIDATION_ERROR`**.
 - **OK payload:** `data.items` — JSON array ordered **`submitted_at DESC, id DESC`**, objects **`{ id, form_type, payload, source, submitted_at, reviewed_at, draft_deals_id, review_status, review_outcome }`** for the caller tenant **(unreviewed seller and birddog submissions only)**.
 
+### `get_draft_deal_v1(p_draft_id uuid)` → `jsonb`
+
+- **Authority / migration:** **`20260509000001_10_12C6_get_draft_deal_read_path.sql`** — `DROP FUNCTION IF EXISTS` + `CREATE FUNCTION`; **`STABLE`**; **`SECURITY DEFINER`**; **`REVOKE ALL`** from `PUBLIC`, `anon`; **`GRANT EXECUTE`** to **`authenticated`** only.
+- **Role + tenant:** Wrapped **`require_min_role_v1('member')`**; **`current_tenant_id()`** **`NULL` → `NOT_AUTHORIZED`** (envelope). **`p_draft_id`** **`NULL`**, missing row, or draft in another tenant → **`NOT_FOUND`** (no cross-tenant leak).
+- **Not workspace-write-gated** — read-only.
+- **OK `data`:** **`id`**, **`form_type`**, **`payload`**, **`address`**, **`asking_price`**, **`repair_estimate`**, **`promoted_deal_id`**, **`created_at`**.
+
 ### `mark_submission_reviewed_v1(p_submission_id uuid, p_outcome text)` → `jsonb`
 
 - **Authority / migration:** **`20260507000001_10_12C4_submission_review_outcomes.sql`** — `CREATE OR REPLACE FUNCTION`; **`SECURITY DEFINER`**; **`GRANT EXECUTE`** to **`authenticated`** only (`REVOKE` from `anon`, `PUBLIC`).
@@ -1571,7 +1579,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 Authenticated clients **must not** read or write **`intake_submissions`** / **`intake_buyers`** via PostgREST table routes; **`42501`** (privilege) is the expected failure mode for direct SQL/table access outside **`SECURITY DEFINER`** RPCs.
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`** **10.12C3** + **10.12C4**; **`get_lead_intake_kpis_v1`** **10.12C2** + **10.12C4** + **10.12C5**; **`mark_submission_reviewed_v1`** **10.12C4**; **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`submit_form_v1`** `build_route_owner` **10.12C1** (§67 `draft_deals_id` linkage; submission outcomes §66); **`list_intake_submissions_v1`** **10.12C3** + **10.12C4**; **`get_lead_intake_kpis_v1`** **10.12C2** + **10.12C4** + **10.12C5**; **`get_draft_deal_v1`** **10.12C6**; **`mark_submission_reviewed_v1`** **10.12C4**; **`list_buyers_v1`** **10.12A**. **`upsert_buyer_from_intake_v1`** §66 / registry **10.12C**. **`docs/truth/execute_allowlist.json`**, **`docs/truth/privilege_truth.json`** (`internal_definer_helpers` documents buyer upsert helper).
 
 ---
 
@@ -1694,4 +1702,4 @@ Callable **only** from **`SECURITY DEFINER`** intake RPCs — **not** PostgREST 
 
 ---
 
-**§Registry:** Build Route **`10.12C1`**; **`docs/truth/rpc_contract_registry.json`** (**`create_deal_from_intake_v1`**, **`promote_draft_deal_v1`**, **`submit_form_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/privilege_truth.json`** (**`internal_definer_helpers`**); **`docs/truth/definer_allowlist.json`**; **`docs/truth/qa_claim.json`** **`10.12C1`**.
+**§Registry:** Build Route **`10.12C1`** **+** **`10.12C6`** (draft read); **`docs/truth/rpc_contract_registry.json`** (**`create_deal_from_intake_v1`**, **`get_draft_deal_v1`**, **`promote_draft_deal_v1`**, **`submit_form_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/privilege_truth.json`** (**`internal_definer_helpers`**); **`docs/truth/definer_allowlist.json`**; **`docs/truth/qa_claim.json`** **`10.12C1`** (see active **`qa_claim.json`** for current build-route item).

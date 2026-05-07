@@ -203,6 +203,11 @@
         "privilege": "EXECUTE"
       },
       {
+        "routine": "get_draft_deal_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §64 — Build Route 10.12C6; governed draft read for Lead Intake pre-fill; authenticated only (REVOKE anon, PUBLIC)"
+      },
+      {
         "routine": "get_lead_intake_kpis_v1",
         "privilege": "EXECUTE",
         "authority": "CONTRACTS.md §64 — Build Route 10.12C2 / 10.12C4 / 10.12C5; Lead Intake KPI read path; unreviewed_count seller+birddog only (10.12C5)"
@@ -367,6 +372,7 @@
       "foundation_log_activity_v1",
       "get_acq_deal_v1",
       "get_acq_kpis_v1",
+      "get_draft_deal_v1",
       "get_lead_intake_kpis_v1",
       "get_profile_settings_v1",
       "get_user_entitlements_v1",

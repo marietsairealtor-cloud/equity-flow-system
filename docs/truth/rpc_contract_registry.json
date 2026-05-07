@@ -504,6 +504,15 @@
       "notes": "Old zero-arg surface dropped. Signature get_acq_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). Tenant from current_tenant_id(). Both params NULL = all-time; otherwise filters deals by created_at (inclusive bounds when set). p_date_to < p_date_from => VALIDATION_ERROR. avg_assignment_fee: latest deal_inputs row per deal (ORDER BY created_at DESC), averaged over qualifying terminal-stage deals in range. Read-only KPIs. STABLE."
     },
     {
+      "name": "get_draft_deal_v1",
+      "version": 1,
+      "build_route_owner": "10.12C6",
+      "input_contract": "CONTRACTS.md §64 get_draft_deal_v1 (10.12C6 draft read path)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "notes": "Migration 20260509000001_10_12C6_get_draft_deal_read_path.sql. get_draft_deal_v1(p_draft_id uuid). STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE PUBLIC, anon). require_min_role_v1(member); failure => NOT_AUTHORIZED envelope. current_tenant_id() NULL => NOT_AUTHORIZED. Tenant-scoped SELECT on draft_deals; wrong tenant, missing row, or NULL p_draft_id => NOT_FOUND. No check_workspace_write_allowed_v1. OK data: id, form_type, payload, address, asking_price, repair_estimate, promoted_deal_id, created_at. Standard jsonb envelope ok/code/data/error."
+    },
+    {
       "name": "get_lead_intake_kpis_v1",
       "version": 1,
       "build_route_owner": "10.12C2",

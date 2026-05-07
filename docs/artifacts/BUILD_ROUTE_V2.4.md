@@ -8290,6 +8290,53 @@ Lead Intake **`unreviewed_count`** excludes buyer submissions.
 
 ---
 
+### **10.12C6 — Intake Backend — Draft Deal Read Path**
+
+**Deliverable:**
+Governed backend read path for loading a draft deal by `draft_id` so Lead Intake review/promote UI can pre-fill from public submission data.
+
+**RPC:**
+
+`get_draft_deal_v1(p_draft_id uuid)`
+
+**DoD:**
+
+* `RETURNS jsonb`
+* `SECURITY DEFINER`
+* `STABLE`
+* authenticated only
+* member+
+* tenant-scoped via `current_tenant_id()`
+* no write lock needed
+* `NOT_AUTHORIZED` if no tenant context / role failure
+* `NOT_FOUND` if draft missing or cross-tenant
+* returns:
+
+  * `id`
+  * `form_type`
+  * `payload`
+  * `address`
+  * `asking_price`
+  * `repair_estimate`
+  * `promoted_deal_id`
+  * `created_at`
+
+**Tests:**
+
+* valid tenant can fetch own draft
+* payload returned for pre-fill
+* cross-tenant draft returns `NOT_FOUND`
+* missing draft returns `NOT_FOUND`
+* no tenant context returns `NOT_AUTHORIZED`
+* anon cannot execute
+* authenticated can execute
+
+**Proof:** `docs/proofs/10.12C6_get_draft_deal_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C5` merged
+
+---
+
 ### **10.12D1 — Lead Intake UI — Internal Operator Queue**
 
 **Deliverable:**
@@ -8298,8 +8345,10 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
 **DoD:**
 
 * `/lead-intake` page exists in WeWeb
+* Authenticated sub-route for review/promote exists (e.g. `/lead-intake/new`) and accepts `draft_id` query parameter matching inbox **`draft_deals_id`**
 * Page is authenticated-only
 * Page uses governed backend RPCs only
+* No direct table calls from WeWeb
 * No direct table calls from WeWeb
 * No frontend-only KPI math
 * No buyer-ops UI on Lead Intake page
@@ -8342,8 +8391,12 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
   * `Dismiss`
 * `Review + Promote to ACQ` opens:
 
-  * `/lead-intake/new?draft_id=<draft_deals_id>`
-* Review form pre-fills from draft/submission data available in backend response or draft promotion flow
+  * `/lead-intake/new?draft_id=<draft_deals_id>` (or equivalent path; **`draft_id`** must match inbox row)
+* On open (when **`draft_id`** present), UI loads the draft for pre-fill **only** via:
+
+  * `get_draft_deal_v1(p_draft_id)` (**10.12C6**)
+
+  using governed fields returned in **`data`** (`payload`, `address`, `asking_price`, `repair_estimate`, `promoted_deal_id`, `created_at`, `form_type`, `id`). No client-side reassembly of the draft from **`list_intake_submissions_v1`** alone as a substitute for this RPC when promoting from the inbox.
 * On save, UI calls:
 
   * `promote_draft_deal_v1(p_draft_id, p_fields)`
@@ -8379,7 +8432,7 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
   * `WORKSPACE_NOT_WRITABLE` shows workspace inactive/read-only message
   * `VALIDATION_ERROR` shows validation message
   * `CONFLICT` shows already-reviewed message and refreshes inbox
-  * `NOT_FOUND` shows not-found/stale-row message and refreshes inbox
+  * `NOT_FOUND` shows not-found/stale-row message and refreshes inbox (applies to **`mark_submission_reviewed_v1`**, **`promote_draft_deal_v1`**, and **`get_draft_deal_v1`** draft load / stale **`draft_id`**)
 * Empty inbox state exists:
 
   * “No unreviewed seller or birddog submissions.”
@@ -8402,6 +8455,7 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
 * buyer submissions are not shown
 * dismiss calls `mark_submission_reviewed_v1`
 * dismiss success removes row from inbox
+* promote flow loads **`get_draft_deal_v1`** when opening review screen with **`draft_id`**
 * promote flow calls `promote_draft_deal_v1`
 * promote success removes row from inbox and deal appears in ACQ
 * error states render correctly
@@ -8411,7 +8465,7 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
 
 **Proof:** `docs/proofs/10.12D1_lead_intake_internal_ui_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** `10.12C5` merged
+**Prerequisite:** **`10.12C6`** merged (includes **`10.12C5`** dependency chain)
 
 ---
 
@@ -8506,7 +8560,7 @@ Lightweight public seller, buyer, and birddog intake forms that can be embedded 
 
 **Proof:** `docs/proofs/10.12D2_public_intake_embed_forms_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** `10.12D1` or built in same PR as `10.12D1`, plus `10.12C5` merged.
+**Prerequisite:** `10.12D1` or built in same PR as `10.12D1`, plus **`10.12C6`** merged (Lead Intake review screen depends on **`get_draft_deal_v1`**).
 
 ---
 
