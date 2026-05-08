@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-07T23:36:37Z",
+    "generated":  "2026-05-08T23:50:55Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -186,15 +186,6 @@
                             "tables":  [
                                            "deal_activity_log",
                                            "deals"
-                                       ],
-                            "row_version_enforced":  false,
-                            "optimistic_concurrency":  false
-                        },
-                        {
-                            "path_type":  "rpc",
-                            "name":  "mark_submission_reviewed_v1",
-                            "tables":  [
-                                           "intake_submissions"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

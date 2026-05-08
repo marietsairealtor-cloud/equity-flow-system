@@ -3848,12 +3848,22 @@ $$;
 ALTER FUNCTION "public"."mark_deal_dead_v1"("p_deal_id" "uuid", "p_dead_reason" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."mark_submission_reviewed_v1"("p_submission_id" "uuid", "p_outcome" "text") RETURNS "jsonb"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+  SELECT public.mark_submission_reviewed_v1($2, $1, NULL::uuid);
+$_$;
+
+ALTER FUNCTION "public"."mark_submission_reviewed_v1"("p_submission_id" "uuid", "p_outcome" "text") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."mark_submission_reviewed_v1"("p_outcome" "text", "p_submission_id" "uuid" DEFAULT NULL::"uuid", "p_draft_id" "uuid" DEFAULT NULL::"uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant uuid;
-  v_row    public.intake_submissions%ROWTYPE;
+  v_tenant        uuid;
+  v_row           public.intake_submissions%ROWTYPE;
+  v_effective     uuid;
   v_allowed text[] := ARRAY[
     'dismissed_not_interested',
     'dismissed_wrong_number',
@@ -3874,8 +3884,6 @@ BEGIN
       );
   END;
 
-  -- Resolve tenant before workspace lock so missing JWT tenant maps to NOT_AUTHORIZED,
-  -- not WORKSPACE_NOT_WRITABLE (check_workspace_write_allowed_v1() is boolean; see 10.8.11N).
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
     RETURN jsonb_build_object(
@@ -3891,10 +3899,12 @@ BEGIN
     );
   END IF;
 
-  IF p_submission_id IS NULL THEN
+  IF p_submission_id IS NULL AND p_draft_id IS NULL THEN
     RETURN jsonb_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'p_submission_id is required', 'fields', '{}'::jsonb)
+      'error', jsonb_build_object(
+        'message', 'p_submission_id or p_draft_id is required',
+        'fields', '{}'::jsonb)
     );
   END IF;
 
@@ -3920,18 +3930,28 @@ BEGIN
     );
   END IF;
 
-  SELECT * INTO v_row
-  FROM public.intake_submissions
-  WHERE id = p_submission_id;
+  IF p_submission_id IS NOT NULL THEN
+    v_effective := p_submission_id;
+  ELSE
+    SELECT s.id INTO v_effective
+    FROM public.intake_submissions s
+    WHERE s.draft_deals_id = p_draft_id
+      AND s.tenant_id = v_tenant;
 
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'ok', false, 'code', 'NOT_FOUND', 'data', '{}'::jsonb,
-      'error', jsonb_build_object('message', 'Submission not found', 'fields', '{}'::jsonb)
-    );
+    IF NOT FOUND THEN
+      RETURN jsonb_build_object(
+        'ok', false, 'code', 'NOT_FOUND', 'data', '{}'::jsonb,
+        'error', jsonb_build_object('message', 'Submission not found', 'fields', '{}'::jsonb)
+      );
+    END IF;
   END IF;
 
-  IF v_row.tenant_id <> v_tenant THEN
+  SELECT * INTO v_row
+  FROM public.intake_submissions
+  WHERE id = v_effective
+    AND tenant_id = v_tenant;
+
+  IF NOT FOUND THEN
     RETURN jsonb_build_object(
       'ok', false, 'code', 'NOT_FOUND', 'data', '{}'::jsonb,
       'error', jsonb_build_object('message', 'Submission not found', 'fields', '{}'::jsonb)
@@ -3949,7 +3969,7 @@ BEGIN
     IF v_row.review_outcome IS NOT DISTINCT FROM p_outcome THEN
       RETURN jsonb_build_object(
         'ok', true, 'code', 'OK',
-        'data', jsonb_build_object('submission_id', p_submission_id),
+        'data', jsonb_build_object('submission_id', v_effective),
         'error', null
       );
     END IF;
@@ -3963,17 +3983,17 @@ BEGIN
   SET reviewed_at    = now(),
       review_status  = 'reviewed',
       review_outcome = p_outcome
-  WHERE id = p_submission_id AND tenant_id = v_tenant;
+  WHERE id = v_effective AND tenant_id = v_tenant;
 
   RETURN jsonb_build_object(
     'ok', true, 'code', 'OK',
-    'data', jsonb_build_object('submission_id', p_submission_id),
+    'data', jsonb_build_object('submission_id', v_effective),
     'error', null
   );
 END;
 $$;
 
-ALTER FUNCTION "public"."mark_submission_reviewed_v1"("p_submission_id" "uuid", "p_outcome" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."mark_submission_reviewed_v1"("p_outcome" "text", "p_submission_id" "uuid", "p_draft_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."process_workspace_retention_v1"() RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
