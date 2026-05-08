@@ -235,7 +235,7 @@
       {
         "routine": "mark_submission_reviewed_v1",
         "privilege": "EXECUTE",
-        "authority": "Build Route 10.12C4 — Lead Intake submission dismiss/reject; authenticated only (REVOKE anon, PUBLIC)"
+        "authority": "Build Route 10.12C4 + 10.12C8 — Lead Intake dismiss/reject; canonical (text, uuid, uuid) + legacy (uuid, text); authenticated only (REVOKE anon, PUBLIC)"
       },
       {
         "routine": "promote_draft_deal_v1",

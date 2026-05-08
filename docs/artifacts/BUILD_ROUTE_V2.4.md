@@ -8118,6 +8118,8 @@ Keep Lead Intake focused on seller/birddog review queue. Buyer submissions shoul
 **Deliverable:**
 Lead Intake submissions support governed review outcomes so the inbox can be cleared without deleting data, while KPIs distinguish legitimate leads from spam/test/invalid submissions.
 
+**Supersession:** **`10.12C8`** updates **`mark_submission_reviewed_v1`** to **`(p_outcome text, p_submission_id uuid DEFAULT NULL, p_draft_id uuid DEFAULT NULL)`** so dismiss can target **`draft_id`** from the Lead Intake URL; after **10.12C8** merges, use **10.12C8** for RPC parameter order and identifier resolution.
+
 **DoD:**
 
 * `intake_submissions` has review outcome fields:
@@ -8393,6 +8395,45 @@ Governed money input parsing helper and application across all RPCs that accept 
 
 ---
 
+### **10.12C8 — Intake Backend — mark_submission_reviewed_v1 Draft ID Support**
+
+**Deliverable:**
+`mark_submission_reviewed_v1` updated to accept `p_draft_id` so Lead Intake UI only needs one ID (`draft_id` from URL) to both promote and dismiss a submission.
+
+**DoD:**
+
+* `mark_submission_reviewed_v1` signature updated (required **`p_outcome` first** so PostgreSQL parameter defaults are valid):
+
+  * `mark_submission_reviewed_v1(p_outcome text, p_submission_id uuid DEFAULT NULL, p_draft_id uuid DEFAULT NULL)`
+
+* If `p_submission_id` supplied → use it (identity for the row)
+* Else if `p_draft_id` supplied → resolve linked submission via `intake_submissions.draft_deals_id = p_draft_id AND tenant_id = v_tenant`
+* If both supplied → `p_submission_id` wins
+* If neither supplied → `VALIDATION_ERROR`
+* If `p_draft_id` supplied but no linked submission found → `NOT_FOUND`
+* If `p_draft_id` supplied but linked submission belongs to different tenant → `NOT_FOUND`
+* All existing validation rules unchanged
+* All existing error codes unchanged
+* No schema changes
+* No new tables
+
+**Tests:**
+
+* dismiss via `p_draft_id` sets `reviewed_at`, `review_status`, `review_outcome` correctly
+* dismiss via `p_submission_id` still works (regression)
+* neither `p_submission_id` nor `p_draft_id` supplied → `VALIDATION_ERROR`
+* both supplied → `p_submission_id` wins
+* invalid `p_draft_id` with no linked submission → `NOT_FOUND`
+* cross-tenant `p_draft_id` → `NOT_FOUND`
+* expired workspace → `WORKSPACE_NOT_WRITABLE`
+* unauthenticated → `NOT_AUTHORIZED`
+
+**Proof:** `docs/proofs/10.12C8_mark_submission_reviewed_draft_id_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12C4` merged
+
+---
+
 ### **10.12D1 — Lead Intake UI — Internal Operator Queue**
 
 **Deliverable:**
@@ -8475,7 +8516,7 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
   * Invalid → `rejected_invalid`
 * Dismiss save calls:
 
-  * `mark_submission_reviewed_v1(p_submission_id, p_outcome)`
+  * `mark_submission_reviewed_v1(p_outcome, p_submission_id := …)` from inbox row, or **`mark_submission_reviewed_v1(p_outcome, p_draft_id := …)`** when dismissing from the review route keyed by **`draft_id`** (**10.12C8**)
 * Successful dismiss:
 
   * shows success state

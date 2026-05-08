@@ -663,6 +663,10 @@
     "10.12C7": {
       "title": "Intake Backend — Money Input Normalizer",
       "proof_pattern": "^docs/proofs/10\\.12C7_money_input_normalizer_"
+    },
+    "10.12C8": {
+      "title": "Intake Backend — mark_submission_reviewed_v1 Draft ID Support",
+      "proof_pattern": "^docs/proofs/10\\.12C8_mark_submission_reviewed_draft_id_"
     }
   }
 }
