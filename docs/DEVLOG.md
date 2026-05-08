@@ -9642,3 +9642,25 @@ DoD
 
 Status
 PASS
+
+2026-05-10 — Build Route v2.4 — 10.12C7
+
+Objective
+Intake Backend — Money input normalizer: server-side parsing of formatted money strings on governed intake and deal-pricing RPCs (`K`/`M`, `$`, commas, percent multipliers); `submit_form_v1` unchanged (raw payload storage).
+
+Changes
+- Migration `20260510000001_10_12C7_money_input_normalizer.sql`: `_parse_money_input_v1`; `_intake_canonicalize_pricing_assumptions_v1`; validators and consumers updated; `create_deal_from_intake_v1`, `promote_draft_deal_v1`, `update_deal_pricing_v1` use parser where financial fields are consumed
+- pgTAP: `supabase/tests/10_12C7_money_input_normalizer.test.sql`
+- `docs/artifacts/CONTRACTS.md` §64 / §67 / registry; `docs/governance/GOVERNANCE_CHANGE_20260510T180000Z.md`; truth JSON (`rpc_contract_registry`, `privilege_truth`, `qa_claim`, `qa_scope_map`, `cloud_migration_parity`, `definer_allowlist`, `calc_version_registry`, `write_path_registry`, etc.) as delivered on the lane
+- `scripts/ci_robot_owned_guard.ps1` proof pattern for `10.12C7_money_input_normalizer_<UTC>.log`; `scripts/ci_rpc_mapping_contract.ps1` excludes chained helper bodies from mapping scan (and ASCII-safe messages on Windows)
+- Handoff artifacts refreshed with governance work (`generated/schema.sql`, `generated/contracts.snapshot.json`, `docs/handoff_latest.txt`) where applicable
+- Phase 4: finalized proof uses repo-relative pgTAP paths (`ci_path_leak_audit`); canonical filename `10.12C7_money_input_normalizer_20260507T234136Z.log`; `proof:finalize` + manifest
+
+Proof
+`docs/proofs/10.12C7_money_input_normalizer_20260507T234136Z.log`
+
+DoD
+Phase 1–4 complete for Build Route 10.12C7. Merge-blocking gate satisfied. `npm run pr:preflight` captured in finalized proof.
+
+Status
+PASS
