@@ -9664,3 +9664,28 @@ Phase 1–4 complete for Build Route 10.12C7. Merge-blocking gate satisfied. `np
 
 Status
 PASS
+
+---
+
+## 2026-05-09 — Build Route v2.4 — **10.12C8**
+
+Objective  
+Lead Intake dismiss path: `mark_submission_reviewed_v1` accepts optional `p_draft_id` (canonical signature `p_outcome` first) so the UI can use the same `draft_id` as promote/review; legacy `(p_submission_id, p_outcome)` overload retained.
+
+Changes  
+- Migration `20260511000001_10_12C8_mark_submission_reviewed_draft_id.sql`: canonical `(p_outcome text, p_submission_id uuid DEFAULT NULL, p_draft_id uuid DEFAULT NULL)`; tenant-scoped row fetch; `p_submission_id` wins when both IDs set; `LANGUAGE plpgsql` legacy forwarder with `PERFORM public.current_tenant_id()` + delegate (definer-safety-audit)  
+- Migration `20260512000001_10_12C8_legacy_wrapper_definer_audit.sql`: idempotent `CREATE OR REPLACE` of legacy overload for databases that had applied an earlier SQL-only wrapper (no behavior change; audit compliance only)  
+- pgTAP: `supabase/tests/10_12C8_mark_submission_reviewed_draft_id.test.sql`  
+- `docs/artifacts/BUILD_ROUTE_V2.4.md` (10.12C8 + supersession on 10.12C4); `docs/artifacts/CONTRACTS.md` §17 / §64; `docs/governance/GOVERNANCE_CHANGE_20260511T160000Z.md`; `docs/truth/rpc_contract_registry.json`, `privilege_truth.json`, `qa_claim.json`, `qa_scope_map.json`; `scripts/ci_robot_owned_guard.ps1` proof pattern `10.12C8_mark_submission_reviewed_draft_id_<UTC>.log`  
+- `generated/schema.sql` aligned with migrations where committed for schema-drift  
+- Phase 4: `proof:finalize`; canonical proof filename below; manifest hash updated  
+
+Proof  
+`docs/proofs/10.12C8_mark_submission_reviewed_draft_id_20260509T211500Z.log`
+
+DoD  
+- Canonical + legacy RPC signatures; draft resolution by `draft_deals_id` + tenant; neither ID `VALIDATION_ERROR`; cross-tenant / unknown draft `NOT_FOUND`; existing outcome / buyer / workspace / auth envelopes unchanged  
+- Phase 1–4 complete for Build Route 10.12C8; `npm run pr:preflight` recorded in finalized proof  
+
+Status  
+PASS
