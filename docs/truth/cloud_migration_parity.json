@@ -4,5 +4,5 @@
   "migration_tip": "20260512000001",
   "migration_tip_file": "20260512000001_10_12C8_legacy_wrapper_definer_audit.sql",
   "migration_count": 126,
-  "pinned_at": "2026-05-08"
+  "pinned_at": "2026-05-09"
 }
