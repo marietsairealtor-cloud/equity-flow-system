@@ -667,6 +667,10 @@
     "10.12C8": {
       "title": "Intake Backend — mark_submission_reviewed_v1 Draft ID Support",
       "proof_pattern": "^docs/proofs/10\\.12C8_mark_submission_reviewed_draft_id_"
+    },
+    "10.12D1": {
+      "title": "Lead Intake UI — Internal Operator Queue",
+      "proof_pattern": "^docs/proofs/10\\.12D1_lead_intake_internal_ui_"
     }
   }
 }

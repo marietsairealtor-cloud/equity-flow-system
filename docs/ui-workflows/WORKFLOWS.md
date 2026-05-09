@@ -524,6 +524,73 @@ Item: 10.12B
 
 ---
 
+## fetch-intake-submissions
+Trigger: /lead-intake page load, after promote, after dismiss
+Reads: auth session, current_tenant_id
+Calls: list_intake_submissions_v1()
+Writes: submissions variable
+Item: 10.12D1
+
+---
+
+## fetch-lead-intake-kpis
+Trigger: /lead-intake page load, after time filter change, after promote, after dismiss
+Reads: kpiDateFrom, kpiDateTo
+Calls: get_lead_intake_kpis_v1(p_date_from, p_date_to)
+Writes: leadintakeKpiData variable
+Item: 10.12D1
+
+---
+
+## fetch-draft-deal-result
+Trigger: /lead-intake/new page load when draft_id param present
+Reads: globalContext.pageParameters['draft_id']
+Calls: get_draft_deal_v1(p_draft_id)
+Writes: draftDeal variable
+Item: 10.12D1
+
+---
+
+## nav-to-new
+Trigger: submission row click on /lead-intake
+Reads: item['draft_deals_id'], item['id']
+Calls: none — navigate only
+Writes: none
+Branches: navigates to /lead-intake/new?draft_id=item['draft_deals_id']&submission_id=item['id']
+Item: 10.12D1
+
+---
+
+## promote-draft-deal
+Trigger: Save button click on /lead-intake/new when draft_id param present
+Reads: globalContext.pageParameters['draft_id'], all form input values
+Calls: promote_draft_deal_v1(p_draft_id, p_fields)
+Writes: none
+Branches: ok=true → fetch-intake-submissions → fetch-lead-intake-kpis → navigate /lead-intake | ok=false → show error
+Item: 10.12D1
+
+---
+
+## create-deal-from-intake
+Trigger: Save button click on /lead-intake/new when no draft_id param
+Reads: all form input values
+Calls: create_deal_from_intake_v1(p_fields)
+Writes: none
+Branches: ok=true → fetch-intake-submissions → fetch-lead-intake-kpis → navigate /lead-intake | ok=false → show error
+Item: 10.12D1
+
+---
+
+## dismiss-submission
+Trigger: "Not a deal" confirm button on /lead-intake/new
+Reads: globalContext.pageParameters['draft_id'], outcome dropdown value
+Calls: mark_submission_reviewed_v1(p_outcome, p_draft_id)
+Writes: none
+Branches: ok=true → close popup → fetch-intake-submissions → fetch-lead-intake-kpis → navigate /lead-intake | ok=false → show error
+Item: 10.12D1
+
+---
+
 # WeWeb Variable Registry
 
 All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolean.
@@ -593,3 +660,11 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 |----------|------|-------------|------------|
 | formState | text | Page: Public Form (/form/{{slug}}/{{type}}). Values: idle, validation_error, error, invalid_route, success. Controls visibility of SellerForm, BuyerForm, BirddogForm, ErrorState, SuccessState containers. Variable ID: b33bc3a6-01ab-4da5-93b6-70d198e78880. Item: 10.12B | public-form-page-load; submit-seller-form; submit-buyer-form; submit-birddog-form |
 | isSubmitting | boolean | Page: Public Form (/form/{{slug}}/{{type}}). Values: true, false. Controls: submit button disabled state during RPC call. Item: 10.12B | submit-seller-form; submit-buyer-form; submit-birddog-form |
+
+## Lead Intake Page Variables
+
+| Variable | Type | Description | Written By |
+|----------|------|-------------|------------|
+| submissions | object | list_intake_submissions_v1() result — unreviewed seller/birddog rows. Variable ID: 64410e2c-3f61-403c-a8f9-1d0a0e558014 | fetch-intake-submissions |
+| leadintakeKpiData | object | get_lead_intake_kpis_v1() result — new_leads, submission_to_deal_pct, avg_review_time_hours, unreviewed_count, rejected_count | fetch-lead-intake-kpis |
+| draftDeal | object | get_draft_deal_v1() result — draft deal data for pre-fill on /lead-intake/new | fetch-draft-deal-result |

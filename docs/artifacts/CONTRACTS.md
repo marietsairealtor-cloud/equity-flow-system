@@ -1709,3 +1709,37 @@ Callable **only** from **`SECURITY DEFINER`** intake RPCs — **not** PostgREST 
 ---
 
 **§Registry:** Build Route **`10.12C1`** **+** **`10.12C6`** (draft read) **+** **`10.12C7`** (money normalization helpers and recreated consumers); **`docs/truth/rpc_contract_registry.json`** (**`create_deal_from_intake_v1`**, **`get_draft_deal_v1`**, **`promote_draft_deal_v1`**, **`submit_form_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/privilege_truth.json`** (**`internal_definer_helpers`**); **`docs/truth/definer_allowlist.json`**; **`docs/truth/qa_claim.json`** (see active **`qa_claim.json`** for current build-route item).
+
+---
+
+## 68) Lead Intake UI — Internal Operator Queue (10.12D1)
+
+**Purpose:** Freeze the **authenticated WeWeb** internal Lead Intake surface: **`/lead-intake`** (inbox + KPI strip + public link/embed copy) and **`/lead-intake/new`** (review, manual deal creation, promote, dismiss). All persisted reads and writes use **§17** RPCs only — **no** PostgREST table routes for **`intake_submissions`**, **`draft_deals`**, or related catalogs (**§64** direct-access invariant).
+
+### Routes
+
+| Route | Role |
+|---|---|
+| **`/lead-intake`** | Loads inbox via **`list_intake_submissions_v1`**; KPI strip via **`get_lead_intake_kpis_v1(p_date_from, p_date_to)`**; row navigation to review |
+| **`/lead-intake/new`** | **`draft_id`** query parameter optional — when present, pre-fill **only** via **`get_draft_deal_v1(p_draft_id)`** (never reconstruct draft solely from inbox list payloads); **`submission_id`** may accompany **`draft_id`** for bookkeeping |
+
+Reporting window for KPIs: **`kpiDateFrom`**, **`kpiDateTo`** (same date-variable pattern as Acquisition KPI wiring — **`§63`**); refetch on preset change (Last 7 / Last 30 / custom).
+
+### Governed RPC usage (canonical)
+
+| User intent | RPC |
+|---|---|
+| Inbox list | **`list_intake_submissions_v1`** |
+| KPI strip | **`get_lead_intake_kpis_v1`** |
+| Load draft for review (`draft_id` present) | **`get_draft_deal_v1`** |
+| Promote linked draft | **`promote_draft_deal_v1(p_draft_id, p_fields)`** — **10.12C7** authoritative money parsing on financial **`p_fields`** |
+| Create deal without draft | **`create_deal_from_intake_v1(p_fields)`** — **10.12C7** applies |
+| Dismiss / reject from review (`draft_id` path) | **`mark_submission_reviewed_v1(p_outcome, p_draft_id := …)`** (**10.12C8**) |
+
+After successful promote, dismiss, or manual create, implementations refresh inbox + KPIs (same RPCs) before returning to **`/lead-intake`**.
+
+### WeWeb workflow / variable registry
+
+Authoritative names and variable IDs: **`docs/ui-workflows/WORKFLOWS.md`** — **`fetch-intake-submissions`**, **`fetch-lead-intake-kpis`**, **`fetch-draft-deal-result`**, **`nav-to-new`**, **`promote-draft-deal`**, **`create-deal-from-intake`**, **`dismiss-submission`**; variables **`submissions`**, **`leadintakeKpiData`**, **`draftDeal`**.
+
+**§Registry:** Build Route **`10.12D1`**; RPC contracts **`§64`**, **`§67`**, **`10.12C8`** (**`mark_submission_reviewed_v1`** draft path); **`docs/ui-workflows/WORKFLOWS.md`**; **`docs/truth/qa_claim.json`** / **`qa_scope_map.json`** for proof naming (**`docs/proofs/10.12D1_lead_intake_internal_ui_<UTC>.log`**).

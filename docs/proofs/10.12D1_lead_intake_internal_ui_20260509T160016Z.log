@@ -1,0 +1,37 @@
+PROOF_HEAD=81b24ae74209fb9b0d3fd21dae02ada5e0da4f78
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.12D1 Lead Intake internal UI -- proof log ===
+ITEM: Build Route 10.12D1 (Lead Intake UI -- Internal Operator Queue)
+Gate: npm run pr:preflight (Phase 3 bundle per SOP_WORKFLOW.md)
+Captured_utc: 2026-05-09T160016Z
+HEAD: 81b24ae74209fb9b0d3fd21dae02ada5e0da4f78
+Branch: 10.12d1-phase-one
+
+=== Deliverable (reference) ===
+WeWeb: /lead-intake, /lead-intake/new (draft_id query param); RPC-only per CONTRACTS.md §68.
+Registry: docs/ui-workflows/WORKFLOWS.md (fetch-intake-submissions, fetch-lead-intake-kpis,
+fetch-draft-deal-result, nav-to-new, promote-draft-deal, create-deal-from-intake, dismiss-submission).
+Backend RPCs unchanged in this item: list_intake_submissions_v1, get_lead_intake_kpis_v1,
+get_draft_deal_v1, promote_draft_deal_v1, create_deal_from_intake_v1, mark_submission_reviewed_v1.
+
+=== Phase 2 ===
+npm run handoff -- PASS (operator session; truth artifacts aligned)
+npm run handoff:commit -- PASS (operator session)
+
+=== Phase 3 ===
+node scripts/ci_semantic_contract.mjs -- PASS (operator session)
+npm run green:once -- PASS (operator session)
+npm run green:twice -- PASS (operator session; no edits between runs)
+npm run pr:preflight -- PASS (operator session)
+  preflight:encoding OK
+  lint OK
+  test: All tests successful. Files=81, Tests=976. Result: PASS
+  toolchain:contract TOOLCHAIN_CONTRACT_OK
+  truth:sync / truth:check STATUS: PASS (truth-bootstrap OK)
+  required-checks-contract STATUS: PASS
+  proof:manifest PROOF_MANIFEST_OK
+  proof-commit-binding PROOF_COMMIT_BINDING_SKIP (no proof files changed in PR)
+
+RESULT=PASS
