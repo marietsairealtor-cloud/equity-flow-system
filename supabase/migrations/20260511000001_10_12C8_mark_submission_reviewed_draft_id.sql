@@ -153,11 +153,14 @@ CREATE OR REPLACE FUNCTION public.mark_submission_reviewed_v1(
   p_outcome       text
 )
 RETURNS jsonb
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $legacy$
-  SELECT public.mark_submission_reviewed_v1($2, $1, NULL::uuid);
+BEGIN
+  PERFORM public.current_tenant_id();
+  RETURN public.mark_submission_reviewed_v1(p_outcome, p_submission_id, NULL::uuid);
+END;
 $legacy$;
 
 ALTER FUNCTION public.mark_submission_reviewed_v1(text, uuid, uuid) OWNER TO postgres;
