@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260510000001",
-  "migration_tip_file": "20260510000001_10_12C7_money_input_normalizer.sql",
-  "migration_count": 124,
-  "pinned_at": "2026-05-07"
+  "migration_tip": "20260512000001",
+  "migration_tip_file": "20260512000001_10_12C8_legacy_wrapper_definer_audit.sql",
+  "migration_count": 126,
+  "pinned_at": "2026-05-09"
 }
