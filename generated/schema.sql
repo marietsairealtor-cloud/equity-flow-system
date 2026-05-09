@@ -3848,11 +3848,14 @@ $$;
 ALTER FUNCTION "public"."mark_deal_dead_v1"("p_deal_id" "uuid", "p_dead_reason" "text") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."mark_submission_reviewed_v1"("p_submission_id" "uuid", "p_outcome" "text") RETURNS "jsonb"
-    LANGUAGE "sql" SECURITY DEFINER
+    LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
-    AS $_$
-  SELECT public.mark_submission_reviewed_v1($2, $1, NULL::uuid);
-$_$;
+    AS $$
+BEGIN
+  PERFORM public.current_tenant_id();
+  RETURN public.mark_submission_reviewed_v1(p_outcome, p_submission_id, NULL::uuid);
+END;
+$$;
 
 ALTER FUNCTION "public"."mark_submission_reviewed_v1"("p_submission_id" "uuid", "p_outcome" "text") OWNER TO "postgres";
 
