@@ -1,0 +1,29 @@
+PROOF_HEAD=502c20aeaab8981fb3fa1644b874ff206ab41cf5
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.12C8 mark_submission_reviewed draft id -- proof log ===
+ITEM: Build Route 10.12C8 (Intake Backend -- mark_submission_reviewed_v1 draft ID support)
+Gate: npm run pr:preflight (Phase 3 bundle per SOP_WORKFLOW.md)
+Captured_utc: 2026-05-09T211500Z
+HEAD: 502c20aeaab8981fb3fa1644b874ff206ab41cf5
+Branch: feat/10.12C8-mark-submission-reviewed-draft-id
+
+=== Deliverable (reference) ===
+Migration: 20260511000001_10_12C8_mark_submission_reviewed_draft_id.sql
+Migration (corrective): 20260512000001_10_12C8_legacy_wrapper_definer_audit.sql
+No behavior change; legacy overload preserved, audit compliance only.
+Tests: supabase/tests/10_12C8_mark_submission_reviewed_draft_id.test.sql
+RPC: mark_submission_reviewed_v1(p_outcome text, p_submission_id uuid DEFAULT NULL, p_draft_id uuid DEFAULT NULL); legacy (uuid, text) forwarder with PERFORM current_tenant_id() for definer-safety-audit
+
+=== Phase 2 ===
+npm run handoff -- PASS (operator session; truth artifacts committed)
+npm run handoff:commit -- PASS (operator session)
+
+=== Phase 3 ===
+node scripts/ci_semantic_contract.mjs -- PASS (operator session)
+npm run green:once -- PASS (operator session)
+npm run green:twice -- PASS (operator session; no edits between runs)
+npm run pr:preflight -- PASS (operator session)
+
+RESULT=PASS
