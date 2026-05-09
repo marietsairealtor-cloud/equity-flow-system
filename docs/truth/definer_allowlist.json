@@ -50,6 +50,7 @@
     "public.lookup_share_token_v1",
     "public.mark_deal_dead_v1",
     "public.mark_submission_reviewed_v1",
+    "public.mark_submission_reviewed_v1",
     "public.process_workspace_retention_v1",
     "public.promote_draft_deal_v1",
     "public.register_deal_media_v1",

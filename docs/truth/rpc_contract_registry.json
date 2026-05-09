@@ -710,7 +710,7 @@
       "name": "mark_submission_reviewed_v1",
       "version": 1,
       "build_route_owner": "10.12C4",
-      "input_contract": "CONTRACTS.md §64 mark_submission_reviewed_v1 (10.12C4)",
+      "input_contract": "CONTRACTS.md §64 mark_submission_reviewed_v1 (10.12C4; 10.12C8 canonical signature + legacy overload)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
@@ -719,7 +719,7 @@
         "NOT_FOUND",
         "CONFLICT"
       ],
-      "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_submission_id uuid, p_outcome text). require_min_role_v1(member); current_tenant_id before check_workspace_write_allowed_v1. Dismiss/reject outcomes only; promoted is promote_draft_deal_v1 + trigger trg_draft_deals_promoted_sync_intake_review. Idempotent OK when same outcome; CONFLICT when already reviewed with different outcome. buyer form_type rejected at validation."
+      "notes": "SECURITY DEFINER, EXECUTE to authenticated only on both overloads (REVOKE anon, PUBLIC). Canonical (10.12C8 20260511000001): (p_outcome text, p_submission_id uuid DEFAULT NULL, p_draft_id uuid DEFAULT NULL). Legacy (plpgsql, PERFORM current_tenant_id for audit): (p_submission_id uuid, p_outcome text) delegates to canonical (p_outcome, p_submission_id, NULL). require_min_role_v1(member); current_tenant_id before check_workspace_write_allowed_v1 in canonical body. p_submission_id wins when both ids set; else draft_deals_id + tenant resolve; neither id VALIDATION_ERROR. Row fetch id AND tenant_id. Dismiss/reject outcomes only; promoted is promote_draft_deal_v1 + trigger trg_draft_deals_promoted_sync_intake_review. Idempotent OK when same outcome; CONFLICT when already reviewed with different outcome. buyer form_type rejected at validation."
     },
     {
       "name": "process_workspace_retention_v1",
