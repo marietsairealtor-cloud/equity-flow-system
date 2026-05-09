@@ -9689,3 +9689,29 @@ DoD
 
 Status  
 PASS
+
+---
+
+## 2026-05-09 — Build Route v2.4 — **10.12D1**
+
+Objective  
+Lead Intake UI — Internal Operator Queue: authenticated **`/lead-intake`** (inbox, KPI strip, copyable form links/embeds) and **`/lead-intake/new`** (review with **`draft_id`**, promote, dismiss, manual **`create_deal_from_intake_v1`** path), **RPC-only** per **CONTRACTS.md** §68.
+
+Changes  
+- **`docs/artifacts/CONTRACTS.md`** **§68** — frozen WeWeb surface contract (routes, RPC table, **`get_draft_deal_v1`** pre-fill when **`draft_id`** present, KPI date variables, **`docs/ui-workflows/WORKFLOWS.md`** pointer)  
+- **`docs/ui-workflows/WORKFLOWS.md`** — seven workflows (**`fetch-intake-submissions`**, **`fetch-lead-intake-kpis`**, **`fetch-draft-deal-result`**, **`nav-to-new`**, **`promote-draft-deal`**, **`create-deal-from-intake`**, **`dismiss-submission`**) + **`submissions`**, **`leadintakeKpiData`**, **`draftDeal`**  
+- **`docs/truth/qa_claim.json`** / **`qa_scope_map.json`** — active item **10.12D1**, proof pattern **`10.12D1_lead_intake_internal_ui_`**  
+- **`scripts/ci_robot_owned_guard.ps1`** — finalized proof log allowlist  
+- **`docs/governance/GOVERNANCE_CHANGE_20260509T221500Z.md`** — Phase 1 admin record (**DEVLOG** deferred to Phase 5 per **SOP_WORKFLOW.md**)  
+- Phase **2**: **`npm run handoff`**, **`npm run handoff:commit`** — PASS  
+- Phase **3**: **`node scripts/ci_semantic_contract.mjs`**, **`npm run green:once`**, **`npm run green:twice`**, **`npm run pr:preflight`** — PASS  
+- Phase **4**: **`npm run proof:finalize`**; **`docs/proofs/manifest.json`** hash updated  
+
+Proof  
+`docs/proofs/10.12D1_lead_intake_internal_ui_20260509T160016Z.log`
+
+DoD  
+- Build Route **10.12D1** Phase **1–4** complete; merge-blocking proof path finalized; **`npm run pr:preflight`** reflected in proof body  
+
+Status  
+PASS
