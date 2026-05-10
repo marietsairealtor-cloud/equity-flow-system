@@ -540,6 +540,15 @@
       "notes": "Migration 20260513000003_10_13A_offer_data_contract_soft_offer.sql. refresh_deal_soft_offer_v1(p_deal_id uuid, p_idempotency_key text). VOLATILE SECURITY DEFINER; EXECUTE authenticated only. Order: require_min_role(member) first executable (wrapped NOT_AUTHORIZED); auth.uid() required; trim(p_idempotency_key) non-empty else VALIDATION_ERROR; SELECT rpc_idempotency_log replay before tenant/workspace/get_offer_payload/mutations; current_tenant_id(); check_workspace_write_allowed_v1; get_offer_payload_v1; builds copy_text/copy_email with 48h UTC clause (ASCII hyphen in Subject); INSERT rpc_idempotency_log ON CONFLICT replay; DELETE+INSERT deal_soft_offers. Failure from get_offer_payload returns envelope without log row."
     },
     {
+      "name": "send_offer_v1",
+      "version": 1,
+      "build_route_owner": "10.13B",
+      "input_contract": "CONTRACTS.md §17 / §70 send_offer_v1 (10.13B)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR", "CONFLICT"],
+      "notes": "Migration 20260513000004_10_13B_offer_send_write_path.sql. send_offer_v1(p_deal_id uuid, p_idempotency_key text). VOLATILE SECURITY DEFINER; EXECUTE authenticated only. Order: require_min_role(member) first executable (wrapped NOT_AUTHORIZED); auth.uid(); trim(p_idempotency_key) non-empty else VALIDATION_ERROR; SELECT rpc_idempotency_log replay before tenant/workspace/deal lock; current_tenant_id(); check_workspace_write_allowed_v1; SELECT deals FOR UPDATE (tenant, deleted_at IS NULL); NOT_FOUND missing deal; CONFLICT if stage not analyzing or already offer_sent; VALIDATION_ERROR if no deal_soft_offers row for deal; INSERT rpc_idempotency_log ON CONFLICT RETURNING (xmax = 0) loser replay; winner UPDATE deals stage offer_sent row_version+1, INSERT deal_reminders offer_follow_up at clock_timestamp()+3 days, INSERT deal_activity_log stage_change. OK jsonb: deal_id, stage, deal_soft_offer_id, reminder_id, reminder_date UTC Z string."
+    },
+    {
       "name": "list_acq_deals_v1",
       "version": 1,
       "build_route_owner": "10.11A",

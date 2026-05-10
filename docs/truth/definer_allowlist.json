@@ -55,6 +55,7 @@
     "public.process_workspace_retention_v1",
     "public.promote_draft_deal_v1",
     "public.refresh_deal_soft_offer_v1",
+    "public.send_offer_v1",
     "public.register_deal_media_v1",
     "public.remove_member_v1",
     "public.rescind_invite_v1",

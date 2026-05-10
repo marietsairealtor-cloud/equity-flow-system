@@ -47,6 +47,7 @@
     "mark_submission_reviewed_v1",
     "promote_draft_deal_v1",
     "refresh_deal_soft_offer_v1",
+    "send_offer_v1",
     "register_deal_media_v1",
     "remove_member_v1",
     "rescind_invite_v1",

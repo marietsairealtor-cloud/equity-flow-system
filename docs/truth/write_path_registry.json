@@ -224,6 +224,18 @@
                         },
                         {
                             "path_type":  "rpc",
+                            "name":  "send_offer_v1",
+                            "tables":  [
+                                           "deal_activity_log",
+                                           "deal_reminders",
+                                           "deals",
+                                           "rpc_idempotency_log"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
                             "name":  "register_deal_media_v1",
                             "tables":  [
                                            "deal_media"

@@ -679,6 +679,10 @@
     "10.13A": {
       "title": "Offer Backend — Data Contract + Soft Offer Copy",
       "proof_pattern": "^docs/proofs/10\\.13A_offer_data_contract_soft_copy_"
+    },
+    "10.13B": {
+      "title": "Offer Backend — Send Offer Write Path",
+      "proof_pattern": "^docs/proofs/10\\.13B_offer_send_write_path_"
     }
   }
 }
