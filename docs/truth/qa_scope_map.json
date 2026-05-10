@@ -671,6 +671,10 @@
     "10.12D1": {
       "title": "Lead Intake UI — Internal Operator Queue",
       "proof_pattern": "^docs/proofs/10\\.12D1_lead_intake_internal_ui_"
+    },
+    "10.12D2": {
+      "title": "Public Intake Forms — Static Embed Delivery",
+      "proof_pattern": "^docs/proofs/10\\.12D2_static_intake_embed_"
     }
   }
 }

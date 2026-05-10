@@ -230,8 +230,9 @@
     }
     } finally {
       inFlight = false;
-      if (!successPanel.classList.contains('hidden')) return;
-      submitBtn.disabled = false;
+      if (successPanel.classList.contains('hidden')) {
+        submitBtn.disabled = false;
+      }
     }
   });
 })();

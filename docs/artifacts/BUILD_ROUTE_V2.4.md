@@ -8567,99 +8567,195 @@ Internal WeWeb Lead Intake page for reviewing seller/birddog submissions, viewin
 
 ---
 
-### **10.12D2 — Public Intake Forms — Lightweight Embed Distribution**
+### **10.12D2 — Public Intake Forms — Static Embed Delivery**
 
 **Deliverable:**
-Lightweight public seller, buyer, and birddog intake forms that can be embedded on external websites without loading the WeWeb runtime, while still submitting through the governed `submit_form_v1` backend path.
+Lightweight public seller, buyer, and birddog intake forms are available as static HTML embed pages, hosted through GitHub Pages, embeddable on partner/realtor websites with a plain iframe, and submitting only through the governed `submit_form_v1` backend path.
 
-**DoD:**
+---
 
-* Lightweight public form surface exists outside WeWeb iframe runtime
-* Seller, buyer, and birddog forms are supported
-* Forms are embeddable on external websites
-* Forms are mobile responsive
-* Forms are fast-loading and minimal dependency
-* Forms post only to governed backend RPC:
+# **Final Architecture**
 
-  * `submit_form_v1(p_slug, p_form_type, p_payload)`
+* Canonical embed delivery is **GitHub Pages static HTML**
+
+* Embed files live in repo:
+
+  * `apps/embed/seller.html`
+  * `apps/embed/buyer.html`
+  * `apps/embed/birddog.html`
+
+* Embed snippet uses plain iframe:
+
+```html
+<iframe
+  title="Seller intake form"
+  src="https://{github-pages-domain}/embed/seller.html?slug={workspace_slug}"
+  width="100%"
+  height="600"
+  style="border:0">
+</iframe>
+```
+
+* Host page requires:
+
+  * no JavaScript
+  * no WeWeb runtime
+  * no Supabase Storage loader
+  * no Edge Function dependency for canonical delivery
+
+* Public form submits to governed RPC only:
+
+```text
+submit_form_v1(p_slug, p_form_type, p_payload)
+```
+
+---
+
+# **DoD**
+
+## Static embed surfaces
+
+* Static embed HTML files exist:
+
+  * `apps/embed/seller.html`
+  * `apps/embed/buyer.html`
+  * `apps/embed/birddog.html`
+
+* GitHub Pages is enabled for the repo/path used by embed forms
+
+* Lead Intake UI copy-embed buttons generate iframe snippets pointing to GitHub Pages embed URLs
+
+* Embed is delivered as plain iframe HTML:
+
+  * no host-page JavaScript required
+  * no WeWeb runtime
+  * no Supabase Storage loader
+  * no framework dependency
+
+---
+
+## Common form behavior
+
+Each embed page:
+
+* reads `slug` from URL query string
+* validates required fields client-side
+* includes `spam_token`
+* disables submit while request is pending
+* prevents duplicate submit during in-flight request
+* shows success state after `ok = true`
+* shows safe error state after backend envelope error
+* is mobile responsive
+* is self-contained HTML/CSS/JS
+* uses no external framework
+
+---
+
+## Seller form
+
+Seller form captures only:
+
+* address
+* name
+* phone
+* email
+
+Seller form does **not** capture:
+
+* asking_price
+* repair_estimate
+* condition notes
+* seller timeline
+
+---
+
+## Buyer form
+
+Buyer form captures only:
+
+* name
+* email
+* phone
+* areas_of_interest
+* budget_range
+
+---
+
+## Birddog form
+
+Birddog form captures backend-approved birddog public intake fields only.
+
+---
+
+## Backend governance
+
+Public client calls only:
+
+```text
+/rest/v1/rpc/submit_form_v1
+```
+
 * No direct table calls
-* No Supabase table insert/update from frontend
-* No frontend-created deal/draft/buyer records outside RPC
-* Supported public form types:
+* No frontend-created deal/draft/buyer rows outside `submit_form_v1`
+* No new backend write paths
+* No new RPC required for D2
 
-  * seller
-  * buyer
-  * birddog
-* Form URL pattern or embed endpoint supports:
+---
 
-  * workspace slug
-  * form type
-* Seller form captures only 10.12B-approved seller public intake fields:
+## Security
 
-  * address
-  * name
-  * phone
-  * email
-* Seller form does **not** capture:
+* No service-role key exposed
+* Supabase publishable/anon key is allowed in static HTML
+* Unknown/missing slug renders safe error
+* `NOT_FOUND`, `VALIDATION_ERROR`, `NOT_AUTHORIZED` render safe public messages
 
-  * asking_price
-  * repair_estimate
-  * condition notes
-  * seller timeline
-* Buyer form captures buyer intake fields:
+---
 
-  * name
-  * email
-  * phone
-  * areas_of_interest
-  * budget_range
-  * optional deal_type_tags
-  * optional price_range_notes
-  * optional notes
-* Birddog form captures birddog intake fields as already governed by backend contract
-* Form payload includes spam protection token field expected by `submit_form_v1`
-* Submit button disabled while request is pending
-* Duplicate submit protection exists client-side
-* Success state appears after `ok = true`
-* Error state appears after backend envelope error
-* `NOT_AUTHORIZED` / expired workspace message is user-safe
-* `VALIDATION_ERROR` message is user-safe
-* Unknown slug / invalid slug shows not-found style message
-* Embed snippet is deterministic and copyable from Lead Intake UI
-* Embed snippet supports at minimum:
+# **Abandoned approaches / retained history**
 
-  * seller form
-  * buyer form
-  * birddog form
-* Embed snippet does not load full WeWeb app runtime
-* Embed snippet can be pasted into a realtor/external website
-* Embed surface is visually neutral/simple by default
-* Form styling is self-contained enough to avoid breaking host page
-* No authentication required for public submit
-* No private tenant data exposed in embed
-* **`submit_form_v1`** behavior unchanged (**10.12C7**): public payloads (e.g. birddog **asking_price** as free text) may remain raw JSON strings in **`draft_deals.payload`**; money normalization runs on governed **read/promote/intake/pricing** RPCs when numbers are consumed, not at public submit time
+During D2, these approaches were tested and rejected as canonical delivery:
 
-**Tests / Proof:**
+* WeWeb iframe embed — blocked by plan/runtime limitations
+* Supabase Edge Function returning HTML — blocked by Supabase content-type behavior
+* Edge Function JSON + host-page `fetch + srcdoc` — worked but required host-page JavaScript
+* Supabase Storage `loader.html` — abandoned and forward-cleaned
 
-* seller embed form renders without WeWeb runtime
-* buyer embed form renders without WeWeb runtime
-* birddog embed form renders without WeWeb runtime
-* seller submit calls `submit_form_v1` with correct slug/type/payload
-* seller submit does not include pricing/repair/timeline/condition fields
+Storage cleanup is handled by forward migration:
+
+```text
+20260513000002_10_12D2_cleanup_intake_forms_storage.sql
+```
+
+The Edge Function may remain deployed as optional/non-canonical fallback or exploratory artifact, but **GitHub Pages static HTML is the canonical D2 delivery path**.
+
+---
+
+# **Tests / Proof**
+
+* `seller.html` renders standalone
+* `buyer.html` renders standalone
+* `birddog.html` renders standalone
+* each form reads `slug` from query string
+* missing slug shows safe error
+* seller submit calls `submit_form_v1` with correct seller payload
+* seller payload excludes pricing/repair/condition/timeline fields
 * buyer submit calls `submit_form_v1` with correct buyer payload
 * birddog submit calls `submit_form_v1` with correct birddog payload
 * success envelope renders success state
-* validation envelope renders error state
-* expired workspace / `NOT_AUTHORIZED` renders safe message
-* invalid slug / `NOT_FOUND` renders safe message
-* duplicate clicking does not create duplicate client submissions
-* embed snippet generated by D1 points to D2 form correctly
-* no direct table calls from public form code
-* no WeWeb iframe/runtime in embed proof
+* validation envelope renders safe error
+* `NOT_FOUND` renders safe error
+* `NOT_AUTHORIZED` renders safe inactive/unavailable message
+* duplicate submit protection works
+* no direct table calls exist in embed code
+* no service-role key appears in repo
+* no WeWeb runtime appears in embed output
+* GitHub Pages public URLs load
+* iframe snippets from D1 point to GitHub Pages static embed URLs
+* Storage cleanup migration proves abandoned `intake-forms` bucket/policy removed
 
-**Proof:** `docs/proofs/10.12D2_public_intake_embed_forms_<UTC>.log`
+**Proof:** `docs/proofs/10.12D2_static_intake_embed_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** `10.12D1` or built in same PR as `10.12D1`, plus **`10.12C7`** merged (**`10.12C6`** for **`get_draft_deal_v1`**; **`10.12C7`** for server-side money parsing on promotion and intake pricing paths when public/embed inputs carry formatted strings).
+**Prerequisite:** `10.12D1`, `10.12C7` merged
 
 ---
 

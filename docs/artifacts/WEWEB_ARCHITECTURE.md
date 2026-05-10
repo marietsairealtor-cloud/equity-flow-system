@@ -32,7 +32,8 @@ Static URL, no credentials of any kind. Anyone on the internet can visit.
 
 ### 1.2 Slug-Gated
 Permanent URL with tenant slug. No authentication required. The slug resolves tenant context.
-- Intake forms (`/form/:slug/:type`)
+- Intake forms — WeWeb canonical route (`/form/:slug/:type`; Build Route **10.12B**)
+- Intake embed surface — **Primary:** **GitHub Pages** static HTML (**`apps/embed/seller.html`**, **`buyer.html`**, **`birddog.html`**) — partner sites use plain **`iframe src=`** with **`?slug=`** only (**host page requires no JavaScript**). **No WeWeb runtime** and **no WeWeb Seat / cross-domain embed plan** on partner origins. Build Route **10.12D2**. **Optional:** Edge **`intake-form`** JSON + scripted **`fetch` / `srcdoc`** for tooling only (not canonical distribution).
 
 ### 1.3 Token-Gated
 Dynamic URL with share token. No authentication required. Token resolves deal context.
@@ -50,6 +51,10 @@ Supabase Auth session required. Tenant context resolved via `get_user_entitlemen
 |---|---|---|---|---|
 | 1 | MAO calculator | /mao-calculator | Open public + authenticated | None |
 | 2 | Intake form | /form/:slug/:type | Slug-gated | Valid slug |
+| — | Intake embed seller | https://{org}.github.io/{repo}/embed/seller.html?slug= | Slug-gated | Valid slug |
+| — | Intake embed buyer | https://{org}.github.io/{repo}/embed/buyer.html?slug= | Slug-gated | Valid slug |
+| — | Intake embed birddog | https://{org}.github.io/{repo}/embed/birddog.html?slug= | Slug-gated | Valid slug |
+| — | Intake Edge JSON API (optional) | /functions/v1/intake-form?slug=&type= | Dev / tooling | Valid slug + allowed type |
 | 3 | Deal viewer | /deal/:share_token | Token-gated | Valid share token |
 | 4 | Auth page | /auth | Public | None |
 | 5 | Onboarding | /onboarding | Authenticated | Zero tenants or no active sub |
@@ -153,18 +158,36 @@ Stage and assignee are separate concepts.
 
 ### 4.2 Intake Form (Slug-Gated)
 
-- Route: /form/:slug/:type where type is buyer, seller, or birddog
+**WeWeb-hosted surface (canonical app route)**
+
+- Route: `/form/:slug/:type` where **`type`** is **buyer**, **seller**, or **birddog**
 - Slug resolves tenant context via `resolve_form_slug_v1` RPC (anon-callable)
 - No expiration, no token renewal — permanent URLs suitable for website embedding
 - Submissions route to tenant inbox via `submit_form_v1` RPC (anon-callable)
+
+**GitHub Pages embed (canonical — Build Route 10.12D2)**
+
+- Static pages in-repo: **`apps/embed/seller.html`**, **`apps/embed/buyer.html`**, **`apps/embed/birddog.html`**; published via **GitHub Pages** (e.g. **`https://{org}.github.io/{repo}/embed/seller.html?slug={slug}`**).
+- Partner embed: **plain outer `iframe src=`** — **no JavaScript on the embedding host**; **no WeWeb Command Centre runtime**; **no WeWeb Seat / iframe-embed plan** dependency on partner sites.
+- Each page posts **only** via **`submit_form_v1`** using **Supabase project URL + anon key** embedded in the HTML (**anon** is acceptable for public RPC — **RLS + EXECUTE grants** are the gate; **service-role** never in embed assets).
+- **Lead Intake** (**10.12D1**) copies **`iframe`** snippets targeting **GitHub Pages `embed/`** URLs plus **`/form/…`** WeWeb links.
+- **Superseded / non-canonical:** WeWeb **`iframe`** to the published app without an embed-capable plan; Supabase Edge **GET `text/html`** rewritten to **`text/plain`**; Supabase **Storage `loader.html`** + Edge JSON (**Storage sandbox** blocks the **`fetch`** pattern). Canonical distribution is **GitHub Pages** — see Build Route **10.12D2**.
+
+**Optional — Edge Function `intake-form` (dev / tooling)**
+
+- **`GET`** **`/functions/v1/intake-form?slug={slug}&type={seller|buyer|birddog}`** returns **`application/json`**: **`{ "ok": true, "html": "..." }`** (or error envelope). May remain deployed for **fixtures / experiments**; **canonical operator embed is not blocked on this function.**
+- Scripted third-party **`fetch`** + **`iframe.srcdoc`** against this URL is **non-canonical** playground behavior only (CORS as configured on **`intake-form`**).
+
+**Shared public contract (WeWeb `/form/...`, GitHub Pages `apps/embed/`, optional Edge `html`)**
+
 - Seller form captures: **address, name, phone, email** (10.12B public form)
 - Buyer form captures: name, email, phone, areas of interest, budget range
 - Birddog form captures: **address, name, phone, email, condition notes, asking price**
 - Address autocomplete on all address fields (Google Places)
 - Invisible spam protection (Cloudflare Turnstile or reCAPTCHA v3)
 - **10.12C backend contract:** seller public intake creates or updates a tenant-scoped **draft deal** with **address-aligned context** only; **`asking_price`, repair/condition-as-MAO inputs, and `timeline` are not captured from the public seller form** and remain **NULL** on the draft until populated by governed non–public-intake paths. Buyer submissions create/update buyer records; birddog submissions persist as intake without auto-creating buyer records. **10.12C7** normalizes monetary strings server-side when **`promote_draft_deal_v1`**, **`create_deal_from_intake_v1`**, **`update_deal_pricing_v1`**, and related validators consume numeric financial fields; **`submit_form_v1`** continues to persist **`p_payload`** as submitted (including human-typed birddog **asking_price** text).
-- **Build Route 10.12D2** delivers **lightweight** seller / buyer / birddog surfaces (minimal dependencies, mobile-friendly) that post **only** through **`submit_form_v1`** and **do not** load the full WeWeb app runtime — suitable for paste-into-site embeds. **10.12D1** (Lead Intake) provides deterministic link/embed copy that targets those public surfaces; no direct table reads for distribution controls.
-- The **`/form/:slug/:type`** route remains the canonical slug URL pattern; implementation may be WeWeb-hosted and/or aligned with the **10.12D2** embed host per Build Route.
+- **Build Route 10.12D2** delivers **GitHub Pages**–hosted static embeds (**§4.2**): **`iframe src=`** to **`apps/embed/`** pages, **`submit_form_v1`** only, **no WeWeb runtime**, **no Supabase Storage** on the canonical path. **Optional** Edge **`intake-form`** JSON remains **non-critical**. **10.12D1** copies **GitHub Pages `embed/`** **`iframe`** URLs and **`/form/…`** WeWeb links.
+- **`/form/:slug/:type`** remains the **canonical WeWeb** slug URL pattern inside the hosted app (**10.12B**). **Canonical external embed host** for partner sites is **GitHub Pages** (**10.12D2**), not WeWeb.
 - One page component when the form is served inside WeWeb, dynamic rendering based on form type
 
 ### 4.2.1 Intake record model — `intake_submissions` (AUTHORITATIVE)
@@ -221,7 +244,7 @@ Stage and assignee are separate concepts.
    * **Dismiss / reject without promoting** — **`mark_submission_reviewed_v1(p_submission_id uuid, p_outcome text)`** (**10.12C4**) sets **`reviewed_at`**, **`review_status = reviewed`**, and **`review_outcome`** to a **`dismissed_*`** or **`rejected_*`** value (§4.2.1). This RPC **rejects** **`p_outcome = promoted`** — promotion stays on **`promote_draft_deal_v1`**.
    * **Draft detail for promote/review screen** — **`get_draft_deal_v1(p_draft_id uuid)`** (**10.12C6**) returns the tenant-scoped **`draft_deals`** row fields needed to pre-fill the review form when the operator opens **`/lead-intake/new`** (or equivalent) with **`draft_id`**; RPC-only (no WeWeb table reads on **`draft_deals`**).
 
-**WeWeb / UI sequencing (Build Route):** **`create_deal_from_intake_v1`**, **`get_draft_deal_v1`** (**10.12C6**), **`promote_draft_deal_v1`**, and **`mark_submission_reviewed_v1`** must ship and be contract-tested per **10.12C1** / **10.12C4** / **10.12C6** before **10.12D1** implements the internal **`/lead-intake`** operator queue (KPI strip + inbox + promote / dismiss flows). **10.12C7** (money input normalizer) must ship before **10.12D1** / **10.12D2** so formatted public or operator money strings (e.g. **`$185,000`**, **`580K`**, **`70%`**) are parsed consistently on governed RPCs while **`submit_form_v1`** remains raw-payload storage. Inbox reads use **`list_intake_submissions_v1`** (seller/birddog, **`review_status = unreviewed`** after **10.12C4**). KPIs use **`get_lead_intake_kpis_v1`** only (**10.12C2** baseline + **10.12C4** fields; **`unreviewed_count`** queue scope = seller/birddog unreviewed only after **10.12C5**). **10.12D2** covers lightweight public intake forms/embeds that call **`submit_form_v1`** only (same PR as **10.12D1** allowed — see Build Route prerequisites). No direct table writes from WeWeb; no frontend-only deal creation, promotion, dismiss logic, or KPI math.
+**WeWeb / UI sequencing (Build Route):** **`create_deal_from_intake_v1`**, **`get_draft_deal_v1`** (**10.12C6**), **`promote_draft_deal_v1`**, and **`mark_submission_reviewed_v1`** must ship and be contract-tested per **10.12C1** / **10.12C4** / **10.12C6** before **10.12D1** implements the internal **`/lead-intake`** operator queue (KPI strip + inbox + promote / dismiss flows). **10.12C7** (money input normalizer) must ship before **10.12D1** / **10.12D2** so formatted public or operator money strings (e.g. **`$185,000`**, **`580K`**, **`70%`**) are parsed consistently on governed RPCs while **`submit_form_v1`** remains raw-payload storage. Inbox reads use **`list_intake_submissions_v1`** (seller/birddog, **`review_status = unreviewed`** after **10.12C4**). KPIs use **`get_lead_intake_kpis_v1`** only (**10.12C2** baseline + **10.12C4** fields; **`unreviewed_count`** queue scope = seller/birddog unreviewed only after **10.12C5**). **10.12D2** ships **GitHub Pages** static **`apps/embed/`** intake (**§4.2**) posting via **`submit_form_v1`** only — optional Edge **`intake-form`** JSON is **not** on the canonical embed path — same PR as **10.12D1** allowed (see Build Route prerequisites). No direct table writes from WeWeb; no frontend-only deal creation, promotion, dismiss logic, or KPI math.
 
 ### 4.4 Deal Viewer (Token-Gated) — Buyer-Ready Deal Packet
 
@@ -239,9 +262,15 @@ Stage and assignee are separate concepts.
 
 | URL Pattern | Type | Expires |
 |---|---|---|
-| /form/acme-realty/seller | Slug (permanent) | Never |
-| /form/acme-realty/buyer | Slug (permanent) | Never |
-| /form/acme-realty/birddog | Slug (permanent) | Never |
+| /form/acme-realty/seller | Slug — WeWeb | Never |
+| /form/acme-realty/buyer | Slug — WeWeb | Never |
+| /form/acme-realty/birddog | Slug — WeWeb | Never |
+| https://{org}.github.io/{repo}/embed/seller.html?slug=acme-realty | GitHub Pages static embed → **`submit_form_v1`** | Never |
+| https://{org}.github.io/{repo}/embed/buyer.html?slug=acme-realty | GitHub Pages static embed → **`submit_form_v1`** | Never |
+| https://{org}.github.io/{repo}/embed/birddog.html?slug=acme-realty | GitHub Pages static embed → **`submit_form_v1`** | Never |
+| /functions/v1/intake-form?slug=acme-realty&type=seller | Edge JSON (**`html`**) — optional / tooling | Never |
+| /functions/v1/intake-form?slug=acme-realty&type=buyer | Edge JSON (**`html`**) — optional / tooling | Never |
+| /functions/v1/intake-form?slug=acme-realty&type=birddog | Edge JSON (**`html`**) — optional / tooling | Never |
 | /deal/shr_9f3a... | Share token | ≤90 days |
 | /lead-intake | Auth sub-route | Session |
 | /lead-intake/new?draft_id=… | Auth sub-route (promote/review) | Session |
@@ -252,7 +281,7 @@ Stage and assignee are separate concepts.
 
 Share tokens (Section 8) = temporary, deal-specific access. Used by Dispo for buyer deal packets. Expire ≤90 days, revocable, scoped to deal_id.
 
-Slugs (new) = permanent, tenant-scoped form URLs. **10.12D1** exposes copyable links/embed snippets on Lead Intake; **10.12D2** provides the lightweight public form surfaces those snippets target. No expiration, embeddable on websites. Different mechanism, different use case, no overlap with share tokens.
+Slugs (new) = permanent, tenant-scoped form URLs. **10.12D1** exposes copyable **WeWeb** form links (`/form/:slug/:type`) **and** embed snippets: **primary** plain **`iframe src=`** to **GitHub Pages** **`apps/embed/{seller|buyer|birddog}.html?slug=…`** (**host page requires no JavaScript**; **no WeWeb Seat / embed-plan** on partner sites). **Optional:** scripted **`fetch`** + **`srcdoc`** using Edge **`intake-form`** JSON (non-canonical). No expiration for slug URLs; embeddable on websites. Different mechanism than share tokens.
 
 ---
 ## 5) Authentication and Onboarding
@@ -596,7 +625,7 @@ A deal enters TC only through Dispo handoff:
 
 ### 8.4 Lead Intake (Management)
 
-**Build Route:** Internal operator UI is **10.12D1**; lightweight public forms/embeds are **10.12D2** (prerequisite chain: **10.12C5**, **10.12C6**, and **10.12C7** before **10.12D1** / **10.12D2** — KPI queue scope, **`get_draft_deal_v1`**, and server-side money normalization for intake/pricing RPCs).
+**Build Route:** Internal operator UI is **10.12D1**; public intake embed distribution is **10.12D2** (**GitHub Pages** **`apps/embed/`** — §4.2; optional Edge **`intake-form`** JSON **not** canonical). Prerequisite chain: **10.12C5**, **10.12C6**, and **10.12C7** before **10.12D1** / **10.12D2** — KPI queue scope, **`get_draft_deal_v1`**, and server-side money normalization for intake/pricing RPCs.
 
 **Purpose**
 Lead Intake is the authenticated intake-management page.
@@ -614,7 +643,7 @@ It is the inbox and control center for public intake forms and submissions.
 * **promotes** public submissions tied to draft deals via **`promote_draft_deal_v1`** and **dismisses / rejects** via **`mark_submission_reviewed_v1`** (**see §4.3 flow 2**); promoted assumptions and overlay **`p_fields`** money fields are parsed server-side per **10.12C7** (**`_parse_money_input_v1`**) — WeWeb stripping of **`$`/commas** remains optional UX polish, not the security boundary
 * **Review + Promote** deep link (**`/lead-intake/new?draft_id=...`**, Build Route **10.12D1**): loads the draft row for form pre-fill via **`get_draft_deal_v1(p_draft_id)`** (**10.12C6**) before submit — RPC-only; no **`draft_deals`** table reads from WeWeb
 * copies seller / buyer / birddog **form links** and **standalone embed snippets** (**10.12D1** — distribution only; not the buyer roster; see §8.2 **10.14C**)
-* embed snippets **do not** load the full WeWeb runtime; they point at **10.12D2** public form surfaces that post via **`submit_form_v1`** only
+* embed snippets **do not** load the full WeWeb runtime and impose **no WeWeb Seat / embed-plan** on partner sites; **default** is **`iframe src=`** to **GitHub Pages** **`embed/`** static HTML (**host page requires no JavaScript**; **`submit_form_v1`** only)
 * empty inbox copy matches **10.12D1** (“No unreviewed seller or birddog submissions.”) with form-link / embed controls still available on the page
 
 **Route**
