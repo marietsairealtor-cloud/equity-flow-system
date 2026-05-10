@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Property Submission Form</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+      color: #1a1a1a;
+      background: #fff;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .wrap {
+      max-width: 32rem;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+    }
+    .banner {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .banner.error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+    .banner.success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+    .hidden { display: none !important; }
+    label {
+      display: block;
+      font-weight: 500;
+      font-size: 0.875rem;
+      margin-bottom: 0.35rem;
+      color: #374151;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font: inherit;
+      margin-bottom: 1rem;
+      background: #fff;
+    }
+    textarea {
+      min-height: 6rem;
+      resize: vertical;
+    }
+    input:focus, textarea:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: 1px;
+      border-color: #2563eb;
+    }
+    button[type="submit"] {
+      width: 100%;
+      margin-top: 0.25rem;
+      padding: 0.75rem 1rem;
+      font: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: #1d4ed8;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button[type="submit"]:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    button[type="submit"]:focus-visible {
+      outline: 2px solid #1e40af;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Property Submission Form</h1>
+    <div id="slug-error" class="banner error hidden" role="alert"></div>
+    <div id="rpc-error" class="banner error hidden" role="alert"></div>
+    <div id="success-panel" class="banner success hidden" role="status">Thank you. We&apos;ll be in touch.</div>
+    <form id="intake-form" class="hidden" novalidate>
+      <label for="address">Property address <span aria-hidden="true">*</span></label>
+      <input id="address" name="address" type="text" autocomplete="address-line1" required>
+      <label for="name">Your name <span aria-hidden="true">*</span></label>
+      <input id="name" name="name" type="text" autocomplete="name" required>
+      <label for="phone">Phone <span aria-hidden="true">*</span></label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel" required>
+      <label for="email">Email <span aria-hidden="true">*</span></label>
+      <input id="email" name="email" type="email" autocomplete="email" required>
+      <label for="condition_notes">Condition notes</label>
+      <textarea id="condition_notes" name="condition_notes" autocomplete="off"></textarea>
+      <label for="asking_price">Asking price</label>
+      <input id="asking_price" name="asking_price" type="text" inputmode="decimal" autocomplete="off">
+      <button type="submit" id="submit-btn">Submit</button>
+    </form>
+  </div>
+  <script>
+(function () {
+  var RPC_URL = 'https://upnelewdvbicxvfgzojg.supabase.co/rest/v1/rpc/submit_form_v1';
+  // SECURITY: Supabase publishable (anon) key only — never service_role or other secrets.
+  // This string is public in static HTML; do not replace via .env with the wrong key.
+  var API_KEY = 'sb_publishable_NcP5G98-A2vGcekY2baQkA_jjBRyfPS';
+  var FORM_TYPE = 'birddog';
+
+  function spamToken() {
+    try {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+    } catch (e) {}
+    return String(Date.now());
+  }
+
+  function getSlug() {
+    var params = new URLSearchParams(window.location.search);
+    var s = params.get('slug');
+    return s === null ? '' : String(s).trim();
+  }
+
+  function show(el, msg) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+  function hide(el) {
+    el.classList.add('hidden');
+    el.textContent = '';
+  }
+
+  var slugError = document.getElementById('slug-error');
+  var rpcError = document.getElementById('rpc-error');
+  var successPanel = document.getElementById('success-panel');
+  var form = document.getElementById('intake-form');
+  var submitBtn = document.getElementById('submit-btn');
+  var inFlight = false;
+
+  var slug = getSlug();
+  if (!slug) {
+    show(slugError, 'A valid form link is required (missing slug).');
+  } else {
+    form.classList.remove('hidden');
+  }
+
+  form.addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    if (!slug) return;
+    if (inFlight) return;
+    inFlight = true;
+    submitBtn.disabled = true;
+
+    try {
+    hide(rpcError);
+    if (!form.reportValidity()) return;
+
+    var address = document.getElementById('address').value.trim();
+    var name = document.getElementById('name').value.trim();
+    var phone = document.getElementById('phone').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var conditionNotes = document.getElementById('condition_notes').value.trim();
+    var askingPrice = document.getElementById('asking_price').value.trim();
+
+    if (!address || !name || !phone || !email) {
+      show(rpcError, 'Please fill in all required fields.');
+      return;
+    }
+
+    var body = {
+      p_slug: slug,
+      p_form_type: FORM_TYPE,
+      p_payload: {
+        address: address,
+        name: name,
+        phone: phone,
+        email: email,
+        condition_notes: conditionNotes,
+        asking_price: askingPrice,
+        spam_token: spamToken()
+      }
+    };
+
+    try {
+      var res = await fetch(RPC_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: API_KEY,
+          Authorization: 'Bearer ' + API_KEY
+        },
+        body: JSON.stringify(body)
+      });
+
+      var text = await res.text();
+      var data;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (parseErr) {
+        show(rpcError, 'Something went wrong. Please try again.');
+        return;
+      }
+
+      if (data && data.ok === true) {
+        form.reset();
+        form.classList.add('hidden');
+        hide(rpcError);
+        successPanel.classList.remove('hidden');
+        return;
+      }
+
+      var code = data && data.code;
+      var errMsg = data && data.error && data.error.message;
+
+      if (code === 'NOT_AUTHORIZED') {
+        show(rpcError, 'This form is not currently accepting submissions.');
+      } else if (code === 'NOT_FOUND') {
+        show(rpcError, 'Form not found.');
+      } else if (code === 'VALIDATION_ERROR') {
+        show(rpcError, errMsg || 'Please check your entries and try again.');
+      } else {
+        show(rpcError, 'Something went wrong. Please try again.');
+      }
+    } catch (networkErr) {
+      show(rpcError, 'Something went wrong. Please try again.');
+    }
+    } finally {
+      inFlight = false;
+      if (!successPanel.classList.contains('hidden')) return;
+      submitBtn.disabled = false;
+    }
+  });
+})();
+  </script>
+</body>
+</html>
