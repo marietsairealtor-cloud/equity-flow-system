@@ -1,5 +1,5 @@
 {
-  "version": 24,
+  "version": 25,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -125,6 +125,14 @@
       "description": "10.12C7: DROP+CREATE _parse_money_input_v1, _intake_canonicalize_pricing_assumptions_v1, _intake_validate_pricing_assumptions_v1, _intake_apply_mao_to_assumptions_v1, create_deal_from_intake_v1, promote_draft_deal_v1, update_deal_pricing_v1. Human-formatted money strings normalized before validation/merge; update_deal_pricing_v1 still copies calc_version from base row on insert (pricing_ / calc_version tokens in migration only). No new calc_version integer; MAO formula and append-only pricing protocol unchanged.",
       "introduced_pr": "10.12C7",
       "released_at": "2026-05-10"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.13A offer payload + soft offer copy",
+      "migration": "20260513000003_10_13A_offer_data_contract_soft_offer.sql",
+      "description": "10.13A: get_offer_payload_v1 reads governed assumptions_snapshot_id row (deal_inputs.calc_version unchanged); validates mao text; derives mao only when snapshot mao absent using ROUND((arv * multiplier) - repair_estimate - COALESCE(assignment_fee,0)) consistent with existing pricing protocol. refresh_deal_soft_offer_v1 persists copy + deal_soft_offers.calc_version from payload. No new calc_version integer; no change to create_deal_v1 / update_deal_pricing_v1 MAO write protocol.",
+      "introduced_pr": "feat/10.13a-offer-data-contract",
+      "released_at": "2026-05-14"
     }
   ],
   "watch_surface": {
