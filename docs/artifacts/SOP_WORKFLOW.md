@@ -32,6 +32,7 @@ Use this as a session startup reminder. Full rules for each step are in §1.
 - [ ] Implement DoD (code, scripts, migrations, tests)
 - [ ] Triple-register any new `docs/truth/**` file
 - [ ] Author manual-only files (migrations, tests, CONTRACTS.md, governance file)
+- [ ] **Calc watch:** if this PR adds or edits `supabase/migrations/*.sql`, run `npm run lint:calc-version` before pushing (same as CI `ci_calc_version_lint`). When it fails, append a `calc_versions[]` row to `docs/truth/calc_version_registry.json`, bump that file’s top-level `version`, and commit together with the migration — tokens come from `watch_surface.migration_tokens` in that JSON.
 - [ ] Run all Phase 1 gate pre-checks (§1 Phase 1 Step 4) — see §18 for over-trigger behaviors
 - [ ] Commit all implementation changes
 
@@ -96,7 +97,7 @@ Author the files that require human architectural intent. These are never overwr
 - Tests: `supabase/tests/*.test.sql` — behavioral verification logic
 - Contracts: `docs/artifacts/CONTRACTS.md` — architectural laws and RPC mappings
 - Governance: `docs/governance/GOVERNANCE_CHANGE_<UTC>.md` — justification for the change
-- Manual Registries: `calc_version_registry.json`, `rpc_contract_registry.json`, `privilege_truth.json`
+- Manual Registries: `calc_version_registry.json` (**required whenever `npm run lint:calc-version` flags a changed migration** — append row + bump registry `version`; token list is `watch_surface.migration_tokens` in that file), `rpc_contract_registry.json`, `privilege_truth.json`
 
 **Step 4 — Pre-emptive Gate Alignment (Sanity Checks)**
 
@@ -104,7 +105,7 @@ Verify the implementation against automated CI gates before committing. See §18
 
 | Condition | Gate | Required Action |
 |---|---|---|
-| Migration contains calc-logic token | `ci_calc_version_lint` | Update `calc_version_registry.json` |
+| Migration matches any substring in `calc_version_registry.json` → `watch_surface.migration_tokens` | `ci_calc_version_lint` | Update `calc_version_registry.json`: append `calc_versions[]` entry describing the migration + bump top-level `version`; verify locally with `npm run lint:calc-version` (also runs in `npm run pr:preflight`) |
 | Migration changes schema | `ci_entitlement_policy_coupling` | Add note to `CONTRACTS.md` |
 | SQL comments contain non-ASCII | `ci_encoding_audit` | Fix to ASCII hyphens + alphanumeric only |
 | New SECURITY DEFINER function | `definer-safety-audit` | Add to `definer_allowlist.json` |

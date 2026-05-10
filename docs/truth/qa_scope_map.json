@@ -675,6 +675,10 @@
     "10.12D2": {
       "title": "Public Intake Forms — Static Embed Delivery",
       "proof_pattern": "^docs/proofs/10\\.12D2_static_intake_embed_"
+    },
+    "10.13A": {
+      "title": "Offer Backend — Data Contract + Soft Offer Copy",
+      "proof_pattern": "^docs/proofs/10\\.13A_offer_data_contract_soft_copy_"
     }
   }
 }

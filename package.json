@@ -18,6 +18,7 @@
     "handoff:commit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\handoff_commit.ps1",
     "lint:contracts": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\contracts_lint.ps1",
     "lint:migrations": "node scripts/lint_migrations.mjs",
+    "lint:calc-version": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_calc_version_lint.ps1",
     "must:contain": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\must_contain.ps1",
     "preflight:encoding": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/preflight_encoding.ps1",
     "ci_encoding_audit": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ci_encoding_audit.ps1",

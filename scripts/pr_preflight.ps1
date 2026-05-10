@@ -18,6 +18,7 @@ RunIf "test"
 RunIf "toolchain:contract"
 RunIf "truth:sync"
 RunIf "truth:check"
+RunIf "lint:calc-version"
 RunIf "proof:manifest"
 
 Write-Host "== proof-commit-binding =="

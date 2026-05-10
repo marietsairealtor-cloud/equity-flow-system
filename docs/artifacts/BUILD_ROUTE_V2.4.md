@@ -8859,6 +8859,61 @@ Formal PDF output of offer content, derived from the same governed offer payload
 
 ---
 
+### **10.13D — Offer Flow — UI Wiring**
+
+**Deliverable:**
+Offer UI fully wired for soft-offer copy, formal PDF output, and governed send-offer actions.
+
+**DoD:**
+
+* Offer UI renders governed offer content only
+
+* Governed read path is wired:
+
+  * `get_offer_payload_v1`
+
+* Copy text is wired
+
+* Copy email is wired
+
+* Download PDF is wired
+
+* Send Offer action is wired to governed send-offer path only:
+
+  * `send_offer_v1`
+
+* Soft-offer delivery is supported without forcing formal PDF generation first
+
+* UI does **not** call `advance_deal_stage_v1` separately for offer send
+
+* UI refreshes correctly after send:
+
+  * deal stage
+  * reminder state
+  * any offer-linked deal state returned from governed backend
+
+* No direct table calls
+
+* No mock offer values remain
+
+* No frontend-derived pricing or expiry logic exists outside governed backend payload
+
+**Tests:**
+
+* copy-text action works from `get_offer_payload_v1`
+* copy-email action works from `get_offer_payload_v1`
+* PDF action works from the governed offer payload
+* send-offer action calls `send_offer_v1` only
+* UI refreshes stage/reminder state correctly after send
+* no mocked offer content remains
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.13D_offer_flow_ui_wiring_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.13A`, `10.13B`, `10.13C` merged
+
+---
+
 ### **10.13E — Offer Flow — Save Deal + Reopen Deal**
 
 **Deliverable:**

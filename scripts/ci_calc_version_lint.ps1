@@ -8,7 +8,16 @@ Write-Host "Base ref: $base"
 $changed = (git diff --name-only "$base...HEAD" 2>&1) -split "`n" | Where-Object { $_ -ne "" }
 
 $registryPath = "docs/truth/calc_version_registry.json"
-$tokens = @("calc_version","calc_versions","calculate_","compute_","pricing_","commission_","fee_","rate_")
+if (-not (Test-Path $registryPath)) {
+  Write-Error "CALC_VERSION_REGISTRY FAIL: $registryPath not found."
+  exit 1
+}
+$registryJson = Get-Content $registryPath -Raw | ConvertFrom-Json
+$tokens = @($registryJson.watch_surface.migration_tokens)
+if ($tokens.Count -eq 0) {
+  Write-Error "CALC_VERSION_REGISTRY FAIL: $registryPath must define watch_surface.migration_tokens (non-empty array)."
+  exit 1
+}
 
 $calcLogicFiles = @()
 
