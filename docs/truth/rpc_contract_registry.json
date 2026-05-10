@@ -522,6 +522,24 @@
       "notes": "Migrations 20260505000002_10_12C2_lead_intake_kpis.sql (intro), 20260507000001_10_12C4_submission_review_outcomes.sql (KPI payload + semantics), 20260508000001_10_12C5_kpi_unreviewed_count_fix.sql (recreate only: unreviewed_count). DROP IF EXISTS + CREATE. STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). Signature (p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). require_min_role_v1(member); wrapped NOT_AUTHORIZED. current_tenant_id() required. Effective bounds v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from => VALIDATION_ERROR. OK data (10.12C4): new_submissions, new_leads (excludes rejected_spam/test/invalid), rejected_count, submission_to_deal_pct (pct of new_leads promoted; draft.promoted_deal_id or review_outcome=promoted), avg_review_time_hours (review_status=reviewed, reviewed_at set), unreviewed_count (10.12C5: review_status=unreviewed AND form_type IN (seller,birddog); not windowed; buyer excluded), date_from, date_to. No check_workspace_write_allowed_v1."
     },
     {
+      "name": "get_offer_payload_v1",
+      "version": 1,
+      "build_route_owner": "10.13A",
+      "input_contract": "CONTRACTS.md §17 / §69 get_offer_payload_v1 (10.13A)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"],
+      "notes": "Migration 20260513000003_10_13A_offer_data_contract_soft_offer.sql. get_offer_payload_v1(p_deal_id uuid). STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE PUBLIC, anon). require_min_role_v1(member); NOT_AUTHORIZED on guard failure or null tenant. Explicit-column SELECT on deals + deal_inputs (no SELECT *). NOT_FOUND missing deal or snapshot in tenant; NULL p_deal_id => VALIDATION_ERROR. Non-empty mao must parse numeric else VALIDATION_ERROR (invalid mao). Otherwise derives MAO when arv+repair_estimate+multiplier present; assignment_fee optional. OK jsonb envelope: data.pricing, data.seller, offer_clause_hours=48."
+    },
+    {
+      "name": "refresh_deal_soft_offer_v1",
+      "version": 1,
+      "build_route_owner": "10.13A",
+      "input_contract": "CONTRACTS.md §17 / §69 refresh_deal_soft_offer_v1 (10.13A)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "notes": "Migration 20260513000003_10_13A_offer_data_contract_soft_offer.sql. refresh_deal_soft_offer_v1(p_deal_id uuid, p_idempotency_key text). VOLATILE SECURITY DEFINER; EXECUTE authenticated only. Order: require_min_role(member) first executable (wrapped NOT_AUTHORIZED); auth.uid() required; trim(p_idempotency_key) non-empty else VALIDATION_ERROR; SELECT rpc_idempotency_log replay before tenant/workspace/get_offer_payload/mutations; current_tenant_id(); check_workspace_write_allowed_v1; get_offer_payload_v1; builds copy_text/copy_email with 48h UTC clause (ASCII hyphen in Subject); INSERT rpc_idempotency_log ON CONFLICT replay; DELETE+INSERT deal_soft_offers. Failure from get_offer_payload returns envelope without log row."
+    },
+    {
       "name": "list_acq_deals_v1",
       "version": 1,
       "build_route_owner": "10.11A",

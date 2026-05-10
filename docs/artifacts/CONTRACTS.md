@@ -284,6 +284,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | get_acq_kpis_v1 | 10.11A, KPI date range 10.11A4 | Acquisition KPIs (contracts signed, lead-to-contract %, avg assignment fee) for current tenant; optional `p_date_from` / `p_date_to` filter by deal `created_at` (both NULL = all time); invalid range → `VALIDATION_ERROR`; avg fee from latest `deal_inputs` per deal | SECURITY DEFINER, min role: member | current_tenant_id() — optional `p_date_from`, `p_date_to` timestamptz |
 | get_draft_deal_v1 | 10.12C6 | Read a tenant-scoped `draft_deals` row by `p_draft_id` for Lead Intake review/promote UI pre-fill (`id`, `form_type`, `payload`, `address`, `asking_price`, `repair_estimate`, `promoted_deal_id`, `created_at`); **no** workspace write lock; `NULL` or unknown/cross-tenant id → `NOT_FOUND` | SECURITY DEFINER, authenticated only (REVOKE anon), min role member, **STABLE** | current_tenant_id() — `p_draft_id` only |
 | get_lead_intake_kpis_v1 | 10.12C2 **+** 10.12C4 **+** 10.12C5 | Lead Intake KPIs: **`new_submissions`**, **`new_leads`** (seller+birddog window; excludes `rejected_spam` / `rejected_test` / `rejected_invalid`), **`rejected_count`**, **`submission_to_deal_pct`**, **`avg_review_time_hours`**, **`unreviewed_count`** (**10.12C5:** `review_status = unreviewed` **and** `form_type` **seller** / **birddog** only; buyer rows excluded); optional `p_date_from` / `p_date_to`; `v_to < v_from` → `VALIDATION_ERROR`; read-only | SECURITY DEFINER, min role: member, STABLE | current_tenant_id() — optional timestamps |
+| get_offer_payload_v1 | 10.13A | Governed offer read from **`deals.assumptions_snapshot_id`**: pricing (**`arv`**, **`repair_estimate`**, **`multiplier`**, **`assignment_fee`**, derived or snapshot **`mao`**, **`calc_version`**) plus seller identity fields; non-empty snapshot **`mao`** that fails numeric parse → **`VALIDATION_ERROR`** (no silent fallback); missing **`mao`** derives MAO only when **`arv`**, **`repair_estimate`**, **`multiplier`** present | SECURITY DEFINER, authenticated only, min role member, **STABLE** | current_tenant_id() — **`p_deal_id`** only |
 | get_acq_deal_v1 | 10.11A, read-path corrections 10.11A3 | Single deal detail for Acquisition (deal + deal_properties + latest pricing snapshot including mao and multiplier; top-level last_contacted_at from latest call_log or null) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
 | update_seller_info_v1 | 10.11A | Partial update of seller + next-action fields on deals | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
@@ -296,6 +297,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | return_to_dispo_v1 | 10.11A | tc → dispo (undo tc) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_deal_media_v1 | 10.11A | List registered deal photo metadata for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | register_deal_media_v1 | 10.11A | Register storage_path after client upload to deal-photos bucket | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_storage_path + p_sort_order |
+| refresh_deal_soft_offer_v1 | 10.13A | **`require_min_role_v1('member')`** first executable statement; then **`auth.uid()`** + non-empty key; **`rpc_idempotency_log`** replay (**verbatim `result_json`**) **before** tenant/workspace/`get_offer_payload_v1`/writes; persists **`deal_soft_offers`** + atomic **`rpc_idempotency_log`** claim (**`ON CONFLICT`** loser replay); ASCII hyphen email subject **`Soft offer -`** | SECURITY DEFINER, authenticated only, min role member, workspace write lock, **VOLATILE** | **`current_tenant_id()`** + **`auth.uid()`** — **`p_deal_id`**, **`p_idempotency_key`** |
 | delete_deal_media_v1 | 10.11A | Delete deal_media row; returns storage_path for Edge cleanup | SECURITY DEFINER, min role: member | current_tenant_id() — p_media_id only |
 | create_deal_note_v1 | 10.11A1 | Append user note or call log on `deal_notes` for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_note_type + p_content |
 | list_deal_notes_v1 | 10.11A1 | List notes/call logs for a deal (newest first) | SECURITY DEFINER, STABLE, min role: member | current_tenant_id() — p_deal_id only |
@@ -1743,3 +1745,29 @@ After successful promote, dismiss, or manual create, implementations refresh inb
 Authoritative names and variable IDs: **`docs/ui-workflows/WORKFLOWS.md`** — **`fetch-intake-submissions`**, **`fetch-lead-intake-kpis`**, **`fetch-draft-deal-result`**, **`nav-to-new`**, **`promote-draft-deal`**, **`create-deal-from-intake`**, **`dismiss-submission`**; variables **`submissions`**, **`leadintakeKpiData`**, **`draftDeal`**.
 
 **§Registry:** Build Route **`10.12D1`**; RPC contracts **`§64`**, **`§67`**, **`10.12C8`** (**`mark_submission_reviewed_v1`** draft path); **`docs/ui-workflows/WORKFLOWS.md`**; **`docs/truth/qa_claim.json`** / **`qa_scope_map.json`** for proof naming (**`docs/proofs/10.12D1_lead_intake_internal_ui_<UTC>.log`**).
+
+---
+
+## 69) Offer Backend — Data Contract + Soft Offer Copy (10.13A)
+
+**Purpose:** Governed seller-facing **soft-offer** payload read and optional persistence of rendered copy (**`deal_soft_offers`**), tied to the authoritative **`deal_inputs`** row referenced by **`deals.assumptions_snapshot_id`**.
+
+### `get_offer_payload_v1(p_deal_id uuid)` → `jsonb`
+
+- **Authority / migration:** **`20260513000003_10_13A_offer_data_contract_soft_offer.sql`** — **`STABLE`** **`SECURITY DEFINER`**; **`REVOKE ALL`** from **`PUBLIC`**, **`anon`**; **`GRANT EXECUTE`** to **`authenticated`** only.
+- **Role + tenant:** Wrapped **`require_min_role_v1('member')`** → failure **`NOT_AUTHORIZED`**. **`current_tenant_id()`** **`NULL` → `NOT_AUTHORIZED`**. Explicit column **`SELECT`** only on **`deals`** / **`deal_inputs`** (no **`SELECT *`**).
+- **Reads:** **`deals`** row for **`p_deal_id`** in tenant with **`deleted_at IS NULL`**; snapshot **`deal_inputs`** row matching **`assumptions_snapshot_id`** and **`deal_id`**. Missing / cross-tenant → **`NOT_FOUND`**. **`p_deal_id`** **`NULL` → `VALIDATION_ERROR`**.
+- **MAO:** Non-empty snapshot **`mao`** must parse as **`numeric`** — otherwise **`VALIDATION_ERROR`** (**`fields.mao = invalid`**). If **`mao`** absent or blank, server derives MAO only when **`arv`**, **`repair_estimate`**, and **`multiplier`** are all numeric; **`assignment_fee`** optional (**`0`** when absent). Otherwise **`VALIDATION_ERROR`**.
+- **OK `data`:** **`deal_id`**, **`assumptions_snapshot_id`**, **`calc_version`**, **`pricing`** (arv, repair_estimate, multiplier, assignment_fee, mao string, calc_version echo), **`seller`** (address, seller_name, seller_phone, seller_email), **`offer_clause_hours`** (**48**).
+- **Not workspace-write-gated** — read-only.
+
+### `refresh_deal_soft_offer_v1(p_deal_id uuid, p_idempotency_key text)` → `jsonb`
+
+- **Authority / migration:** same file — **`VOLATILE`** **`SECURITY DEFINER`**; **`GRANT EXECUTE`** to **`authenticated`** only.
+- **Privileged RPC ordering:** **`PERFORM public.require_min_role_v1('member')`** is the **first executable statement** (wrapped **`BEGIN`**/**`EXCEPTION`** → **`NOT_AUTHORIZED`**), per **`CONTRACTS`** privileged-write RPC rule.
+- **Early idempotency replay:** Then **`auth.uid()`** (required → **`NOT_AUTHORIZED`** if null); **`p_idempotency_key`** non-empty after trim → else **`VALIDATION_ERROR`**; **`SELECT`** **`rpc_idempotency_log`** for **`(user_id, trim(key), rpc_name = refresh_deal_soft_offer_v1)`** — if found, **`RETURN`** stored **`result_json`** immediately (**before** **`current_tenant_id()`**, workspace lock, **`get_offer_payload_v1`**, or **`deal_soft_offers`** DML).
+- **First-call path after replay miss:** **`current_tenant_id()`** non-null; **`check_workspace_write_allowed_v1()`**; **`p_deal_id`** required; **`get_offer_payload_v1`** (failure envelope unchanged — **no** log row). Builds **`copy_text`** / **`copy_email`** from that payload (ASCII hyphen subject **`Soft offer - …`**); **`offer_expires_at := clock_timestamp() + interval '48 hours'`**.
+- **Atomic claim + persist:** **`INSERT`** **`rpc_idempotency_log`** with full **`result_json`**, **`ON CONFLICT DO UPDATE SET result_json = rpc_idempotency_log.result_json`**, **`RETURNING (xmax = 0)`** — loser returns winner’s **`result_json`**; winner **`DELETE`**/**`INSERT`** **`deal_soft_offers`**.
+- **OK `data`:** **`deal_id`**, **`deal_soft_offer_id`**, **`assumptions_snapshot_id`**, **`offer_expires_at`** (UTC **`Z`** suffix string).
+
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** (**`get_offer_payload_v1`**, **`refresh_deal_soft_offer_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/definer_allowlist.json`**; **`docs/truth/privilege_truth.json`** — **`§17`** mapping table above.

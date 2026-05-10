@@ -213,6 +213,11 @@
         "authority": "CONTRACTS.md §64 — Build Route 10.12C2 / 10.12C4 / 10.12C5; Lead Intake KPI read path; unreviewed_count seller+birddog only (10.12C5)"
       },
       {
+        "routine": "get_offer_payload_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §17 / §69 — Build Route 10.13A; governed offer payload read"
+      },
+      {
         "routine": "handoff_to_dispo_v1",
         "privilege": "EXECUTE"
       },
@@ -245,6 +250,11 @@
       {
         "routine": "register_deal_media_v1",
         "privilege": "EXECUTE"
+      },
+      {
+        "routine": "refresh_deal_soft_offer_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §17 / §69 — Build Route 10.13A; persist soft-offer copy + idempotent replay"
       },
       {
         "routine": "return_to_acq_v1",
@@ -384,6 +394,7 @@
       "get_acq_kpis_v1",
       "get_draft_deal_v1",
       "get_lead_intake_kpis_v1",
+      "get_offer_payload_v1",
       "get_profile_settings_v1",
       "get_user_entitlements_v1",
       "get_workspace_settings_v1",
@@ -408,6 +419,7 @@
       "mark_submission_reviewed_v1",
       "promote_draft_deal_v1",
       "register_deal_media_v1",
+      "refresh_deal_soft_offer_v1",
       "remove_member_v1",
       "rescind_invite_v1",
       "resolve_form_slug_v1",
