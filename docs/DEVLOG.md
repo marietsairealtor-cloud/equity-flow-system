@@ -9715,3 +9715,30 @@ DoD
 
 Status  
 PASS
+
+---
+
+## 2026-05-10 — Build Route v2.4 — **10.12D2**
+
+Objective  
+Public intake forms delivered as static HTML embeds on GitHub Pages (**`forms.equityflowsystems.com`**), iframe-friendly, submitting only through governed **`submit_form_v1`** — no WeWeb runtime, no Storage loader canonical path, optional Edge Function retained non-canonical.
+
+Changes  
+- **`apps/embed/seller.html`**, **`buyer.html`**, **`birddog.html`** — self-contained embeds (`spam_token`, duplicate-submit guard, **`submit_form_v1`** RPC)  
+- **`apps/embed/CNAME`** — custom domain  
+- **`.github/workflows/deploy-embed.yml`** — Pages deploy on **`main`** / **`apps/embed/**`**  
+- **`supabase/migrations/20260513000001_10_12D2_intake_forms_storage_bucket.sql`**, **`20260513000002_10_12D2_cleanup_intake_forms_storage.sql`** — forward bucket history + abandoned **`intake-forms`** cleanup  
+- **`supabase/tests/10_12D2_cleanup_intake_forms_storage.test.sql`** — pgTAP asserts bucket/policy/objects absent post-cleanup  
+- **`.gitleaks.toml`** / **`secrets-scan`** config — allowlist for publishable embed key and related fixtures  
+- **`docs/truth/qa_claim.json`**, **`qa_scope_map.json`**, **`scripts/ci_robot_owned_guard.ps1`** — **10.12D2** proof pattern **`10.12D2_static_intake_embed_`**  
+- **`docs/governance/GOVERNANCE_CHANGE_20260510T230000Z.md`** — governance record  
+- **`npm run proof:finalize`** — **`docs/proofs/10.12D2_static_intake_embed_20260510T022023Z.log`**; **`docs/proofs/manifest.json`** hash updated  
+
+Proof  
+`docs/proofs/10.12D2_static_intake_embed_20260510T022023Z.log`
+
+DoD  
+- Static seller/buyer/birddog embeds live on Pages custom domain; slug/query validation; success and safe error envelopes; no direct table calls or service-role exposure; Lead Intake embed snippets target Pages URLs; storage cleanup migration applied; merge-blocking proof finalized  
+
+Status  
+PASS
