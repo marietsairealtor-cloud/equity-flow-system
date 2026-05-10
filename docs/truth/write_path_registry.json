@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-10T15:27:37Z",
+    "generated":  "2026-05-10T19:47:02Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -224,18 +224,6 @@
                         },
                         {
                             "path_type":  "rpc",
-                            "name":  "send_offer_v1",
-                            "tables":  [
-                                           "deal_activity_log",
-                                           "deal_reminders",
-                                           "deals",
-                                           "rpc_idempotency_log"
-                                       ],
-                            "row_version_enforced":  false,
-                            "optimistic_concurrency":  false
-                        },
-                        {
-                            "path_type":  "rpc",
                             "name":  "register_deal_media_v1",
                             "tables":  [
                                            "deal_media"
@@ -275,6 +263,18 @@
                             "name":  "revoke_share_token_v1",
                             "tables":  [
                                            "share_tokens"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "send_offer_v1",
+                            "tables":  [
+                                           "deal_activity_log",
+                                           "deal_reminders",
+                                           "deals",
+                                           "rpc_idempotency_log"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
