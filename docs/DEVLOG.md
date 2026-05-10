@@ -9763,3 +9763,31 @@ DoD
 
 Status  
 PASS
+
+---
+
+## 2026-05-10 — Build Route v2.4 — **10.13B**
+
+Objective  
+Merge-blocking governed **Send Offer** write path (**send_offer_v1**) closes with finalized Phase 4 proof: atomic **analyzing** to **offer_sent**, **deal_reminders** follow-up, **deal_activity_log**, **rpc_idempotency_log** replay, prerequisite **deal_soft_offers**.
+
+Changes  
+- **`supabase/migrations/20260513000004_10_13B_offer_send_write_path.sql`** — **`send_offer_v1(p_deal_id uuid, p_idempotency_key text)`** (**SECURITY DEFINER**, **authenticated** **EXECUTE** only)  
+- **`supabase/tests/10_13B_offer_send_write_path.test.sql`** — pgTAP (validation, conflict, isolation, reminder + activity, idempotency, grants)  
+- **`docs/artifacts/CONTRACTS.md`** — **`§17`** row **`send_offer_v1`**; **`advance_deal_stage_v1`** note for offer-send wiring; **`§70`** contract  
+- **`docs/governance/GOVERNANCE_CHANGE_20260509T233000Z.md`** — Phase 1 admin record  
+- **`docs/truth/`** — **`rpc_contract_registry`**, **`privilege_truth`**, **`definer_allowlist`**, **`execute_allowlist`**, **`expected_surface`**, **`write_path_registry`**, **`qa_claim`** / **`qa_scope_map`**, **`cloud_migration_parity`**  
+- **`scripts/ci_robot_owned_guard.ps1`** — proof pattern **`10.13B_offer_send_write_path_`**  
+- **`npm run proof:finalize`** — **`docs/proofs/10.13B_offer_send_write_path_20260510T203103Z.log`**; **`docs/proofs/manifest.json`** hash updated  
+- Merged via PR **#616**
+
+Proof  
+`docs/proofs/10.13B_offer_send_write_path_20260510T203103Z.log`
+
+DoD  
+- **`send_offer_v1`** exists and performs required mutations atomically (deal stage, reminder engine surface, activity log; ties send to deal + persisted soft offer)  
+- No separate **`advance_deal_stage_v1`** call for governed offer send (contract documented)  
+- No direct table calls from clients; merge-blocking proof + pgTAP aligned  
+
+Status  
+PASS
