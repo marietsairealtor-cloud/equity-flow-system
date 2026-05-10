@@ -1,0 +1,63 @@
+PROOF_HEAD=228548fcb94dd5820eab6ba3f37305f2bcb80e06
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.12D2 Public Intake Forms — Static Embed Delivery — Proof Log ===
+Date: 2026-05-10T02:20:23.4851272Z
+Branch: main (merged)
+HEAD SHA: 228548fcb94dd5820eab6ba3f37305f2bcb80e06
+
+=== Deliverable ===
+Static embed forms hosted at forms.equityflowsystems.com via GitHub Pages
+apps/embed/seller.html — PASS
+apps/embed/buyer.html — PASS
+apps/embed/birddog.html — PASS
+apps/embed/CNAME — forms.equityflowsystems.com
+.github/workflows/deploy-embed.yml — GitHub Actions deploy on push to main
+
+=== Architecture ===
+Canonical embed delivery: GitHub Pages static HTML
+Custom domain: forms.equityflowsystems.com
+Submit path: submit_form_v1 (governed RPC, no direct table calls)
+Anon key: publishable key in static HTML (QA approved)
+No WeWeb runtime
+No Supabase Storage dependency
+No Edge Function dependency for canonical delivery
+Edge Function intake-form: retained as optional fallback only
+
+=== Abandoned approaches ===
+WeWeb iframe — blocked by plan requirement
+Supabase Edge Function HTML — blocked by content-type rewrite
+Supabase Storage loader.html — blocked by JS sandbox
+Storage cleanup: 20260513000002_10_12D2_cleanup_intake_forms_storage.sql applied
+
+=== Live URL Tests ===
+forms.equityflowsystems.com/seller.html?slug=test2ws3 — renders PASS
+forms.equityflowsystems.com/buyer.html?slug=test2ws3 — renders PASS
+forms.equityflowsystems.com/birddog.html?slug=test2ws3 — renders PASS
+seller form submit — ok=true, submission in Lead Intake inbox PASS
+iframe embed in external page — renders PASS
+Lead Intake embed modal copy buttons — correct URLs PASS
+
+=== DoD Checklist ===
+seller.html self-contained, no external dependencies         PASS
+buyer.html self-contained, no external dependencies          PASS
+birddog.html self-contained, no external dependencies        PASS
+slug read from URL query string                              PASS
+missing slug shows safe error                                PASS
+required field validation                                    PASS
+spam_token included                                          PASS
+duplicate submit protection                                  PASS
+success state after ok=true                                  PASS
+error states: NOT_AUTHORIZED, VALIDATION_ERROR, NOT_FOUND   PASS
+mobile responsive                                            PASS
+no WeWeb runtime in embed output                             PASS
+no service-role key exposed                                  PASS
+no direct table calls                                        PASS
+GitHub Pages enabled and serving forms.equityflowsystems.com PASS
+Lead Intake embed snippets point to GitHub Pages URLs        PASS
+Storage cleanup migration applied                            PASS
+gitleaks allowlist updated for anon key in static HTML       PASS
+
+=== RESULT ===
+10.12D2 Public Intake Forms Static Embed Delivery: PASS (merge-blocking gate)
