@@ -1,0 +1,22 @@
+PROOF_HEAD=e5fadd39664cf906ebe3f7933b32f86eb507e95a
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+Build Route: 10.12D2 — Public intake forms — static embed delivery (working iteration)
+
+PROOF_HEAD: e5fadd39664cf906ebe3f7933b32f86eb507e95a
+Branch: feat/10.12d2-static-embed
+
+Gate: database-tests (pgTAP via supabase test db)
+
+Result: PASS
+
+Summary:
+- Full pgTAP suite completed successfully, including supabase/tests/10_12D2_cleanup_intake_forms_storage.test.sql (intake-forms bucket absent; policy absent; no orphan storage.objects for intake-forms after migration chain).
+
+Notes:
+- Migration 20260513000002_10_12D2_cleanup_intake_forms_storage.sql matches deployed/reconciled DB state (multi-statement form with storage.allow_delete_query guard).
+- Canonical D2 delivery: apps/embed/*.html + GitHub Pages; abandoned Storage loader path removed by forward cleanup migration per Build Route.
+- Live GitHub Pages URL/embed verification deferred until post-merge deployment because Pages publication depends on merge-to-main.
+
+Recorded: 2026-05-10 (iteration log — rename/finalize to 10.12D2_static_intake_embed_<UTC>.log per SOP when closing Phase 4)
