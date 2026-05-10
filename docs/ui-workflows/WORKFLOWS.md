@@ -591,6 +591,45 @@ Item: 10.12D1
 
 ---
 
+## embed-seller-form
+Trigger: seller.html loaded in browser (apps/embed/seller.html)
+Reads: ?slug= from URL query params
+Calls: submit_form_v1(p_slug, p_form_type='seller', p_payload)
+Writes: none — public form, no variables
+Branches: slug missing → show error | valid → show form | submit ok=true → success state | submit ok=false → error state
+Item: 10.12D2
+
+---
+
+## embed-buyer-form
+Trigger: buyer.html loaded in browser (apps/embed/buyer.html)
+Reads: ?slug= from URL query params
+Calls: submit_form_v1(p_slug, p_form_type='buyer', p_payload)
+Writes: none
+Branches: same as seller
+Item: 10.12D2
+
+---
+
+## embed-birddog-form
+Trigger: birddog.html loaded in browser (apps/embed/birddog.html)
+Reads: ?slug= from URL query params
+Calls: submit_form_v1(p_slug, p_form_type='birddog', p_payload)
+Writes: none
+Branches: same as seller
+Item: 10.12D2
+
+---
+
+## deploy-embed (GitHub Actions)
+Trigger: push to main when apps/embed/** changes, workflow_dispatch
+Reads: apps/embed/ folder contents
+Calls: GitHub Pages deploy
+Writes: forms.equityflowsystems.com static hosting
+Item: 10.12D2
+
+---
+
 # WeWeb Variable Registry
 
 All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolean.

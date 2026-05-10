@@ -1,0 +1,20 @@
+# Gitleaks overrides on top of default rules (useDefault).
+#
+# Allowlisted paths are intentional false positives for generic-api-key:
+# - apps/embed/*.html: Supabase publishable (anon) keys are public by contract (Build Route 10.12D2).
+# - pending invites pgTAP: synthetic fixture strings.
+# - docs/DEVLOG.md: narrative/historical lines occasionally match generic secret heuristics.
+
+title = "equity-flow-system"
+
+[extend]
+useDefault = true
+
+[allowlist]
+paths = [
+  '''apps/embed/''',
+  '''supabase/tests/10_8_11I3_pending_invites_rpc.test.sql''',
+  '''docs/DEVLOG.md''',
+  '''scripts/capture_surface_truth.mjs''',
+  '''scripts/ci_surface_truth.mjs''',
+]

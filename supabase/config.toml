@@ -434,3 +434,9 @@ entrypoint = "./functions/create-checkout-session/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/stripe-webhook/index.ts"
+
+[functions.intake-form]
+enabled = true
+verify_jwt = false
+import_map = "./functions/intake-form/deno.json"
+entrypoint = "./functions/intake-form/index.ts"
