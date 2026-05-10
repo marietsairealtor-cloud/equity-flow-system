@@ -9742,3 +9742,24 @@ DoD
 
 Status  
 PASS
+
+---
+
+## 2026-05-10 — Build Route v2.4 — **10.13A**
+
+Objective  
+Governed offer payload read and soft-offer refresh (**get_offer_payload_v1**, **refresh_deal_soft_offer_v1**, **deal_soft_offers**) merged on **`main`** with reproducible Phase 6 **`ship`** / **`handoff`** (operator precondition documented).
+
+Changes  
+- **Phase 4** finalized proof already on **`main`** (referenced below)  
+- **DEVLOG** — documents Phase **6** operator precondition: run **`supabase db reset`** (or otherwise align local Postgres with **`origin/main`** migration tip) before **`npm run handoff`** when the **`supabase_db_equity-flow-system`** container is up; **`scripts/sync_truth_registries.mjs`** then reflects current catalog (otherwise a stale DB rewrote **`definer_allowlist`**, **`execute_allowlist`**, and **`tenant_table_selector`** incorrectly). When sync skips (Docker down) or catalog matches committed truth, typical **`handoff`** churn is **`docs/handoff_latest.txt`** + **`docs/truth/write_path_registry.json`** only — robot-owned, not committed in this DEVLOG-only change.
+
+Proof  
+`docs/proofs/10.13A_offer_data_contract_soft_copy_20260510T183553Z.log`
+
+DoD  
+- Build Route **10.13A** delivery merged with **`CONTRACTS.md`** §17/§69, migrations + pgTAP, truth registries, governance record, robot guard, finalized proof + **`manifest.json`**  
+- Phase **6**: **`npm run ship`** PASS (verify-only); **`npm run handoff`** with Docker / DB aligned yields expected robot-owned deltas (**`handoff_latest`**, **`write_path_registry`**) without accidental **`sync_truth`** drift  
+
+Status  
+PASS
