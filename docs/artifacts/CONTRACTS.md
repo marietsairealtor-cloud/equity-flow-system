@@ -289,7 +289,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_acq_deals_v1 | 10.11A | Filtered Acquisition deal list (excludes dispo/tc/closed/dead; follow_ups via deal_reminders) | SECURITY DEFINER, min role: member | current_tenant_id() — p_filter + optional p_farm_area_id |
 | update_seller_info_v1 | 10.11A | Partial update of seller + next-action fields on deals | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | update_property_info_v1 | 10.11A | Upsert deal_properties row for a deal (partial field merge) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
-| advance_deal_stage_v1 | 10.11A; activity log 10.11A10 | Validated stage transitions (start_analysis / send_offer / mark_contract_signed); writes `stage_change` to `deal_activity_log` (§62) | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — p_deal_id + p_action |
+| advance_deal_stage_v1 | 10.11A; activity log 10.11A10 | Validated stage transitions (start_analysis / send_offer / mark_contract_signed); writes `stage_change` to `deal_activity_log` (§62). **10.13B:** governed **Send Offer** uses **`send_offer_v1`** — do not call **`advance_deal_stage_v1(..., 'send_offer')`** separately for that workflow | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — p_deal_id + p_action |
 | mark_deal_dead_v1 | 10.11A | Mark deal dead with required reason | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_dead_reason |
 | handoff_to_dispo_v1 | 10.11A; activity log 10.11A10 | under_contract → dispo; sets assignee_user_id; writes `handoff` to `deal_activity_log` (§62) | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — p_deal_id + p_assignee_user_id |
 | handoff_to_tc_v1 | 10.11A | dispo → tc; sets assignee_user_id | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_assignee_user_id |
@@ -298,6 +298,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | list_deal_media_v1 | 10.11A | List registered deal photo metadata for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | register_deal_media_v1 | 10.11A | Register storage_path after client upload to deal-photos bucket | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_storage_path + p_sort_order |
 | refresh_deal_soft_offer_v1 | 10.13A | **`require_min_role_v1('member')`** first executable statement; then **`auth.uid()`** + non-empty key; **`rpc_idempotency_log`** replay (**verbatim `result_json`**) **before** tenant/workspace/`get_offer_payload_v1`/writes; persists **`deal_soft_offers`** + atomic **`rpc_idempotency_log`** claim (**`ON CONFLICT`** loser replay); ASCII hyphen email subject **`Soft offer -`** | SECURITY DEFINER, authenticated only, min role member, workspace write lock, **VOLATILE** | **`current_tenant_id()`** + **`auth.uid()`** — **`p_deal_id`**, **`p_idempotency_key`** |
+| send_offer_v1 | 10.13B | Atomic **`analyzing` -> `offer_sent`** with prerequisite **`deal_soft_offers`** row; **`deal_reminders`** (**`offer_follow_up`**, **`clock_timestamp() + interval '3 days'`**); **`deal_activity_log`** (**`stage_change`**); **`rpc_idempotency_log`** replay + atomic claim (**`RETURNING (xmax = 0)`**) before mutations | SECURITY DEFINER, authenticated only, min role member, workspace write lock, **VOLATILE** | **`current_tenant_id()`** + **`auth.uid()`** — **`p_deal_id`**, **`p_idempotency_key`** |
 | delete_deal_media_v1 | 10.11A | Delete deal_media row; returns storage_path for Edge cleanup | SECURITY DEFINER, min role: member | current_tenant_id() — p_media_id only |
 | create_deal_note_v1 | 10.11A1 | Append user note or call log on `deal_notes` for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_note_type + p_content |
 | list_deal_notes_v1 | 10.11A1 | List notes/call logs for a deal (newest first) | SECURITY DEFINER, STABLE, min role: member | current_tenant_id() — p_deal_id only |
@@ -1770,4 +1771,24 @@ Authoritative names and variable IDs: **`docs/ui-workflows/WORKFLOWS.md`** — *
 - **Atomic claim + persist:** **`INSERT`** **`rpc_idempotency_log`** with full **`result_json`**, **`ON CONFLICT DO UPDATE SET result_json = rpc_idempotency_log.result_json`**, **`RETURNING (xmax = 0)`** — loser returns winner’s **`result_json`**; winner **`DELETE`**/**`INSERT`** **`deal_soft_offers`**.
 - **OK `data`:** **`deal_id`**, **`deal_soft_offer_id`**, **`assumptions_snapshot_id`**, **`offer_expires_at`** (UTC **`Z`** suffix string).
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** (**`get_offer_payload_v1`**, **`refresh_deal_soft_offer_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/definer_allowlist.json`**; **`docs/truth/privilege_truth.json`** — **`§17`** mapping table above.
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** (**`get_offer_payload_v1`**, **`refresh_deal_soft_offer_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/definer_allowlist.json`**; **`docs/truth/privilege_truth.json`**; **`send_offer_v1`** (**§70**, **10.13B**) — **`§17`** mapping table above.
+
+---
+
+## 70) Offer Backend — Send Offer Write Path (10.13B)
+
+**Purpose:** Single governed mutation for **Send Offer**: ties stage advance to persisted soft-offer state, schedules seller follow-up on **`deal_reminders`**, and appends **`deal_activity_log`** — without requiring a separate **`advance_deal_stage_v1(..., 'send_offer')`** call.
+
+### `send_offer_v1(p_deal_id uuid, p_idempotency_key text)` → `jsonb`
+
+- **Authority / migration:** **`20260513000004_10_13B_offer_send_write_path.sql`** — **`VOLATILE`** **`SECURITY DEFINER`**; **`REVOKE ALL`** from **`PUBLIC`**, **`anon`**; **`GRANT EXECUTE`** to **`authenticated`** only.
+- **Privileged RPC ordering:** **`PERFORM public.require_min_role_v1('member')`** is the **first executable statement** (wrapped **`BEGIN`**/**`EXCEPTION`** → **`NOT_AUTHORIZED`** envelope).
+- **Caller + key:** **`auth.uid()`** required (**`NOT_AUTHORIZED`**); **`trim(p_idempotency_key)`** non-empty (**else `VALIDATION_ERROR`** **`fields.p_idempotency_key`**).
+- **Early idempotency replay:** **`SELECT`** **`rpc_idempotency_log`** for **`(user_id, trim(key), rpc_name = send_offer_v1)`** — if found, **`RETURN`** stored **`result_json`** immediately (**before** **`current_tenant_id()`**, workspace lock, row locks, or writes).
+- **Tenant + workspace:** **`current_tenant_id()`** non-null (**`NOT_AUTHORIZED`**); **`check_workspace_write_allowed_v1()`** (**else read-only `NOT_AUTHORIZED`**). **`p_deal_id`** **`NULL` → `VALIDATION_ERROR`**.
+- **Deal row lock:** **`SELECT stage FROM deals … FOR UPDATE`** where **`id = p_deal_id`**, **`tenant_id = current tenant`**, **`deleted_at IS NULL`**. Missing / cross-tenant → **`NOT_FOUND`**. Stage already **`offer_sent` → `CONFLICT`**; stage not **`analyzing` → `CONFLICT`** (**`fields.stage`** echo).
+- **Soft-offer prerequisite:** Latest **`deal_soft_offers`** row for **`(tenant_id, deal_id)`** required — absent → **`VALIDATION_ERROR`** (**`deal_soft_offer`** **`missing`**).
+- **Atomic claim + writes:** Precomputes **`reminder_id`** (**`gen_random_uuid()`**) and **`reminder_date`** (**`clock_timestamp() + interval '3 days'`**); builds OK **`result_json`**; **`INSERT`** **`rpc_idempotency_log`** with **`ON CONFLICT … RETURNING (xmax = 0)`** — loser replays winner **`result_json`** without mutating state; winner **`UPDATE deals`** (**`stage = offer_sent`**, **`row_version + 1`**), **`INSERT deal_reminders`** (**`reminder_type = offer_follow_up`**), **`INSERT deal_activity_log`** (**`activity_type = stage_change`**, governed narrative including **`send_offer_v1`**).
+- **OK `data`:** **`deal_id`**, **`stage`** (**`offer_sent`**), **`deal_soft_offer_id`**, **`reminder_id`**, **`reminder_date`** (UTC **`Z`** suffix string).
+
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** (**`send_offer_v1`**); **`docs/truth/execute_allowlist.json`**; **`docs/truth/definer_allowlist.json`**; **`docs/truth/privilege_truth.json`**; **`docs/truth/write_path_registry.json`** — **`§17`** mapping table above.

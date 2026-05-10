@@ -257,6 +257,11 @@
         "authority": "CONTRACTS.md §17 / §69 — Build Route 10.13A; persist soft-offer copy + idempotent replay"
       },
       {
+        "routine": "send_offer_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §17 / §70 — Build Route 10.13B; governed send offer + reminder + activity + idempotent replay"
+      },
+      {
         "routine": "return_to_acq_v1",
         "privilege": "EXECUTE"
       },
@@ -420,6 +425,7 @@
       "promote_draft_deal_v1",
       "register_deal_media_v1",
       "refresh_deal_soft_offer_v1",
+      "send_offer_v1",
       "remove_member_v1",
       "rescind_invite_v1",
       "resolve_form_slug_v1",
