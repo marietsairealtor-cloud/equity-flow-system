@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-11T17:04:44Z",
+    "generated":  "2026-05-11T17:13:17Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -214,6 +214,16 @@
                         },
                         {
                             "path_type":  "rpc",
+                            "name":  "refresh_deal_soft_offer_v1",
+                            "tables":  [
+                                           "deal_soft_offers",
+                                           "rpc_idempotency_log"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
                             "name":  "register_deal_media_v1",
                             "tables":  [
                                            "deal_media"
@@ -253,6 +263,18 @@
                             "name":  "revoke_share_token_v1",
                             "tables":  [
                                            "share_tokens"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "send_offer_v1",
+                            "tables":  [
+                                           "deal_activity_log",
+                                           "deal_reminders",
+                                           "deals",
+                                           "rpc_idempotency_log"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -436,6 +458,15 @@
                             "name":  "deal_outputs_tenant_match",
                             "tables":  [
                                            "deal_outputs"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "trigger",
+                            "name":  "deal_soft_offers_tenant_match",
+                            "tables":  [
+                                           "deal_soft_offers"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
