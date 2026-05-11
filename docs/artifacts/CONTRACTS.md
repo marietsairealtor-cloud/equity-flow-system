@@ -1468,7 +1468,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - No **mock KPI**, **mock deal list**, or **mock deal detail** data remains on the Acquisition page; **KPI strip**, **deal list**, and **deal detail** are **live reads** from the governed endpoints.
 - All **writes** on the Acquisition surface use **governed RPCs only** (stage, seller/property edits, reminders, notes, media registration, handoff, dead, pricing/properties paths as routed in the UI registry).
 - **Quick contact actions:** Call, Email (**Text deferred from v1**); wired with native **`tel:`** / **`mailto:`** links per **`docs/ui-workflows/WORKFLOWS.md`**.
-- **10.13C-D (Offer UI — Send Offer + Email delivery):** **Offer Sent** is available only when the selected deal stage is **`analyzing`**. The action calls **`refresh_deal_soft_offer_v1`** then **`send_offer_v1`** in that order, each with its **own** idempotency key — **not** a separate **`advance_deal_stage_v1`** hop for offer send (**`send_offer_v1`** owns the stage transition per **§70** / **10.13B**). On success, the canvas re-runs the governed read workflows in **`docs/ui-workflows/WORKFLOWS.md`** (**`offer-sent-send`**). **Email Offer** opens a native **`mailto:`** link built from **allowlisted reads only** (**`get_acq_deal_v1`** fields on **`selectedDeal`** and/or **`get_offer_payload_v1`** where explicitly bound) — **no** client-side MAO math, **no** PDF, **no** in-app email transport, **no** SMTP. **Copy Offer** is removed or superseded by **Email Offer**.
+- **10.13C-D (Offer UI — Send Offer + Email delivery):** **Offer Sent** is available only when the selected deal stage is **`analyzing`**. The action calls **`refresh_deal_soft_offer_v1`** then **`send_offer_v1`** in that order, each with its **own** idempotency key — **not** a separate **`advance_deal_stage_v1`** hop for offer send (**`send_offer_v1`** owns the stage transition per **§70** / **10.13B**). On success, the canvas re-runs the governed read workflows in **`docs/ui-workflows/WORKFLOWS.md`** (**`acq-offer-sent`**). **Email Offer** opens a native **`mailto:`** link built from **`get_acq_deal_v1`** fields on **`selectedDeal`** (see **`acq-email-offer`**) — **no** client-side MAO math, **no** PDF, **no** in-app email transport, **no** SMTP. **Copy Offer** is removed or superseded by **Email Offer**.
 
 **Deal photos / media:**
 
@@ -1479,7 +1479,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 
 - **Activity log requires 10.11A10 (merged):** The Acquisition activity panel reads **`deal_activity_log`** via **`list_deal_activity_v1`** (wired in **`docs/ui-workflows/WORKFLOWS.md`**); meaningful system-backed rows assume **§62** (**10.11A10** activity log expansion) merged first.
 
-**§Registry:** UI truth — **`docs/ui-workflows/WORKFLOWS.md`** (including **10.13C-D** workflows **`offer-sent-send`**, **`email-offer-mailto`**); RPC truth — **`docs/truth/rpc_contract_registry.json`** (**§17** / **§69** / **§70**; Phase 1 admin for **10.13C-D** does not add migrations).
+**§Registry:** UI truth — **`docs/ui-workflows/WORKFLOWS.md`** (including **10.13C-D** workflows **`acq-offer-sent`**, **`acq-email-offer`**); RPC truth — **`docs/truth/rpc_contract_registry.json`** (**§17** / **§69** / **§70**; Phase 1 admin for **10.13C-D** does not add migrations).
 
 ---
 

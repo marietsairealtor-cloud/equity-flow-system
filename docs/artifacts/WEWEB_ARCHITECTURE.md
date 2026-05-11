@@ -78,8 +78,8 @@ Rules:
 - Closed and Dead are terminal states. Records become read-only.
 - FUP tiers (2 Weeks, One Month, 90 Days) are eliminated. Follow-up timing handled by reminder engine.
 - Stages track deal state. Reminders track nurture cadence. Clean separation.
-- Auto-advance: one-tap actions automatically transition stages where applicable (for example, "Send offer" moves Analyzing → Offer Sent).
-- Valid transitions enforced server-side by `update_deal_v1`.
+- Auto-advance: one-tap actions transition stages via governed deal RPCs where applicable (for example, Acquisition **Offer Sent** runs `refresh_deal_soft_offer_v1` then `send_offer_v1`, which advances **Analyzing → Offer Sent** server-side; see `docs/ui-workflows/WORKFLOWS.md` **acq-offer-sent**).
+- Valid transitions are enforced inside those mutation RPCs — the client does not set stage directly.
 
 ### 3.1 Workflow Ownership + Handoff (AUTHORITATIVE)
 
@@ -527,7 +527,7 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 
 
 **Actions**
-- In `Analyzing`, primary CTA is **Send offer → Offer Sent**
+- In `Analyzing`, **Offer Sent** calls `refresh_deal_soft_offer_v1` then `send_offer_v1` (workflow **acq-offer-sent** in `WORKFLOWS.md`). **Email Offer** (Contact Seller) opens a native `mailto:` draft from `selectedDeal` fields (workflow **acq-email-offer**).
 - In `UC`, primary CTA is **Send to Dispo**
 - **Send to Dispo** opens a small modal:
   - assignee dropdown
@@ -540,7 +540,7 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
   - assigned user gets notification
 
 **Data**
-- `update_deal_v1` + `list_deals_v1`
+- Acquisition list/detail reads: `list_acq_deals_v1`, `get_acq_deal_v1` (see `WORKFLOWS.md`); mutations per Build Route / §17 (including offer send: `refresh_deal_soft_offer_v1` → `send_offer_v1`, not a legacy `update_deal_v1` offer hop).
 - reminders from reminder engine
 
 ---
@@ -685,8 +685,8 @@ It lives on the MAO calculator page in authenticated context. It is not a separa
   * Copy email
   * Download PDF
 * injects dynamic 48-hour expiration clause into all outputs
-* “Send offer” triggers Analyzing → Offer Sent via `update_deal_v1`
-* auto-creates follow-up reminder on offer send 
+* Acquisition **Offer Sent** (deal detail, Analyzing) advances **Analyzing → Offer Sent** via `refresh_deal_soft_offer_v1` then `send_offer_v1` — not `update_deal_v1` (see `WORKFLOWS.md` **acq-offer-sent**); backend creates follow-up reminder + activity on successful send.
+* This embedded generator is for copy/download surfaces on the MAO page; governed offer send remains on Acquisition.
 
 **Reporting note**
 
