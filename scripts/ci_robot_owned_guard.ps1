@@ -209,6 +209,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/10\.12D2_static_intake_embed_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.12D2 proof log" }
   if($pp -match "^docs/proofs/10\.13A_offer_data_contract_soft_copy_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.13A proof log" }
   if($pp -match "^docs/proofs/10\.13B_offer_send_write_path_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.13B proof log" }
+  if($pp -match "^docs/proofs/10\.13B1_offer_activity_log_copy_correction_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.13B1 proof log" }
   if($pp -eq "docs/truth/deal_health_thresholds.json"){ return "ALLOW:10.8.4 deal health thresholds truth file" }
   if($pp -eq "docs/truth/rpc_schemas/list_deals_v1.json"){ return "ALLOW:10.8.4 list_deals_v1 schema update" }
   if($pp -eq "docs/truth/surface_truth.json"){ return "ALLOW:9.1 surface truth capture" }

@@ -21,6 +21,14 @@ Write-Host "=== handoff-commit-safety-contract ==="
 if (!(Test-Path "scripts/handoff_commit.ps1")) { Fail "scripts/handoff_commit.ps1 missing" }
 Pass "handoff_commit.ps1 exists"
 
+# Encoding preflight (invoked from repo root)
+Assert-Contains "scripts/handoff_commit.ps1" "preflight_encoding\.ps1" "handoff:commit: runs encoding preflight"
+Assert-Contains "scripts/handoff_commit.ps1" "preflight_encoding\.ps1 exited" "handoff:commit: checks preflight exit code"
+Assert-Contains "scripts/handoff_commit.ps1" 'Set-Location \$repoRoot' "handoff:commit: cds to repo root before work"
+
+# Regenerate truth artifacts (local)
+Assert-Contains "scripts/handoff_commit.ps1" "npm run handoff exited" "handoff:commit: fails closed when handoff fails"
+
 # Detached HEAD refusal
 Assert-Contains "scripts/handoff_commit.ps1" "HEAD.*detached|detached.*HEAD|abbrev-ref HEAD.*HEAD" "handoff:commit: refuses detached HEAD"
 Assert-Contains "scripts/handoff_commit.ps1" "throw.*Blocked.*detached|throw.*detached" "handoff:commit: throws on detached HEAD"
@@ -31,6 +39,7 @@ Assert-Contains "scripts/handoff_commit.ps1" "pr/handoff-artifacts" "handoff:com
 
 # Pushes current branch only
 Assert-Contains "scripts/handoff_commit.ps1" "git push.*origin.*branch|push.*origin.*branch" "handoff:commit: pushes current branch only"
+Assert-Contains "scripts/handoff_commit.ps1" "git push exited" "handoff:commit: fails closed on push errors"
 Assert-Contains "scripts/handoff_commit.ps1" "Pushed:" "handoff:commit: prints remote ref pushed"
 
 Write-Host "HANDOFF_COMMIT_SAFETY_CONTRACT_OK"

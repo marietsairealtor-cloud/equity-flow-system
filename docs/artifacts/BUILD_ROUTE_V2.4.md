@@ -8831,86 +8831,106 @@ Governed send-offer mutation that advances stage and creates follow-up reminders
 
 ---
 
-### **10.13C — Offer Output — Formal PDF**
+### **10.13B1 — Offer Backend — Activity Log Copy Correction**
 
 **Deliverable:**
-Formal PDF output of offer content, derived from the same governed offer payload used in soft-offer delivery.
+Correct the user-facing activity log message written by `send_offer_v1` so the Acquisition activity feed shows operator-friendly language instead of backend implementation details.
+
+**Scope:**
+Corrective backend migration only.
 
 **DoD:**
 
-* Formal PDF output exists for seller-ready offer content
-* PDF reads from the same `get_offer_payload_v1` used by `10.13A`
-* No separate offer regeneration occurs at PDF time
-* Dynamic 48-hour expiration clause is included
-* PDF is tied to the deal record
-* PDF output does not create a second source of truth
-* No direct table calls
+* `send_offer_v1` still performs the same governed send-offer mutation from `10.13B`
+* Activity log row written by `send_offer_v1` uses user-facing content:
+
+  * `Offer sent to seller`
+
+* No change to:
+
+  * stage transition behavior
+  * idempotency behavior
+  * reminder creation behavior
+  * authorization behavior
+  * RPC signature
+  * return envelope shape
+
+* No direct table calls from UI
+* No frontend-only business logic added
 
 **Tests:**
 
-* PDF output is generated from `get_offer_payload_v1`
-* expiration clause appears in PDF
-* PDF is tied to the correct deal
-* PDF output does not mutate pricing or deal stage by itself
+* Existing `10.13B` send-offer behavior remains valid
+* Activity log assertion expects:
 
-**Proof:** `docs/proofs/10.13C_formal_offer_pdf_<UTC>.md`
-**Gate:** `lane-only`
-**Prerequisite:** `10.13A` merged
+  * `Offer sent to seller`
+
+* No duplicate reminder or activity row is produced on idempotent replay
+
+**Proof:** `docs/proofs/10.13B1_offer_activity_log_copy_correction_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.13B` merged
 
 ---
 
-### **10.13D — Offer Flow — UI Wiring**
+### **10.13C-D — Offer UI — Send Offer + Email Delivery Wiring**
 
 **Deliverable:**
-Offer UI fully wired for soft-offer copy, formal PDF output, and governed send-offer actions.
+Acquisition UI offer workflow is wired to the governed backend send path and seller-ready email delivery surface. Formal PDF generation is intentionally removed from this item; seller delivery is via native pre-filled email (`mailto:`), matching the V1 communication boundary.
+
+**Scope:**
+Merged UI delivery for the former `10.13C` / `10.13D` offer-output workflow.
 
 **DoD:**
 
-* Offer UI renders governed offer content only
+* Acquisition page includes an **Offer Sent** action for deals in `Analyzing` stage only
+* Offer Sent action calls governed backend only:
 
-* Governed read path is wired:
+  * first calls `refresh_deal_soft_offer_v1`
+  * then calls `send_offer_v1`
 
-  * `get_offer_payload_v1`
-
-* Copy text is wired
-
-* Copy email is wired
-
-* Download PDF is wired
-
-* Send Offer action is wired to governed send-offer path only:
-
-  * `send_offer_v1`
-
-* Soft-offer delivery is supported without forcing formal PDF generation first
-
+* `send_offer_v1` is the only offer-send stage transition path
 * UI does **not** call `advance_deal_stage_v1` separately for offer send
+* On successful send:
 
-* UI refreshes correctly after send:
+  * selected deal refreshes
+  * deal stage reflects `offer_sent`
+  * follow-up reminder is created by backend
+  * activity log is created by backend
 
-  * deal stage
-  * reminder state
-  * any offer-linked deal state returned from governed backend
+* Acquisition page includes **Email Offer** action
+* Email Offer action uses native `mailto:` link only
+* Email Offer pre-fills:
 
+  * seller email
+  * subject using property address
+  * body using seller-ready offer copy / selected deal pricing context
+
+* Copy Offer button is removed or superseded by Email Offer
+* No PDF output is required
+* No in-app email sending
+* No SMTP / IMAP / two-way email sync
+* No frontend-only business logic determines send success
 * No direct table calls
 
-* No mock offer values remain
+**Tests / Proof:**
 
-* No frontend-derived pricing or expiry logic exists outside governed backend payload
+* Offer Sent button is visible only for `Analyzing` deals
+* Offer Sent workflow calls `refresh_deal_soft_offer_v1`
+* Offer Sent workflow calls `send_offer_v1`
+* Offer Sent workflow does not call `advance_deal_stage_v1`
+* Successful send refreshes selected deal
+* Email Offer button renders a valid `mailto:` link
+* `mailto:` includes seller email
+* `mailto:` subject includes deal address
+* `mailto:` body includes seller-ready offer content / pricing context
+* Copy Offer button is removed or superseded by Email Offer
+* No PDF generation path exists in this item
+* No direct table calls
 
-**Tests:**
-
-* copy-text action works from `get_offer_payload_v1`
-* copy-email action works from `get_offer_payload_v1`
-* PDF action works from the governed offer payload
-* send-offer action calls `send_offer_v1` only
-* UI refreshes stage/reminder state correctly after send
-* no mocked offer content remains
-* no direct table access exists in UI
-
-**Proof:** `docs/proofs/10.13D_offer_flow_ui_wiring_<UTC>.md`
+**Proof:** `docs/proofs/10.13C-D_offer_ui_send_email_wiring_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.13A`, `10.13B`, `10.13C` merged
+**Prerequisite:** `10.13A`, `10.13B` merged
 
 ---
 

@@ -5503,7 +5503,7 @@ BEGIN
     tenant_id, deal_id, activity_type, content, created_by, created_at
   ) VALUES (
     v_tenant, p_deal_id, 'stage_change',
-    'Offer sent (governed send_offer_v1); follow-up reminder scheduled',
+    'Offer sent to seller',
     v_user, now()
   );
 
