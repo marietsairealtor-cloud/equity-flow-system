@@ -390,6 +390,28 @@ Item: 10.11B
 
 ---
 
+## offer-sent-send
+Trigger: Offer Sent button on Acquisition deal detail (visible only when selectedDeal.stage === analyzing)
+Reads: activeDealId, auth context; distinct ephemeral idempotency keys for each RPC (generated per click)
+Calls: refresh_deal_soft_offer_v1(p_deal_id=activeDealId, p_idempotency_key=<key A>)
+       send_offer_v1(p_deal_id=activeDealId, p_idempotency_key=<key B>)
+Writes: none -- on success triggers governed refetch workflows below
+Branches: success → fetch-selected-deal + fetch-acq-deals + fetch-all-deals + fetch-deal-activity + fetch-deal-reminders (+ close any offer UI surface if applicable)
+Does not call advance_deal_stage_v1 for this send path
+Item: 10.13C-D
+
+---
+
+## email-offer-mailto
+Trigger: Email Offer button on Acquisition deal detail
+Reads: activeDealId; selectedDeal (seller email, address, pricing / offer copy fields) and/or optional get_offer_payload_v1(p_deal_id=activeDealId) when the canvas binds an explicit read for mailto body — no client-side MAO derivation
+Calls: none -- opens native mailto: URL only (no Edge send-mail RPC, no SMTP)
+Writes: none
+Branches: none
+Item: 10.13C-D
+
+---
+
 ## save-seller
 Trigger: Save button in Edit Seller popup
 Reads: seller input field values, activeDealId
@@ -692,6 +714,9 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | dealNotes | object | list_deal_notes_v1() result — notes for selected deal. Variable ID: 61f09425-563c-48ba-a62a-18de5ab34fec | fetch-deal-notes |
 | dealActivity | object | list_deal_activity_v1() result — activity log for selected deal. Variable ID: a00c6fa3-ffce-49b5-8e4c-c177855ec11e | fetch-deal-activity |
 | dealReminders | object | list_reminders_v1() result — all incomplete reminders for tenant. Variable ID: TBD | fetch-deal-reminders |
+| offerSentIdempotencyKeyRefresh | text | Ephemeral idempotency key for refresh_deal_soft_offer_v1 (new value each Offer Sent click). Variable ID: TBD | offer-sent-send |
+| offerSentIdempotencyKeySend | text | Ephemeral idempotency key for send_offer_v1 (distinct from refresh key; new each Offer Sent click). Variable ID: TBD | offer-sent-send |
+| offerMailtoUrl | text | mailto: URL for Email Offer — subject/body from governed reads only. Variable ID: TBD | email-offer-mailto |
 
 ## Public Form Variables
 
