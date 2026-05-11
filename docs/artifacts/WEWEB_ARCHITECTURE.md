@@ -78,8 +78,8 @@ Rules:
 - Closed and Dead are terminal states. Records become read-only.
 - FUP tiers (2 Weeks, One Month, 90 Days) are eliminated. Follow-up timing handled by reminder engine.
 - Stages track deal state. Reminders track nurture cadence. Clean separation.
-- Auto-advance: one-tap actions automatically transition stages where applicable (for example, "Send offer" moves Analyzing → Offer Sent).
-- Valid transitions enforced server-side by `update_deal_v1`.
+- Auto-advance: one-tap actions automatically transition stages where applicable (for example, **Send offer** on Acquisition moves **Analyzing → Offer Sent** via **`send_offer_v1`** after **`refresh_deal_soft_offer_v1`** — **10.13C-D**).
+- Valid transitions enforced server-side by governed Acquisition RPCs (**§17**), not ad-hoc table writes.
 
 ### 3.1 Workflow Ownership + Handoff (AUTHORITATIVE)
 
@@ -458,7 +458,7 @@ Today is the executive overview and triage page. It shows what matters now, wher
 ### 7.4 One-Tap Actions
 
 * Follow Up → opens Acquisition on that deal
-* Send Offer → opens Offer Generator / Acquisition and auto-advances when sent
+* Send Offer → opens Acquisition on the deal (governed **Offer Sent** path per **10.13C-D**: **`refresh_deal_soft_offer_v1`** → **`send_offer_v1`**) or MAO / Offer Generator per entry-point wiring
 * Analyze → opens MAO / Acquisition with intake pre-fill
 * Open TC → opens `/tc/:deal_id`
 * View → opens Dispo or deal detail with buyer-interest context
@@ -527,7 +527,7 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 
 
 **Actions**
-- In `Analyzing`, primary CTA is **Send offer → Offer Sent**
+- In `Analyzing`, primary CTA is **Send offer → Offer Sent** via **`refresh_deal_soft_offer_v1`** then **`send_offer_v1`** (**10.13C-D**; not **`update_deal_v1`** / not a separate **`advance_deal_stage_v1('send_offer')`**). **Email Offer** uses native **`mailto:`** with seller-ready copy (optional **`get_offer_payload_v1`** when bound in **`docs/ui-workflows/WORKFLOWS.md`**).
 - In `UC`, primary CTA is **Send to Dispo**
 - **Send to Dispo** opens a small modal:
   - assignee dropdown
@@ -540,8 +540,8 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
   - assigned user gets notification
 
 **Data**
-- `update_deal_v1` + `list_deals_v1`
-- reminders from reminder engine
+- Governed Acquisition reads/writes per **§63** / **`docs/ui-workflows/WORKFLOWS.md`** (e.g. **`get_acq_kpis_v1`**, **`list_acq_deals_v1`**, **`get_acq_deal_v1`**, notes/media/reminder RPCs) — not legacy **`list_deals_v1`** / **`update_deal_v1`** substitutes for ACQ surfaces.
+- Offer send path: **§69–§70** (**`refresh_deal_soft_offer_v1`**, **`send_offer_v1`**); reminders include server-created **`offer_follow_up`** on successful send.
 
 ---
 
@@ -683,10 +683,10 @@ It lives on the MAO calculator page in authenticated context. It is not a separa
 
   * Copy text
   * Copy email
-  * Download PDF
+  * Download PDF (MAO embedded generator scope — **Acquisition** lane **10.13C-D** does not require PDF for offer delivery)
 * injects dynamic 48-hour expiration clause into all outputs
-* “Send offer” triggers Analyzing → Offer Sent via `update_deal_v1`
-* auto-creates follow-up reminder on offer send 
+* **Acquisition deal-detail “Send offer”** (**10.13C-D**): **`refresh_deal_soft_offer_v1`** → **`send_offer_v1`** — not **`update_deal_v1`**
+* follow-up reminder on governed offer send is created server-side in **`send_offer_v1`** (**§70**) 
 
 **Reporting note**
 

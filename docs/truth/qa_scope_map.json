@@ -687,6 +687,10 @@
     "10.13B1": {
       "title": "Offer Backend — Activity Log Copy Correction",
       "proof_pattern": "^docs/proofs/10\\.13B1_offer_activity_log_copy_correction_"
+    },
+    "10.13C-D": {
+      "title": "Offer UI — Send Offer + Email Delivery Wiring",
+      "proof_pattern": "^docs/proofs/10\\.13C-D_offer_ui_send_email_wiring_"
     }
   }
 }
