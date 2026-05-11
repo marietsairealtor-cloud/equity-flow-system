@@ -9791,3 +9791,29 @@ DoD
 
 Status  
 PASS
+
+---
+
+## 2026-05-11 — Build Route v2.4 — **10.13B1**
+
+Objective  
+Corrective migration: **`send_offer_v1`** writes operator-facing **`deal_activity_log`** copy (**`Offer sent to seller`**) instead of backend implementation wording — no change to stage transition, idempotency, reminders, auth, RPC signature, or return envelope.
+
+Changes  
+- **`supabase/migrations/20260513000005_10_13B1_offer_activity_log_copy_correction.sql`** — redefines **`send_offer_v1`**; activity **`content`** only  
+- **`supabase/tests/10_13B1_offer_activity_log_copy_correction.test.sql`** — pgTAP (copy, legacy string absent, idempotent replay)  
+- **`supabase/tests/10_13B_offer_send_write_path.test.sql`** — activity assertion aligned to new copy  
+- **`docs/artifacts/CONTRACTS.md`** — **`§17`** **`send_offer_v1`** maps **10.13B, 10.13B1**; activity copy noted  
+- **`docs/governance/GOVERNANCE_CHANGE_20260511T140000Z.md`** — Phase 1 admin record  
+- **`docs/truth/qa_claim.json`**, **`qa_scope_map.json`**, **`cloud_migration_parity.json`**, **`scripts/ci_robot_owned_guard.ps1`** — active item **10.13B1**, proof pattern, migration tip **131**  
+- **`npm run proof:finalize`** — **`docs/proofs/10.13B1_offer_activity_log_copy_correction_20260511T153319Z.log`** (body includes verbatim **`npm run pr:preflight`** transcript: **10_13B1** / **10_13B** pgTAP lines, **`Result: PASS`**, truth-bootstrap, **`PROOF_MANIFEST_OK`**, proof-commit-binding tail); **`docs/proofs/manifest.json`** hash updated  
+- Merged via PR **#618**
+
+Proof  
+`docs/proofs/10.13B1_offer_activity_log_copy_correction_20260511T153319Z.log`
+
+DoD  
+- Build Route **10.13B1** Phase **1–4** complete; merge-blocking proof path finalized; proof log is receipt-backed (not summary-only)  
+
+Status  
+PASS
