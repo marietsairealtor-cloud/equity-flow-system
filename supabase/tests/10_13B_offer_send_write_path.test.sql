@@ -191,7 +191,7 @@ SELECT ok(
     WHERE al.deal_id = 'd13b0000-0000-4000-8000-000000000001'::uuid
       AND al.tenant_id = 'b13b0000-0000-4000-8000-000000000001'::uuid
       AND al.activity_type = 'stage_change'
-      AND al.content = 'Offer sent (governed send_offer_v1); follow-up reminder scheduled'
+      AND al.content = 'Offer sent to seller'
       AND al.created_by = 'a13b0000-0000-4000-8000-0000000000a1'::uuid
   ),
   '10.13B: stage_change activity row for governed send'
