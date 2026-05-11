@@ -466,6 +466,28 @@ Item: 10.11B
 
 ---
 
+## acq-offer-sent
+Trigger: Offer Sent button on Acquisition deal detail (visible only when selected deal stage is **Analyzing**)
+Reads: activeDealId, selectedDeal (stage guard), acqOfferSendRefreshKey, acqOfferSendCommitKey (non-empty idempotency keys per RPC — generate UUID or reuse project idempotency pattern)
+Calls: refresh_deal_soft_offer_v1(p_deal_id=activeDealId, p_idempotency_key=acqOfferSendRefreshKey) → send_offer_v1(p_deal_id=activeDealId, p_idempotency_key=acqOfferSendCommitKey)
+Writes: regenerates idempotency keys after success if required; triggers fetch-acq-deals + fetch-selected-deal + fetch-deal-activity + fetch-deal-reminders (+ fetch-deal-notes when wired) on success
+Branches: stage !== analyzing → control hidden/disabled | validation (empty keys) → stop | RPC error → error surface | success → refresh + toast/close
+Item: 10.13C-D
+Note: Do **not** call advance_deal_stage_v1(..., 'send_offer') on this path — governed send is **send_offer_v1** only (**§17** / **§70**).
+
+---
+
+## acq-email-offer
+Trigger: Email Offer button on Acquisition deal detail
+Reads: selectedDeal (seller email, address fields) and/or offerPayload when **get_offer_payload_v1(p_deal_id=activeDealId)** is explicitly chained for seller-ready body text
+Calls: optional get_offer_payload_v1 before compose — transport is native mailto: URI only (no Edge Function email, no SMTP)
+Writes: none
+Branches: missing seller email → disable or validation | success → open mailto: with encoded subject (property address) + body (seller-ready offer copy / pricing context per binding)
+Item: 10.13C-D
+Note: **Copy Offer** is removed or superseded by **Email Offer** for this lane (**BUILD_ROUTE 10.13C-D**). No PDF generation on this item.
+
+---
+
 ## submit-deal-note
 Trigger: Submit button in Notes/Log section
 Reads: noteInput, activeDealId
@@ -692,6 +714,9 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | dealNotes | object | list_deal_notes_v1() result — notes for selected deal. Variable ID: 61f09425-563c-48ba-a62a-18de5ab34fec | fetch-deal-notes |
 | dealActivity | object | list_deal_activity_v1() result — activity log for selected deal. Variable ID: a00c6fa3-ffce-49b5-8e4c-c177855ec11e | fetch-deal-activity |
 | dealReminders | object | list_reminders_v1() result — all incomplete reminders for tenant. Variable ID: TBD | fetch-deal-reminders |
+| acqOfferSendRefreshKey | text | Idempotency key for refresh_deal_soft_offer_v1 in Offer Sent sequence. Variable ID: TBD | acq-offer-sent |
+| acqOfferSendCommitKey | text | Idempotency key for send_offer_v1 in Offer Sent sequence. Variable ID: TBD | acq-offer-sent |
+| offerPayload | object | get_offer_payload_v1() result when Email Offer binds RPC-backed mailto body. Variable ID: TBD | optional pre-step to acq-email-offer |
 
 ## Public Form Variables
 
