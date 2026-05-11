@@ -1,18 +1,21 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 51f4ce6
+HEAD: 64b087e
 
 === git status --porcelain=v1 ===
  M docs/proofs/manifest.json
+ M docs/truth/definer_allowlist.json
+ M docs/truth/execute_allowlist.json
+ M docs/truth/tenant_table_selector.json
  M docs/truth/write_path_registry.json
 ?? docs/proofs/10.13C-D_offer_ui_send_email_wiring_20260511T172504Z.md
+?? docs/proofs/10.13C-D_offer_ui_send_email_wiring_20260511T193348Z.md
 
 === supabase status (sanitized summary) ===
 {
     "exitcode":  0,
     "stack_running":  false,
     "stopped_services":  [
-                             "supabase_imgproxy_equity-flow-system",
-                             "supabase_pooler_equity-flow-system"
+
                          ],
     "api_url":  null,
     "rest_url":  null,
