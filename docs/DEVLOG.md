@@ -9848,3 +9848,28 @@ DoD
 
 Status  
 PASS
+
+---
+
+## 2026-05-12 — Build Route v2.4 — **10.13E**
+
+Objective  
+Authenticated ACQ deal detail save path (**`update_deal_pricing_v1`**) persists append-only **`deal_inputs`** + snapshot pointer + server **`mao`**; reopen via **`get_acq_deal_v1`** matches saved values; successful save appends **`deal_activity_log`** (**`pricing_save`**); **`require_min_role_v1('member')`** enforced first — no silent recompute drift.
+
+Changes  
+- **`supabase/migrations/20260514000001_10_13E_pricing_save_activity_log.sql`** — activity row + membership guard on **`update_deal_pricing_v1`**  
+- **`supabase/tests/10_13E_save_reopen_deal.test.sql`** — pgTAP (save, snapshot, reopen, activity, non-member **`NOT_AUTHORIZED`**, cross-tenant isolation)  
+- **`docs/artifacts/CONTRACTS.md`**, **`docs/ui-workflows/WORKFLOWS.md`** (**`save-acq-pricing`**), **`docs/artifacts/WEWEB_ARCHITECTURE.md`** — Phase 1 contract / UI registry  
+- **`docs/truth/`** — **`rpc_contract_registry`**, **`write_path_registry`**, **`cloud_migration_parity`**, **`calc_version_registry`**; **`docs/governance/GOVERNANCE_CHANGE_20260514T230000Z.md`**  
+- **`docs/proofs/10.13E_save_reopen_deal_20260512T211454Z.log`** — finalized proof (**`proof:finalize`** via **`pwsh`** after proof-tail-only hygiene); **`docs/proofs/manifest.json`**  
+- Merged via PR **#626**
+
+Proof  
+`docs/proofs/10.13E_save_reopen_deal_20260512T211454Z.log`
+
+DoD  
+- Save persists pricing inputs + outputs + **`calc_version`** + multiplier; reopen identical via **`get_acq_deal_v1`**; mutation activity recorded (**`pricing_save`**); no silent recompute drift; Hub = authenticated ACQ deal detail (no new Hub page)  
+- Build Route **10.13E** Phase **1–4** complete; **`npm run pr:preflight`** reflected in proof body; proof commit binding satisfied (no non-**`docs/proofs/`** changes after **`PROOF_HEAD`** in proof tail)
+
+Status  
+PASS
