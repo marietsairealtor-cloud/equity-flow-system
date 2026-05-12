@@ -11,11 +11,23 @@ Get-ChildItem $paths -Recurse -File -Filter *.sql -ErrorAction SilentlyContinue 
   $stripped = $stripped -replace '(?s)/\*.*?\*/', ''
   $stripped = $stripped -replace "'(?:''|[^'])*'", ''
 
-  if(($stripped -match '(?is)security\s+definer') -and (
-       ($stripped -match '(?is)\bformat\s*\(') -or
-       (($stripped -match '(?is)\bexecute\b') -and 
-        ($stripped -notmatch '(?is)\b(grant|revoke)\s+execute\s+on\s+(function|procedure)\b') -and 
-        ($stripped -notmatch '(?is)\bcreate\s+trigger\b.*\bexecute\s+function\b'))
-     )){ $bad+=("$($_.FullName) : SECURITY DEFINER dynamic SQL (EXECUTE/format)") }
+  # Comments only (keep string literals) — used to tell safe printf-style format() from dynamic-SQL templates
+  $tSqlComments = $t -replace '(?m)--[^\r\n]*', ''
+  $tSqlComments = $tSqlComments -replace '(?s)/\*.*?\*/', ''
+
+  $definer = $stripped -match '(?is)security\s+definer'
+  $badExecute = (($stripped -match '(?is)\bexecute\b') -and
+    ($stripped -notmatch '(?is)\b(grant|revoke)\s+execute\s+on\s+(function|procedure)\b') -and
+    ($stripped -notmatch '(?is)\bcreate\s+trigger\b.*\bexecute\s+function\b'))
+  # Under SECURITY DEFINER, only flag format( when the first argument is not a literal template (e.g. not format('...', args))
+  $dangerousFormat = $false
+  if ($definer -and ($tSqlComments -match '(?is)\bformat\s*\(')) {
+    # Safe: format( optional_ws 'template' , ...). Flag when first arg is not a literal string template.
+    if ($tSqlComments -match "(?is)\bformat\s*\((?!\s*')") { $dangerousFormat = $true }
+  }
+
+  if ($definer -and ($badExecute -or $dangerousFormat)) {
+    $bad+=("$($_.FullName) : SECURITY DEFINER dynamic SQL (EXECUTE/format)")
+  }
 }
 if($bad.Count){ $bad | %{"LINT_SQL_SAFETY FAIL: $_"}; exit 1 } else { "LINT_SQL_SAFETY OK" }
