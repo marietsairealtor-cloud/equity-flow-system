@@ -9817,3 +9817,34 @@ DoD
 
 Status  
 PASS
+
+---
+
+## 2026-05-11 — Build Route v2.4 — **10.13C-D**
+
+Objective  
+Acquisition WeWeb offer UI wired to governed backend send (**refresh_deal_soft_offer_v1** then **send_offer_v1**) and seller-ready **mailto:** delivery (**acq-offer-sent**, **acq-email-offer**); lane-only gate — no PDF, no in-app SMTP, no direct table calls.
+
+Changes  
+- **`docs/artifacts/CONTRACTS.md`** — **§17** / **§63** / registry rows aligned to offer UI + mailto surface  
+- **`docs/artifacts/WEWEB_ARCHITECTURE.md`** — acquisition / offer path alignment  
+- **`docs/ui-workflows/WORKFLOWS.md`** — **acq-offer-sent**, **acq-email-offer** + ACQ variables (stage guard Analyzing; distinct idempotency keys per RPC; no **advance_deal_stage_v1** for send_offer on send path; post-send refresh per registry)  
+- **`docs/truth/qa_claim.json`**, **`qa_scope_map.json`** — active item **10.13C-D**, proof pattern **`10.13C-D_offer_ui_send_email_wiring_`**  
+- **`scripts/ci_robot_owned_guard.ps1`** — finalized proof allowlist entry  
+- **`docs/governance/GOVERNANCE_CHANGE_20260511T223000Z.md`** — Phase 1 admin record  
+- **`docs/proofs/10.13C-D_offer_ui_send_email_wiring_20260511T202527Z.md`** — lane proof doc (Phases 2–3: **handoff**, **handoff:commit**, **green:once**, **green:twice**, **pr:preflight** recorded **PASS**)  
+- **`docs/proofs/manifest.json`** — hash updated  
+- **`generated/contracts.snapshot.json`** — contract snapshot aligned  
+- **`docs/handoff_latest.txt`**, **`docs/truth/write_path_registry.json`** — robot-owned handoff deltas as merged  
+- Merged via PR **#621**
+
+Proof  
+`docs/proofs/10.13C-D_offer_ui_send_email_wiring_20260511T202527Z.md`
+
+DoD  
+- Offer Sent visible only for Analyzing deals; calls **refresh_deal_soft_offer_v1** then **send_offer_v1**; does not call **advance_deal_stage_v1** for send_offer; success refreshes deal list, selected deal, activity, reminders per registry  
+- Email Offer uses native **mailto:** (seller email; subject includes address; body seller-ready / pricing when bound); optional **get_offer_payload_v1** only when explicitly chained; no PDF path; no in-app SMTP; no direct table calls from WeWeb  
+- Build Route **10.13C-D** Phase **1–3** complete per proof doc; merge on **`main`**
+
+Status  
+PASS
