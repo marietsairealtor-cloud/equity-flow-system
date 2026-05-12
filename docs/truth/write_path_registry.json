@@ -321,7 +321,8 @@
                             "name":  "update_deal_pricing_v1",
                             "tables":  [
                                            "deal_inputs",
-                                           "deals"
+                                           "deals",
+                                           "deal_activity_log"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

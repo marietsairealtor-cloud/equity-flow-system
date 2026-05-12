@@ -528,6 +528,7 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 
 **Actions**
 - In `Analyzing`, primary CTA is **Send offer → Offer Sent** via **`refresh_deal_soft_offer_v1`** then **`send_offer_v1`** (**10.13C-D**; not **`update_deal_v1`** / not a separate **`advance_deal_stage_v1('send_offer')`**). **Email Offer** uses native **`mailto:`** with seller-ready copy (optional **`get_offer_payload_v1`** when bound in **`docs/ui-workflows/WORKFLOWS.md`**).
+- **Pricing save / reopen (10.13E):** Acquisition deal detail persists assumptions via **`update_deal_pricing_v1`** (**`save-acq-pricing`** in **`WORKFLOWS.md`**); reopen uses **`get_acq_deal_v1`** (**`fetch-selected-deal`**). Successful save appends **`deal_activity_log`** (**`pricing_save`**) — refresh activity after save.
 - In `UC`, primary CTA is **Send to Dispo**
 - **Send to Dispo** opens a small modal:
   - assignee dropdown
@@ -540,7 +541,7 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
   - assigned user gets notification
 
 **Data**
-- Governed Acquisition reads/writes per **§63** / **`docs/ui-workflows/WORKFLOWS.md`** (e.g. **`get_acq_kpis_v1`**, **`list_acq_deals_v1`**, **`get_acq_deal_v1`**, notes/media/reminder RPCs) — not legacy **`list_deals_v1`** / **`update_deal_v1`** substitutes for ACQ surfaces.
+- Governed Acquisition reads/writes per **§63** / **`docs/ui-workflows/WORKFLOWS.md`** (e.g. **`get_acq_kpis_v1`**, **`list_acq_deals_v1`**, **`get_acq_deal_v1`**, **`update_deal_pricing_v1`** for pricing save — **10.13E**, notes/media/reminder RPCs) — not legacy **`list_deals_v1`** / **`update_deal_v1`** substitutes for ACQ surfaces.
 - Offer send path: **§69–§70** (**`refresh_deal_soft_offer_v1`**, **`send_offer_v1`**); reminders include server-created **`offer_follow_up`** on successful send.
 
 ---

@@ -1,5 +1,5 @@
 {
-  "version": 25,
+  "version": 26,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -132,6 +132,14 @@
       "migration": "20260513000003_10_13A_offer_data_contract_soft_offer.sql",
       "description": "10.13A: get_offer_payload_v1 reads governed assumptions_snapshot_id row (deal_inputs.calc_version unchanged); validates mao text; derives mao only when snapshot mao absent using ROUND((arv * multiplier) - repair_estimate - COALESCE(assignment_fee,0)) consistent with existing pricing protocol. refresh_deal_soft_offer_v1 persists copy + deal_soft_offers.calc_version from payload. No new calc_version integer; no change to create_deal_v1 / update_deal_pricing_v1 MAO write protocol.",
       "introduced_pr": "feat/10.13a-offer-data-contract",
+      "released_at": "2026-05-14"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.13E pricing save activity + role guard",
+      "migration": "20260514000001_10_13E_pricing_save_activity_log.sql",
+      "description": "10.13E: update_deal_pricing_v1 recreated — require_min_role_v1('member') before tenant/workspace checks; successful save inserts deal_activity_log (pricing_save). Still copies calc_version from base row on insert; MAO formula and append-only pricing protocol unchanged. Incidental pricing_ token in migration filename/function name only.",
+      "introduced_pr": "10.13E",
       "released_at": "2026-05-14"
     }
   ],
