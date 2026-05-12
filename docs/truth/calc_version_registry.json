@@ -1,5 +1,5 @@
 {
-  "version": 26,
+  "version": 27,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -141,6 +141,14 @@
       "description": "10.13E: update_deal_pricing_v1 recreated — require_min_role_v1('member') before tenant/workspace checks; successful save inserts deal_activity_log (pricing_save). Still copies calc_version from base row on insert; MAO formula and append-only pricing protocol unchanged. Incidental pricing_ token in migration filename/function name only.",
       "introduced_pr": "10.13E",
       "released_at": "2026-05-14"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.14A Dispo dashboard read path + TC handoff activity",
+      "migration": "20260515000001_10_14A_dispo_dashboard_read_path.sql",
+      "description": "10.14A: adds get_dispo_kpis_v1 and list_dispo_dashboard_deals_v1 (read-only); replaces handoff_to_tc_v1 with require_min_role_v1('member') first, auth.uid + tenant checks, deal_activity_log append on disp→tc. Reads join deals/deal_inputs/share_tokens/deal_activity_log/deal_tc_checklist for KPIs and list — incidental deal_inputs.assumptions references only; no change to calc_version integer protocol on pricing writes.",
+      "introduced_pr": "10.14A",
+      "released_at": "2026-05-15"
     }
   ],
   "watch_surface": {

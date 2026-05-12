@@ -541,6 +541,8 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
   - assigned user gets notification
 
 **Data**
+
+- Governed Dispo reads: **`get_dispo_kpis_v1`**, **`list_dispo_dashboard_deals_v1`** (**10.14A** — **§71**); per-deal activity timeline via **`list_deal_activity_v1`** (**§56**). Share links via **`create_share_token_v1`** / **`revoke_share_token_v1`** (**§17**). **`handoff_to_tc_v1`** for **`dispo` → `tc`** (**§62** / **§71**).
 - Governed Acquisition reads/writes per **§63** / **`docs/ui-workflows/WORKFLOWS.md`** (e.g. **`get_acq_kpis_v1`**, **`list_acq_deals_v1`**, **`get_acq_deal_v1`**, **`update_deal_pricing_v1`** for pricing save — **10.13E**, notes/media/reminder RPCs) — not legacy **`list_deals_v1`** / **`update_deal_v1`** substitutes for ACQ surfaces.
 - Offer send path: **§69–§70** (**`refresh_deal_soft_offer_v1`**, **`send_offer_v1`**); reminders include server-created **`offer_follow_up`** on successful send.
 
@@ -742,9 +744,9 @@ Use these definitions unless a governance PR changes them.
 - **Leads Worked:** Count of deals with at least one logged Acquisition activity during the selected reporting period.
 - **Lead-to-Contract %:** Contracts Signed ÷ Leads Worked.
 - **Avg Projected Assignment Fee / Projected Gross Profit:** Average projected assignment fee on deals that reached contract signed / UC during the selected reporting period.
-- **Deals Moved to TC:** Count of deals transitioned from Dispo to TC during the selected reporting period. A deal enters TC only when the assignment agreement is signed and deposit / earnest money / consideration is received.
-- **Deposit / Earnest Money / Consideration Collected:** Total deposit / earnest money / consideration amount recorded as received before TC handoff during the selected reporting period on Dispo-owned deals. Deposit collection is fully owned by Dispo because deposit must be received before the deal can move to TC.
-- **Avg Assignment Fee (Dispo):** Average assignment fee on deals moved from Dispo to TC during the selected reporting period.
+- **Deals Moved to TC (Dispo KPI strip — `get_dispo_kpis_v1`, 10.14A):** Count of **`deal_activity_log`** rows for the tenant where **`activity_type = handoff`**, **`content = Deal handed off to TC`**, and **`created_at`** falls in the effective RPC window **`[data.date_from, data.date_to]`** (inputs default to **last 30 days** through **`now()`**; **`data.*`** echoes the bounds used — **§71**). Aligns with **`handoff_to_tc_v1`** (**§62**).
+- **Deposit / Earnest Money / Consideration Collected (Dispo KPI strip — `get_dispo_kpis_v1`, 10.14A):** **`deposit_collected`** — count of **`deal_tc_checklist`** rows where **`item_key = deposit_received`** and **`completed_at`** falls in the same effective window (**§71**). Product copy may describe dollars received; v1 backend counts checklist completions in-window, not summed currency.
+- **Avg Assignment Fee (Dispo KPI strip — `get_dispo_kpis_v1`, 10.14A):** **`avg_assignment_fee`** — average numeric **`assignment_fee`** from the assumptions snapshot on deals currently in **`stage = dispo`** (non-blank values only; empty set → **0**). **Not** filtered by the KPI date window in v1 — current pipeline snapshot (**§71**). UI must not imply the date range changes this number until governance extends the RPC.
 - **Closed Assignment Fee Received:** Total assignment fee amount recorded as received on deals marked Closed during the selected reporting period.
 - **At-Risk Closings:** Count of TC-stage deals with closing date within 7 days and missing required checklist items, overdue checklist items, or passed closing date without being marked Closed.
 - **Dead reason required:** A deal may move to Dead from any active non-terminal stage only if a dead reason is recorded. Standard reasons: house sold, seller requested no contact, seller withdrew, duplicate, invalid lead, other.

@@ -695,6 +695,10 @@
     "10.13E": {
       "title": "Offer Flow — Save Deal + Reopen Deal",
       "proof_pattern": "^docs/proofs/10\\.13E_save_reopen_deal_"
+    },
+    "10.14A": {
+      "title": "Dispo Backend — Dashboard Data Contract + KPI Read Path",
+      "proof_pattern": "^docs/proofs/10\\.14A_dispo_data_contract_"
     }
   }
 }

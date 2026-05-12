@@ -401,6 +401,24 @@ Item: 10.11B
 
 ---
 
+## fetch-dispo-kpis
+Trigger: /dispo page load, after Dispo KPI date filter change (when bound)
+Reads: dispoKpiDateFrom, dispoKpiDateTo (ISO timestamptz strings; may be null — server defaults per **§71**)
+Calls: get_dispo_kpis_v1(p_date_from=dispoKpiDateFrom, p_date_to=dispoKpiDateTo)
+Writes: dispoKpiData variable
+Item: 10.14A
+
+---
+
+## fetch-dispo-dashboard
+Trigger: /dispo page load, after successful **`handoff_to_tc_v1`** (when wired), after other Dispo writes that should refresh the board (when wired)
+Reads: none
+Calls: list_dispo_dashboard_deals_v1()
+Writes: dispoDealList variable
+Item: 10.14A
+
+---
+
 ## save-seller
 Trigger: Save button in Edit Seller popup
 Reads: seller input field values, activeDealId
@@ -744,3 +762,12 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | submissions | object | list_intake_submissions_v1() result — unreviewed seller/birddog rows. Variable ID: 64410e2c-3f61-403c-a8f9-1d0a0e558014 | fetch-intake-submissions |
 | leadintakeKpiData | object | get_lead_intake_kpis_v1() result — new_leads, submission_to_deal_pct, avg_review_time_hours, unreviewed_count, rejected_count | fetch-lead-intake-kpis |
 | draftDeal | object | get_draft_deal_v1() result — draft deal data for pre-fill on /lead-intake/new | fetch-draft-deal-result |
+
+## Dispo Page Variables
+
+| Variable | Type | Description | Written By |
+|----------|------|-------------|------------|
+| dispoKpiDateFrom | text | Dispo KPI window start — ISO timestamptz string or empty for RPC default (**§71**). Variable ID: TBD | date filter on-change |
+| dispoKpiDateTo | text | Dispo KPI window end — ISO timestamptz string or empty for RPC default. Variable ID: TBD | date filter on-change |
+| dispoKpiData | object | get_dispo_kpis_v1() result — deals_moved_to_tc, deposit_collected, avg_assignment_fee, date_from, date_to (**§71** / **§8.7**). Variable ID: TBD | fetch-dispo-kpis |
+| dispoDealList | object | list_dispo_dashboard_deals_v1() result — `data.items` board payload. Variable ID: TBD | fetch-dispo-dashboard |

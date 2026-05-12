@@ -208,6 +208,11 @@
         "authority": "CONTRACTS.md §64 — Build Route 10.12C6; governed draft read for Lead Intake pre-fill; authenticated only (REVOKE anon, PUBLIC)"
       },
       {
+        "routine": "get_dispo_kpis_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §71 — Build Route 10.14A; Dispo KPI read path; authenticated only (REVOKE anon, PUBLIC)"
+      },
+      {
         "routine": "get_lead_intake_kpis_v1",
         "privilege": "EXECUTE",
         "authority": "CONTRACTS.md §64 — Build Route 10.12C2 / 10.12C4 / 10.12C5; Lead Intake KPI read path; unreviewed_count seller+birddog only (10.12C5)"
@@ -223,7 +228,8 @@
       },
       {
         "routine": "handoff_to_tc_v1",
-        "privilege": "EXECUTE"
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §55 / §62 / §71 — Build Route 10.11A + 10.14A; disp→tc handoff + deal_activity_log"
       },
       {
         "routine": "list_acq_deals_v1",
@@ -232,6 +238,11 @@
       {
         "routine": "list_deal_media_v1",
         "privilege": "EXECUTE"
+      },
+      {
+        "routine": "list_dispo_dashboard_deals_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §71 — Build Route 10.14A; Dispo dashboard deal list; authenticated only (REVOKE anon, PUBLIC)"
       },
       {
         "routine": "mark_deal_dead_v1",
@@ -398,6 +409,7 @@
       "get_acq_deal_v1",
       "get_acq_kpis_v1",
       "get_draft_deal_v1",
+      "get_dispo_kpis_v1",
       "get_lead_intake_kpis_v1",
       "get_offer_payload_v1",
       "get_profile_settings_v1",
@@ -412,6 +424,7 @@
       "list_deal_activity_v1",
       "list_deal_media_v1",
       "list_deal_notes_v1",
+      "list_dispo_dashboard_deals_v1",
       "list_deals_v1",
       "list_farm_areas_v1",
       "list_intake_submissions_v1",
