@@ -184,6 +184,8 @@ SELECT ok(
 );
 
 -- 10. activity log (stage_change)
+-- Full chain: 000005 has already redefined send_offer_v1, so the row matches 10.13B1 copy.
+-- Legacy governed wording is asserted absent in 10_13B1_offer_activity_log_copy_correction.test.sql.
 SELECT ok(
   EXISTS (
     SELECT 1

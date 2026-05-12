@@ -70,13 +70,15 @@ SELECT ok(
   '10.13B1: stage_change activity uses corrected copy'
 );
 
--- 3. legacy backend-implementation copy is not written
-SELECT is(
-  (SELECT COUNT(*)::int
-   FROM public.deal_activity_log al
-   WHERE al.deal_id = 'd13c0000-0000-4000-8000-000000000001'::uuid
-     AND al.content = 'Offer sent (governed send_offer_v1); follow-up reminder scheduled'),
-  0,
+-- 3. legacy 10.13B backend-implementation copy must not appear (predicate only — NOT desired text)
+SELECT ok(
+  NOT EXISTS (
+    SELECT 1
+    FROM public.deal_activity_log al
+    WHERE al.deal_id = 'd13c0000-0000-4000-8000-000000000001'::uuid
+      AND al.tenant_id = 'b13c0000-0000-4000-8000-000000000001'::uuid
+      AND al.content = 'Offer sent (governed send_offer_v1); follow-up reminder scheduled'
+  ),
   '10.13B1: legacy governed-copy activity content absent'
 );
 
