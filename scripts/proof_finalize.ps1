@@ -117,7 +117,7 @@ foreach ($sp in $secretPatterns) {
         }
     }
 }
-if ($secretFail) { Die "proof:finalize blocked - secret pattern matched. Redact proof log before finalizing." }
+if ($secretFail) { Die "proof:finalize blocked — secret pattern matched. Redact proof log before finalizing." }
 Write-Host "SECRET_SCAN: PASS"
 # --- normalize proof file ---
 Normalize-Utf8NoBomLf $abs
