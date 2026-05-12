@@ -691,6 +691,10 @@
     "10.13C-D": {
       "title": "Offer UI — Send Offer + Email Delivery Wiring",
       "proof_pattern": "^docs/proofs/10\\.13C-D_offer_ui_send_email_wiring_"
+    },
+    "10.13E": {
+      "title": "Offer Flow — Save Deal + Reopen Deal",
+      "proof_pattern": "^docs/proofs/10\\.13E_save_reopen_deal_"
     }
   }
 }
