@@ -4743,10 +4743,10 @@ BEGIN
 
   v_new_offer_id := gen_random_uuid();
   v_expires := clock_timestamp() + interval '48 hours';
-  v_clause := format(
-    'This indicative soft offer expires at %s UTC (48 hours from generation).',
-    to_char(v_expires AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')
-  );
+  v_clause :=
+    'This indicative soft offer expires at '
+    || to_char(v_expires AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS')
+    || ' UTC (48 hours from generation).';
 
   v_copy_text :=
     'Soft Offer' || chr(10) || chr(10) ||
