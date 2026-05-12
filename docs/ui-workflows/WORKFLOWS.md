@@ -371,12 +371,23 @@ Item: 10.11B
 ---
 
 ## fetch-selected-deal
-Trigger: deal row click, after save mutations
+Trigger: deal row click, after save mutations, after save-acq-pricing success
 Reads: activeDealId variable
 Calls: get_acq_deal_v1(p_deal_id=activeDealId)
 Writes: selectedDeal variable
 Branches: passthrough condition: activeDealId !== ''
 Item: 10.11B
+
+---
+
+## save-acq-pricing
+Trigger: Save on Acquisition deal detail pricing editor (governed MAO / assumptions fields)
+Reads: activeDealId, acqPricingFields (or equivalent bound map — arv, ask_price, repair_estimate, assignment_fee, multiplier only — no client `mao`)
+Calls: update_deal_pricing_v1(p_deal_id=activeDealId, p_fields=acqPricingFields)
+Writes: none — triggers fetch-selected-deal + fetch-deal-activity on success
+Branches: RPC error → error surface | success → fetch-selected-deal + fetch-deal-activity (and optional toast)
+Item: 10.13E
+Note: **Hub surface** for **10.13E** is authenticated **ACQ deal detail** (not a new page). Reopen path is **`get_acq_deal_v1`** via **fetch-selected-deal**.
 
 ---
 
@@ -449,7 +460,7 @@ Item: 10.11B
 ---
 
 ## fetch-deal-activity
-Trigger: deal row click, after stage change, after mark dead, after handoff
+Trigger: deal row click, after stage change, after mark dead, after handoff, after save-acq-pricing success
 Reads: activeDealId
 Calls: list_deal_activity_v1(p_deal_id=activeDealId)
 Writes: dealActivity variable
@@ -706,6 +717,7 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | dealList | object | list_acq_deals_v1() result filtered by activeFilter and activeFarmAreaId. Variable ID: TBD | fetch-acq-deals |
 | activeDealId | text | Currently selected deal UUID. Empty string when no deal selected. Variable ID: TBD | deal row on-click |
 | selectedDeal | object | get_acq_deal_v1() result for activeDealId. Variable ID: d8580b53-ee7f-4dcd-b380-ec3c64475c9a | fetch-selected-deal |
+| acqPricingFields | object | JSON object passed as p_fields to update_deal_pricing_v1 (editable keys only; server derives mao). Variable ID: TBD | bound on deal detail pricing editor; cleared or reloaded when activeDealId changes |
 | dispoAssignee | text | Selected assignee user_id for Send to Dispo popup. Variable ID: d93f58a4-0d4f-434d-ae5c-0f8d5e400735 | assignee repeater on-click |
 | deficiencyTags | array | Working copy of deficiency tags in Edit Property popup. Loaded from selectedDeal on popup open. Variable ID: 7d8913b8-ed90-41c8-807a-b25d35376b54 | Edit button on-click, Add/Remove tag actions |
 | uploadIndex | number | While loop counter for multi-file photo upload. Resets to 0 before each upload session. Variable ID: a26467b7-2a07-42d7-9aba-689a70d8e479 | upload-deal-photos while loop |

@@ -5882,6 +5882,18 @@ DECLARE
   v_final_assignment_fee numeric;
   v_raw              text;
 BEGIN
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RETURN json_build_object(
+        'ok', false,
+        'code', 'NOT_AUTHORIZED',
+        'data', '{}'::json,
+        'error', json_build_object('message', 'Not authorized', 'fields', '{}'::json)
+      );
+  END;
+
   v_tenant := public.current_tenant_id();
   v_user   := auth.uid();
 
@@ -6107,6 +6119,12 @@ BEGIN
       updated_at              = now(),
       row_version             = row_version + 1
   WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  INSERT INTO public.deal_activity_log (
+    tenant_id, deal_id, activity_type, content, created_by, created_at
+  ) VALUES (
+    v_tenant, p_deal_id, 'pricing_save', 'Pricing saved', v_user, clock_timestamp()
+  );
 
   RETURN json_build_object(
     'ok',   true,
