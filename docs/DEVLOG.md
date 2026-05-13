@@ -9851,6 +9851,32 @@ PASS
 
 ---
 
+## 2026-05-13 — Build Route v2.4 — **10.14A**
+
+Objective  
+Governed **Dispo** operating dashboard read path: KPI strip (**`get_dispo_kpis_v1`**) and deal board (**`list_dispo_dashboard_deals_v1`**); auditable **`dispo` → `tc`** handoff via **`handoff_to_tc_v1`** activity (**`Deal handed off to TC`**) so TC moves are countable server-side — RPC-only for authenticated UI.
+
+Changes  
+- **`supabase/migrations/20260515000001_10_14A_dispo_dashboard_read_path.sql`** — **`get_dispo_kpis_v1`**, **`list_dispo_dashboard_deals_v1`**, **`handoff_to_tc_v1`** overlay (member guard, activity log)  
+- **`supabase/tests/10_14A_dispo_dashboard.test.sql`** — pgTAP coverage for KPIs, list payload, handoff + isolation  
+- **`docs/artifacts/CONTRACTS.md`** — **§17** / **§62** / **§71**; **`docs/artifacts/WEWEB_ARCHITECTURE.md`** — **§8.2** / **§8.7**; **`docs/ui-workflows/WORKFLOWS.md`** — **`fetch-dispo-kpis`**, **`fetch-dispo-dashboard`**, Dispo page variables  
+- **`docs/governance/GOVERNANCE_CHANGE_20260515T180000Z.md`** — Phase 1 admin; **`docs/truth/`** registries (surface, allowlists, privileges, **`rpc_contract_registry`**, **`write_path_registry`**, **`cloud_migration_parity`**, **`calc_version_registry`**, **`qa_***`)  
+- **`scripts/ci_robot_owned_guard.ps1`** — proof pattern **`10.14A_dispo_data_contract_`**  
+- **`npm run proof:finalize`** — **`docs/proofs/10.14A_dispo_data_contract_20260513T001338Z.log`**; **`docs/proofs/manifest.json`** hash updated  
+- Merged via PR **#628**; post-merge verification command **PASS** (operator session)
+
+Proof  
+`docs/proofs/10.14A_dispo_data_contract_20260513T001338Z.log`
+
+DoD  
+- Dispo KPI and dashboard list are governed reads; **`handoff_to_tc_v1`** writes the activity row used for **`deals_moved_to_tc`** window counts; no direct tenant-table reads from authenticated UI for this slice  
+- Build Route **10.14A** Phase **1–4** complete; **`npm run pr:preflight`** reflected in proof body  
+
+Status  
+PASS
+
+---
+
 ## 2026-05-12 — Build Route v2.4 — **10.13E**
 
 Objective  
