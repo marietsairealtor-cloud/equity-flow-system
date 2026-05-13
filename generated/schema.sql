@@ -7690,9 +7690,9 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
 
 ALTER TABLE "public"."deals" OWNER TO "postgres";
 
-COMMENT ON COLUMN "public"."deals"."assignment_agreement_signed_at" IS '10.14B: assignment agreement signed â€” required with earnest_money_received_at before handoff_to_tc_v1.';
+COMMENT ON COLUMN "public"."deals"."assignment_agreement_signed_at" IS '10.14B: assignment agreement signed - required with earnest_money_received_at before handoff_to_tc_v1.';
 
-COMMENT ON COLUMN "public"."deals"."earnest_money_received_at" IS '10.14B: earnest money / deposit received â€” required with assignment_agreement_signed_at before handoff_to_tc_v1.';
+COMMENT ON COLUMN "public"."deals"."earnest_money_received_at" IS '10.14B: earnest money / deposit received - required with assignment_agreement_signed_at before handoff_to_tc_v1.';
 
 CREATE TABLE IF NOT EXISTS "public"."draft_deals" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
