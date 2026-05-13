@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-12T20:45:29Z",
+    "generated":  "2026-05-12T23:59:46Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -166,6 +166,7 @@
                             "path_type":  "rpc",
                             "name":  "handoff_to_tc_v1",
                             "tables":  [
+                                           "deal_activity_log",
                                            "deals"
                                        ],
                             "row_version_enforced":  false,

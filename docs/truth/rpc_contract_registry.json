@@ -513,6 +513,15 @@
       "notes": "Migration 20260509000001_10_12C6_get_draft_deal_read_path.sql. get_draft_deal_v1(p_draft_id uuid). STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE PUBLIC, anon). require_min_role_v1(member); failure => NOT_AUTHORIZED envelope. current_tenant_id() NULL => NOT_AUTHORIZED. Tenant-scoped SELECT on draft_deals; wrong tenant, missing row, or NULL p_draft_id => NOT_FOUND. No check_workspace_write_allowed_v1. OK data: id, form_type, payload, address, asking_price, repair_estimate, promoted_deal_id, created_at. Standard jsonb envelope ok/code/data/error."
     },
     {
+      "name": "get_dispo_kpis_v1",
+      "version": 1,
+      "build_route_owner": "10.14A",
+      "input_contract": "CONTRACTS.md §17 / §71 get_dispo_kpis_v1 (10.14A)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "notes": "Migration 20260515000001_10_14A_dispo_dashboard_read_path.sql. get_dispo_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). Inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED (Not authorized). current_tenant_id() NULL => NOT_AUTHORIZED. v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from => VALIDATION_ERROR. OK data: deals_moved_to_tc (deal_activity_log handoff rows content 'Deal handed off to TC' in window), deposit_collected (deal_tc_checklist deposit_received completed_at in window), avg_assignment_fee (ROUND mean assignment_fee from assumptions_snapshot_id join for deals stage=dispo only, not windowed), date_from, date_to. JSON envelope (json). No workspace write lock (read-only)."
+    },
+    {
       "name": "get_lead_intake_kpis_v1",
       "version": 1,
       "build_route_owner": "10.12C2",
@@ -638,10 +647,10 @@
       "name": "handoff_to_tc_v1",
       "version": 1,
       "build_route_owner": "10.11A",
-      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — handoff_to_tc_v1",
+      "input_contract": "CONTRACTS.md §55 / §62 / §71 handoff_to_tc_v1 (10.11A; activity log 10.14A)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
-      "notes": "dispo only → tc; sets assignee_user_id. Workspace write lock."
+      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
+      "notes": "dispo only → tc; sets assignee_user_id. **10.14A:** inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED (Not authorized). Then current_tenant_id() + auth.uid() both required (NOT_AUTHORIZED if missing). check_workspace_write_allowed_v1 (read-only workspace => NOT_AUTHORIZED). Non-member assignee => VALIDATION_ERROR. Successful path UPDATE deals + INSERT deal_activity_log (activity_type handoff, content 'Deal handed off to TC', created_by auth.uid()). Workspace write lock."
     },
     {
       "name": "return_to_acq_v1",
@@ -714,6 +723,15 @@
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
       "notes": "STABLE SECURITY DEFINER. Returns activity array from deal_activity_log for deal in tenant (newest first)."
+    },
+    {
+      "name": "list_dispo_dashboard_deals_v1",
+      "version": 1,
+      "build_route_owner": "10.14A",
+      "input_contract": "CONTRACTS.md §17 / §71 list_dispo_dashboard_deals_v1 (10.14A)",
+      "response_schema": null,
+      "error_codes": ["NOT_AUTHORIZED"],
+      "notes": "Migration 20260515000001_10_14A_dispo_dashboard_read_path.sql. list_dispo_dashboard_deals_v1() no args. STABLE SECURITY DEFINER; EXECUTE authenticated only (REVOKE anon, PUBLIC). require_min_role_v1(member) wrapped NOT_AUTHORIZED. current_tenant_id() NULL => NOT_AUTHORIZED. OK data.items: deals where tenant_id match, deleted_at IS NULL, stage=dispo; each row includes share_link summary (active|none|revoked|expired|inactive), buyer_interest {schema_version:1, signals:[]}, activity teaser {entry_count, last_activity_type, last_activity_at}, latest arv/ask/assignment_fee from deal_inputs, health_color. JSON envelope (json). Read-only."
     },
     {
       "name": "update_deal_seller_v1",

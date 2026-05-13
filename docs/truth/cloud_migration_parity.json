@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260514000001",
-  "migration_tip_file": "20260514000001_10_13E_pricing_save_activity_log.sql",
-  "migration_count": 132,
+  "migration_tip": "20260515000001",
+  "migration_tip_file": "20260515000001_10_14A_dispo_dashboard_read_path.sql",
+  "migration_count": 133,
   "pinned_at": "2026-05-12"
 }
