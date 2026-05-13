@@ -229,7 +229,7 @@
       {
         "routine": "handoff_to_tc_v1",
         "privilege": "EXECUTE",
-        "authority": "CONTRACTS.md §55 / §62 / §71 — Build Route 10.11A + 10.14A; disp→tc handoff + deal_activity_log"
+        "authority": "CONTRACTS.md §55 / §62 / §71 / §72 — Build Route 10.11A + 10.14A + 10.14B; disp→tc handoff + deal_activity_log + milestone gate + workspace_handoff_notifications when assignee set"
       },
       {
         "routine": "list_acq_deals_v1",
@@ -274,7 +274,8 @@
       },
       {
         "routine": "return_to_acq_v1",
-        "privilege": "EXECUTE"
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §55 / §72 — Build Route 10.11A + 10.14B; return to Acq + deal_activity_log"
       },
       {
         "routine": "return_to_dispo_v1",

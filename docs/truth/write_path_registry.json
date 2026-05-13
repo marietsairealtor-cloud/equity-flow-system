@@ -167,7 +167,8 @@
                             "name":  "handoff_to_tc_v1",
                             "tables":  [
                                            "deal_activity_log",
-                                           "deals"
+                                           "deals",
+                                           "workspace_handoff_notifications"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
@@ -245,6 +246,7 @@
                             "path_type":  "rpc",
                             "name":  "return_to_acq_v1",
                             "tables":  [
+                                           "deal_activity_log",
                                            "deals"
                                        ],
                             "row_version_enforced":  false,

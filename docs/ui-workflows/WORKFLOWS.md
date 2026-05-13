@@ -419,6 +419,35 @@ Item: 10.14A
 
 ---
 
+## dispo-share-link
+Trigger: Dispo deal row or detail when operator creates or revokes a buyer-facing share link (when wired)
+Reads: activeDispoDealId (or equivalent), expires_at for create
+Calls: create_share_token_v1(p_deal_id=activeDispoDealId, p_expires_at=future timestamptz within 90 days)
+       revoke_share_token_v1(p_token=token string from create response or list-derived source)
+Writes: share link state variables as bound; then fetch-dispo-dashboard when wired
+Item: 10.14B
+
+---
+
+## dispo-return-to-acq
+Trigger: Dispo operator confirms Return to Acq (when wired)
+Reads: activeDispoDealId
+Calls: return_to_acq_v1(p_deal_id=activeDispoDealId)
+Writes: none -- triggers fetch-dispo-dashboard and clears selection when wired
+Item: 10.14B
+
+---
+
+## dispo-send-to-tc
+Trigger: Dispo operator confirms Send to TC after milestones satisfied (when wired)
+Reads: activeDispoDealId, tcAssigneeUserId (nullable)
+Calls: handoff_to_tc_v1(p_deal_id=activeDispoDealId, p_assignee_user_id=tcAssigneeUserId)
+Writes: none -- triggers fetch-dispo-dashboard when wired
+Branches: CONFLICT when assignment_agreement_signed_at or earnest_money_received_at missing on deal -- surface server message; do not call until milestones persisted via governed path (future setter or server-seeded state)
+Item: 10.14B
+
+---
+
 ## save-seller
 Trigger: Save button in Edit Seller popup
 Reads: seller input field values, activeDealId

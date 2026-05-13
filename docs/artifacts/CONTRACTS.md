@@ -293,8 +293,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | advance_deal_stage_v1 | 10.11A; activity log 10.11A10 | Validated stage transitions (start_analysis / send_offer / mark_contract_signed); writes `stage_change` to `deal_activity_log` (§62). **10.13B:** governed **Send Offer** uses **`send_offer_v1`** — do not call **`advance_deal_stage_v1(..., 'send_offer')`** separately for that workflow | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — p_deal_id + p_action |
 | mark_deal_dead_v1 | 10.11A | Mark deal dead with required reason | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_dead_reason |
 | handoff_to_dispo_v1 | 10.11A; activity log 10.11A10 | under_contract → dispo; sets assignee_user_id; writes `handoff` to `deal_activity_log` (§62) | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — p_deal_id + p_assignee_user_id |
-| handoff_to_tc_v1 | 10.11A; activity log **10.14A** | `dispo` → `tc`; sets `assignee_user_id`; **`require_min_role_v1('member')`** first; requires **`auth.uid()`** + tenant; on success writes **`handoff`** row **`Deal handed off to TC`** to **`deal_activity_log`** | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — `p_deal_id` + `p_assignee_user_id` |
-| return_to_acq_v1 | 10.11A | dispo → under_contract (undo dispo) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
+| handoff_to_tc_v1 | 10.11A; activity log **10.14A**; milestones + notification **10.14B** | `dispo` → `tc`; sets `assignee_user_id`; **`require_min_role_v1('member')`** first; requires **`auth.uid()`** + tenant; **`assignment_agreement_signed_at`** and **`earnest_money_received_at`** both required (**`CONFLICT`** + **`error.fields`** if missing); on success writes **`handoff`** **`Deal handed off to TC`** to **`deal_activity_log`**; non-null assignee inserts **`workspace_handoff_notifications`** (**`handoff_to_tc`**) | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — `p_deal_id` + `p_assignee_user_id` |
+| return_to_acq_v1 | 10.11A; activity log **10.14B** | dispo → under_contract (undo dispo); **`require_min_role_v1('member')`** first; **`auth.uid()`** + tenant; on success writes **`handoff`** **`Deal returned to Acq from Dispo`** to **`deal_activity_log`** | SECURITY DEFINER, min role: member | non-NULL `current_tenant_id()` and `auth.uid()` — `p_deal_id` only |
 | return_to_dispo_v1 | 10.11A | tc → dispo (undo tc) | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | list_deal_media_v1 | 10.11A | List registered deal photo metadata for a deal | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id only |
 | register_deal_media_v1 | 10.11A | Register storage_path after client upload to deal-photos bucket | SECURITY DEFINER, min role: member | current_tenant_id() — p_deal_id + p_storage_path + p_sort_order |
@@ -310,9 +310,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_deal_pricing_v1 | 10.11A9 (corrective to 10.11A7) **+** 10.12C7 **+** 10.13E | Append-only pricing snapshot: editable assumptions + server-derived `mao` (§59, §61); updates `deals.assumptions_snapshot_id`; **10.12C7** parses formatted money strings in `p_fields`; **`require_min_role_v1('member')`** first (**10.13E**); successful save appends **`deal_activity_log`** (**`pricing_save`**, **`Pricing saved`**) | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() — p_deal_id + p_fields jsonb |
 | get_user_entitlements_v1 | 5A | Return entitlement state for current user and tenant | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | foundation_log_activity_v1 | 6.10 | Append activity log entry for audit trail | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
-| lookup_share_token_v1 | 6.7/8.7/8.10 | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
-| revoke_share_token_v1 | 8.6 | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
-| create_share_token_v1 | 8.8/8.9 | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| lookup_share_token_v1 | 6.7/8.7/8.10; **10.14B** regression | Look up share token by token + deal_id scope; logs attempt (best-effort, hash-only). deal_id required (8.10). **`NOT_FOUND`** envelope identical for invalid / expired / revoked (no leak). | SECURITY DEFINER | current_tenant_id() - no tenant_id param |
+| revoke_share_token_v1 | 8.6; **10.14B** regression | Revoke a share token immediately (idempotent) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
+| create_share_token_v1 | 8.8/8.9; **10.14B** regression | Generate cryptographically secure share token (shr_ prefix, 256-bit entropy, hash-at-rest); expires_at required (8.9) | SECURITY DEFINER | current_tenant_id() — no tenant_id param |
 | resolve_form_slug_v1 | 10.8.1 | Resolve tenant slug + form type to tenant context for public intake forms | SECURITY DEFINER, anon-callable (§12 exception) | slug input only — no tenant_id param |
 | submit_form_v1 | 10.8.1, 10.12A, 10.12C, 10.12C1 | Public intake submit; persists `draft_deals` + `intake_submissions` (§64–§67); **10.12C1** links intake row to draft via `draft_deals_id`; seller address + payload for MAO prefill; governed buyer upsert via internal helper (§66) | SECURITY DEFINER, anon + authenticated EXECUTE (§12 / §64 / §66) | slug input only — no tenant_id param |
 | create_deal_from_intake_v1 | 10.12C1 **+** 10.12C7 | Lead Intake manual / call-in: create real `deals` row (`stage=new`) from `p_fields` jsonb; optional nested `property`, `assumptions` (server-derived MAO; no client `mao`); **10.12C7** canonicalizes assumption money strings server-side | SECURITY DEFINER, authenticated only (REVOKE anon); min role member; workspace write lock | `p_fields` jsonb only — tenant from `current_tenant_id()` |
@@ -1305,12 +1305,12 @@ All listed functions use the standard JSON envelope (`ok`, `code`, `data`, `erro
 | `update_deal_pricing_v1(p_deal_id uuid, p_fields jsonb)` | Append-only merge into `deal_inputs` assumptions; **`mao` derived server-side** (10.11A9 — §59, §61); **10.12C7** accepts formatted money strings in `p_fields`; new row + `deals.assumptions_snapshot_id` update; **10.13E** appends **`deal_activity_log`** (**`pricing_save`**) on success and enforces **`require_min_role_v1('member')`** before tenant/workspace checks. |
 | `advance_deal_stage_v1(p_deal_id uuid, p_action text)` | Allowed forward transitions only; invalid transitions → `CONFLICT`. **10.11A10:** successful transition appends **`stage_change`** to **`deal_activity_log`**; requires tenant + user JWT context (**§62**). |
 | `mark_deal_dead_v1(p_deal_id uuid, p_dead_reason text)` | Sets stage `dead`; empty reason → `VALIDATION_ERROR`. |
-| `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. **`handoff_to_dispo_v1` (10.11A10):** successful path appends **`handoff`** to **`deal_activity_log`**; requires tenant + user JWT context (**§62**). **`handoff_to_tc_v1` (10.14A):** same tenant + user requirement; successful path appends **`handoff`** with content **`Deal handed off to TC`** (**§71**). |
-| `return_to_acq_v1` / `return_to_dispo_v1` | Reverse handoffs (`dispo`→`under_contract`, `tc`→`dispo`). |
+| `handoff_to_dispo_v1` / `handoff_to_tc_v1` | Stage handoffs with assignee; wrong stage → `CONFLICT`. **`handoff_to_dispo_v1` (10.11A10):** successful path appends **`handoff`** to **`deal_activity_log`**; requires tenant + user JWT context (**§62**). **`handoff_to_tc_v1` (10.14A):** same tenant + user requirement; successful path appends **`handoff`** with content **`Deal handed off to TC`** (**§71**). **`handoff_to_tc_v1` (10.14B):** both **`assignment_agreement_signed_at`** and **`earnest_money_received_at`** required on **`deals`** before handoff (**`CONFLICT`** + **`error.fields`** otherwise); non-null assignee inserts **`workspace_handoff_notifications`** (**§72**). |
+| `return_to_acq_v1` / `return_to_dispo_v1` | Reverse handoffs (`dispo`→`under_contract`, `tc`→`dispo`). **`return_to_acq_v1` (10.14B):** **`require_min_role_v1('member')`** + **`auth.uid()`**; successful path appends **`handoff`** **`Deal returned to Acq from Dispo`** (**§72**). |
 | `list_deal_media_v1` / `register_deal_media_v1` / `delete_deal_media_v1` | Deal photo metadata lifecycle. |
 | `create_deal_note_v1` / `list_deal_notes_v1` / `list_deal_activity_v1` | User notes/call logs and read-only deal activity timeline (10.11A1 — §56). |
 
-**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature; **10.11A8** for `update_deal_properties_v1` — §58, §60; **10.11A9** for `update_deal_pricing_v1` — §59, §61; **10.13E** for `update_deal_pricing_v1` activity + role-guard ordering; **10.11A10** for `advance_deal_stage_v1`, `handoff_to_dispo_v1`, and **`complete_reminder_v1`** `deal_activity_log` writes — §62; **10.14A** for `get_dispo_kpis_v1`, `list_dispo_dashboard_deals_v1`, and `handoff_to_tc_v1` activity append — §71).
+**§RPC reference:** Detailed error codes and behaviors for registry/CI are summarized in `docs/truth/rpc_contract_registry.json` under `build_route_owner` **10.11A** (and **10.11A1** for notes/activity — §56; **10.11A4** for `get_acq_kpis_v1` date-range signature; **10.11A8** for `update_deal_properties_v1` — §58, §60; **10.11A9** for `update_deal_pricing_v1` — §59, §61; **10.13E** for `update_deal_pricing_v1` activity + role-guard ordering; **10.11A10** for `advance_deal_stage_v1`, `handoff_to_dispo_v1`, and **`complete_reminder_v1`** `deal_activity_log` writes — §62; **10.14A** for `get_dispo_kpis_v1`, `list_dispo_dashboard_deals_v1`, and `handoff_to_tc_v1` activity append — §71; **10.14B** for `handoff_to_tc_v1` milestone gate + `workspace_handoff_notifications`, `return_to_acq_v1` activity append, and share-token trio regression notes — §72).
 
 ---
 
@@ -1450,6 +1450,14 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **Authority overlay:** migration **`20260515000001_10_14A_dispo_dashboard_read_path.sql`** replaces **`handoff_to_tc_v1`**: **first** inner **`BEGIN`** / **`PERFORM public.require_min_role_v1('member')`** with **`NOT_AUTHORIZED`** (**`Not authorized`**) on guard failure; then **`current_tenant_id()`** and **`auth.uid()`** must both be non-NULL (**`NOT_AUTHORIZED`**); **`check_workspace_write_allowed_v1()`** before write; **`VALIDATION_ERROR`** when **`p_assignee_user_id`** is set but not a workspace member.
 - After a successful **`dispo` → `tc`** handoff, writes one **`deal_activity_log`** row with **`activity_type`** **`handoff`**, **`content`** **`Deal handed off to TC`**, **`created_by`** = **`auth.uid()`** — enables **`get_dispo_kpis_v1.deals_moved_to_tc`** window counts (**§71**).
 
+### `handoff_to_tc_v1` (10.14B overlay)
+
+- **Authority overlay:** migration **`20260516000001_10_14B_dispo_share_link_handoff.sql`** further replaces **`handoff_to_tc_v1`**: **`SELECT`** loads **`assignment_agreement_signed_at`** and **`earnest_money_received_at`**; if either is **`NULL`** while stage is **`dispo`**, returns **`CONFLICT`** with **`error.fields`** listing missing milestone keys (**`required`** markers). On success with non-**`NULL`** **`p_assignee_user_id`**, **`INSERT`** into **`workspace_handoff_notifications`** (**`kind = handoff_to_tc`**) for downstream notification delivery.
+
+### `return_to_acq_v1` (10.14B overlay)
+
+- **Authority overlay:** same migration replaces **`return_to_acq_v1`** with **`require_min_role_v1('member')`** first (**`NOT_AUTHORIZED`** on guard failure), **`current_tenant_id()`** + **`auth.uid()`** required, **`check_workspace_write_allowed_v1()`** before write. Successful **`dispo` → `under_contract`** appends **`deal_activity_log`** (**`activity_type = handoff`**, **`content = Deal returned to Acq from Dispo`**, **`created_by = auth.uid()`**).
+
 ### `complete_reminder_v1`
 
 - On **first** completion (`completed_at` transition from unset to set): writes one **`deal_activity_log`** row on the linked deal with **`activity_type`** **`reminder_completed`**.
@@ -1461,7 +1469,7 @@ Writes **`address`**, **`next_action`**, and **`next_action_due`** on **`public.
 - **`create_deal_note_v1`** continues to append **only** to **`deal_notes`**. It does **not** write to **`deal_activity_log`** — user notes vs system activity streams remain separated (§56).
 - **`deal_activity_log`** remains **system-events only** — no user-note duplication through this RPC set.
 
-**§Registry:** `docs/truth/rpc_contract_registry.json` — **`advance_deal_stage_v1`**, **`handoff_to_dispo_v1`**, **`handoff_to_tc_v1`** (overlay **10.14A**), **`complete_reminder_v1`** **`build_route_owner`** **10.11A10** / **10.14A** as applicable.
+**§Registry:** `docs/truth/rpc_contract_registry.json` — **`advance_deal_stage_v1`**, **`handoff_to_dispo_v1`**, **`handoff_to_tc_v1`** (overlay **10.14A** + **10.14B**), **`return_to_acq_v1`** (**10.14B**), **`complete_reminder_v1`** **`build_route_owner`** **10.11A10** / **10.14A** / **10.14B** as applicable.
 
 ---
 
@@ -1830,4 +1838,31 @@ Authoritative names and variable IDs: **`docs/ui-workflows/WORKFLOWS.md`** — *
 
 - See **§62** overlay: activity row + membership ordering; write path tables include **`deal_activity_log`** + **`deals`** (**`docs/truth/write_path_registry.json`**).
 
-**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`get_dispo_kpis_v1`**, **`list_dispo_dashboard_deals_v1`**, **`handoff_to_tc_v1`** notes; **`docs/truth/write_path_registry.json`**; **`§17`** mapping table above.
+**§Registry:** **`docs/truth/rpc_contract_registry.json`** — **`get_dispo_kpis_v1`**, **`list_dispo_dashboard_deals_v1`**, **`handoff_to_tc_v1`** notes; **`docs/truth/write_path_registry.json`**; **`tenant_table_selector.json`**; **`§17`** mapping table above; full **`handoff_to_tc_v1`** / **`return_to_acq_v1`** / share-token **`NOT_FOUND`** parity — **§72**.
+
+---
+
+## 72) Dispo backend — share link + handoff control (10.14B)
+
+**Authority:** migration **`20260516000001_10_14B_dispo_share_link_handoff.sql`**.
+
+**Purpose:** Gate **`dispo` → `tc`** on recorded assignment and deposit milestones; persist assignee handoff signals; align **`return_to_acq_v1`** with member + JWT user guards and **`deal_activity_log`** audit. Share link **create / revoke / lookup** implementations remain on prior migrations (**8.x**, **9.x**, **10.8.11N**); **10.14B** adds **`supabase/tests/10_14B_dispo_share_link_handoff.test.sql`** for lane regression (**`NOT_FOUND`** envelope parity).
+
+### Schema
+
+- **`deals.assignment_agreement_signed_at`**, **`deals.earnest_money_received_at`** (nullable **`timestamptz`**): both must be non-**`NULL`** before **`handoff_to_tc_v1`** performs the stage update; else **`CONFLICT`** with **`error.fields`** echoing missing keys.
+- **`workspace_handoff_notifications`**: append-only (**`tenant_id`**, **`recipient_user_id`**, **`deal_id`**, **`kind = handoff_to_tc`**). **No** **`GRANT`** to **`anon`** / **`authenticated`**; **`SECURITY DEFINER`** inserts only.
+
+### `handoff_to_tc_v1` (**10.14B** delta)
+
+- After **§62** / **§71** / **10.14A** guards, **`SELECT`** loads milestone timestamps; missing either on a **`dispo`** deal -> **`CONFLICT`**. Success path: existing **`UPDATE deals`** + **`INSERT deal_activity_log`**; if **`p_assignee_user_id`** is set, **`INSERT workspace_handoff_notifications`**.
+
+### `return_to_acq_v1` (**10.14B** delta)
+
+- **`require_min_role_v1('member')`** first; **`current_tenant_id()`** + **`auth.uid()`**; **`check_workspace_write_allowed_v1()`**; success **`INSERT deal_activity_log`** (**`Deal returned to Acq from Dispo`**).
+
+### Share token RPCs (signatures unchanged)
+
+- **`create_share_token_v1`**, **`revoke_share_token_v1`**, **`lookup_share_token_v1`**: behavior per **§17** and foundation bullets; **`lookup_share_token_v1`** continues identical **`NOT_FOUND`** JSON for invalid, expired, and revoked paths.
+
+**§Registry:** **`docs/truth/rpc_contract_registry.json`**; **`docs/truth/write_path_registry.json`**; **`docs/truth/tenant_table_selector.json`**; **`§17`** mapping table above.

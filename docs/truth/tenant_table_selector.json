@@ -24,13 +24,14 @@
     "tenant_slugs",
     "tenant_subscriptions",
     "tenants",
-    "user_profiles"
+    "user_profiles",
+    "workspace_handoff_notifications"
   ],
   "selector": {
     "required": true,
     "tenant_id_column": "tenant_id"
   },
-  "version": 3,
+  "version": 4,
   "tenant_tables": [
     "user_profiles"
   ]

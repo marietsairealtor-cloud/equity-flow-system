@@ -542,7 +542,7 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 
 **Data**
 
-- Governed Dispo reads: **`get_dispo_kpis_v1`**, **`list_dispo_dashboard_deals_v1`** (**10.14A** — **§71**); per-deal activity timeline via **`list_deal_activity_v1`** (**§56**). Share links via **`create_share_token_v1`** / **`revoke_share_token_v1`** (**§17**). **`handoff_to_tc_v1`** for **`dispo` → `tc`** (**§62** / **§71**).
+- Governed Dispo reads: **`get_dispo_kpis_v1`**, **`list_dispo_dashboard_deals_v1`** (**10.14A** — **§71**); per-deal activity timeline via **`list_deal_activity_v1`** (**§56**). Share links via **`create_share_token_v1`** / **`revoke_share_token_v1`** / **`lookup_share_token_v1`** (**§17**; **10.14B** pgTAP locks **`NOT_FOUND`** envelope parity for invalid / expired / revoked). **`handoff_to_tc_v1`** for **`dispo` → `tc`** (**§62** / **§71** / **§72**): server requires **`deals.assignment_agreement_signed_at`** and **`deals.earnest_money_received_at`** before handoff (**migration `20260516000001`**); non-null assignee persists **`workspace_handoff_notifications`** (**`handoff_to_tc`**) for in-app notification surfaces. **`return_to_acq_v1`** (**§72**) appends **`deal_activity_log`** on **`dispo` → `under_contract`**.
 - Governed Acquisition reads/writes per **§63** / **`docs/ui-workflows/WORKFLOWS.md`** (e.g. **`get_acq_kpis_v1`**, **`list_acq_deals_v1`**, **`get_acq_deal_v1`**, **`update_deal_pricing_v1`** for pricing save — **10.13E**, notes/media/reminder RPCs) — not legacy **`list_deals_v1`** / **`update_deal_v1`** substitutes for ACQ surfaces.
 - Offer send path: **§69–§70** (**`refresh_deal_soft_offer_v1`**, **`send_offer_v1`**); reminders include server-created **`offer_follow_up`** on successful send.
 

@@ -41,7 +41,7 @@
         "NOT_FOUND",
         "CONFLICT"
       ],
-      "notes": "VALIDATION_ERROR on null/past/future>90d expires_at or null deal_id. NOT_FOUND on deal not in tenant. CONFLICT on cardinality limit (50 active tokens)."
+      "notes": "VALIDATION_ERROR on null/past/future>90d expires_at or null deal_id. NOT_FOUND on deal not in tenant. CONFLICT on cardinality limit (50 active tokens). **10.14B:** pgTAP in 10_14B_dispo_share_link_handoff.test.sql asserts OK path on Dispo deal for Build Route lane regression."
     },
     {
       "name": "foundation_log_activity_v1",
@@ -87,7 +87,7 @@
         "VALIDATION_ERROR",
         "NOT_FOUND"
       ],
-      "notes": "NOT_FOUND returned for all failure cases (revoked, expired, nonexistent, bad format) — no existence leak."
+      "notes": "NOT_FOUND returned for all failure cases (revoked, expired, nonexistent, bad format) — no existence leak. **10.14B:** same envelope asserted vs unknown token in 10_14B_dispo_share_link_handoff.test.sql (expired/revoked parity)."
     },
     {
       "name": "revoke_share_token_v1",
@@ -99,7 +99,7 @@
         "NOT_AUTHORIZED",
         "VALIDATION_ERROR"
       ],
-      "notes": "Idempotent. Revocation of already-revoked or nonexistent token returns OK."
+      "notes": "Idempotent. Revocation of already-revoked or nonexistent token returns OK. **10.14B:** pgTAP asserts revoke + post-revoke lookup envelope in 10_14B_dispo_share_link_handoff.test.sql."
     },
     {
       "name": "update_deal_v1",
@@ -647,19 +647,19 @@
       "name": "handoff_to_tc_v1",
       "version": 1,
       "build_route_owner": "10.11A",
-      "input_contract": "CONTRACTS.md §55 / §62 / §71 handoff_to_tc_v1 (10.11A; activity log 10.14A)",
+      "input_contract": "CONTRACTS.md §55 / §62 / §71 / §72 handoff_to_tc_v1 (10.11A; activity log 10.14A; milestones + notification 10.14B)",
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
-      "notes": "dispo only → tc; sets assignee_user_id. **10.14A:** inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED (Not authorized). Then current_tenant_id() + auth.uid() both required (NOT_AUTHORIZED if missing). check_workspace_write_allowed_v1 (read-only workspace => NOT_AUTHORIZED). Non-member assignee => VALIDATION_ERROR. Successful path UPDATE deals + INSERT deal_activity_log (activity_type handoff, content 'Deal handed off to TC', created_by auth.uid()). Workspace write lock."
+      "notes": "dispo only → tc; sets assignee_user_id. **10.14A:** inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED (Not authorized). Then current_tenant_id() + auth.uid() both required (NOT_AUTHORIZED if missing). check_workspace_write_allowed_v1 (read-only workspace => NOT_AUTHORIZED). Non-member assignee => VALIDATION_ERROR. **10.14B:** assignment_agreement_signed_at and earnest_money_received_at on deals must both be non-NULL before handoff; else CONFLICT with error.fields for missing milestones. Successful path UPDATE deals + INSERT deal_activity_log (activity_type handoff, content 'Deal handed off to TC', created_by auth.uid()); if p_assignee_user_id set, INSERT workspace_handoff_notifications (kind handoff_to_tc). Workspace write lock."
     },
     {
       "name": "return_to_acq_v1",
       "version": 1,
       "build_route_owner": "10.11A",
-      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — return_to_acq_v1",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — return_to_acq_v1; activity log 10.14B §72",
       "response_schema": null,
       "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
-      "notes": "dispo → under_contract only. Workspace write lock."
+      "notes": "dispo → under_contract only. **10.14B:** inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED. current_tenant_id() + auth.uid() required; check_workspace_write_allowed_v1 before write. Successful path UPDATE deals + INSERT deal_activity_log (activity_type handoff, content 'Deal returned to Acq from Dispo', created_by auth.uid()). Workspace write lock."
     },
     {
       "name": "return_to_dispo_v1",
