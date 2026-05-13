@@ -699,6 +699,10 @@
     "10.14A": {
       "title": "Dispo Backend — Dashboard Data Contract + KPI Read Path",
       "proof_pattern": "^docs/proofs/10\\.14A_dispo_data_contract_"
+    },
+    "10.14B": {
+      "title": "Dispo Backend — Share Link + Handoff Control",
+      "proof_pattern": "^docs/proofs/10\\.14B_dispo_share_link_handoff_"
     }
   }
 }

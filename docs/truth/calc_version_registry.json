@@ -149,6 +149,14 @@
       "description": "10.14A: adds get_dispo_kpis_v1 and list_dispo_dashboard_deals_v1 (read-only); replaces handoff_to_tc_v1 with require_min_role_v1('member') first, auth.uid + tenant checks, deal_activity_log append on disp→tc. Reads join deals/deal_inputs/share_tokens/deal_activity_log/deal_tc_checklist for KPIs and list — incidental deal_inputs.assumptions references only; no change to calc_version integer protocol on pricing writes.",
       "introduced_pr": "10.14A",
       "released_at": "2026-05-15"
+    },
+    {
+      "calc_version": 1,
+      "label": "10.14B Dispo share link + handoff control",
+      "migration": "20260516000001_10_14B_dispo_share_link_handoff.sql",
+      "description": "10.14B: adds deals.assignment_agreement_signed_at and deals.earnest_money_received_at; workspace_handoff_notifications; replaces handoff_to_tc_v1 with milestone CONFLICT gate and assignee notification insert; replaces return_to_acq_v1 with require_min_role_v1(member), auth.uid, and deal_activity_log on disp to under_contract. Incidental deals row reads only; no change to calc_version integer protocol on pricing writes.",
+      "introduced_pr": "10.14B",
+      "released_at": "2026-05-16"
     }
   ],
   "watch_surface": {

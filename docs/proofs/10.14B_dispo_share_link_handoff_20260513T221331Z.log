@@ -1,0 +1,168 @@
+PROOF_HEAD=cc8d1687d91c1c6772d07768a84901dce84a2a3e
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.14B Dispo Backend -- Share Link + Handoff Control -- Proof Log ===
+Date: 2026-05-13T18:12:16.0298113-04:00
+Branch: br/10.14B-dispo-share-link-handoff
+PR HEAD SHA: cc8d1687d91c1c6772d07768a84901dce84a2a3e
+
+=== Deliverable ===
+Item: 10.14B
+Gate: merge-blocking
+Prerequisite: 10.14A merged
+
+=== Migrations ===
+20260516000001_10_14B_dispo_share_link_handoff.sql
+20260516000002_10_14B_fix_comment_encoding.sql
+
+=== Schema Changes ===
+deals: assignment_agreement_signed_at timestamptz NULL added            -- PASS
+deals: earnest_money_received_at timestamptz NULL added                 -- PASS
+workspace_handoff_notifications table created                           -- PASS
+workspace_handoff_notifications: RLS enabled                            -- PASS
+workspace_handoff_notifications: REVOKE ALL from anon, authenticated    -- PASS
+
+=== RPCs ===
+handoff_to_tc_v1(uuid, uuid) -- SECURITY DEFINER, GRANT authenticated  -- PASS
+return_to_acq_v1(uuid) -- SECURITY DEFINER, GRANT authenticated        -- PASS
+
+=== DoD Checklist ===
+Share link generation via create_share_token_v1                         -- PASS
+Share link revocation via revoke_share_token_v1                         -- PASS
+Identical response shape for invalid/expired/revoked token              -- PASS
+Send to TC enforces assignment_agreement_signed_at                      -- PASS
+Send to TC enforces earnest_money_received_at                           -- PASS
+Return to Acq uses governed handoff path                                -- PASS
+Recipient notification row inserted on handoff with assignee            -- PASS
+No notification row when assignee is null                               -- PASS
+No direct table calls                                                   -- PASS
+
+=== Phase 3 -- full sanitized pr:preflight transcript ===
+
+> equity-flow-system@0.0.0 pr:preflight
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1
+
+== preflight:encoding ==
+Encoding preflight OK.
+== lint ==
+== test ==
+Connecting to local database...
+<REPO_ROOT>/supabase/tests/10_11A10_activity_log_expansion.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/10_11A1_deal_notes_activity_log.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/10_11A2_deal_edit_write_paths.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/10_11A3_acq_deal_detail_read_corrections.test.sql ........ ok
+<REPO_ROOT>/supabase/tests/10_11A4_acq_kpi_date_range.test.sql ...................... ok
+<REPO_ROOT>/supabase/tests/10_11A5_deal_properties_schema_normalization.test.sql .... ok
+<REPO_ROOT>/supabase/tests/10_11A6_deal_properties_write_path.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/10_11A7_deal_pricing_write_path.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/10_11A8_repair_estimate_cleanup.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/10_11A9_pricing_contract_correction.test.sql ............. ok
+<REPO_ROOT>/supabase/tests/10_11A_acquisition_backend.test.sql ...................... ok
+<REPO_ROOT>/supabase/tests/10_12A_intake_submission_persistence.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/10_12C1_intake_deal_creation_promotion.test.sql .......... ok
+<REPO_ROOT>/supabase/tests/10_12C2_lead_intake_kpis.test.sql ........................ ok
+<REPO_ROOT>/supabase/tests/10_12C3_list_intake_submissions_filter.test.sql .......... ok
+<REPO_ROOT>/supabase/tests/10_12C4_submission_review_outcomes.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/10_12C5_kpi_unreviewed_count_fix.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/10_12C6_get_draft_deal.test.sql .......................... ok
+<REPO_ROOT>/supabase/tests/10_12C7_money_input_normalizer.test.sql .................. ok
+<REPO_ROOT>/supabase/tests/10_12C8_mark_submission_reviewed_draft_id.test.sql ....... ok
+<REPO_ROOT>/supabase/tests/10_12C_intake_submission_outcomes.test.sql ............... ok
+<REPO_ROOT>/supabase/tests/10_12D2_cleanup_intake_forms_storage.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/10_13A_offer_data_contract_soft_offer.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/10_13B1_offer_activity_log_copy_correction.test.sql ...... ok
+<REPO_ROOT>/supabase/tests/10_13B_offer_send_write_path.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/10_13E_save_reopen_deal.test.sql ......................... ok
+<REPO_ROOT>/supabase/tests/10_14A_dispo_dashboard.test.sql .......................... ok
+<REPO_ROOT>/supabase/tests/10_14B_dispo_share_link_handoff.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/10_4_rpc_response_contract_tests.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/10_5_rpc_error_contract_tests.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/10_8_11A_list_user_tenants.test.sql ...................... ok
+<REPO_ROOT>/supabase/tests/10_8_11B_set_current_tenant.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/10_8_11D_profile_settings.test.sql ....................... ok
+<REPO_ROOT>/supabase/tests/10_8_11E1_workspace_slug_invariant.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/10_8_11E_workspace_settings_read.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/10_8_11F_workspace_settings_general_rpcs.test.sql ........ ok
+<REPO_ROOT>/supabase/tests/10_8_11G_workspace_members_rpcs.test.sql ................. ok
+<REPO_ROOT>/supabase/tests/10_8_11H_workspace_farm_areas_rpcs.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/10_8_11I1_invite_email_webhook.test.sql .................. ok
+<REPO_ROOT>/supabase/tests/10_8_11I2_workspace_settings_read_fix.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/10_8_11I3_pending_invites_rpc.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/10_8_11I5_seat_billing_sync.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/10_8_11I7_auth_user_exists.test.sql ...................... ok
+<REPO_ROOT>/supabase/tests/10_8_11I8_list_user_tenants_workspace_name.test.sql ...... ok
+<REPO_ROOT>/supabase/tests/10_8_11J_update_display_name.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/10_8_11K_subscription_status_consistency.test.sql ........ ok
+<REPO_ROOT>/supabase/tests/10_8_11M_entitlement_access_retention.test.sql ........... ok
+<REPO_ROOT>/supabase/tests/10_8_11N_expired_write_lock.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/10_8_11O1_archived_workspace_restore.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/10_8_11O2_entitlement_archived_state_fix.test.sql ........ ok
+<REPO_ROOT>/supabase/tests/10_8_11O3_archived_workspace_restore_targeting.test.sql .. ok
+<REPO_ROOT>/supabase/tests/10_8_11O_retention_archive_lifecycle.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/10_8_12_free_trial.test.sql .............................. ok
+<REPO_ROOT>/supabase/tests/10_8_1A_subscriptions_table.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/10_8_1_slug_system.test.sql .............................. ok
+<REPO_ROOT>/supabase/tests/10_8_2_entitlements_extension.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/10_8_3_reminder_engine.test.sql .......................... ok
+<REPO_ROOT>/supabase/tests/10_8_4_deal_health.test.sql .............................. ok
+<REPO_ROOT>/supabase/tests/10_8_5_tc_data_model.test.sql ............................ ok
+<REPO_ROOT>/supabase/tests/10_8_6_farm_areas.test.sql ............................... ok
+<REPO_ROOT>/supabase/tests/10_8_8A_create_tenant.test.sql ........................... ok
+<REPO_ROOT>/supabase/tests/10_8_8B_set_tenant_slug.test.sql ......................... ok
+<REPO_ROOT>/supabase/tests/10_8_8D_check_slug_access.test.sql ....................... ok
+<REPO_ROOT>/supabase/tests/10_9_mao_calculator.test.sql ............................. ok
+<REPO_ROOT>/supabase/tests/6_10_activity_log_append_only.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/6_11_role_guard_helper.test.sql .......................... ok
+<REPO_ROOT>/supabase/tests/6_3_tenant_integrity_suite.test.sql ...................... ok
+<REPO_ROOT>/supabase/tests/6_4_rls_structural_audit.test.sql ........................ ok
+<REPO_ROOT>/supabase/tests/6_6_row_version_concurrency.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/6_7_share_link_isolation.test.sql ........................ ok
+<REPO_ROOT>/supabase/tests/6_8_seat_role_model.test.sql ............................. ok
+<REPO_ROOT>/supabase/tests/6_9_foundation_surface.test.sql .......................... ok
+<REPO_ROOT>/supabase/tests/7_10_tenant_role_ordering_invariant.test.sql ............. ok
+<REPO_ROOT>/supabase/tests/7_4_entitlement_truth.test.sql ........................... ok
+<REPO_ROOT>/supabase/tests/7_5_rls_negative_suite.test.sql .......................... ok
+<REPO_ROOT>/supabase/tests/7_6_calc_version_protocol.test.sql ....................... ok
+<REPO_ROOT>/supabase/tests/7_8_role_enforcement_rpc.test.sql ........................ ok
+<REPO_ROOT>/supabase/tests/7_9_tenant_context_integrity.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/8_10_share_token_scope_enforcement.test.sql .............. ok
+<REPO_ROOT>/supabase/tests/8_4_share_token_hash_at_rest.test.sql .................... ok
+<REPO_ROOT>/supabase/tests/8_5_share_surface_abuse_controls.test.sql ................ ok
+<REPO_ROOT>/supabase/tests/8_6_share_token_revocation.test.sql ...................... ok
+<REPO_ROOT>/supabase/tests/8_7_share_token_usage_logging.test.sql ................... ok
+<REPO_ROOT>/supabase/tests/8_8_share_token_secure_generation.test.sql ............... ok
+<REPO_ROOT>/supabase/tests/8_9_share_token_expiration_invariant.test.sql ............ ok
+<REPO_ROOT>/supabase/tests/9_4_token_format_validation.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/9_5_token_cardinality_guard.test.sql ..................... ok
+<REPO_ROOT>/supabase/tests/9_7_token_lifetime_invariant.test.sql ..................... ok
+All tests successful.
+Files=88, Tests=1086,  3 wallclock secs ( 0.15 usr  0.12 sys +  0.46 cusr  0.31 csys =  1.04 CPU)
+Result: PASS
+
+== toolchain:contract ==
+TOOLCHAIN_CONTRACT_OK
+
+== truth:check ==
+STATUS: PASS (truth-bootstrap OK)
+
+=== required-checks-contract ===
+PASS lane-only excluded
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+
+== lint:calc-version ==
+calc-version-registry: PASS
+
+== proof:manifest ==
+PROOF_MANIFEST_OK
+
+== proof-commit-binding ==
+PROOF_COMMIT_BINDING_SKIP: no proof files changed in PR
+
+=== Phase 2 ===
+npm run handoff -- PASS
+npm run handoff:commit -- PASS
+
+=== RESULT ===
+10.14B Dispo Backend Share Link + Handoff Control: PASS (merge-blocking)

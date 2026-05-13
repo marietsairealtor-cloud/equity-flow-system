@@ -326,6 +326,20 @@ SELECT is(
   '10.14A: handoff_to_tc_v1 rejects non-dispo stage'
 );
 
+SET LOCAL ROLE postgres;
+
+UPDATE public.deals
+SET assignment_agreement_signed_at = '2026-05-01 08:00:00+00'::timestamptz,
+    earnest_money_received_at     = '2026-05-01 09:00:00+00'::timestamptz
+WHERE id = 'd14a0000-0000-4000-8000-000000000003'::uuid;
+
+SELECT set_config(
+  'request.jwt.claims',
+  '{"sub":"a14a0000-0000-4000-8000-0000000000a1","role":"authenticated","tenant_id":"b14a0000-0000-4000-8000-000000000001"}',
+  true
+);
+SET LOCAL ROLE authenticated;
+
 SELECT is(
   (
     public.handoff_to_tc_v1(

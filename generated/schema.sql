@@ -3053,6 +3053,8 @@ DECLARE
   v_tenant uuid;
   v_user   uuid;
   v_stage  text;
+  v_aa     timestamptz;
+  v_em     timestamptz;
 BEGIN
   BEGIN
     PERFORM public.require_min_role_v1('member');
@@ -3083,7 +3085,8 @@ BEGIN
     );
   END IF;
 
-  SELECT stage INTO v_stage
+  SELECT stage, assignment_agreement_signed_at, earnest_money_received_at
+  INTO v_stage, v_aa, v_em
   FROM public.deals
   WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL;
 
@@ -3098,6 +3101,23 @@ BEGIN
     RETURN json_build_object(
       'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
       'error', json_build_object('message', 'Handoff to TC is only allowed from Dispo stage', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF v_aa IS NULL OR v_em IS NULL THEN
+    RETURN json_build_object(
+      'ok', false,
+      'code', 'CONFLICT',
+      'data', json_build_object(),
+      'error', json_build_object(
+        'message',
+        'Send to TC requires assignment agreement signed and earnest money received timestamps.',
+        'fields',
+        json_build_object(
+          'assignment_agreement_signed_at', CASE WHEN v_aa IS NULL THEN json_build_array('required') ELSE json_build_array() END,
+          'earnest_money_received_at', CASE WHEN v_em IS NULL THEN json_build_array('required') ELSE json_build_array() END
+        )
+      )
     );
   END IF;
 
@@ -3123,6 +3143,14 @@ BEGIN
   ) VALUES (
     v_tenant, p_deal_id, 'handoff', 'Deal handed off to TC', v_user, now()
   );
+
+  IF p_assignee_user_id IS NOT NULL THEN
+    INSERT INTO public.workspace_handoff_notifications (
+      tenant_id, recipient_user_id, deal_id, kind, created_at
+    ) VALUES (
+      v_tenant, p_assignee_user_id, p_deal_id, 'handoff_to_tc', now()
+    );
+  END IF;
 
   RETURN json_build_object(
     'ok', true, 'code', 'OK',
@@ -5427,13 +5455,28 @@ CREATE OR REPLACE FUNCTION "public"."return_to_acq_v1"("p_deal_id" "uuid") RETUR
     AS $$
 DECLARE
   v_tenant uuid;
+  v_user   uuid;
   v_stage  text;
 BEGIN
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION
+    WHEN OTHERS THEN
+      RETURN json_build_object(
+        'ok', false,
+        'code', 'NOT_AUTHORIZED',
+        'data', json_build_object(),
+        'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+      );
+  END;
+
   v_tenant := public.current_tenant_id();
-  IF v_tenant IS NULL THEN
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
-      'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
     );
   END IF;
 
@@ -5467,6 +5510,12 @@ BEGIN
     updated_at  = now(),
     row_version = row_version + 1
   WHERE id = p_deal_id AND tenant_id = v_tenant;
+
+  INSERT INTO public.deal_activity_log (
+    tenant_id, deal_id, activity_type, content, created_by, created_at
+  ) VALUES (
+    v_tenant, p_deal_id, 'handoff', 'Deal returned to Acq from Dispo', v_user, now()
+  );
 
   RETURN json_build_object(
     'ok', true, 'code', 'OK',
@@ -7634,10 +7683,16 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
     "next_action" "text",
     "next_action_due" timestamp with time zone,
     "dead_reason" "text",
+    "assignment_agreement_signed_at" timestamp with time zone,
+    "earnest_money_received_at" timestamp with time zone,
     CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['new'::"text", 'analyzing'::"text", 'offer_sent'::"text", 'under_contract'::"text", 'dispo'::"text", 'tc'::"text", 'closed'::"text", 'dead'::"text"])))
 );
 
 ALTER TABLE "public"."deals" OWNER TO "postgres";
+
+COMMENT ON COLUMN "public"."deals"."assignment_agreement_signed_at" IS '10.14B: assignment agreement signed - required with earnest_money_received_at before handoff_to_tc_v1.';
+
+COMMENT ON COLUMN "public"."deals"."earnest_money_received_at" IS '10.14B: earnest money / deposit received - required with assignment_agreement_signed_at before handoff_to_tc_v1.';
 
 CREATE TABLE IF NOT EXISTS "public"."draft_deals" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -7807,6 +7862,18 @@ CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
 
+CREATE TABLE IF NOT EXISTS "public"."workspace_handoff_notifications" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "tenant_id" "uuid" NOT NULL,
+    "recipient_user_id" "uuid" NOT NULL,
+    "deal_id" "uuid" NOT NULL,
+    "kind" "text" DEFAULT 'handoff_to_tc'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "workspace_handoff_notifications_kind_check" CHECK (("kind" = 'handoff_to_tc'::"text"))
+);
+
+ALTER TABLE "public"."workspace_handoff_notifications" OWNER TO "postgres";
+
 ALTER TABLE ONLY "public"."activity_log"
     ADD CONSTRAINT "activity_log_pkey" PRIMARY KEY ("id");
 
@@ -7915,6 +7982,9 @@ ALTER TABLE ONLY "public"."tenants"
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id");
 
+ALTER TABLE ONLY "public"."workspace_handoff_notifications"
+    ADD CONSTRAINT "workspace_handoff_notifications_pkey" PRIMARY KEY ("id");
+
 CREATE INDEX "draft_deals_tenant_promoted_idx" ON "public"."draft_deals" USING "btree" ("tenant_id") WHERE ("promoted_deal_id" IS NOT NULL);
 
 CREATE INDEX "idx_deal_soft_offers_deal_created" ON "public"."deal_soft_offers" USING "btree" ("deal_id", "created_at" DESC);
@@ -7930,6 +8000,8 @@ CREATE INDEX "intake_submissions_tenant_submitted_idx" ON "public"."intake_submi
 CREATE UNIQUE INDEX "share_tokens_token_hash_unique" ON "public"."share_tokens" USING "btree" ("token_hash");
 
 CREATE UNIQUE INDEX "tenants_restore_token_unique" ON "public"."tenants" USING "btree" ("restore_token") WHERE ("restore_token" IS NOT NULL);
+
+CREATE INDEX "workspace_handoff_notifications_recipient_created_idx" ON "public"."workspace_handoff_notifications" USING "btree" ("recipient_user_id", "created_at" DESC);
 
 CREATE OR REPLACE TRIGGER "activity_log_no_delete" BEFORE DELETE ON "public"."activity_log" FOR EACH ROW EXECUTE FUNCTION "public"."activity_log_append_only"();
 
@@ -8065,6 +8137,15 @@ ALTER TABLE ONLY "public"."tenant_subscriptions"
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_current_tenant_id_fkey" FOREIGN KEY ("current_tenant_id") REFERENCES "public"."tenants"("id") ON DELETE SET NULL;
 
+ALTER TABLE ONLY "public"."workspace_handoff_notifications"
+    ADD CONSTRAINT "workspace_handoff_notifications_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "public"."deals"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."workspace_handoff_notifications"
+    ADD CONSTRAINT "workspace_handoff_notifications_recipient_user_id_fkey" FOREIGN KEY ("recipient_user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."workspace_handoff_notifications"
+    ADD CONSTRAINT "workspace_handoff_notifications_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE CASCADE;
+
 ALTER TABLE "public"."activity_log" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "activity_log_insert_own" ON "public"."activity_log" FOR INSERT TO "authenticated" WITH CHECK (("tenant_id" = "public"."current_tenant_id"()));
@@ -8174,6 +8255,8 @@ ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "user_profiles_select_self" ON "public"."user_profiles" FOR SELECT TO "authenticated" USING (("id" = "auth"."uid"()));
 
 CREATE POLICY "user_profiles_update_self" ON "public"."user_profiles" FOR UPDATE TO "authenticated" USING (("id" = "auth"."uid"())) WITH CHECK (("id" = "auth"."uid"()));
+
+ALTER TABLE "public"."workspace_handoff_notifications" ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON FUNCTION "public"."current_tenant_id"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."current_tenant_id"() TO "authenticated";
