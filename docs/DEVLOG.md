@@ -9899,3 +9899,29 @@ DoD
 
 Status  
 PASS
+
+2026-05-13 — Build Route v2.4 — 10.14B
+
+Objective
+Dispo Backend - Share Link + Handoff Control
+
+Changes
+- Migration 20260516000001_10_14B_dispo_share_link_handoff.sql applied
+- Migration 20260516000002_10_14B_fix_comment_encoding.sql applied (corrective)
+- deals table: assignment_agreement_signed_at timestamptz NULL added
+- deals table: earnest_money_received_at timestamptz NULL added
+- workspace_handoff_notifications table created (append-only, RLS enabled)
+- handoff_to_tc_v1(uuid, uuid) updated: gates on both prerequisite timestamps, inserts notification row on assignee
+- return_to_acq_v1(uuid) created: governed return path from Dispo to under_contract
+- Share token create/revoke/lookup contracts unchanged (prior 8.x/9.x migrations)
+- CONTRACTS.md updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.14B_dispo_share_link_handoff_20260513T221331Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
