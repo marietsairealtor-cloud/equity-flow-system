@@ -170,6 +170,14 @@
       ],
       "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Same limit and NOT_AUTHORIZED contract as list_intake_submissions_v1. Reads intake_buyers for tenant; items expose id, name, email, phone, areas_of_interest, budget_range, deal_type_tags, price_range_notes, notes, is_active, created_at, updated_at. Primary UI consumer: Dispo Buyer Ops (10.14C); Lead Intake must not use this as a roster."
     },
+      {
+        "name": "update_buyer_active_status_v1",
+        "version": 1,
+        "build_route_owner": "10.14B1",
+        "input_contract": "CONTRACTS.md §-- update_buyer_active_status_v1",
+        "response_schema": null,
+        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"]
+      },
     {
       "name": "list_reminders_v1",
       "version": 1,
