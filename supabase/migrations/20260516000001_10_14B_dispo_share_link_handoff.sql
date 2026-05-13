@@ -36,7 +36,9 @@ ALTER TABLE public.workspace_handoff_notifications OWNER TO postgres;
 
 ALTER TABLE public.workspace_handoff_notifications ENABLE ROW LEVEL SECURITY;
 
-REVOKE ALL ON TABLE public.workspace_handoff_notifications FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON TABLE public.workspace_handoff_notifications FROM PUBLIC;
+REVOKE ALL ON TABLE public.workspace_handoff_notifications FROM anon;
+REVOKE ALL ON TABLE public.workspace_handoff_notifications FROM authenticated;
 
 -- ============================================================
 -- handoff_to_tc_v1 — prerequisites + assignee notification row
