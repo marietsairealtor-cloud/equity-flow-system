@@ -9033,6 +9033,60 @@ Governed backend for share links, handoffs, notification, and share-token securi
 
 ---
 
+### **10.14B1 — Dispo Backend — Buyer Active Status Mutation**
+
+**Deliverable:**
+Governed backend mutation for activating/deactivating persisted buyers used by the Dispo Buyer Ops UI.
+
+**DoD:**
+
+* `update_buyer_active_status_v1` exists
+* RPC updates `intake_buyers.is_active`
+* RPC is tenant-scoped
+* RPC requires authenticated member access
+* RPC uses governed backend only
+* No direct table calls from UI
+* No buyer CRM / Rolodex expansion
+* No buyer-deal matching engine
+* No automated campaign/blast workflow
+* Does not rebuild `list_buyers_v1`
+
+**RPC:**
+
+* `update_buyer_active_status_v1(p_buyer_id uuid, p_is_active boolean)`
+
+**Behavior:**
+
+* Valid buyer in current tenant updates `is_active`
+* Cross-tenant buyer returns `NOT_FOUND`
+* Missing buyer returns `NOT_FOUND`
+* Non-member returns `NOT_AUTHORIZED`
+* Null `p_buyer_id` returns `VALIDATION_ERROR`
+* Null `p_is_active` returns `VALIDATION_ERROR`
+* Response uses standard JSON envelope:
+
+  * `ok`
+  * `code`
+  * `data`
+  * `error`
+
+**Tests:**
+
+* active buyer can be deactivated
+* inactive buyer can be activated
+* updated buyer remains tenant-scoped
+* cross-tenant update returns `NOT_FOUND`
+* non-member cannot update buyer status
+* null inputs return `VALIDATION_ERROR`
+* `list_buyers_v1` reflects updated `is_active`
+* no direct table access is required by frontend
+
+**Proof:** `docs/proofs/10.14B1_buyer_active_status_mutation_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.12A`, `10.14A` merged
+
+---
+
 ### **10.14C — Dispo — Buyer Ops UI**
 
 **Deliverable:**
