@@ -9925,3 +9925,29 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-14 — Build Route v2.4 — 10.14B1
+
+Objective
+Dispo Backend - Buyer Active Status Mutation
+
+Changes
+- Migration 20260517000001_10_14B1_buyer_active_status_mutation.sql applied
+- New RPC: update_buyer_active_status_v1(p_buyer_id uuid, p_is_active boolean)
+- Updates intake_buyers.is_active for tenant-scoped buyer
+- No new tables. No signature change to list_buyers_v1.
+- Tests: 10_14B1_buyer_active_status_mutation.test.sql (9 tests, all pass)
+- CONTRACTS.md §17 updated
+- rpc_contract_registry.json, privilege_truth.json registered
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- migration-grant-lint PASS
+- rpc-contract-registry PASS
+- rpc-mapping-contract PASS
+
+Proof
+docs/proofs/10.14B1_buyer_active_status_mutation_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
