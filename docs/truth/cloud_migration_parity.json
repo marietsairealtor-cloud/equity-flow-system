@@ -4,5 +4,5 @@
   "migration_tip": "20260517000001",
   "migration_tip_file": "20260517000001_10_14B1_buyer_active_status_mutation.sql",
   "migration_count": 136,
-  "pinned_at": "2026-05-13"
+  "pinned_at": "2026-05-14"
 }
