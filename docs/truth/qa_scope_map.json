@@ -703,6 +703,10 @@
     "10.14B": {
       "title": "Dispo Backend — Share Link + Handoff Control",
       "proof_pattern": "^docs/proofs/10\\.14B_dispo_share_link_handoff_"
+    },
+    "10.14B1": {
+      "title": "Dispo Backend — Buyer Active Status Mutation",
+      "proof_pattern": "^docs/proofs/10\\.14B1_buyer_active_status_mutation_"
     }
   }
 }

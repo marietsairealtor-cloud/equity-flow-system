@@ -291,8 +291,11 @@
         "authority": "Build Route 10.11A6 — jsonb patch on deal_properties; EXECUTE to authenticated"
       },
       {
-        "routine": "update_deal_pricing_v1",
-        "privilege": "EXECUTE",
+        "routine": "update_buyer_active_status_v1",
+          "privilege": "EXECUTE",
+          "authority": "Build Route 10.14B1 -- buyer active status mutation; EXECUTE to authenticated"
+        },
+      {
         "authority": "Build Route 10.11A7 — append-only deal_inputs pricing merge; EXECUTE to authenticated"
       },
       {
@@ -451,7 +454,8 @@
       "set_tenant_slug_v1",
       "submit_form_v1",
       "update_deal_properties_v1",
-      "update_deal_pricing_v1",
+      "update_buyer_active_status_v1",
+        "update_deal_pricing_v1",
       "update_deal_property_v1",
       "update_deal_seller_v1",
       "update_deal_v1",

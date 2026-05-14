@@ -72,6 +72,7 @@
     "public.trg_draft_deals_promoted_sync_intake_review_v1",
     "public.trigger_invite_email",
     "public.trigger_seat_sync",
+    "public.update_buyer_active_status_v1",
     "public.update_deal_pricing_v1",
     "public.update_deal_properties_v1",
     "public.update_deal_property_v1",

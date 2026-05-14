@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-13T22:01:18Z",
+    "generated":  "2026-05-14T00:12:36Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -315,6 +315,15 @@
                             "name":  "trg_draft_deals_promoted_sync_intake_review_v1",
                             "tables":  [
                                            "intake_submissions"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_buyer_active_status_v1",
+                            "tables":  [
+                                           "intake_buyers"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
