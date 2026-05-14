@@ -260,6 +260,7 @@
     "docs/proofs/10.13C-D_offer_ui_send_email_wiring_20260511T202527Z.md": "b5bbbdc244ed4137339433adbf53643249754fe09e30f8cfe36e7ef33f9e32c2",
     "docs/proofs/10.13E_save_reopen_deal_20260512T211454Z.log": "3952b2bdf69d51735bfd238051f8e93486ac6824efdd98801ca795a44754ee4e",
     "docs/proofs/10.14A_dispo_data_contract_20260513T001338Z.log": "e6a16994cb6e7ef7e9b4c9c83163114e3ce1715d6141ff4e39f57821d007073a",
-    "docs/proofs/10.14B_dispo_share_link_handoff_20260513T221331Z.log": "c94a2d8db4e6c6df40ab432e46b5192141de1f8ab9fb23704946d9ab74fa7b90"
+    "docs/proofs/10.14B_dispo_share_link_handoff_20260513T221331Z.log": "c94a2d8db4e6c6df40ab432e46b5192141de1f8ab9fb23704946d9ab74fa7b90",
+    "docs/proofs/10.14B1_buyer_active_status_mutation_20260514T002759Z.log": "2ffbab68734512d5a7c5ce3ccfbdedf1885a91d5fd93651d0f1223180fe49fc9"
   }
 }
