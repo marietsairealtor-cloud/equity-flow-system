@@ -176,7 +176,8 @@
         "build_route_owner": "10.14B1",
         "input_contract": "CONTRACTS.md §-- update_buyer_active_status_v1",
         "response_schema": null,
-        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"]
+        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"],
+        "notes": "Governed mutation for Dispo Buyer Ops activate/deactivate. Tenant-scoped. Does not modify list_buyers_v1."
       },
     {
       "name": "list_reminders_v1",
