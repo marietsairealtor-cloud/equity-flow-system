@@ -9175,56 +9175,440 @@ These fields are required by `handoff_to_tc_v1` before a deal can move from `Dis
 **Prerequisite:** `10.14B` merged
 
 ---
+### **10.14B3 — Property Field Expansion — Electrical + Plumbing Backend**
+
+**Deliverable:**
+Backend support for operator-captured electrical and plumbing property details, available from Lead Intake Review through ACQ and later Dispo/share packet flows.
+
+**DoD:**
+
+* `deal_properties` includes:
+
+  * `electrical`
+  * `plumbing`
+
+* `update_deal_properties_v1` accepts and persists:
+
+  * `electrical`
+  * `plumbing`
+
+* `get_acq_deal_v1` returns:
+
+  * `properties.electrical`
+  * `properties.plumbing`
+
+* Fields are authenticated/operator enrichment fields only
+* Public seller intake form is not changed
+* No direct table calls
+* `CONTRACTS.md` updated for allowed keys and output shape
+* Existing property fields remain backward compatible
+
+**Tests:**
+
+* `update_deal_properties_v1` persists `electrical`
+* `update_deal_properties_v1` persists `plumbing`
+* `get_acq_deal_v1` returns saved `electrical`
+* `get_acq_deal_v1` returns saved `plumbing`
+* cross-tenant update returns `NOT_FOUND`
+* non-member returns `NOT_AUTHORIZED`
+* invalid fields remain rejected
+
+**Proof:** `docs/proofs/10.14B3_property_electrical_plumbing_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B2` merged
+
+---
+
+### **10.14B4 — Lead Intake + ACQ UI — Electrical/Plumbing Wiring**
+
+**Deliverable:**
+Authenticated UI wiring for operator-captured electrical and plumbing fields in Lead Intake Review and ACQ property edit.
+
+**DoD:**
+
+* Lead Intake Review shows editable fields:
+
+  * `electrical`
+  * `plumbing`
+
+* ACQ deal detail / property edit popup shows editable fields:
+
+  * `electrical`
+  * `plumbing`
+
+* UI writes through governed backend only:
+
+  * `update_deal_properties_v1`
+
+* UI reads through governed backend only:
+
+  * `get_acq_deal_v1`
+  * existing Lead Intake governed read path where applicable
+
+* Public seller intake form is not changed
+* No direct table calls
+* Saved values persist and refresh correctly
+* Empty values can be cleared if existing property edit behavior allows clearing
+
+**Tests:**
+
+* Lead Intake Review renders electrical/plumbing fields
+* ACQ property edit renders electrical/plumbing fields
+* save calls governed RPC only
+* saved values refresh correctly
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.14B4_lead_intake_acq_electrical_plumbing_ui_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.14B3` merged
+
+---
+
+### **10.14B5 — Acquisition Backend — Signed APS Documents + Handoff Gate**
+
+**Deliverable:**
+Governed backend document support for signed APS upload/attachment, with `handoff_to_dispo_v1` blocked for new handoff attempts unless a signed APS exists.
+
+**Definitions:**
+
+* APS = Agreement of Purchase and Sale
+* Required document type:
+
+  * `signed_purchase_agreement`
+
+**DoD:**
+
+* `deal_documents` table exists
+* `deal_documents` is tenant-scoped
+* `deal_documents` supports:
+
+  * `deal_id`
+  * `document_type`
+  * `storage_path`
+  * `file_name`
+  * `mime_type`
+  * `file_size`
+  * `uploaded_by`
+  * `uploaded_at`
+  * `created_at`
+
+* Direct table access revoked from `anon` and `authenticated`
+* RLS enabled where applicable
+* Storage/path strategy is documented
+* Governed upload/attach/list path exists
+* Required RPCs exist, or equivalent governed contract exists:
+
+  * `create_deal_document_upload_v1`
+  * `attach_deal_document_v1`
+  * `list_deal_documents_v1`
+
+* Signed APS can be attached to a deal
+* Signed APS metadata can be read by authenticated tenant members
+* `handoff_to_dispo_v1` blocks new handoff attempts unless signed APS exists
+* Existing deals already in `dispo` are grandfathered
+* No retroactive block/backfill required for existing `dispo` deals
+* No direct table calls from UI
+
+**Tests:**
+
+* signed APS document can be attached to a current-tenant deal
+* signed APS metadata can be listed through governed RPC
+* cross-tenant attach returns `NOT_FOUND`
+* non-member returns `NOT_AUTHORIZED`
+* invalid document type returns `VALIDATION_ERROR`
+* `handoff_to_dispo_v1` rejects when signed APS is missing
+* `handoff_to_dispo_v1` succeeds when signed APS exists
+* existing `dispo` deals are not retroactively blocked
+
+**Proof:** `docs/proofs/10.14B5_signed_aps_documents_handoff_gate_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B2` merged
+
+---
+
+### **10.14B6 — Acquisition UI — Signed APS Upload**
+
+**Deliverable:**
+ACQ deal detail UI support for uploading, replacing, and showing status for signed APS before sending a deal to Dispo.
+
+**DoD:**
+
+* ACQ deal detail shows signed APS upload/status area
+* Operator can upload signed APS
+* Operator can replace signed APS
+* UI shows uploaded file status/metadata
+* `Send to Dispo` is disabled until signed APS exists
+* Disabled state explains missing signed APS requirement
+* Upload/list actions use governed backend only
+* No direct table calls
+* No unauthenticated access
+
+**Tests:**
+
+* ACQ deal detail shows signed APS missing state
+* upload flow attaches signed APS through governed backend
+* uploaded status appears after refresh
+* replace flow works
+* `Send to Dispo` disabled without signed APS
+* `Send to Dispo` enabled when signed APS exists
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.14B6_acq_signed_aps_upload_ui_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.14B5` merged
+
+---
+
+### **10.14B7 — Dispo Backend — Buyer-Facing Packet Fields**
+
+**Deliverable:**
+Backend support for buyer-facing Dispo deal packet fields used by the Dispo packet editor and unauthenticated share packet viewer.
+
+**DoD:**
+
+* Buyer-facing Dispo fields exist:
+
+  * `dispo_asking_price`
+  * `dispo_intersection`
+  * `dispo_closing_date`
+  * `dispo_description`
+  * `dispo_comparables`
+  * `dispo_media_url`
+  * `dispo_market_value_estimate`
+  * `dispo_below_market_override`
+
+* `dispo_market_value_estimate` means operator-estimated market value / ARV / comp-supported value
+* Do not use `dispo_as_is_value` for below-market math
+* Below-market display value is derived as:
+
+  * `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`
+
+* If market value and override are absent, below-market badge can be hidden
+* Governed authenticated mutation exists for editing packet fields
+* `lookup_share_token_v1` returns these fields for valid share tokens
+* `lookup_share_token_v1` does not expose non-allowlisted/internal fields
+* No direct table calls
+
+**Tests:**
+
+* packet fields can be saved through governed mutation
+* saved packet fields persist
+* below-market value derives correctly from market value minus asking price
+* override value takes precedence over derived value
+* `lookup_share_token_v1` returns packet fields for valid token
+* `lookup_share_token_v1` excludes internal/seller-sensitive fields
+* cross-tenant mutation returns `NOT_FOUND`
+* non-member returns `NOT_AUTHORIZED`
+
+**Proof:** `docs/proofs/10.14B7_dispo_buyer_packet_fields_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B2` merged
+
+---
+
+### **10.14B8 — Dispo Backend — Share Packet Photo Visibility**
+
+**Deliverable:**
+Backend support for controlling which deal photos/media are approved for the buyer-facing share packet.
+
+**DoD:**
+
+* `deal_media` supports share-packet visibility using one of:
+
+  * `is_dispo_approved`
+  * or `visibility = internal / dispo_share`
+
+* Internal deal media is not exposed by default
+* Only approved/share-visible photos are returned to buyer share packet
+* Governed authenticated mutation exists to approve/remove media from share packet
+* `lookup_share_token_v1` returns approved/share-visible media only
+* No direct table calls
+* Existing media remains backward compatible
+
+**Tests:**
+
+* media is internal/not shared by default
+* authenticated member can mark media as share-approved
+* authenticated member can remove media from share packet
+* `lookup_share_token_v1` returns approved media only
+* unapproved/internal media is not returned
+* cross-tenant approval returns `NOT_FOUND`
+* non-member returns `NOT_AUTHORIZED`
+
+**Proof:** `docs/proofs/10.14B8_dispo_share_packet_photo_visibility_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.8.7A`, `10.14B7` merged
+
+---
+
+### **10.14B9 — Dispo UI — Packet Editor + Photo Approval**
+
+**Deliverable:**
+Authenticated Dispo UI editor for buyer-facing packet fields and share-packet photo approval.
+
+**DoD:**
+
+* Dispo packet editor lives on `/dispo`
+* Editor is opened from Dispo deal detail row/card, preferably modal or slide-out
+* Editor supports:
+
+  * asking price
+  * closing date
+  * intersection
+  * description
+  * comparables
+  * media URL
+  * market value estimate
+  * below-market override
+
+* Editor shows derived below-market value preview
+* Editor can save buyer-facing packet fields through governed backend only
+* Photo approval UI lets operator choose which photos appear in buyer share packet
+* Photo approval uses governed backend only
+* No direct table calls
+* No buyer matching engine
+* No CRM/Rolodex expansion
+
+**Tests:**
+
+* editor opens from `/dispo`
+* packet fields render existing values
+* packet fields save through governed backend
+* derived below-market preview works
+* photo approval toggle works
+* approved photos refresh correctly
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.14B9_dispo_packet_editor_photo_approval_ui_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.14B7`, `10.14B8` merged
+
+---
+
+### **10.14B10 — Share Packet Backend — Buyer Interest Ping**
+
+**Deliverable:**
+Anon-callable best-effort backend activity ping when a buyer clicks “I’m Interested” on the unauthenticated share packet.
+
+**RPC:**
+
+* `log_buyer_interest_v1(p_token text)`
+
+**DoD:**
+
+* RPC exists:
+
+  * `log_buyer_interest_v1`
+
+* RPC is callable from unauthenticated share packet
+* `GRANT EXECUTE TO anon` exists
+* This anon grant is documented as a public-RPC exception
+* Valid active token writes `deal_activity_log` row:
+
+  * `activity_type = buyer_interest`
+  * `content = Buyer clicked I'm Interested`
+
+* Invalid / expired / revoked tokens return safe identical failure shape
+* Invalid / expired / revoked tokens do not leak token state
+* Invalid / expired / revoked tokens do not write activity
+* RPC is best-effort and must not block the mailto CTA
+* No direct table calls
+
+**Tests:**
+
+* valid token writes buyer interest activity
+* invalid token returns safe failure
+* expired token returns same failure shape
+* revoked token returns same failure shape
+* invalid / expired / revoked do not write activity
+* anon can execute RPC
+* authenticated membership is not required
+* response shape does not leak token state
+
+**Proof:** `docs/proofs/10.14B10_buyer_interest_ping_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B`, `10.14B7` merged
+
+---
 
 ### **10.14C — Dispo Share Packet — Deal Viewer + Share-Link Verification**
 
-Deliverable:
-Token-gated buyer-facing deal packet with tenant branding, buyer CTA, and security-smoke verification.
+**Deliverable:**
+Token-gated buyer-facing deal packet with tenant branding, allowlisted buyer-facing fields, approved photos, buyer CTA, and security-smoke verification.
 
-DoD:
+**DoD:**
 
-Token validated via lookup_share_token_v1 before any data renders
-Share packet displays:
-ARV
-repairs
-assignment ask
-terms
-photos / notes
-Tenant branding auto-displays workspace name at top
-“I’m Interested” CTA appears at bottom as mailto: link pre-filled with deal address + wholesaler email + subject line
-Notification bell pinged on buyer click as best-effort backend activity
-Mobile-friendly rendering
-Expired / revoked / invalid token shows friendly “This deal is no longer available” page
-Response shape is identical regardless of failure reason
-Share link works unauthenticated
-Only allowlisted fields appear
-Negative probe: non-shared deal cannot be accessed
-No authentication required
-No direct table calls
+* Share packet route exists:
 
-Tests:
+  * `/deal/:share_token`
 
-valid token renders packet
-invalid / expired / revoked token render identical friendly failure page
-only allowlisted fields appear
-negative probe cannot access non-shared deal
+* Share link works unauthenticated
+* Token validated via `lookup_share_token_v1` before any data renders
+* Valid token renders buyer-facing packet
+* Expired / revoked / invalid token shows friendly page:
 
-Proof: docs/proofs/10.14C_deal_viewer_share_packet_<UTC>.md
-Gate: merge-blocking (security) once enabled
-Prerequisite: 10.14B, 10.8.7A merged
+  * `This deal is no longer available`
+
+* Invalid / expired / revoked response shape is identical
+* Share packet displays allowlisted fields only, including:
+
+  * tenant branding / workspace name
+  * asking price
+  * closing date
+  * ARV / market value estimate
+  * below-market badge when available
+  * repairs / repair estimate
+  * property details
+  * electrical
+  * plumbing
+  * comparables
+  * approved photos only
+  * notes / description
+  * media package button when `dispo_media_url` exists
+
+* “I’m Interested” CTA appears at bottom
+* CTA opens `mailto:` prefilled with:
+
+  * deal address/intersection
+  * wholesaler email
+  * subject line
+
+* CTA calls `log_buyer_interest_v1` as best-effort before opening mailto
+* If buyer-interest ping fails, mailto still opens
+* Mobile-friendly rendering
+* Negative probe: non-shared deal cannot be accessed
+* No authentication required
+* No direct table calls
+
+**Tests:**
+
+* valid token renders packet
+* invalid / expired / revoked token render identical friendly failure page
+* only allowlisted fields appear
+* approved photos appear
+* unapproved/internal photos do not appear
+* buyer CTA calls `log_buyer_interest_v1`
+* CTA still opens mailto if logging fails
+* negative probe cannot access non-shared deal
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.14C_deal_viewer_share_packet_<UTC>.md`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B`, `10.14B3`, `10.14B7`, `10.14B8`, `10.14B10`, `10.8.7A` merged
 
 ---
 
 ### **10.14D — Dispo — Buyer Ops UI**
 
 **Deliverable:**
-Authenticated **Dispo** surface for the tenant buyer roster and lean outbound distribution tools. Buyers **enter** through intake; buyer **usage** (list, filter, activate/deactivate, reach out) belongs here.
+Authenticated Dispo surface for the tenant buyer roster and lean outbound distribution tools. Buyers enter through intake; buyer usage, filtering, activation/deactivation, and manual reach-out belong here.
 
 **DoD:**
 
-* Buyer Ops UI lives on **`/dispo`** as part of the Dispo department surface
+* Buyer Ops UI lives on `/dispo` as part of the Dispo department surface
+* Buyer Ops reads persisted buyers through:
 
-* Buyer Ops reads persisted buyers through **`list_buyers_v1`** only
+  * `list_buyers_v1`
 
 * Buyer list search supports:
 
@@ -9251,19 +9635,17 @@ Authenticated **Dispo** surface for the tenant buyer roster and lean outbound di
 
 * Activate / deactivate control is wired through governed backend only:
 
-  * **`update_buyer_active_status_v1(p_buyer_id uuid, p_is_active boolean)`**
+  * `update_buyer_active_status_v1(p_buyer_id uuid, p_is_active boolean)`
 
-* Buyer active-status mutation is tenant-scoped and uses no direct table calls
-
+* Buyer active-status mutation is tenant-scoped
 * Manual send workflow supports:
 
   * send to all buyers
   * send to filtered subset
   * copy recipient list
-  * launch `mailto:` draft for the selected recipient set
+  * launch `mailto:` draft for selected recipient set
 
-* Buyer Ops does **not** create or mutate buyer records outside governed RPCs
-
+* Buyer Ops does not create or mutate buyer records outside governed RPCs
 * Explicitly out of scope:
 
   * buyer-deal matching engine
@@ -9276,7 +9658,8 @@ Authenticated **Dispo** surface for the tenant buyer roster and lean outbound di
 **Tests:**
 
 * Buyer Ops on `/dispo` renders buyer list through `list_buyers_v1`
-* search and filters work correctly on governed buyer data
+* search works on governed buyer data
+* filters work on governed buyer data
 * buyer detail renders correctly
 * activate / deactivate calls `update_buyer_active_status_v1` only
 * active-status changes refresh correctly in UI
