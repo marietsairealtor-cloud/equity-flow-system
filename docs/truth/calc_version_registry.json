@@ -1,5 +1,5 @@
 {
-  "version": 27,
+  "version": 28,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -157,6 +157,13 @@
       "description": "10.14B: adds deals.assignment_agreement_signed_at and deals.earnest_money_received_at; workspace_handoff_notifications; replaces handoff_to_tc_v1 with milestone CONFLICT gate and assignee notification insert; replaces return_to_acq_v1 with require_min_role_v1(member), auth.uid, and deal_activity_log on disp to under_contract. Incidental deals row reads only; no change to calc_version integer protocol on pricing writes.",
       "introduced_pr": "10.14B",
       "released_at": "2026-05-16"
+    },
+    {
+      "calc_version": null,
+      "label": "10.14B3 schema extension",
+      "description": "Migration 20260517000003_10_14B3_property_electrical_plumbing.sql adds electrical/plumbing columns to deal_properties and extends update_deal_properties_v1 and get_acq_deal_v1. References calc_version token incidentally in comments only. No change to calc_version integer protocol or pricing calculation logic.",
+      "introduced_pr": "10.14B3",
+      "released_at": "2026-05-17"
     }
   ],
   "watch_surface": {

@@ -1982,12 +1982,22 @@ DECLARE
   v_last_contacted  timestamptz;
 BEGIN
   v_tenant := public.current_tenant_id();
+
   IF v_tenant IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
       'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
     );
   END IF;
+
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
+  END;
 
   IF p_deal_id IS NULL THEN
     RETURN json_build_object(
@@ -2059,7 +2069,9 @@ BEGIN
         'furnace_age',     v_props.furnace_age,
         'ac_age',          v_props.ac_age,
         'heating_type',    v_props.heating_type,
-        'cooling_type',    v_props.cooling_type
+        'cooling_type',    v_props.cooling_type,
+        'electrical',      v_props.electrical,
+        'plumbing',        v_props.plumbing
       ) END,
       'pricing',           (
         SELECT json_build_object(
@@ -6647,7 +6659,8 @@ DECLARE
     'property_type','beds','baths','sqft','lot_size','year_built',
     'occupancy','deficiency_tags','condition_notes',
     'garage_parking','basement_type','foundation_type',
-    'roof_age','furnace_age','ac_age','heating_type','cooling_type'
+    'roof_age','furnace_age','ac_age','heating_type','cooling_type',
+    'electrical','plumbing'
   ];
   v_unknown_keys      text[];
   v_year_built        integer;
@@ -6667,6 +6680,17 @@ BEGIN
       'error', json_build_object('message', 'No tenant or user context', 'fields', '{}'::json)
     );
   END IF;
+
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'Not authorized', 'fields', '{}'::json)
+    );
+  END;
 
   IF NOT public.check_workspace_write_allowed_v1() THEN
     RETURN json_build_object(
@@ -6743,7 +6767,7 @@ BEGIN
   IF p_fields ? 'year_built' AND p_fields->>'year_built' IS NOT NULL THEN
     BEGIN
       v_year_built := (p_fields->>'year_built')::integer;
-    EXCEPTION WHEN others THEN
+    EXCEPTION WHEN OTHERS THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'year_built must be a valid integer', 'fields', '{}'::json));
     END;
@@ -6752,7 +6776,7 @@ BEGIN
   IF p_fields ? 'roof_age' AND p_fields->>'roof_age' IS NOT NULL THEN
     BEGIN
       v_roof_age := (p_fields->>'roof_age')::integer;
-    EXCEPTION WHEN others THEN
+    EXCEPTION WHEN OTHERS THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'roof_age must be a valid integer', 'fields', '{}'::json));
     END;
@@ -6761,7 +6785,7 @@ BEGIN
   IF p_fields ? 'furnace_age' AND p_fields->>'furnace_age' IS NOT NULL THEN
     BEGIN
       v_furnace_age := (p_fields->>'furnace_age')::integer;
-    EXCEPTION WHEN others THEN
+    EXCEPTION WHEN OTHERS THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'furnace_age must be a valid integer', 'fields', '{}'::json));
     END;
@@ -6770,7 +6794,7 @@ BEGIN
   IF p_fields ? 'ac_age' AND p_fields->>'ac_age' IS NOT NULL THEN
     BEGIN
       v_ac_age := (p_fields->>'ac_age')::integer;
-    EXCEPTION WHEN others THEN
+    EXCEPTION WHEN OTHERS THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
         'error', json_build_object('message', 'ac_age must be a valid integer', 'fields', '{}'::json));
     END;
@@ -6821,28 +6845,32 @@ BEGIN
     ac_age          = CASE WHEN p_fields ? 'ac_age'           THEN v_ac_age                        ELSE ac_age          END,
     heating_type    = CASE WHEN p_fields ? 'heating_type'     THEN (p_fields->>'heating_type')     ELSE heating_type    END,
     cooling_type    = CASE WHEN p_fields ? 'cooling_type'     THEN (p_fields->>'cooling_type')     ELSE cooling_type    END,
+    electrical      = CASE WHEN p_fields ? 'electrical'       THEN (p_fields->>'electrical')       ELSE electrical      END,
+    plumbing        = CASE WHEN p_fields ? 'plumbing'         THEN (p_fields->>'plumbing')         ELSE plumbing        END,
     updated_at      = now(),
     row_version     = row_version + 1
   WHERE deal_id   = p_deal_id
     AND tenant_id = v_tenant
     AND (
-      (p_fields ? 'property_type'   AND (p_fields->>'property_type')  IS DISTINCT FROM property_type)   OR
-      (p_fields ? 'beds'            AND (p_fields->>'beds')           IS DISTINCT FROM beds)             OR
-      (p_fields ? 'baths'           AND (p_fields->>'baths')          IS DISTINCT FROM baths)            OR
-      (p_fields ? 'sqft'            AND (p_fields->>'sqft')           IS DISTINCT FROM sqft)             OR
-      (p_fields ? 'lot_size'        AND (p_fields->>'lot_size')       IS DISTINCT FROM lot_size)         OR
-      (p_fields ? 'year_built'      AND v_year_built                  IS DISTINCT FROM year_built)       OR
-      (p_fields ? 'occupancy'       AND (p_fields->>'occupancy')      IS DISTINCT FROM occupancy)        OR
-      (p_fields ? 'deficiency_tags' AND v_deficiency_tags             IS DISTINCT FROM deficiency_tags)  OR
-      (p_fields ? 'condition_notes' AND (p_fields->>'condition_notes') IS DISTINCT FROM condition_notes) OR
-      (p_fields ? 'garage_parking'  AND (p_fields->>'garage_parking') IS DISTINCT FROM garage_parking)   OR
-      (p_fields ? 'basement_type'   AND (p_fields->>'basement_type')  IS DISTINCT FROM basement_type)    OR
-      (p_fields ? 'foundation_type' AND (p_fields->>'foundation_type') IS DISTINCT FROM foundation_type) OR
-      (p_fields ? 'roof_age'        AND v_roof_age                    IS DISTINCT FROM roof_age)         OR
-      (p_fields ? 'furnace_age'     AND v_furnace_age                 IS DISTINCT FROM furnace_age)      OR
-      (p_fields ? 'ac_age'          AND v_ac_age                      IS DISTINCT FROM ac_age)           OR
-      (p_fields ? 'heating_type'    AND (p_fields->>'heating_type')   IS DISTINCT FROM heating_type)     OR
-      (p_fields ? 'cooling_type'    AND (p_fields->>'cooling_type')   IS DISTINCT FROM cooling_type)
+      (p_fields ? 'property_type'   AND (p_fields->>'property_type')   IS DISTINCT FROM property_type)   OR
+      (p_fields ? 'beds'            AND (p_fields->>'beds')            IS DISTINCT FROM beds)             OR
+      (p_fields ? 'baths'           AND (p_fields->>'baths')           IS DISTINCT FROM baths)            OR
+      (p_fields ? 'sqft'            AND (p_fields->>'sqft')            IS DISTINCT FROM sqft)             OR
+      (p_fields ? 'lot_size'        AND (p_fields->>'lot_size')        IS DISTINCT FROM lot_size)         OR
+      (p_fields ? 'year_built'      AND v_year_built                   IS DISTINCT FROM year_built)       OR
+      (p_fields ? 'occupancy'       AND (p_fields->>'occupancy')       IS DISTINCT FROM occupancy)        OR
+      (p_fields ? 'deficiency_tags' AND v_deficiency_tags              IS DISTINCT FROM deficiency_tags)  OR
+      (p_fields ? 'condition_notes' AND (p_fields->>'condition_notes') IS DISTINCT FROM condition_notes)  OR
+      (p_fields ? 'garage_parking'  AND (p_fields->>'garage_parking')  IS DISTINCT FROM garage_parking)   OR
+      (p_fields ? 'basement_type'   AND (p_fields->>'basement_type')   IS DISTINCT FROM basement_type)    OR
+      (p_fields ? 'foundation_type' AND (p_fields->>'foundation_type') IS DISTINCT FROM foundation_type)  OR
+      (p_fields ? 'roof_age'        AND v_roof_age                     IS DISTINCT FROM roof_age)         OR
+      (p_fields ? 'furnace_age'     AND v_furnace_age                  IS DISTINCT FROM furnace_age)      OR
+      (p_fields ? 'ac_age'          AND v_ac_age                       IS DISTINCT FROM ac_age)           OR
+      (p_fields ? 'heating_type'    AND (p_fields->>'heating_type')    IS DISTINCT FROM heating_type)     OR
+      (p_fields ? 'cooling_type'    AND (p_fields->>'cooling_type')    IS DISTINCT FROM cooling_type)     OR
+      (p_fields ? 'electrical'      AND (p_fields->>'electrical')      IS DISTINCT FROM electrical)       OR
+      (p_fields ? 'plumbing'        AND (p_fields->>'plumbing')        IS DISTINCT FROM plumbing)
     );
 
   GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
@@ -7801,10 +7829,16 @@ CREATE TABLE IF NOT EXISTS "public"."deal_properties" (
     "heating_type" "text",
     "cooling_type" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "electrical" "text",
+    "plumbing" "text"
 );
 
 ALTER TABLE "public"."deal_properties" OWNER TO "postgres";
+
+COMMENT ON COLUMN "public"."deal_properties"."electrical" IS '10.14B3: operator-captured electrical details e.g. 100A panel, knob-and-tube. Not from public seller form.';
+
+COMMENT ON COLUMN "public"."deal_properties"."plumbing" IS '10.14B3: operator-captured plumbing details e.g. copper, galvanized. Not from public seller form.';
 
 CREATE TABLE IF NOT EXISTS "public"."deal_reminders" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
