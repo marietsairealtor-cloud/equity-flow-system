@@ -39,6 +39,36 @@ Permanent URL with tenant slug. No authentication required. The slug resolves te
 Dynamic URL with share token. No authentication required. Token resolves deal context.
 - Deal viewer (`/deal/:share_token`)
 
+**Deal viewer (10.14C) -- authoritative field list:**
+- Tenant branding (workspace name) -- from `tenants.name`
+- "Buyers List Exclusive" badge
+- Hero photo (first `is_dispo_approved` photo from `deal_media`)
+- Asking price (`dispo_asking_price`) -- large, prominent
+- Below-market badge -- `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`
+- Closing date (`dispo_closing_date`)
+- ARV (`deal_inputs.assumptions.arv`)
+- Closest intersection (`dispo_intersection`) -- NOT full address (privacy)
+- Google Maps link generated from intersection text
+- Beds, baths, sqft, parking -- from `deal_properties`
+- Property type, lot size, occupancy, basement type -- from `deal_properties`
+- Electrical, plumbing -- from `deal_properties` (operator-enriched)
+- Repair estimate -- from `deal_inputs.assumptions.repair_estimate`
+- Description (`dispo_description`)
+- Key deficiencies / condition notes -- from `deal_properties.condition_notes`
+- Comparable sales (`dispo_comparables`) -- plain text
+- Approved photos only (`deal_media` where `is_dispo_approved = true`)
+- Media package button -- opens `dispo_media_url` in new tab
+- "Do NOT go to the address" warning
+- "I'm Interested" CTA -- calls `log_buyer_interest_v1` (best-effort) then opens `mailto:` pre-filled with deal address + workspace contact info
+- Call / WhatsApp / Email contact buttons
+- "Join our buyers list" button -- links to public intake form
+- Confidentiality disclaimer footer
+- Expired / revoked / invalid token -- identical friendly "This deal is no longer available" page (no data leak)
+
+**Token validation:** `lookup_share_token_v1` (extended in build order step 5 to return dispo packet fields). Invalid/expired/revoked all return identical NOT_FOUND envelope -- no token state leaked to buyer.
+
+**Buyer interest ping:** `log_buyer_interest_v1(p_token)` -- anon-callable (§12 exception); valid token writes `buyer_interest` activity row; invalid/expired/revoked returns safe identical shape; best-effort -- CTA opens mailto regardless of ping result.
+
 ### 1.4 Authenticated
 Supabase Auth session required. Tenant context resolved via `get_user_entitlements_v1`.
 - All hub pages (Today, Acquisition, Dispo, TC, Lead Intake, Settings)
@@ -525,6 +555,23 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 - activity log
 - Users do not manually choose from a generic status dropdown. The UI shows only valid next-step action buttons for the current stage.
 
+**Property edit popup — field list (authoritative)**
+- property_type, beds, baths, sqft, parking
+- lot_size, year_built, occupancy
+- basement_type, foundation_type, roof_age
+- furnace_age, ac_age, heating_type, cooling_type
+- **electrical** (operator enrichment — gap 1; not captured on public seller form)
+- **plumbing** (operator enrichment — gap 1; not captured on public seller form)
+- deficiency_tags, condition_notes
+- garage_parking
+
+**Signed APS upload (gap 4 + gap 5)**
+- ACQ deal detail shows upload slot for signed purchase agreement (APS)
+- Upload governed via `upload_deal_document_v1` (deal_documents table — gap 4)
+- Shows uploaded status + replace option once document exists
+- **Send to Dispo is disabled until signed APS is uploaded** (UI mirrors backend gate)
+- Backend gate: `handoff_to_dispo_v1` blocks if no `signed_purchase_agreement` document exists for the deal (grandfather: existing dispo deals exempt)
+
 
 **Actions**
 - In `Analyzing`, primary CTA is **Send offer → Offer Sent** via **`refresh_deal_soft_offer_v1`** then **`send_offer_v1`** (**10.13C-D**; not **`update_deal_v1`** / not a separate **`advance_deal_stage_v1('send_offer')`**). **Email Offer** uses native **`mailto:`** with seller-ready copy (optional **`get_offer_payload_v1`** when bound in **`docs/ui-workflows/WORKFLOWS.md`**).
@@ -561,18 +608,49 @@ Dispo owns **outbound monetization**: deals in Dispo stage **and** the tenant bu
 * revokes links via `revoke_share_token_v1`
 * shows activity log per deal
 * shows cross-view transition toast on stage changes
-* **Buyer Ops (Build Route 10.14C):**
 
-  * buyer roster via `list_buyers_v1` (**not** on Lead Intake)
-  * search / filter buyer list; detail view
-  * activate / deactivate (**governed** mutations only — see **`10.14C`**)
-  * lean manual distribution: recipient selection, copy list, `mailto:` drafts (matching / blast workflows stay future scope)
+**Deal milestone checkboxes (10.14B2)**
+* Assignment agreement signed -- calls `set_dispo_deal_milestone_v1('assignment_agreement_signed', true/false)`
+* Earnest money / deposit received -- calls `set_dispo_deal_milestone_v1('earnest_money_received', true/false)`
+* Send to TC button disabled until both milestones are set (UI mirrors backend gate)
+* Send to TC opens modal with optional assignee (from `list_workspace_members_v1`) then calls `handoff_to_tc_v1`
+* Return to Acq calls `return_to_acq_v1`
+
+**Dispo packet editor (gap 7 / build order step 7)**
+* Lives in deal detail modal/slide-out on `/dispo`
+* Operator edits buyer-facing marketing fields:
+  * asking price (`dispo_asking_price`)
+  * closing date (`dispo_closing_date`)
+  * intersection (`dispo_intersection`) -- e.g. "King & Spadina"
+  * description (`dispo_description`)
+  * comparables (`dispo_comparables`) -- plain text
+  * media URL (`dispo_media_url`)
+  * market value estimate (`dispo_market_value_estimate`)
+  * below-market override (`dispo_below_market_override`)
+* Below-market display: `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`
+* All writes via governed `update_dispo_packet_v1` RPC (build order step 5)
+
+**Dispo photo approval (gap 9 / build order step 6)**
+* Dispo deal detail shows deal media list
+* Operator toggles `is_dispo_approved` per photo via governed mutation
+* Only approved photos appear on buyer share packet
+* All writes via governed RPC -- no direct `deal_media` table calls
+
+**Buyer Ops (Build Route 10.14D)**
+* buyer roster via `list_buyers_v1` (not on Lead Intake)
+* search by name, email, phone
+* filter by status (active/inactive), budget range (min/max numeric input)
+* buyer detail view (read-only) with activate/deactivate toggle
+* activate / deactivate via `update_buyer_active_status_v1` only (10.14B1)
+* lean manual distribution: send to all, send to filtered, copy recipient list, launch `mailto:` draft
+* matching / blast workflows stay future scope
 
 **Boundary**
 
-* buyer roster ≠ buyer CRM expansion (keep lean; **`10.14C`**)
+* buyer roster ≠ buyer CRM expansion (keep lean; **`10.14D`**)
 * no buyer-deal matching engine on this lane
 * no CRM-style Rolodex expansion
+* share link template customization deferred until deal viewer (10.14C) is built
 
 **Primary KPIs (Top 3 only)**
 
@@ -645,7 +723,8 @@ It is the inbox and control center for public intake forms and submissions.
 * supports internal lead-intake entry for address-based leads (**real deal creation — governed backend; see §4.3 flow 1**)
 * **promotes** public submissions tied to draft deals via **`promote_draft_deal_v1`** and **dismisses / rejects** via **`mark_submission_reviewed_v1`** (**see §4.3 flow 2**); promoted assumptions and overlay **`p_fields`** money fields are parsed server-side per **10.12C7** (**`_parse_money_input_v1`**) — WeWeb stripping of **`$`/commas** remains optional UX polish, not the security boundary
 * **Review + Promote** deep link (**`/lead-intake/new?draft_id=...`**, Build Route **10.12D1**): loads the draft row for form pre-fill via **`get_draft_deal_v1(p_draft_id)`** (**10.12C6**) before submit — RPC-only; no **`draft_deals`** table reads from WeWeb
-* copies seller / buyer / birddog **form links** and **standalone embed snippets** (**10.12D1** — distribution only; not the buyer roster; see §8.2 **10.14C**)
+* copies seller / buyer / birddog **form links** and **standalone embed snippets** (**10.12D1** — distribution only; not the buyer roster; see §8.2 **10.14D**)
+* **Lead Intake Review -- electrical/plumbing enrichment (gap 2 / build order step 2):** Review page for authenticated operator includes `electrical` and `plumbing` text fields on the property detail section. These are operator-enrichment fields filled after walkthrough -- not captured on the public seller form. Writes via `update_deal_properties_v1` (extended in build order step 1 to accept `electrical` and `plumbing` keys).
 * embed snippets **do not** load the full WeWeb runtime and impose **no WeWeb Seat / embed-plan** on partner sites; **default** is **`iframe src=`** to **GitHub Pages** **`embed/`** static HTML (**host page requires no JavaScript**; **`submit_form_v1`** only)
 * empty inbox copy matches **10.12D1** (“No unreviewed seller or birddog submissions.”) with form-link / embed controls still available on the page
 
@@ -1057,3 +1136,15 @@ Micro-friction features locked (12 + 7 technical)
 Boundary lines locked (21 items)
 Contract alignment documented
 Governance stack consistent
+
+OPEN GAP TRACKING (build order -- as of 2026-05-17):
+1. Electrical/plumbing backend: deal_properties + update_deal_properties_v1 + get_acq_deal_v1 extension
+2. Lead Intake Review + ACQ UI for electrical/plumbing
+3. Signed APS backend: deal_documents table + upload RPC + handoff_to_dispo_v1 gate
+4. ACQ signed APS upload UI
+5. Dispo packet fields backend: dispo_* columns + update_dispo_packet_v1 + lookup_share_token_v1 extension
+6. Dispo-approved photos backend: deal_media.is_dispo_approved + governed mutation
+7. Dispo packet editor UI
+8. Buyer interest ping RPC: log_buyer_interest_v1 (anon, ss12 exception)
+9. 10.14C share packet viewer
+10. 10.14D buyer ops UI
