@@ -707,6 +707,10 @@
     "10.14B1": {
       "title": "Dispo Backend — Buyer Active Status Mutation",
       "proof_pattern": "^docs/proofs/10\\.14B1_buyer_active_status_mutation_"
+    },
+    "10.14B2": {
+      "title": "Dispo Backend — Deal Milestone Timestamp Mutation",
+      "proof_pattern": "^docs/proofs/10\\.14B2_dispo_deal_milestone_mutation_"
     }
   }
 }
