@@ -9951,3 +9951,30 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-17 — Build Route v2.4 — 10.14B2
+
+Objective
+Dispo Backend - Deal Milestone Timestamp Mutation
+
+Changes
+- Migration 20260517000002_10_14B2_dispo_deal_milestone_mutation.sql applied
+- New RPC: set_dispo_deal_milestone_v1(p_deal_id uuid, p_milestone text, p_is_complete boolean)
+- Sets or clears assignment_agreement_signed_at / earnest_money_received_at on dispo deals
+- Writes deal_activity_log on every successful mutation
+- No new tables. Dispo stage only. Tenant-scoped.
+- Tests: 10_14B2_dispo_deal_milestone_mutation.test.sql (19 tests, all pass)
+- CONTRACTS.md §17 updated
+- rpc_contract_registry.json, privilege_truth.json registered
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- migration-grant-lint PASS
+- rpc-contract-registry PASS
+- rpc-mapping-contract PASS
+
+Proof
+docs/proofs/10.14B2_dispo_deal_milestone_mutation_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
