@@ -9087,26 +9087,158 @@ Governed backend mutation for activating/deactivating persisted buyers used by t
 
 ---
 
-### **10.14C — Dispo — Buyer Ops UI**
+### **10.14B2 — Dispo Backend — Deal Milestone Timestamp Mutation**
 
 **Deliverable:**
-Authenticated **Dispo** surface for the tenant buyer roster and lean outbound distribution tools. Buyers **enter** via intake (public buyer form + submission records on Lead Intake); buyer **usage** (list, filter, reach out) belongs here.
+Governed backend mutation for setting Dispo deal milestone timestamps required before `Send to TC`.
+
+**Purpose:**
+Dispo UI needs checkboxes/toggles for:
+
+* Assignment agreement signed
+* Earnest money / deposit received
+
+These fields are required by `handoff_to_tc_v1` before a deal can move from `Dispo` to `TC`.
+
+**RPC:**
+
+* `set_dispo_deal_milestone_v1(p_deal_id uuid, p_milestone text, p_is_complete boolean)`
+
+**Allowed milestones:**
+
+* `assignment_agreement_signed`
+* `earnest_money_received`
 
 **DoD:**
 
-* Buyer Ops UI lives on **`/dispo`** (integrated with the Dispo department surface, not Lead Intake)
-* Buyer Ops reads persisted buyers through `list_buyers_v1` only
+* RPC exists:
+
+  * `set_dispo_deal_milestone_v1`
+
+* RPC is governed:
+
+  * `SECURITY DEFINER`
+  * `require_min_role_v1('member')`
+  * authenticated only
+  * tenant-scoped
+  * workspace write-lock enforced
+
+* RPC updates only current-tenant `deals` rows in `Dispo` stage
+* RPC maps milestones to fields:
+
+  * `assignment_agreement_signed` → `assignment_agreement_signed_at`
+  * `earnest_money_received` → `earnest_money_received_at`
+
+* When `p_is_complete = true`, timestamp is set to server time
+* When `p_is_complete = false`, timestamp is cleared to `NULL`
+* Invalid milestone returns `VALIDATION_ERROR`
+* Null `p_deal_id`, `p_milestone`, or `p_is_complete` returns `VALIDATION_ERROR`
+* Missing/cross-tenant deal returns `NOT_FOUND`
+* Non-Dispo stage returns `CONFLICT`
+* Successful mutation writes `deal_activity_log`
+* No direct table calls from UI
+
+**Activity log copy:**
+
+* Assignment agreement set:
+
+  * `Assignment agreement marked signed`
+
+* Assignment agreement cleared:
+
+  * `Assignment agreement marked unsigned`
+
+* Earnest money set:
+
+  * `Earnest money marked received`
+
+* Earnest money cleared:
+
+  * `Earnest money marked not received`
+
+**Tests:**
+
+* setting `assignment_agreement_signed` writes `assignment_agreement_signed_at`
+* clearing `assignment_agreement_signed` sets `assignment_agreement_signed_at = NULL`
+* setting `earnest_money_received` writes `earnest_money_received_at`
+* clearing `earnest_money_received` sets `earnest_money_received_at = NULL`
+* invalid milestone returns `VALIDATION_ERROR`
+* null inputs return `VALIDATION_ERROR`
+* cross-tenant deal returns `NOT_FOUND`
+* non-Dispo deal returns `CONFLICT`
+* non-member returns `NOT_AUTHORIZED`
+* successful mutation writes correct activity log row
+* after both milestones are set, `handoff_to_tc_v1` can proceed
+
+**Proof:** `docs/proofs/10.14B2_dispo_deal_milestone_mutation_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B` merged
+
+---
+
+### **10.14C — Dispo Share Packet — Deal Viewer + Share-Link Verification**
+
+Deliverable:
+Token-gated buyer-facing deal packet with tenant branding, buyer CTA, and security-smoke verification.
+
+DoD:
+
+Token validated via lookup_share_token_v1 before any data renders
+Share packet displays:
+ARV
+repairs
+assignment ask
+terms
+photos / notes
+Tenant branding auto-displays workspace name at top
+“I’m Interested” CTA appears at bottom as mailto: link pre-filled with deal address + wholesaler email + subject line
+Notification bell pinged on buyer click as best-effort backend activity
+Mobile-friendly rendering
+Expired / revoked / invalid token shows friendly “This deal is no longer available” page
+Response shape is identical regardless of failure reason
+Share link works unauthenticated
+Only allowlisted fields appear
+Negative probe: non-shared deal cannot be accessed
+No authentication required
+No direct table calls
+
+Tests:
+
+valid token renders packet
+invalid / expired / revoked token render identical friendly failure page
+only allowlisted fields appear
+negative probe cannot access non-shared deal
+
+Proof: docs/proofs/10.14C_deal_viewer_share_packet_<UTC>.md
+Gate: merge-blocking (security) once enabled
+Prerequisite: 10.14B, 10.8.7A merged
+
+---
+
+### **10.14D — Dispo — Buyer Ops UI**
+
+**Deliverable:**
+Authenticated **Dispo** surface for the tenant buyer roster and lean outbound distribution tools. Buyers **enter** through intake; buyer **usage** (list, filter, activate/deactivate, reach out) belongs here.
+
+**DoD:**
+
+* Buyer Ops UI lives on **`/dispo`** as part of the Dispo department surface
+
+* Buyer Ops reads persisted buyers through **`list_buyers_v1`** only
+
 * Buyer list search supports:
 
   * name
   * email
   * phone
+
 * Quick filters support:
 
   * area
   * deal type
   * budget range
   * active / inactive
+
 * Buyer detail shows:
 
   * name
@@ -9116,28 +9248,173 @@ Authenticated **Dispo** surface for the tenant buyer roster and lean outbound di
   * budget range
   * tags / notes
   * active status
-* Activate / deactivate (or equivalent **is_active** control) runs through **governed backend mutations only** — introduce contract + RPC in this lane if none exists yet (no direct table calls)
+
+* Activate / deactivate control is wired through governed backend only:
+
+  * **`update_buyer_active_status_v1(p_buyer_id uuid, p_is_active boolean)`**
+
+* Buyer active-status mutation is tenant-scoped and uses no direct table calls
+
 * Manual send workflow supports:
 
   * send to all buyers
   * send to filtered subset
   * copy recipient list
   * launch `mailto:` draft for the selected recipient set
+
+* Buyer Ops does **not** create or mutate buyer records outside governed RPCs
+
 * Explicitly out of scope:
 
   * buyer-deal matching engine
   * buyer scoring
   * buyer CRM / Rolodex expansion
-  * automated blast / campaign workflows beyond manual `mailto:` (future distribution layer)
+  * automated blast / campaign workflows beyond manual `mailto:`
+
+* No direct table calls
 
 **Tests:**
 
-* Buyer Ops on `/dispo` renders buyer list, filters, detail, and manual send workflow correctly
-* gated buyer actions observe governed contracts only
+* Buyer Ops on `/dispo` renders buyer list through `list_buyers_v1`
+* search and filters work correctly on governed buyer data
+* buyer detail renders correctly
+* activate / deactivate calls `update_buyer_active_status_v1` only
+* active-status changes refresh correctly in UI
+* manual send workflow works correctly
+* no direct table access exists in UI
 
-**Proof:** `docs/proofs/10.14C_dispo_buyer_ops_ui_<UTC>.md`
+**Proof:** `docs/proofs/10.14D_dispo_buyer_ops_ui_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.12A`, `10.14A` merged
+**Prerequisite:** `10.12A`, `10.14B1` merged
+
+---
+
+### **10.15A — TC Backend — Dashboard Data Contract + KPI Read Path**
+
+**Deliverable:**
+Authoritative backend data contract for the TC operating surface.
+
+**DoD:**
+
+* TC KPI strip returns top 3 only:
+
+  * Closings This Week
+  * Closed Assignment Fee Received
+  * At-Risk Closings
+
+* TC page operates on deals in `tc` stage only
+
+* Entry into TC occurs only through governed handoff backend
+
+* Assigned TC user receives notification on handoff
+
+* Progress % is computed from checklist completion
+
+* Days to close is computed from `closing_date`
+
+* Key dates render:
+
+  * APS signed date
+  * conditional deadline
+  * closing date
+
+* Activity log per deal is available
+
+* No direct table calls
+
+**Tests:**
+
+* KPI aggregation is correct
+* only `tc` stage deals are returned
+* progress and days-to-close are computed correctly
+* activity log is available without direct table access
+
+**Proof:** `docs/proofs/10.15A_tc_data_contract_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B`, `10.8.5`, `10.8.7` merged
+
+---
+
+### **10.15B — TC Backend — Checklist, Upload, Fee, and Return Paths**
+
+**Deliverable:**
+Governed write paths for TC checklist completion, contract upload, fee tracking, and return-to-Dispo.
+
+**DoD:**
+
+* Closing checklist supports:
+
+  * APS signed
+  * deposit received
+  * sold firm
+  * docs to lawyer
+  * closing confirmed
+  * assignment fee received
+
+* Contract upload supports single PDF slot
+
+* Actual assignment fee input exists
+
+* Delta vs desired profit is computed
+
+* Secondary handoff action exists:
+
+  * Return to Dispo
+
+* Assigned recipient user gets notification on return
+
+* No direct table calls
+
+**Tests:**
+
+* checklist mutations persist correctly
+* contract upload persists through governed path
+* assignment fee and delta are computed correctly
+* return-to-Dispo works through governed backend and notifies recipient
+
+**Proof:** `docs/proofs/10.15B_tc_write_paths_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.15A` merged
+
+---
+
+### **10.15C — TC — UI Wiring**
+
+**Deliverable:**
+TC operating surface fully wired to governed backend only.
+
+**DoD:**
+
+* TC page exists at `/tc/:deal_id`
+
+* TC page renders governed KPI / checklist / dates / upload / fee data
+
+* Checklist UI wired
+
+* Contract upload wired
+
+* Actual assignment fee input wired
+
+* Delta vs desired profit displayed
+
+* Return to Dispo wired
+
+* Non-TC work no longer appears in Acq / Dispo after handoff
+
+* Activity log per deal renders
+
+* No direct table calls
+
+**Tests:**
+
+* TC page renders live data only
+* checklist, upload, fee input, and return-to-Dispo actions work
+* activity log renders governed data only
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.15C_tc_ui_wiring_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.15A`, `10.15B` merged
 
 ---
 
@@ -9247,6 +9524,80 @@ Backend RPC providing the executive Today view: top KPIs, pipeline counts, and d
 
 ---
 
+### **10.16B — Today View — UI Wiring + Optimistic UI**
+
+**Deliverable:**
+Today view UI fully wired to `get_today_view_v1()` with one-tap actions and rollback-safe optimistic UI.
+
+**DoD:**
+
+* Today view calls `get_today_view_v1()` only
+
+* No hardcoded values remain
+
+* Summary strip renders governed top 3 only:
+
+  * Projected Fees
+  * Overdue Follow-Ups
+  * Closings This Week
+
+* Pipeline strip renders:
+
+  * New
+  * Analyzing
+  * Offer Sent
+  * UC
+  * Dispo
+  * TC
+
+* Task list renders:
+
+  * health dot
+  * deal address
+  * current stage
+  * reason it is here
+  * age or due time
+  * one action button
+
+* One-tap actions wired:
+
+  * Follow Up
+  * Send Offer
+  * Open TC
+  * Analyze
+
+* Optimistic UI behavior:
+
+  * task disappears immediately on click
+  * backend call runs after UI update
+  * rollback on failure
+
+* Empty states handled:
+
+  * no tasks
+  * no active deals
+
+* No frontend-derived business logic
+
+* No direct table queries
+
+**Tests:**
+
+* Today view renders live data only
+* summary strip renders governed top 3 only
+* pipeline strip renders governed counts only
+* task list renders correct task fields
+* one-tap actions work correctly
+* optimistic removal rolls back on failure
+* empty states render correctly
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.16B_today_view_ui_wiring_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.16A` merged
+
+---
+
 ### **10.16C — Notifications — Drawer Data Contract + RPC**
 
 **Deliverable:**
@@ -9299,6 +9650,158 @@ Backend notification feed for the authenticated-shell bell drawer.
 
 ---
 
+### **10.16D — Notifications — Drawer UI Wiring**
+
+**Deliverable:**
+Authenticated shell notification bell opens a drawer wired to governed notification data.
+
+**DoD:**
+
+* Bell opens notifications drawer
+
+* Drawer reads from governed notification RPC only
+
+* User sees only notifications addressed to that user
+
+* Notification groups render cleanly for:
+
+  * reminders
+  * new submissions
+  * buyer interest
+  * closing alerts
+  * deal assigned to you
+
+* Rows show:
+
+  * severity
+  * title
+  * context line
+  * timestamp
+  * click-through action
+
+* Clicking notification routes correctly to:
+
+  * Acquisition
+  * Dispo
+  * TC
+  * Lead Intake
+  * Today
+
+* Empty state handled cleanly
+
+* Drawer is not a standalone page
+
+* No direct table calls
+
+* No duplicated business logic in UI
+
+**Tests:**
+
+* drawer opens and renders governed notifications only
+* click-through routes correctly
+* empty state renders correctly
+* no direct table access exists in UI
+
+**Proof:** `docs/proofs/10.16D_notifications_drawer_ui_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.16C` merged
+
+---
+
+### **10.17A — Shared UX — Micro-Friction Bundle**
+
+**Deliverable:**
+Address autocomplete, numeric input modes, currency formatting, spam protection, and copy icons.
+
+**DoD:**
+
+* Google Places API integrated for address fields on:
+
+  * MAO calculator
+  * intake forms
+  * deal detail
+
+* Auto-fills:
+
+  * street
+  * city
+  * state/province
+  * zip/postal
+  * country
+
+* `inputmode="numeric"` on all financial inputs
+
+* Currency auto-formatting with commas as typed
+
+* Invisible spam protection on public intake forms
+
+* Copy address icon next to every property address in:
+
+  * Acquisition
+  * TC
+  * Lead Intake
+
+**Tests:**
+
+* address autocomplete works on required forms/pages
+* numeric input modes and currency formatting work
+* spam protection is included on public forms
+* copy address icon works where required
+
+**Proof:** `docs/proofs/10.17A_micro_friction_bundle_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.9`, `10.12` merged
+
+---
+
+### **10.17B — Shared UX — Workspace Settings**
+
+**Deliverable:**
+Workspace settings page with role-gated tabs.
+
+**DoD:**
+
+* General tab (admin+) includes:
+
+  * workspace name
+  * slug (editable with warning)
+  * country
+  * currency
+  * measurement unit
+  * farm areas list
+
+* Members tab (admin+) includes:
+
+  * view members
+  * invite
+  * remove
+  * change roles
+
+* Billing tab (owner only) includes:
+
+  * current plan
+  * payment method
+  * cancel subscription
+
+* Timezone is tenant-level setting
+
+* No direct table calls
+
+* All access via authenticated RPCs with `require_min_role_v1`
+
+**Tests:**
+
+* tabs render with correct role gating
+* settings actions route through governed backend only
+* no direct table access exists in UI
+* billing tab remains owner-only
+
+**Proof:** `docs/proofs/10.17B_workspace_settings_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.8`, `10.8.6` merged
+
+---
+
 ### **10.17C — Shared UX — Profile Settings Final Wiring**
 
 **Deliverable:**
@@ -9327,6 +9830,38 @@ Final WeWeb wiring verification for Profile Settings already implemented through
 **Proof:** `docs/proofs/10.17C_profile_settings_final_wiring_<UTC>.md`
 **Gate:** `lane-only`
 **Prerequisite:** `10.8.11D`, `10.8.11J` merged
+
+---
+
+### **10.17D — Shared UX — Error Pages + Friendly Expired Token**
+
+**Deliverable:**
+Universal friendly error handling across public and token-gated flows.
+
+**DoD:**
+
+* Invalid slug renders **“Workspace not found”**
+
+* Expired / revoked share token renders **“This deal is no longer available”**
+
+* Invalid route renders clean 404 page
+
+* All error pages:
+
+  * no stack traces
+  * no developer jargon
+  * no raw backend error codes
+
+**Tests:**
+
+* invalid slug renders friendly state
+* expired / revoked share token renders identical friendly state
+* invalid route renders clean 404
+* no raw backend errors leak into UI
+
+**Proof:** `docs/proofs/10.17D_error_pages_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.8` merged
 
 ---
 
@@ -9411,6 +9946,31 @@ Frontend cannot discover or access hidden endpoints.
 **Proof:** `docs/proofs/10.18B_frontend_surface_enumeration_guard_<UTC>.log`
 **Gate:** `lane-only surface-enumeration`
 **Prerequisite:** target frontend pages merged and scope-ready for verification
+
+---
+
+### **10.18C — Frontend Guard — Seat Enforcement UX + API Consistency**
+
+**Deliverable:**
+Seat / entitlement enforcement is consistent between UI and API.
+
+**DoD:**
+
+* Over-seat condition blocks actions at API, not just UI
+
+* UI displays deterministic blocked state
+
+* No partial-access inconsistencies remain
+
+**Tests:**
+
+* over-seat API actions are blocked
+* UI reflects blocked state deterministically
+* no partial-access mismatches remain
+
+**Proof:** `docs/proofs/10.18C_seat_enforcement_consistency_<UTC>.md`
+**Gate:** `merge-blocking once billing is enabled`
+**Prerequisite:** `10.8.9` merged
 
 ---
 
