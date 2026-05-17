@@ -711,6 +711,10 @@
     "10.14B2": {
       "title": "Dispo Backend — Deal Milestone Timestamp Mutation",
       "proof_pattern": "^docs/proofs/10\\.14B2_dispo_deal_milestone_mutation_"
+    },
+    "10.14B3": {
+      "title": "Property Field Expansion - Electrical + Plumbing Backend",
+      "proof_pattern": "^docs/proofs/10\\.14B3_property_electrical_plumbing_"
     }
   }
 }
