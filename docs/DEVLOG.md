@@ -9978,3 +9978,32 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-17 — Build Route v2.4 — 10.14B3
+
+Objective
+Property Field Expansion - Electrical + Plumbing Backend
+
+Changes
+- Migration 20260517000003_10_14B3_property_electrical_plumbing.sql applied
+- Added public.deal_properties.electrical text NULL
+- Added public.deal_properties.plumbing text NULL
+- update_deal_properties_v1 extended: electrical and plumbing added to allowed keys (19 total)
+- update_deal_properties_v1: envelope-safe require_min_role_v1('member') guard added
+- get_acq_deal_v1 extended: properties.electrical and properties.plumbing added to output
+- get_acq_deal_v1: envelope-safe require_min_role_v1('member') guard added
+- Both RPCs: REVOKE from PUBLIC, anon; GRANT to authenticated
+- No new tables. No new RPCs. No signature changes.
+- Fields are operator-captured only -- public seller form unchanged
+- Tests: 10_14B3_property_electrical_plumbing.test.sql (12 tests, all pass)
+- CONTRACTS.md updated: allowed keys, get_acq_deal_v1 properties output
+- calc_version_registry.json bumped to version 28 (incidental token match)
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.14B3_property_electrical_plumbing_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
