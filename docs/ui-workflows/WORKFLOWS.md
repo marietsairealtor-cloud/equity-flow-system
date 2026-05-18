@@ -462,10 +462,10 @@ Item: 10.11B
 Trigger: Save button in Edit Property popup
 Reads: property input field values, activeDealId, deficiencyTags variable
 Calls: update_deal_property_v1(p_deal_id, p_fields=address/next_action/next_action_due)
-       update_deal_properties_v1(p_deal_id, p_fields=all property fields + deficiency_tags)
+       update_deal_properties_v1(p_deal_id, p_fields=all property fields + deficiency_tags + electrical + plumbing)
 Writes: none -- triggers fetch-selected-deal on success
 Branches: success → fetch-selected-deal + close popup
-Item: 10.11B
+Item: 10.11B / 10.14B4
 
 ---
 
@@ -644,20 +644,20 @@ Item: 10.12D1
 ## promote-draft-deal
 Trigger: Save button click on /lead-intake/new when draft_id param present
 Reads: globalContext.pageParameters['draft_id'], all form input values
-Calls: promote_draft_deal_v1(p_draft_id, p_fields)
+Calls: promote_draft_deal_v1(p_draft_id, p_fields=all intake fields + electrical + plumbing)
 Writes: none
 Branches: ok=true → fetch-intake-submissions → fetch-lead-intake-kpis → navigate /lead-intake | ok=false → show error
-Item: 10.12D1
+Item: 10.12D1 / 10.14B4
 
 ---
 
 ## create-deal-from-intake
 Trigger: Save button click on /lead-intake/new when no draft_id param
 Reads: all form input values
-Calls: create_deal_from_intake_v1(p_fields)
+Calls: create_deal_from_intake_v1(p_fields=all intake fields + electrical + plumbing)
 Writes: none
 Branches: ok=true → fetch-intake-submissions → fetch-lead-intake-kpis → navigate /lead-intake | ok=false → show error
-Item: 10.12D1
+Item: 10.12D1 / 10.14B4
 
 ---
 
