@@ -217,6 +217,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/10\.14B1_buyer_active_status_mutation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.14B1 proof log" }
   if($pp -match "^docs/proofs/10\.14B2_dispo_deal_milestone_mutation_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.14B2 proof log" }
   if($pp -match "^docs/proofs/10\.14B3_property_electrical_plumbing_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.14B3 proof log" }
+  if($pp -match "^docs/proofs/10\.14B4_lead_intake_acq_electrical_plumbing_ui_\d{8}T\d{6}Z\.md$"){ return "ALLOW:10.14B4 proof log" }
   if($pp -eq "docs/truth/deal_health_thresholds.json"){ return "ALLOW:10.8.4 deal health thresholds truth file" }
   if($pp -eq "docs/truth/rpc_schemas/list_deals_v1.json"){ return "ALLOW:10.8.4 list_deals_v1 schema update" }
   if($pp -eq "docs/truth/surface_truth.json"){ return "ALLOW:9.1 surface truth capture" }
