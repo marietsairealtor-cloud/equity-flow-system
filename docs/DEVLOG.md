@@ -10007,3 +10007,28 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-18 — Build Route v2.4 — 10.14B4
+
+Objective
+Lead Intake + ACQ UI - Electrical/Plumbing Wiring
+
+Changes
+- ACQ Edit Property popup: Input-electrical and Input-plumbing fields added
+- ACQ Edit Property popup: both fields seeded from selectedDeal.data.properties.electrical/plumbing
+- ACQ Edit Property popup: save-property workflow p_fields extended with electrical and plumbing
+- Lead Intake Review (/lead-intake/new): electrical and plumbing input fields added
+- promote-draft-deal workflow p_fields extended with electrical and plumbing
+- create-deal-from-intake workflow p_fields extended with electrical and plumbing
+- ACQ deal list card: orphaned next_action display line removed (field moved to reminder system)
+- No backend changes. No migrations. No new RPCs.
+- docs/ui-workflows/WORKFLOWS.md updated: save-property, promote-draft-deal, create-deal-from-intake
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.14B4_lead_intake_acq_electrical_plumbing_ui_<UTC>.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
