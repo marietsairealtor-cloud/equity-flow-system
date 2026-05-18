@@ -9264,6 +9264,100 @@ Authenticated UI wiring for operator-captured electrical and plumbing fields in 
 
 ---
 
+### **10.14B4A — ACQ UI — Health Dot Legend**
+
+**Deliverable:**
+Visible ACQ UI legend/tooltip explaining deal health dot colors so operators understand what red/yellow/green means.
+
+**DoD:**
+
+* ACQ deal list shows a visible health dot legend or tooltip
+* Legend explains each color:
+
+  * green
+  * yellow
+  * red
+
+* Legend is based on existing backend logic:
+
+  * `get_deal_health_color()`
+
+* Threshold wording follows:
+
+  * `docs/truth/deal_health_thresholds.json`
+
+* No backend change
+* No database migration
+* No RPC change
+* No direct table calls
+* Existing deal card health dots remain unchanged
+* UI is clear enough that users do not need external documentation to understand the dot
+
+**Tests:**
+
+* ACQ page renders health dot legend or tooltip
+* legend includes green/yellow/red meaning
+* existing health dots still render on deal cards
+* no backend/RPC/table changes are introduced
+
+**Proof:** `docs/proofs/10.14B4A_acq_health_dot_legend_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.14B4` merged
+
+---
+
+### **10.14B4B — ACQ Backend Cleanup — Remove Orphaned next_action Fields**
+
+**Deliverable:**
+Clean up orphaned `next_action` and `next_action_due` usage after reminders became the governed follow-up system.
+
+**Context:**
+`next_action` and `next_action_due` exist on `public.deals`, but the governed workflow now uses the reminder system instead. These fields are no longer the authoritative follow-up path.
+
+**DoD:**
+
+* WeWeb binding audit is completed before schema removal
+* Audit confirms whether any active UI binding still reads:
+
+  * `selectedDeal.next_action`
+  * `selectedDeal.next_action_due`
+
+* `update_deal_property_v1` no longer accepts:
+
+  * `next_action`
+  * `next_action_due`
+
+* `get_acq_deal_v1` no longer returns:
+
+  * `next_action`
+  * `next_action_due`
+
+* `CONTRACTS.md` updated to remove/deprecate these fields
+* Reminder system remains authoritative follow-up path
+* `list_reminders_v1` remains unchanged
+* No direct table calls
+* Existing reminder behavior is not changed
+* Column removal/deprecation strategy is documented:
+
+  * either drop columns after binding audit confirms safe
+  * or mark deprecated if immediate drop is unsafe
+
+**Tests:**
+
+* `update_deal_property_v1` rejects `next_action`
+* `update_deal_property_v1` rejects `next_action_due`
+* `get_acq_deal_v1` does not return `next_action`
+* `get_acq_deal_v1` does not return `next_action_due`
+* existing reminder tests still pass
+* WeWeb binding audit evidence is included in proof
+* no direct table access is required by frontend
+
+**Proof:** `docs/proofs/10.14B4B_next_action_cleanup_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B4` merged
+
+---
+
 ### **10.14B5 — Acquisition Backend — Signed APS Documents + Handoff Gate**
 
 **Deliverable:**
