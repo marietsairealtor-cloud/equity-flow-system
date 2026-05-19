@@ -10032,3 +10032,30 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-05-19 — Build Route v2.4 — 10.14B4A
+
+Objective
+ACQ UI - Health Dot Legend
+
+Changes
+- ACQ deal list: health dot tooltip added to each deal card
+- Tooltip shows on hover using WeWeb native hover state on Health dot trigger container
+- Tooltip text driven by item.data.health_color:
+  - green  -> Active
+  - yellow -> Check in soon
+  - red    -> Overdue
+- Implementation: WeWeb hover state on wrapper container, Health Label tooltip child display:block on hover
+- No WeWeb workflows involved. Browser-native hover per repeater item.
+- No backend change. No migration. No RPC change. No direct table calls.
+- Existing health dots unchanged.
+- docs/ui-workflows/WORKFLOWS.md updated: acq-health-dot-tooltip entry added
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.14B4A_acq_health_dot_legend_<UTC>.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
