@@ -719,6 +719,10 @@
     "10.14B4": {
       "title": "Lead Intake + ACQ UI - Electrical/Plumbing Wiring",
       "proof_pattern": "^docs/proofs/10\\.14B4_lead_intake_acq_electrical_plumbing_ui_"
+    },
+    "10.14B4A": {
+      "title": "ACQ UI - Health Dot Legend",
+      "proof_pattern": "^docs/proofs/10\\.14B4A_acq_health_dot_legend_"
     }
   }
 }
