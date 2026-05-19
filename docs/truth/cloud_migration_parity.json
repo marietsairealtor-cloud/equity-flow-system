@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260517000003",
-  "migration_tip_file": "20260517000003_10_14B3_property_electrical_plumbing.sql",
-  "migration_count": 138,
-  "pinned_at": "2026-05-17"
+  "migration_tip": "20260519000001",
+  "migration_tip_file": "20260519000001_10_14B4B_next_action_cleanup.sql",
+  "migration_count": 139,
+  "pinned_at": "2026-05-19"
 }
