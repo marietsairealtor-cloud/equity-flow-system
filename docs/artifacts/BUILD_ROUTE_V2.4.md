@@ -9317,10 +9317,15 @@ Clean up orphaned `next_action` and `next_action_due` usage after reminders beca
 **DoD:**
 
 * WeWeb binding audit is completed before schema removal
-* Audit confirms whether any active UI binding still reads:
+* Audit confirms whether any active detail-view binding still reads:
 
   * `selectedDeal.next_action`
   * `selectedDeal.next_action_due`
+
+* Audit confirms whether any ACQ list binding still reads:
+
+  * `item.next_action`
+  * `item.next_action_due`
 
 * `update_deal_property_v1` no longer accepts:
 
@@ -9332,7 +9337,18 @@ Clean up orphaned `next_action` and `next_action_due` usage after reminders beca
   * `next_action`
   * `next_action_due`
 
-* `CONTRACTS.md` updated to remove/deprecate these fields
+* `list_acq_deals_v1` no longer returns these fields in `data.items`:
+
+  * `next_action`
+  * `next_action_due`
+
+* Migration replaces/updates all affected RPCs:
+
+  * `update_deal_property_v1`
+  * `get_acq_deal_v1`
+  * `list_acq_deals_v1`
+
+* `CONTRACTS.md` updated for all affected RPCs
 * Reminder system remains authoritative follow-up path
 * `list_reminders_v1` remains unchanged
 * No direct table calls
@@ -9348,8 +9364,10 @@ Clean up orphaned `next_action` and `next_action_due` usage after reminders beca
 * `update_deal_property_v1` rejects `next_action_due`
 * `get_acq_deal_v1` does not return `next_action`
 * `get_acq_deal_v1` does not return `next_action_due`
+* `list_acq_deals_v1` response items do not include `next_action`
+* `list_acq_deals_v1` response items do not include `next_action_due`
 * existing reminder tests still pass
-* WeWeb binding audit evidence is included in proof
+* WeWeb binding audit evidence includes detail bindings and ACQ list bindings
 * no direct table access is required by frontend
 
 **Proof:** `docs/proofs/10.14B4B_next_action_cleanup_<UTC>.log`
