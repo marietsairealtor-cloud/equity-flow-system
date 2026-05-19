@@ -723,6 +723,10 @@
     "10.14B4A": {
       "title": "ACQ UI - Health Dot Legend",
       "proof_pattern": "^docs/proofs/10\\.14B4A_acq_health_dot_legend_"
+    },
+    "10.14B4B": {
+      "title": "ACQ Backend Cleanup - Remove Orphaned next_action Fields",
+      "proof_pattern": "^docs/proofs/10\\.14B4B_next_action_cleanup_"
     }
   }
 }
