@@ -1,5 +1,5 @@
 {
-  "version": 29,
+  "version": 30,
   "authority": "Build Route v2.4 Item 7.6",
   "description": "Authoritative registry of all calc_version values. Every calc_version must be registered here with its logic description and introducing PR. Changes to calculation logic files without a registry update fail the calc-version-registry gate.",
   "calc_versions": [
@@ -171,6 +171,13 @@
       "description": "Migration 20260519000001_10_14B4B_next_action_cleanup.sql removes next_action and next_action_due from update_deal_property_v1, get_acq_deal_v1, and list_acq_deals_v1. References calc_version token incidentally via get_acq_deal_v1 body (deal_inputs calc_version field in pricing subquery). No change to calc_version integer protocol or pricing calculation logic.",
       "introduced_pr": "10.14B4B",
       "released_at": "2026-05-19"
+    },
+    {
+      "calc_version": null,
+      "label": "10.14B4C call log cleanup",
+      "description": "Migration 20260520000001_10_14B4C_call_log_cleanup.sql removes last_contacted_at from get_acq_deal_v1 and rejects call_log note type in create_deal_note_v1. References calc_version token incidentally via get_acq_deal_v1 body (deal_inputs calc_version field in pricing subquery). No change to calc_version integer protocol or pricing calculation logic.",
+      "introduced_pr": "10.14B4C",
+      "released_at": "2026-05-20"
     }
   ],
   "watch_surface": {

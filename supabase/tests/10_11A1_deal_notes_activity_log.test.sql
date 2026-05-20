@@ -67,24 +67,20 @@ SELECT is(
   'create_deal_note_v1: note type succeeds'
 );
 
--- 2. create_deal_note_v1 success (call_log)
+-- 2. create_deal_note_v1 rejects call_log (10.14B4C)
 SELECT is(
-  (public.create_deal_note_v1('d1110001-0000-0000-0000-000000000001', 'call_log', 'Called seller')::json)->>'ok',
-  'true',
-  'create_deal_note_v1: call_log type succeeds'
+  (public.create_deal_note_v1('d1110001-0000-0000-0000-000000000001', 'call_log', 'Called seller')::json)->>'code',
+  'VALIDATION_ERROR',
+  'create_deal_note_v1: call_log type rejected after 10.14B4C'
 );
 
--- Pin created_at for the two RPC-inserted notes to distinct known timestamps
+-- Pin created_at for the RPC-inserted note to a known timestamp
 -- Must reset role to superuser to UPDATE the table directly
 SET LOCAL ROLE postgres;
 
 UPDATE public.deal_notes
 SET created_at = '2026-01-01 13:00:00+00', updated_at = '2026-01-01 13:00:00+00'
 WHERE content = 'Fresh note' AND tenant_id = 'b1110001-0000-0000-0000-000000000001';
-
-UPDATE public.deal_notes
-SET created_at = '2026-01-01 14:00:00+00', updated_at = '2026-01-01 14:00:00+00'
-WHERE content = 'Called seller' AND tenant_id = 'b1110001-0000-0000-0000-000000000001';
 
 SET LOCAL ROLE authenticated;
 
@@ -125,22 +121,23 @@ SELECT ok(
 );
 
 -- 8. list_deal_notes_v1 newest first
--- Called seller pinned to 2026-01-01 14:00 -- must be index 0
+-- Fresh note pinned to 2026-01-01 13:00 -- must be index 0
+-- Note: call_log write rejected so 3 notes total: Fresh note (13:00), Newer note (11:00), Older note (10:00)
 SELECT is(
   (
     (public.list_deal_notes_v1('d1110001-0000-0000-0000-000000000001')::json)
     ->'data'->'notes'->0->>'content'
   ),
-  'Called seller',
+  'Fresh note',
   'list_deal_notes_v1: newest note appears first'
 );
 
 -- 9. list_deal_notes_v1 oldest note appears last
--- Older note pinned to 2026-01-01 10:00 -- must be index 3
+-- Older note pinned to 2026-01-01 10:00 -- must be index 2
 SELECT is(
   (
     (public.list_deal_notes_v1('d1110001-0000-0000-0000-000000000001')::json)
-    ->'data'->'notes'->3->>'content'
+    ->'data'->'notes'->2->>'content'
   ),
   'Older note',
   'list_deal_notes_v1: oldest note appears last'
@@ -232,13 +229,13 @@ SELECT is(
   'stream separation: user notes do not appear in activity log'
 );
 
--- 20. notes count is independent from activity count
-SELECT ok(
+-- 20. stream separation: notes count is exactly 3 (2 seeded directly + 1 via RPC)
+-- call_log write is now rejected so notes = Older note + Newer note (seeded) + Fresh note (RPC)
+SELECT is(
   json_array_length(
     (public.list_deal_notes_v1('d1110001-0000-0000-0000-000000000001')::json)->'data'->'notes'
-  ) > json_array_length(
-    (public.list_deal_activity_v1('d1110001-0000-0000-0000-000000000001')::json)->'data'->'activity'
   ),
+  3,
   'stream separation: notes count is independent from activity count'
 );
 

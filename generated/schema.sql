@@ -1331,6 +1331,17 @@ BEGIN
     );
   END IF;
 
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'Not authorized', 'fields', '{}'::json)
+    );
+  END;
+
   IF NOT public.check_workspace_write_allowed_v1() THEN
     RETURN json_build_object(
       'ok',    false,
@@ -1349,12 +1360,13 @@ BEGIN
     );
   END IF;
 
-  IF p_note_type IS NULL OR p_note_type NOT IN ('note', 'call_log') THEN
+  -- call_log rejected: no governed UI writes call logs (10.14B4C)
+  IF p_note_type IS NULL OR p_note_type NOT IN ('note') THEN
     RETURN json_build_object(
       'ok',    false,
       'code',  'VALIDATION_ERROR',
       'data',  '{}'::json,
-      'error', json_build_object('message', 'p_note_type must be note or call_log', 'fields', '{}'::json)
+      'error', json_build_object('message', 'p_note_type must be note', 'fields', '{}'::json)
     );
   END IF;
 
@@ -1976,10 +1988,9 @@ CREATE OR REPLACE FUNCTION "public"."get_acq_deal_v1"("p_deal_id" "uuid") RETURN
     SET "search_path" TO 'public'
     AS $$
 DECLARE
-  v_tenant          uuid;
-  v_deal            record;
-  v_props           record;
-  v_last_contacted  timestamptz;
+  v_tenant  uuid;
+  v_deal    record;
+  v_props   record;
 BEGIN
   v_tenant := public.current_tenant_id();
 
@@ -2021,16 +2032,6 @@ BEGIN
   FROM public.deal_properties
   WHERE deal_id = p_deal_id AND tenant_id = v_tenant;
 
-  -- Derive last_contacted_at from most recent call_log note
-  -- Retained in B4B -- removal deferred to 10.14B4C
-  SELECT dn.created_at INTO v_last_contacted
-  FROM public.deal_notes dn
-  WHERE dn.deal_id   = p_deal_id
-    AND dn.tenant_id = v_tenant
-    AND dn.note_type = 'call_log'
-  ORDER BY dn.created_at DESC
-  LIMIT 1;
-
   RETURN json_build_object(
     'ok', true, 'code', 'OK',
     'data', json_build_object(
@@ -2049,7 +2050,6 @@ BEGIN
       'created_at',        v_deal.created_at,
       'updated_at',        v_deal.updated_at,
       'health_color',      public.get_deal_health_color(v_deal.stage, v_deal.updated_at),
-      'last_contacted_at', v_last_contacted,
       'properties',        CASE WHEN v_props.id IS NULL THEN null ELSE json_build_object(
         'property_type',   v_props.property_type,
         'beds',            v_props.beds,
