@@ -10090,3 +10090,33 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-20 — Build Route v2.4 — 10.14B4C
+
+Objective
+ACQ Backend Cleanup - Remove Unused Call Log Surface
+
+Changes
+- Migration 20260520000001_10_14B4C_call_log_cleanup.sql applied
+- create_deal_note_v1: rejects note_type = 'call_log' with VALIDATION_ERROR
+- create_deal_note_v1: envelope-safe require_min_role_v1('member') guard added
+- create_deal_note_v1: guard order corrected (tenant -> member -> write-lock -> validation)
+- get_acq_deal_v1: last_contacted_at removed from output
+- Existing historical call_log rows in deal_notes NOT deleted
+- list_deal_notes_v1 unchanged -- historical call_log notes remain readable
+- No schema changes. No new tables. No new RPCs. No signature changes.
+- WeWeb binding audit: no active binding reads last_contacted_at
+- Tests: 10_14B4C_call_log_cleanup.test.sql (13 tests, all pass)
+- 10_11A1_deal_notes_activity_log.test.sql updated to reflect new contract
+- 10_11A3_acq_deal_detail_read_corrections.test.sql updated to reflect new contract
+- CONTRACTS.md updated for create_deal_note_v1 and get_acq_deal_v1
+- calc_version_registry.json bumped to version 30 (incidental token)
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.14B4C_call_log_cleanup_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
