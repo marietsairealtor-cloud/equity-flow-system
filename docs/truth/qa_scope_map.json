@@ -727,6 +727,10 @@
     "10.14B4B": {
       "title": "ACQ Backend Cleanup - Remove Orphaned next_action Fields",
       "proof_pattern": "^docs/proofs/10\\.14B4B_next_action_cleanup_"
+    },
+    "10.14B4C": {
+      "title": "ACQ Backend Cleanup - Remove Unused Call Log Surface",
+      "proof_pattern": "^docs/proofs/10\\.14B4C_call_log_cleanup_"
     }
   }
 }
