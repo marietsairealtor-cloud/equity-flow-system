@@ -2022,6 +2022,7 @@ BEGIN
   WHERE deal_id = p_deal_id AND tenant_id = v_tenant;
 
   -- Derive last_contacted_at from most recent call_log note
+  -- Retained in B4B -- removal deferred to 10.14B4C
   SELECT dn.created_at INTO v_last_contacted
   FROM public.deal_notes dn
   WHERE dn.deal_id   = p_deal_id
@@ -2043,8 +2044,6 @@ BEGIN
       'seller_pain',       v_deal.seller_pain,
       'seller_timeline',   v_deal.seller_timeline,
       'seller_notes',      v_deal.seller_notes,
-      'next_action',       v_deal.next_action,
-      'next_action_due',   v_deal.next_action_due,
       'dead_reason',       v_deal.dead_reason,
       'farm_area_id',      v_deal.farm_area_id,
       'created_at',        v_deal.created_at,
@@ -3241,12 +3240,22 @@ DECLARE
   v_tenant uuid;
 BEGIN
   v_tenant := public.current_tenant_id();
+
   IF v_tenant IS NULL THEN
     RETURN json_build_object(
       'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
       'error', json_build_object('message', 'No tenant context', 'fields', json_build_object())
     );
   END IF;
+
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
+  END;
 
   IF p_filter NOT IN ('all', 'new', 'analyzing', 'offer_sent', 'under_contract', 'follow_ups') THEN
     RETURN json_build_object(
@@ -3266,8 +3275,6 @@ BEGIN
               'stage',           d.stage,
               'address',         d.address,
               'assignee_user_id', d.assignee_user_id,
-              'next_action',     d.next_action,
-              'next_action_due', d.next_action_due,
               'farm_area_id',    d.farm_area_id,
               'updated_at',      d.updated_at,
               'created_at',      d.created_at,
@@ -6904,9 +6911,8 @@ DECLARE
   v_user          uuid;
   v_rows_updated  int;
   v_deal_exists   boolean;
-  v_allowed_keys  text[] := ARRAY['address','next_action','next_action_due'];
+  v_allowed_keys  text[] := ARRAY['address'];
   v_unknown_keys  text[];
-  v_next_action_due timestamptz;
 BEGIN
   v_tenant := public.current_tenant_id();
   v_user   := auth.uid();
@@ -6919,6 +6925,17 @@ BEGIN
       'error', json_build_object('message', 'No tenant or user context', 'fields', '{}'::json)
     );
   END IF;
+
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok',    false,
+      'code',  'NOT_AUTHORIZED',
+      'data',  '{}'::json,
+      'error', json_build_object('message', 'Not authorized', 'fields', '{}'::json)
+    );
+  END;
 
   IF NOT public.check_workspace_write_allowed_v1() THEN
     RETURN json_build_object(
@@ -6947,7 +6964,7 @@ BEGIN
     );
   END IF;
 
-  -- Reject unknown keys
+  -- Reject unknown keys (next_action and next_action_due removed -- use reminder system)
   SELECT ARRAY(
     SELECT jsonb_object_keys(p_fields)
     EXCEPT
@@ -6963,41 +6980,21 @@ BEGIN
     );
   END IF;
 
-  -- Validate next_action_due format if provided and not null
-  IF p_fields ? 'next_action_due' AND p_fields->>'next_action_due' IS NOT NULL THEN
-    BEGIN
-      v_next_action_due := (p_fields->>'next_action_due')::timestamptz;
-    EXCEPTION WHEN others THEN
-      RETURN json_build_object(
-        'ok',    false,
-        'code',  'VALIDATION_ERROR',
-        'data',  '{}'::json,
-        'error', json_build_object('message', 'next_action_due is not a valid timestamp', 'fields', '{}'::json)
-      );
-    END;
-  END IF;
-
-  -- UPDATE only if at least one provided field IS DISTINCT FROM current value
   UPDATE public.deals
   SET
-    address         = CASE WHEN p_fields ? 'address'         THEN (p_fields->>'address')          ELSE address         END,
-    next_action     = CASE WHEN p_fields ? 'next_action'     THEN (p_fields->>'next_action')      ELSE next_action     END,
-    next_action_due = CASE WHEN p_fields ? 'next_action_due' THEN v_next_action_due               ELSE next_action_due END,
-    updated_at      = now(),
-    row_version     = row_version + 1
+    address     = CASE WHEN p_fields ? 'address' THEN (p_fields->>'address') ELSE address END,
+    updated_at  = now(),
+    row_version = row_version + 1
   WHERE id        = p_deal_id
     AND tenant_id = v_tenant
     AND deleted_at IS NULL
     AND (
-      (p_fields ? 'address'         AND (p_fields->>'address')     IS DISTINCT FROM address)         OR
-      (p_fields ? 'next_action'     AND (p_fields->>'next_action') IS DISTINCT FROM next_action)     OR
-      (p_fields ? 'next_action_due' AND v_next_action_due          IS DISTINCT FROM next_action_due)
+      (p_fields ? 'address' AND (p_fields->>'address') IS DISTINCT FROM address)
     );
 
   GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
 
   IF v_rows_updated = 0 THEN
-    -- Disambiguate: not found vs no actual changes
     SELECT EXISTS (
       SELECT 1 FROM public.deals
       WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL

@@ -184,7 +184,8 @@ SELECT is(
   'update_deal_property_v1: address persisted correctly'
 );
 
--- 16. omitted field left unchanged
+-- 16. omitted field left unchanged (next_action column readable but not writable via this RPC)
+SET LOCAL ROLE postgres;
 SELECT is(
   (SELECT next_action FROM public.deals WHERE id = 'd1120000-0000-0000-0000-000000000001'),
   'Follow up',
@@ -192,32 +193,32 @@ SELECT is(
 );
 SET LOCAL ROLE authenticated;
 
--- 17. explicit null clears next_action_due (row_version: 4 -> 5)
+-- 17. next_action_due rejected after 10.14B4B cleanup (row_version stays 4)
 SELECT is(
   (public.update_deal_property_v1('d1120000-0000-0000-0000-000000000001',
-    '{"next_action_due":null}'::jsonb)::json)->>'ok',
-  'true',
-  'update_deal_property_v1: explicit null on next_action_due accepted'
+    '{"next_action_due":null}'::jsonb)::json)->>'code',
+  'VALIDATION_ERROR',
+  'update_deal_property_v1: next_action_due rejected after 10.14B4B'
 );
 
--- 18. explicit null clears next_action_due in DB
+-- 18. row_version not incremented after next_action_due rejection (stays 4)
 SET LOCAL ROLE postgres;
 SELECT is(
-  (SELECT next_action_due FROM public.deals WHERE id = 'd1120000-0000-0000-0000-000000000001'),
-  null,
-  'update_deal_property_v1: explicit null clears next_action_due'
+  (SELECT row_version FROM public.deals WHERE id = 'd1120000-0000-0000-0000-000000000001'),
+  4::bigint,
+  'update_deal_property_v1: row_version not incremented after next_action_due rejection'
 );
 SET LOCAL ROLE authenticated;
 
--- 19. invalid timestamp returns VALIDATION_ERROR
+-- 19. next_action also rejected after 10.14B4B cleanup
 SELECT is(
   (public.update_deal_property_v1('d1120000-0000-0000-0000-000000000001',
-    '{"next_action_due":"banana"}'::jsonb)::json)->>'code',
+    '{"next_action":"call seller"}'::jsonb)::json)->>'code',
   'VALIDATION_ERROR',
-  'update_deal_property_v1: invalid timestamp returns VALIDATION_ERROR'
+  'update_deal_property_v1: next_action rejected after 10.14B4B'
 );
 
--- 20. same-value submission returns VALIDATION_ERROR (row_version stays 5)
+-- 20. same-value submission returns VALIDATION_ERROR (row_version stays 4)
 SELECT is(
   (public.update_deal_property_v1('d1120000-0000-0000-0000-000000000001',
     '{"address":"456 Oak Ave"}'::jsonb)::json)->>'code',
@@ -271,18 +272,18 @@ SELECT is(
   'update_deal_property_v1: expired workspace returns WORKSPACE_NOT_WRITABLE'
 );
 
--- 26. row_version NOT incremented on property write lock rejection (stays 5)
+-- 26. row_version NOT incremented on property write lock rejection (stays 4)
 SET LOCAL ROLE postgres;
 SELECT is(
   (SELECT row_version FROM public.deals WHERE id = 'd1120000-0000-0000-0000-000000000001'),
-  5::bigint,
+  4::bigint,
   'update_deal_property_v1: row_version not incremented on write lock rejection'
 );
 
--- 27. row_version NOT incremented on seller write lock rejection (stays 5)
+-- 27. row_version NOT incremented on seller write lock rejection (stays 4)
 SELECT is(
   (SELECT row_version FROM public.deals WHERE id = 'd1120000-0000-0000-0000-000000000001'),
-  5::bigint,
+  4::bigint,
   'update_deal_seller_v1: row_version not incremented on write lock rejection'
 );
 

@@ -9376,6 +9376,56 @@ Clean up orphaned `next_action` and `next_action_due` usage after reminders beca
 
 ---
 
+### **10.14B4C — ACQ Backend Cleanup — Remove Unused Call Log Surface**
+
+**Deliverable:**
+Clean up unused `call_log` note type behavior and remove dead `last_contacted_at` output from ACQ deal detail.
+
+**Context:**
+`create_deal_note_v1` accepts `note_type = 'call_log'`, but no call log UI exists. `get_acq_deal_v1` derives `last_contacted_at` from `deal_notes.note_type = 'call_log'`, but no governed UI writes call logs and the ACQ UI no longer reads `last_contacted_at`.
+
+**DoD:**
+
+* `create_deal_note_v1` rejects new `note_type = 'call_log'`
+* Rejection returns standard envelope:
+
+  * `ok = false`
+  * `code = VALIDATION_ERROR`
+
+* Existing historical `call_log` rows are not deleted
+* `get_acq_deal_v1` no longer returns:
+
+  * `last_contacted_at`
+
+* `CONTRACTS.md` updated
+* WeWeb binding audit confirms no active UI binding reads:
+
+  * `selectedDeal.last_contacted_at`
+
+* `list_deal_notes_v1` behavior is documented:
+
+  * existing notes remain readable
+  * no new call-log writes are allowed
+
+* No direct table calls
+* Existing normal note creation remains unchanged
+
+**Tests:**
+
+* `create_deal_note_v1` accepts `note_type = 'note'`
+* `create_deal_note_v1` rejects `note_type = 'call_log'`
+* rejected `call_log` returns `VALIDATION_ERROR`
+* rejected `call_log` does not insert a row
+* `get_acq_deal_v1` does not return `last_contacted_at`
+* existing normal note listing still works
+* WeWeb binding audit evidence included in proof
+
+**Proof:** `docs/proofs/10.14B4C_call_log_cleanup_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B4A`, `10.14B4B` merged
+
+---
+
 ### **10.14B5 — Acquisition Backend — Signed APS Documents + Handoff Gate**
 
 **Deliverable:**
