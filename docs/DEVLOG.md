@@ -10059,3 +10059,34 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-05-20 — Build Route v2.4 — 10.14B4B
+
+Objective
+ACQ Backend Cleanup - Remove Orphaned next_action Fields
+
+Changes
+- Migration 20260519000001_10_14B4B_next_action_cleanup.sql applied
+- update_deal_property_v1: next_action and next_action_due removed from allowed keys
+- update_deal_property_v1: envelope-safe require_min_role_v1('member') guard added
+- get_acq_deal_v1: next_action and next_action_due removed from output
+- list_acq_deals_v1: next_action and next_action_due removed from data.items
+- list_acq_deals_v1: envelope-safe require_min_role_v1('member') guard added
+- All three RPCs: REVOKE from PUBLIC, anon; GRANT to authenticated
+- next_action and next_action_due columns remain on public.deals (deprecated, not dropped)
+- last_contacted_at retained in get_acq_deal_v1 -- deferred to 10.14B4C
+- Reminder system (list_reminders_v1) unchanged
+- WeWeb binding audit: no active bindings read next_action or next_action_due
+- Tests: 10_14B4B_next_action_cleanup.test.sql (16 tests, all pass)
+- 10_11A2_deal_edit_write_paths.test.sql updated to reflect new contract
+- CONTRACTS.md updated for all three RPCs
+- calc_version_registry.json bumped to version 29 (incidental token)
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+
+Proof
+docs/proofs/10.14B4B_next_action_cleanup_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
