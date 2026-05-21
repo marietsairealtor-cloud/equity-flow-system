@@ -10120,3 +10120,46 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-21 — Build Route v2.4 — 10.14B5
+
+Objective
+Acquisition Backend - Signed APS Documents + Handoff Gate
+
+Changes
+- Migration 20260521000001_10_14B5_signed_aps_documents_handoff_gate.sql applied
+- New table: public.deal_documents (tenant-scoped document metadata)
+  - Columns: id, tenant_id, deal_id, document_type, storage_path, file_name, mime_type, file_size, uploaded_by, uploaded_at, created_at
+  - RLS enabled; direct access revoked from PUBLIC, anon, authenticated
+  - Indexes: tenant/deal, tenant/deal/document_type
+- New RPC: attach_deal_document_v1 -- records governed document metadata after client upload
+  - Allowed document type: signed_purchase_agreement
+  - storage_path validated against tenant/deal/document_type convention
+  - Rejects: path traversal, double slash, leading slash, empty filename, wrong tenant prefix
+  - SECURITY DEFINER, authenticated only, min role: member, workspace write-lock enforced
+- New RPC: list_deal_documents_v1 -- returns document metadata only, no file contents
+  - SECURITY DEFINER, STABLE, authenticated only, min role: member
+- handoff_to_dispo_v1 extended:
+  - Envelope-safe require_min_role_v1('member') guard added
+  - Signed APS gate: blocks handoff unless signed_purchase_agreement exists in deal_documents
+  - Existing dispo deals grandfathered
+- create_deal_document_upload_v1 explicitly out of scope -- client uploads to Supabase Storage directly
+- No base64 document storage in DB
+- Tests: 10_14B5_signed_aps_documents_handoff_gate.test.sql (18 tests, all pass)
+- 10_11A_acquisition_backend.test.sql updated: APS document seeded before handoff tests
+- 10_11A10_activity_log_expansion.test.sql updated: APS document seeded before handoff test
+- CONTRACTS.md updated: deal_documents, attach_deal_document_v1, list_deal_documents_v1, handoff_to_dispo_v1
+- privilege_truth.json updated: attach_deal_document_v1, list_deal_documents_v1 registered
+- rpc_contract_registry.json updated: both new RPCs registered
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- migration-grant-lint PASS
+- migration-rls-colocation PASS
+- rpc-contract-registry PASS
+
+Proof
+docs/proofs/10.14B5_signed_aps_documents_handoff_gate_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
