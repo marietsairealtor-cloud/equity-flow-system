@@ -180,6 +180,24 @@
         "notes": "Governed mutation for Dispo Buyer Ops activate/deactivate. Tenant-scoped. Does not modify list_buyers_v1."
       },
       {
+        "name": "attach_deal_document_v1",
+        "version": 1,
+        "build_route_owner": "10.14B5",
+        "input_contract": "CONTRACTS.md -- attach_deal_document_v1",
+        "response_schema": null,
+        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR", "WORKSPACE_NOT_WRITABLE"],
+        "notes": "Records governed document metadata after client uploads file to Supabase Storage. Allowed document_type: signed_purchase_agreement. storage_path validated against tenant/deal-scoped convention."
+      },
+      {
+        "name": "list_deal_documents_v1",
+        "version": 1,
+        "build_route_owner": "10.14B5",
+        "input_contract": "CONTRACTS.md -- list_deal_documents_v1",
+        "response_schema": null,
+        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"],
+        "notes": "Returns document metadata for a deal. Metadata only -- no file contents returned."
+      },
+      {
         "name": "set_dispo_deal_milestone_v1",
         "version": 1,
         "build_route_owner": "10.14B2",

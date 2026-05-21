@@ -731,6 +731,10 @@
     "10.14B4C": {
       "title": "ACQ Backend Cleanup - Remove Unused Call Log Surface",
       "proof_pattern": "^docs/proofs/10\\.14B4C_call_log_cleanup_"
+    },
+    "10.14B5": {
+      "title": "Acquisition Backend - Signed APS Documents + Handoff Gate",
+      "proof_pattern": "^docs/proofs/10\\.14B5_signed_aps_documents_handoff_gate_"
     }
   }
 }

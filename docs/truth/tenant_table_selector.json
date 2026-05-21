@@ -3,6 +3,7 @@
     "activity_log",
     "calc_versions",
     "deal_activity_log",
+    "deal_documents",
     "deal_inputs",
     "deal_media",
     "deal_notes",

@@ -107,6 +107,24 @@ SELECT is(
 );
 SET LOCAL ROLE authenticated;
 
+-- Seed signed APS document for deal d1200000-0000-0000-0000-000000000001 (required for handoff gate)
+SET LOCAL ROLE postgres;
+INSERT INTO public.deal_documents (
+  id, tenant_id, deal_id, document_type, storage_path,
+  file_name, mime_type, file_size, uploaded_by, uploaded_at, created_at
+)
+VALUES (
+  'a9120000-0000-0000-0000-000000000001',
+  'b1200000-0000-0000-0000-000000000001',
+  'd1200000-0000-0000-0000-000000000001',
+  'signed_purchase_agreement',
+  'b1200000-0000-0000-0000-000000000001/d1200000-0000-0000-0000-000000000001/documents/signed_purchase_agreement/aps.pdf',
+  'aps.pdf', 'application/pdf', 102400,
+  'a1200000-0000-0000-0000-000000000001',
+  now(), now()
+);
+SET LOCAL ROLE authenticated;
+
 -- 7. handoff_to_dispo_v1 writes activity row
 SELECT is(
   (public.handoff_to_dispo_v1(

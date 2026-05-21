@@ -9425,11 +9425,10 @@ Clean up unused `call_log` note type behavior and remove dead `last_contacted_at
 **Prerequisite:** `10.14B4A`, `10.14B4B` merged
 
 ---
-
 ### **10.14B5 — Acquisition Backend — Signed APS Documents + Handoff Gate**
 
 **Deliverable:**
-Governed backend document support for signed APS upload/attachment, with `handoff_to_dispo_v1` blocked for new handoff attempts unless a signed APS exists.
+Governed backend document metadata support for signed APS attachment, with `handoff_to_dispo_v1` blocked for new handoff attempts unless a signed APS exists.
 
 **Definitions:**
 
@@ -9438,12 +9437,21 @@ Governed backend document support for signed APS upload/attachment, with `handof
 
   * `signed_purchase_agreement`
 
+**Storage model:**
+
+* Client uploads file directly to Supabase Storage using WeWeb/Supabase Storage flow
+* Backend does **not** generate upload URLs
+* Backend records governed document metadata after upload
+* No base64 document storage in DB
+
 **DoD:**
 
 * `deal_documents` table exists
 * `deal_documents` is tenant-scoped
 * `deal_documents` supports:
 
+  * `id`
+  * `tenant_id`
   * `deal_id`
   * `document_type`
   * `storage_path`
@@ -9454,38 +9462,60 @@ Governed backend document support for signed APS upload/attachment, with `handof
   * `uploaded_at`
   * `created_at`
 
-* Direct table access revoked from `anon` and `authenticated`
+* Direct table access revoked from:
+
+  * `anon`
+  * `authenticated`
+
 * RLS enabled where applicable
 * Storage/path strategy is documented
-* Governed upload/attach/list path exists
-* Required RPCs exist, or equivalent governed contract exists:
+* `storage_path` is validated against tenant/deal-scoped path convention
+* Governed metadata attach/list path exists
+* Required RPCs exist:
 
-  * `create_deal_document_upload_v1`
   * `attach_deal_document_v1`
   * `list_deal_documents_v1`
 
+* `create_deal_document_upload_v1` is explicitly **out of scope**
+* `attach_deal_document_v1` is governed:
+
+  * authenticated only
+  * `require_min_role_v1('member')`
+  * tenant-scoped
+  * workspace write-lock enforced
+  * cross-tenant deal returns `NOT_FOUND`
+
+* Allowed document type for this item:
+
+  * `signed_purchase_agreement`
+
+* Invalid document type returns `VALIDATION_ERROR`
 * Signed APS can be attached to a deal
 * Signed APS metadata can be read by authenticated tenant members
-* `handoff_to_dispo_v1` blocks new handoff attempts unless signed APS exists
+* `handoff_to_dispo_v1` blocks new handoff attempts unless signed APS metadata exists for the deal
 * Existing deals already in `dispo` are grandfathered
 * No retroactive block/backfill required for existing `dispo` deals
 * No direct table calls from UI
 
 **Tests:**
 
-* signed APS document can be attached to a current-tenant deal
-* signed APS metadata can be listed through governed RPC
+* signed APS document metadata can be attached to a current-tenant deal
+* signed APS metadata can be listed through `list_deal_documents_v1`
 * cross-tenant attach returns `NOT_FOUND`
+* missing deal returns `NOT_FOUND`
 * non-member returns `NOT_AUTHORIZED`
 * invalid document type returns `VALIDATION_ERROR`
+* invalid/unsafe `storage_path` returns `VALIDATION_ERROR`
+* `attach_deal_document_v1` enforces workspace write-lock
+* `list_deal_documents_v1` returns metadata only, not file contents
 * `handoff_to_dispo_v1` rejects when signed APS is missing
 * `handoff_to_dispo_v1` succeeds when signed APS exists
 * existing `dispo` deals are not retroactively blocked
+* direct table access is not required by frontend
 
 **Proof:** `docs/proofs/10.14B5_signed_aps_documents_handoff_gate_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** `10.14B2` merged
-
+**Prerequisite:** `10.14B2`, `10.14B4C` merged
 ---
 
 ### **10.14B6 — Acquisition UI — Signed APS Upload**
