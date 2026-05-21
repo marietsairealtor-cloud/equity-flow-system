@@ -34,6 +34,22 @@ INSERT INTO public.deals (id, tenant_id, row_version, calc_version, stage, updat
 VALUES
   ('d1110000-0000-0000-0000-000000000099', 'b1110000-0000-0000-0000-000000000002', 1, 1, 'new', now(), now());
 
+-- Seed signed APS document for deal 004 (required for handoff_to_dispo_v1 gate -- 10.14B5)
+INSERT INTO public.deal_documents (
+  id, tenant_id, deal_id, document_type, storage_path,
+  file_name, mime_type, file_size, uploaded_by, uploaded_at, created_at
+)
+VALUES (
+  'a9110000-0000-0000-0000-000000000001',
+  'b1110000-0000-0000-0000-000000000001',
+  'd1110000-0000-0000-0000-000000000004',
+  'signed_purchase_agreement',
+  'b1110000-0000-0000-0000-000000000001/d1110000-0000-0000-0000-000000000004/documents/signed_purchase_agreement/aps.pdf',
+  'aps.pdf', 'application/pdf', 102400,
+  'a1110000-0000-0000-0000-000000000001',
+  now(), now()
+);
+
 SELECT set_config('request.jwt.claims',
   '{"sub":"a1110000-0000-0000-0000-000000000001","role":"authenticated","tenant_id":"b1110000-0000-0000-0000-000000000001"}',
   true);
