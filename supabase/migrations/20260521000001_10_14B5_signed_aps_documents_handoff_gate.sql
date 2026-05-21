@@ -30,7 +30,9 @@ CREATE INDEX deal_documents_document_type_idx ON public.deal_documents (tenant_i
 ALTER TABLE public.deal_documents ENABLE ROW LEVEL SECURITY;
 
 -- Revoke direct table access
-REVOKE ALL ON public.deal_documents FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public.deal_documents FROM PUBLIC;
+REVOKE ALL ON public.deal_documents FROM anon;
+REVOKE ALL ON public.deal_documents FROM authenticated;
 
 COMMENT ON TABLE public.deal_documents IS
   '10.14B5: Governed document metadata. Files stored in Supabase Storage. No file content in DB.';
