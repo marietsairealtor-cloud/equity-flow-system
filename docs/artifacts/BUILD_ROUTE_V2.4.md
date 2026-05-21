@@ -9517,38 +9517,146 @@ Governed backend document metadata support for signed APS attachment, with `hand
 **Gate:** `merge-blocking`
 **Prerequisite:** `10.14B2`, `10.14B4C` merged
 ---
-
-### **10.14B6 — Acquisition UI — Signed APS Upload**
+### **10.14B5A — Deal Documents Backend — Generic Document Vault + Remove Path**
 
 **Deliverable:**
-ACQ deal detail UI support for uploading, replacing, and showing status for signed APS before sending a deal to Dispo.
+Revise the deal document backend from APS-gated upload into a generic deal document vault usable by ACQ, Dispo, and TC.
+
+**Design decision:**
+
+* Documents are a shared deal document vault
+* No hard APS gate on `handoff_to_dispo_v1`
+* Send to Dispo uses a reminder only
+* File upload remains client-side via WeWeb/Supabase Storage
+* Backend stores governed metadata only
+* No base64 file storage in DB
 
 **DoD:**
 
-* ACQ deal detail shows signed APS upload/status area
-* Operator can upload signed APS
-* Operator can replace signed APS
-* UI shows uploaded file status/metadata
-* `Send to Dispo` is disabled until signed APS exists
-* Disabled state explains missing signed APS requirement
-* Upload/list actions use governed backend only
-* No direct table calls
-* No unauthenticated access
+* `deal_documents` supports generic deal documents
+* `attach_deal_document_v1` allows generic uploads using:
+
+  * `document_type = general`
+
+* Existing `signed_purchase_agreement` rows remain backward compatible
+* UI is not required to expose document type selection
+* Companies can organize by filename / future label convention
+* `handoff_to_dispo_v1` no longer blocks on signed APS
+* `handoff_to_dispo_v1` preserves normal ACQ → Dispo handoff behavior
+* Add soft-delete fields to `deal_documents`:
+
+  * `deleted_at`
+  * `deleted_by`
+
+* Add governed remove RPC:
+
+  * `delete_deal_document_v1(p_document_id uuid)`
+
+* `delete_deal_document_v1` soft-deletes metadata only
+* Storage file deletion is out of scope
+* `list_deal_documents_v1` excludes soft-deleted documents
+* Direct table access remains revoked from `anon` and `authenticated`
+* All document RPCs remain:
+
+  * authenticated only
+  * `require_min_role_v1('member')`
+  * tenant-scoped
+  * no direct table calls
 
 **Tests:**
 
-* ACQ deal detail shows signed APS missing state
-* upload flow attaches signed APS through governed backend
-* uploaded status appears after refresh
-* replace flow works
-* `Send to Dispo` disabled without signed APS
-* `Send to Dispo` enabled when signed APS exists
-* no direct table access exists in UI
+* generic document can be attached
+* existing `signed_purchase_agreement` document type remains accepted or safely readable
+* invalid/unsafe storage path still returns `VALIDATION_ERROR`
+* cross-tenant attach returns `NOT_FOUND`
+* document list returns generic document metadata
+* `delete_deal_document_v1` soft-deletes a document
+* soft-deleted document no longer appears in `list_deal_documents_v1`
+* cross-tenant delete returns `NOT_FOUND`
+* non-member attach/list/delete returns `NOT_AUTHORIZED`
+* direct table access remains blocked
+* `handoff_to_dispo_v1` no longer requires signed APS
+* existing handoff behavior remains unchanged
 
-**Proof:** `docs/proofs/10.14B6_acq_signed_aps_upload_ui_<UTC>.md`
-**Gate:** `lane-only`
+**Proof:** `docs/proofs/10.14B5A_generic_deal_documents_remove_<UTC>.log`
+**Gate:** `merge-blocking`
 **Prerequisite:** `10.14B5` merged
 
+---
+
+### **10.14B6 — ACQ UI — Deal Documents Upload + Send to Dispo Reminder**
+
+**Deliverable:**
+Generic Documents section on ACQ deal detail for uploading, listing, and removing deal documents, plus Send to Dispo reminder copy instead of a hard APS gate.
+
+**Design decision:**
+
+* ACQ deal detail has one shared Documents area
+* This is not APS-only
+* Documents are useful later for Dispo and TC
+* Operator does not choose document type
+* UI upload defaults backend metadata to:
+
+  * `document_type = general`
+
+* Send to Dispo is not blocked by document status
+* Send to Dispo modal reminds operator to confirm required docs are uploaded
+
+**DoD:**
+
+* ACQ deal detail shows Documents section
+* Documents section includes:
+
+  * upload button
+  * uploaded document list
+  * filename
+  * uploaded date
+  * remove button
+
+* WeWeb uploads file directly to Supabase Storage
+* After successful Storage upload, UI calls:
+
+  * `attach_deal_document_v1`
+
+* UI lists documents through:
+
+  * `list_deal_documents_v1`
+
+* UI removes documents through:
+
+  * `delete_deal_document_v1`
+
+* Removed documents disappear from the list after refresh
+* No document type dropdown is exposed to operator
+* No replace RPC required
+* Replace behavior is handled by uploading a new file and removing the old one if desired
+* Send to Dispo button remains available based on normal stage rules
+* Send to Dispo modal includes reminder copy:
+
+  * `Confirm APS and proof of deposit are uploaded before sending to Dispo.`
+
+* UI handles backend errors cleanly
+* No direct table calls
+* No unauthenticated access
+* No `create_deal_document_upload_v1` usage
+
+**Tests:**
+
+* ACQ deal detail renders Documents section
+* upload flow uploads file to Supabase Storage
+* successful upload calls `attach_deal_document_v1`
+* uploaded document appears after refresh through `list_deal_documents_v1`
+* remove button calls `delete_deal_document_v1`
+* removed document disappears after refresh
+* no document type selector is shown
+* Send to Dispo modal shows required-docs reminder
+* Send to Dispo is not blocked by missing APS document
+* no direct table access exists in UI
+* no `create_deal_document_upload_v1` usage exists
+
+**Proof:** `docs/proofs/10.14B6_acq_deal_documents_ui_<UTC>.md`
+**Gate:** `lane-only`
+**Prerequisite:** `10.14B5A` merged
 ---
 
 ### **10.14B7 — Dispo Backend — Buyer-Facing Packet Fields**

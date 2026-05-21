@@ -565,12 +565,15 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 - deficiency_tags, condition_notes
 - garage_parking
 
-**Signed APS upload (gap 4 + gap 5)**
-- ACQ deal detail shows upload slot for signed purchase agreement (APS)
-- Upload governed via `upload_deal_document_v1` (deal_documents table — gap 4)
-- Shows uploaded status + replace option once document exists
-- **Send to Dispo is disabled until signed APS is uploaded** (UI mirrors backend gate)
-- Backend gate: `handoff_to_dispo_v1` blocks if no `signed_purchase_agreement` document exists for the deal (grandfather: existing dispo deals exempt)
+**Document vault (gap 4 + gap 5 — revised per QA 2026-05-21)**
+- ACQ deal detail shows a generic Documents section (shared vault — ACQ → Dispo → TC)
+- Upload governed via `attach_deal_document_v1`; `document_type = 'general'`; optional `document_label` (operator-defined free text, e.g. "APS", "Proof of Deposit", "Inspection Report")
+- List governed via `list_deal_documents_v1` — excludes soft-deleted rows
+- Remove governed via `delete_deal_document_v1` — soft delete only (`deleted_at`, `deleted_by`); no hard deletes
+- No Replace RPC — operator removes and re-uploads
+- **No hard APS gate on `handoff_to_dispo_v1`** — gate removed (10.14B5A); backend no longer blocks on signed APS
+- **Send to Dispo modal shows reminder only:** "Confirm APS and proof of deposit are uploaded before sending to Dispo."
+- UI does not disable Send to Dispo based on document state
 
 
 **Actions**
@@ -579,6 +582,7 @@ Once a deal is sent to Dispo, it is removed from Acquisition immediately.
 - In `UC`, primary CTA is **Send to Dispo**
 - **Send to Dispo** opens a small modal:
   - assignee dropdown
+  - reminder text: "Confirm APS and proof of deposit are uploaded before sending to Dispo."
   - Confirm
   - Cancel
 - On confirm:
@@ -1137,11 +1141,12 @@ Boundary lines locked (21 items)
 Contract alignment documented
 Governance stack consistent
 
-OPEN GAP TRACKING (build order -- as of 2026-05-17):
-1. Electrical/plumbing backend: deal_properties + update_deal_properties_v1 + get_acq_deal_v1 extension
-2. Lead Intake Review + ACQ UI for electrical/plumbing
-3. Signed APS backend: deal_documents table + upload RPC + handoff_to_dispo_v1 gate
-4. ACQ signed APS upload UI
+OPEN GAP TRACKING (build order -- as of 2026-05-21):
+1. Electrical/plumbing backend: deal_properties + update_deal_properties_v1 + get_acq_deal_v1 extension — DONE (10.14B3)
+2. Lead Intake Review + ACQ UI for electrical/plumbing — DONE (10.14B4)
+3. Document vault backend: deal_documents table + attach_deal_document_v1 + list_deal_documents_v1 — DONE (10.14B5); revised scope below
+3A. Document vault backend revision (10.14B5A): allow document_type=general + optional document_label; remove APS hard gate from handoff_to_dispo_v1; add delete_deal_document_v1 (soft delete)
+4. ACQ document vault UI (10.14B6): generic Documents section — upload/list/remove; Send to Dispo modal reminder only; no disabled gate
 5. Dispo packet fields backend: dispo_* columns + update_dispo_packet_v1 + lookup_share_token_v1 extension
 6. Dispo-approved photos backend: deal_media.is_dispo_approved + governed mutation
 7. Dispo packet editor UI
