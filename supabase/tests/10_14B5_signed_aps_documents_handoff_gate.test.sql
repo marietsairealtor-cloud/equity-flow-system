@@ -273,7 +273,7 @@ SELECT is(
 
 -- 17. direct table access blocked for authenticated role
 SELECT throws_ok(
-  $$ SELECT COUNT(*) FROM public.deal_documents $$,
+  $tap$ SELECT COUNT(*) FROM public.deal_documents $tap$,
   '42501',
   NULL,
   'deal_documents: direct table access blocked for authenticated role'
