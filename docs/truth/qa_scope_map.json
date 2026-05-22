@@ -735,6 +735,10 @@
     "10.14B5": {
       "title": "Acquisition Backend - Signed APS Documents + Handoff Gate",
       "proof_pattern": "^docs/proofs/10\\.14B5_signed_aps_documents_handoff_gate_"
+    },
+    "10.14B5A": {
+      "title": "Deal Documents Backend -- Generic Document Vault + Remove Path",
+      "proof_pattern": "^docs/proofs/10\\.14B5A_generic_deal_documents_remove_"
     }
   }
 }

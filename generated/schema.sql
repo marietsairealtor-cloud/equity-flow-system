@@ -574,7 +574,7 @@ DECLARE
   v_tenant      uuid;
   v_user        uuid;
   v_doc_id      uuid;
-  v_allowed_types text[] := ARRAY['signed_purchase_agreement'];
+  v_allowed_types text[] := ARRAY['signed_purchase_agreement', 'general'];
   v_expected_prefix text;
 BEGIN
   v_tenant := public.current_tenant_id();
@@ -613,7 +613,7 @@ BEGIN
   IF p_document_type IS NULL OR NOT (p_document_type = ANY(v_allowed_types)) THEN
     RETURN json_build_object(
       'ok', false, 'code', 'VALIDATION_ERROR', 'data', '{}'::json,
-      'error', json_build_object('message', 'Invalid document_type. Allowed: signed_purchase_agreement', 'fields', '{}'::json)
+      'error', json_build_object('message', 'Invalid document_type. Allowed: signed_purchase_agreement, general', 'fields', '{}'::json)
     );
   END IF;
 
@@ -638,9 +638,6 @@ BEGIN
     );
   END IF;
 
-  -- Validate storage_path against full tenant/deal/document_type-scoped convention
-  -- Expected prefix: {tenant_id}/{deal_id}/documents/{document_type}/
-  -- Reject: null, leading slash, double slash, path traversal (..)
   v_expected_prefix := v_tenant::text || '/' || p_deal_id::text || '/documents/' || p_document_type || '/';
   IF p_storage_path IS NULL
     OR NOT starts_with(p_storage_path, v_expected_prefix)
@@ -656,7 +653,6 @@ BEGIN
     );
   END IF;
 
-  -- Verify deal belongs to current tenant
   IF NOT EXISTS (
     SELECT 1 FROM public.deals
     WHERE id = p_deal_id AND tenant_id = v_tenant AND deleted_at IS NULL
@@ -1984,6 +1980,72 @@ $$;
 
 ALTER FUNCTION "public"."current_tenant_id"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."delete_deal_document_v1"("p_document_id" "uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_user   uuid;
+BEGIN
+  v_tenant := public.current_tenant_id();
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object())
+    );
+  END IF;
+
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
+  END;
+
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'WORKSPACE_NOT_WRITABLE', 'data', json_build_object(),
+      'error', json_build_object('message', 'Workspace is not active', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF p_document_id IS NULL THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'p_document_id is required', 'fields', json_build_object())
+    );
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.deal_documents
+    WHERE id = p_document_id AND tenant_id = v_tenant AND deleted_at IS NULL
+  ) THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Document not found', 'fields', json_build_object())
+    );
+  END IF;
+
+  UPDATE public.deal_documents
+  SET deleted_at = now(),
+      deleted_by = v_user
+  WHERE id = p_document_id AND tenant_id = v_tenant;
+
+  RETURN json_build_object(
+    'ok', true, 'code', 'OK',
+    'data', json_build_object('document_id', p_document_id),
+    'error', null
+  );
+END;
+$$;
+
+ALTER FUNCTION "public"."delete_deal_document_v1"("p_document_id" "uuid") OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."delete_deal_media_v1"("p_media_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -3166,18 +3228,7 @@ BEGIN
     );
   END IF;
 
-  -- Signed APS gate: block handoff if no signed_purchase_agreement document exists
-  IF NOT EXISTS (
-    SELECT 1 FROM public.deal_documents
-    WHERE deal_id      = p_deal_id
-      AND tenant_id    = v_tenant
-      AND document_type = 'signed_purchase_agreement'
-  ) THEN
-    RETURN json_build_object(
-      'ok', false, 'code', 'CONFLICT', 'data', json_build_object(),
-      'error', json_build_object('message', 'A signed purchase agreement must be attached before handoff to Dispo', 'fields', json_build_object())
-    );
-  END IF;
+  -- APS hard gate removed (10.14B5A). Send to Dispo modal shows reminder copy only.
 
   UPDATE public.deals SET
     stage            = 'dispo',
@@ -3717,7 +3768,9 @@ BEGIN
             ORDER BY dd.created_at DESC
           )
           FROM public.deal_documents dd
-          WHERE dd.deal_id = p_deal_id AND dd.tenant_id = v_tenant
+          WHERE dd.deal_id = p_deal_id
+            AND dd.tenant_id = v_tenant
+            AND dd.deleted_at IS NULL
         ),
         '[]'::json
       )
@@ -7976,16 +8029,22 @@ CREATE TABLE IF NOT EXISTS "public"."deal_documents" (
     "file_size" bigint NOT NULL,
     "uploaded_by" "uuid" NOT NULL,
     "uploaded_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "deleted_at" timestamp with time zone,
+    "deleted_by" "uuid"
 );
 
 ALTER TABLE "public"."deal_documents" OWNER TO "postgres";
 
 COMMENT ON TABLE "public"."deal_documents" IS '10.14B5: Governed document metadata. Files stored in Supabase Storage. No file content in DB.';
 
-COMMENT ON COLUMN "public"."deal_documents"."document_type" IS '10.14B5: Allowed values: signed_purchase_agreement';
+COMMENT ON COLUMN "public"."deal_documents"."document_type" IS '10.14B5A: Allowed values: signed_purchase_agreement, general';
 
 COMMENT ON COLUMN "public"."deal_documents"."storage_path" IS '10.14B5: Tenant/deal-scoped path convention: {tenant_id}/{deal_id}/documents/{document_type}/{filename}';
+
+COMMENT ON COLUMN "public"."deal_documents"."deleted_at" IS '10.14B5A: Soft-delete timestamp. NULL = active. Set by delete_deal_document_v1.';
+
+COMMENT ON COLUMN "public"."deal_documents"."deleted_by" IS '10.14B5A: auth.uid() of operator who soft-deleted the row.';
 
 CREATE TABLE IF NOT EXISTS "public"."deal_inputs" (
     "id" "uuid" NOT NULL,

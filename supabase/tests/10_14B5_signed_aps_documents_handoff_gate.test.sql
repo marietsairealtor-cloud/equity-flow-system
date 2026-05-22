@@ -195,8 +195,8 @@ SELECT is(
     'd1145000-0000-0000-0000-000000000003',
     'a1145000-0000-0000-0000-000000000002'
   )::json)->>'code',
-  'CONFLICT',
-  'handoff_to_dispo_v1: rejects when signed APS is missing'
+  'OK',
+  'handoff_to_dispo_v1: succeeds without signed APS -- gate removed in 10.14B5A'
 );
 
 -- 12. existing dispo deal not retroactively blocked
