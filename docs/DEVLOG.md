@@ -10163,3 +10163,31 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-21 — Build Route v2.4 — 10.14B5A
+
+Objective
+Deal Documents Backend - Generic Document Vault + Remove Path
+
+Changes
+- Migration 20260521000002_10_14B5A_generic_deal_documents_remove.sql applied
+- deal_documents table extended: deleted_at timestamptz NULL, deleted_by uuid NULL added
+- attach_deal_document_v1 extended: document_type = 'general' now allowed; signed_purchase_agreement retained for backward compatibility
+- list_deal_documents_v1 extended: excludes soft-deleted rows (deleted_at IS NOT NULL)
+- New RPC: delete_deal_document_v1(p_document_id uuid) -- soft-delete only; storage file deletion out of scope
+- handoff_to_dispo_v1: APS hard gate removed per QA ruling 2026-05-21; reminder copy only in Send to Dispo modal
+- 10_14B5_signed_aps_documents_handoff_gate.test.sql: test 11 updated to expect OK (gate removed)
+- Tests: 10_14B5A_generic_deal_documents_remove.test.sql (15 tests, all pass)
+- CONTRACTS.md updated: delete_deal_document_v1 section + 10.14B5A notes
+- rpc_contract_registry.json, privilege_truth.json registered
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- migration-grant-lint PASS
+- rpc-contract-registry PASS
+
+Proof
+docs/proofs/10.14B5A_generic_deal_documents_remove_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
