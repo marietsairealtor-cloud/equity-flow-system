@@ -257,7 +257,7 @@ SELECT set_config('request.jwt.claims',
 SET LOCAL ROLE authenticated;
 
 SELECT throws_ok(
-  $$ SELECT COUNT(*) FROM public.deal_documents $$,
+  $tap$ SELECT COUNT(*) FROM public.deal_documents $tap$,
   '42501',
   NULL,
   'deal_documents: direct table access blocked for authenticated role'
