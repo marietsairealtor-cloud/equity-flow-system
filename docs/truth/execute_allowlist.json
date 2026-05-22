@@ -16,6 +16,7 @@
     "create_share_token_v1",
     "create_tenant_v1",
     "current_tenant_id",
+    "delete_deal_document_v1",
     "delete_deal_media_v1",
     "delete_farm_area_v1",
     "foundation_log_activity_v1",
