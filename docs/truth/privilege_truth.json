@@ -306,6 +306,11 @@
           "authority": "Build Route 10.14B5 -- signed APS document list; EXECUTE to authenticated"
         },
         {
+          "routine": "delete_deal_document_v1",
+          "privilege": "EXECUTE",
+          "authority": "Build Route 10.14B5A -- generic document vault remove path; EXECUTE to authenticated"
+        },
+        {
           "routine": "set_dispo_deal_milestone_v1",
           "privilege": "EXECUTE",
           "authority": "Build Route 10.14B2 -- dispo deal milestone mutation; EXECUTE to authenticated"
@@ -474,6 +479,7 @@
       "update_buyer_active_status_v1",
         "attach_deal_document_v1",
         "list_deal_documents_v1",
+        "delete_deal_document_v1",
       "set_dispo_deal_milestone_v1",
       "update_deal_pricing_v1",
       "update_deal_property_v1",

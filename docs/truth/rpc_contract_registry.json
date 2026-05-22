@@ -198,6 +198,15 @@
         "notes": "Returns document metadata for a deal. Metadata only -- no file contents returned."
       },
       {
+        "name": "delete_deal_document_v1",
+        "version": 1,
+        "build_route_owner": "10.14B5A",
+        "input_contract": "CONTRACTS.md §-- delete_deal_document_v1",
+        "response_schema": null,
+        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR", "WORKSPACE_NOT_WRITABLE"],
+        "notes": "Soft-deletes document metadata only. Storage file deletion is out of scope. deleted_at and deleted_by set on mutation."
+      },
+      {
         "name": "set_dispo_deal_milestone_v1",
         "version": 1,
         "build_route_owner": "10.14B2",
