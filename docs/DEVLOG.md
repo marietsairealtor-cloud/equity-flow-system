@@ -10204,3 +10204,31 @@ Changes
 
 Status
 MERGED
+2026-05-23 — Build Route v2.4 — 10.14B5B
+
+Objective
+Deal Documents Storage Bucket + RLS Policies
+
+Changes
+- Migration 20260522000001_10_14B5B_deal_documents_storage_bucket.sql applied
+- New Supabase Storage bucket: deal-documents (private, 10 MB limit)
+- Allowed MIME types: PDF, Word, Excel, JPEG, PNG, WebP
+- New storage RLS policy: deal_documents_insert_authenticated (FOR INSERT TO authenticated)
+- New storage RLS policy: deal_documents_select_authenticated (FOR SELECT TO authenticated)
+- Path convention enforced in both policies: {tenant_id}/{deal_id}/documents/{document_type}/{filename}
+- Tenant prefix scoped to current_tenant_id()
+- document_type restricted to general and signed_purchase_agreement
+- No anon access. No public access. No deletion policy.
+- attach_deal_document_v1 remains governed metadata record path
+- list_deal_documents_v1 remains governed metadata list path
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- CONTRACTS.md updated
+
+Proof
+docs/proofs/10.14B5B_deal_documents_storage_bucket_<UTC>.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+
+Status
+MERGED
