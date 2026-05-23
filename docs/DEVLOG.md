@@ -10191,3 +10191,16 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-23 — Build Route v2.4 — fix/10.14B5-B5A-dollar-quote-lint
+
+Objective
+Fix SQL lint failure in 10.14B5 and 10.14B5A test files.
+
+Changes
+- 10_14B5_signed_aps_documents_handoff_gate.test.sql: replaced $$ with $tap$ in throws_ok call
+- 10_14B5A_generic_deal_documents_remove.test.sql: replaced $$ with $tap$ in throws_ok call
+- run_lint_sql.mjs DOLLAR_DOLLAR violations resolved
+- All tests pass: Files=95, Tests=1188, Result: PASS
+
+Status
+MERGED
