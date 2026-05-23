@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260521000002",
-  "migration_tip_file": "20260521000002_10_14B5A_generic_deal_documents_remove.sql",
-  "migration_count": 142,
-  "pinned_at": "2026-05-22"
+  "migration_tip": "20260522000001",
+  "migration_tip_file": "20260522000001_10_14B5B_deal_documents_storage_bucket.sql",
+  "migration_count": 143,
+  "pinned_at": "2026-05-23"
 }
