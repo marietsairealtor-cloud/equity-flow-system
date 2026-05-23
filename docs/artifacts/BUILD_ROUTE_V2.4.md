@@ -9584,6 +9584,67 @@ Revise the deal document backend from APS-gated upload into a generic deal docum
 
 ---
 
+### **10.14B5B — Deal Documents Storage Bucket + RLS Policies**
+
+**Deliverable:**
+Supabase Storage bucket and tenant-scoped RLS policies required for direct WeWeb/Supabase Storage uploads used by the Deal Documents vault.
+
+**Context:**
+10.14B5/10.14B5A created governed document metadata RPCs, but the corresponding Supabase Storage bucket was missing. 10.14B6 UI cannot upload files until the bucket and storage policies exist.
+
+**DoD:**
+
+* Storage bucket exists:
+
+  * `deal-documents`
+
+* Bucket is private
+* Bucket file size limit is 10 MB
+* Bucket allows only document/image MIME types, including:
+
+  * `application/pdf`
+  * Word document MIME types
+  * common image MIME types
+
+* Storage object path convention is enforced:
+
+  * `{tenant_id}/{deal_id}/documents/{document_type}/{filename}`
+
+* Authenticated users can upload only into their own tenant prefix
+* Authenticated users can read only from their own tenant prefix
+* Policies are scoped to:
+
+  * `bucket_id = 'deal-documents'`
+  * tenant path prefix matching `current_tenant_id()`
+
+* No public bucket access
+* No anon upload/read access
+* No ad-hoc dashboard/manual SQL changes
+* Delivered as governed migration
+* `attach_deal_document_v1` remains the governed metadata record path
+* `list_deal_documents_v1` remains the governed metadata list path
+* Storage file deletion remains out of scope
+
+**Tests:**
+
+* `deal-documents` bucket exists
+* bucket is private
+* bucket file size limit is 10 MB
+* bucket MIME allowlist is present
+* authenticated same-tenant upload policy exists
+* authenticated same-tenant read policy exists
+* anon upload/read is not allowed
+* cross-tenant object path is not allowed
+* storage path convention matches `attach_deal_document_v1`
+* no direct metadata table access is introduced
+
+**Proof:** `docs/proofs/10.14B5B_deal_documents_storage_bucket_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B5A` merged
+**Unblocks:** `10.14B6`
+
+---
+
 ### **10.14B6 — ACQ UI — Deal Documents Upload + Send to Dispo Reminder**
 
 **Deliverable:**

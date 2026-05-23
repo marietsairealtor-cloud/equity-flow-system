@@ -1,10 +1,7 @@
 HANDOFF CHECKPOINT (robot-owned, deterministic)
-HEAD: 96f036b
+HEAD: 2c9c4e0
 
 === git status --porcelain=v1 ===
- M docs/truth/cloud_migration_parity.json
- M docs/truth/definer_allowlist.json
- M docs/truth/execute_allowlist.json
  M docs/truth/write_path_registry.json
 
 === supabase status (sanitized summary) ===
@@ -13,7 +10,6 @@ HEAD: 96f036b
     "stack_running":  false,
     "stopped_services":  [
                              "supabase_imgproxy_equity-flow-system",
-                             "supabase_edge_runtime_equity-flow-system",
                              "supabase_vector_equity-flow-system",
                              "supabase_pooler_equity-flow-system"
                          ],

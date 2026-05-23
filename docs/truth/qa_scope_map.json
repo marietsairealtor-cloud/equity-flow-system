@@ -739,6 +739,10 @@
     "10.14B5A": {
       "title": "Deal Documents Backend -- Generic Document Vault + Remove Path",
       "proof_pattern": "^docs/proofs/10\\.14B5A_generic_deal_documents_remove_"
+    },
+    "10.14B5B": {
+      "title": "Deal Documents Storage Bucket + RLS Policies",
+      "proof_pattern": "^docs/proofs/10\\.14B5B_deal_documents_storage_bucket_"
     }
   }
 }
