@@ -861,3 +861,26 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | dispoKpiDateTo | text | Dispo KPI window end — ISO timestamptz string or empty for RPC default. Variable ID: TBD | date filter on-change |
 | dispoKpiData | object | get_dispo_kpis_v1() result — deals_moved_to_tc, deposit_collected, avg_assignment_fee, date_from, date_to (**§71** / **§8.7**). Variable ID: TBD | fetch-dispo-kpis |
 | dispoDealList | object | list_dispo_dashboard_deals_v1() result — `data.items` board payload. Variable ID: TBD | fetch-dispo-dashboard |
+
+## Error Handling Convention (established 10.14B6)
+
+Every workflow on every page follows this pattern:
+
+**Step 1 — First action of every workflow:**
+Set variable: rror_message → '' (clear any prior error)
+
+**Step 2 — Error branch on every RPC or Storage action:**
+Set variable: rror_message → 'Something went wrong. Please try again.'
+
+**Page-level error display:**
+Each page has one fixed-position toast container element:
+- Position: fixed
+- Visibility condition: rror_message !== ''
+- Contains a text element bound to rror_message
+- Operator dismisses by navigating away or next successful action clears it automatically
+
+**Why one variable per page:**
+All workflows on a page share the single rror_message variable. The first action of each workflow clears it, so stale errors from prior actions never bleed through.
+
+**WeWeb agent sweep instruction (future):**
+For every workflow on this page, add a Set variable action at the start that clears error_message to empty string, and add an error branch on every RPC and Storage action that sets error_message to 'Something went wrong. Please try again.'
