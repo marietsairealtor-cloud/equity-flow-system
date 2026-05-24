@@ -9701,6 +9701,14 @@ Generic Documents section on ACQ deal detail for uploading, listing, and removin
 * No unauthenticated access
 * No `create_deal_document_upload_v1` usage
 
+* Operator can click an uploaded document filename to open/download the file
+* Because `deal-documents` bucket is private, UI uses Supabase Storage signed URL workflow
+* Signed URL generation is handled client-side through WeWeb/Supabase Storage action
+* No new RPC is required for file access
+* Signed URL uses the `storage_path` returned by `list_deal_documents_v1`
+* Signed URL opens in a new tab or downloads the file
+* UI handles signed URL failure cleanly
+
 **Tests:**
 
 * ACQ deal detail renders Documents section
@@ -9714,6 +9722,11 @@ Generic Documents section on ACQ deal detail for uploading, listing, and removin
 * Send to Dispo is not blocked by missing APS document
 * no direct table access exists in UI
 * no `create_deal_document_upload_v1` usage exists
+* clicking document filename generates a temporary signed URL through Supabase Storage
+* signed URL opens/downloads the selected file
+* private bucket direct URL is not used
+* no backend RPC is added for signed URL generation
+* signed URL failure shows clean UI error
 
 **Proof:** `docs/proofs/10.14B6_acq_deal_documents_ui_<UTC>.md`
 **Gate:** `lane-only`

@@ -1,7 +1,24 @@
 -- 10.14B5B: Deal Documents Storage Bucket + RLS Policies tests
+-- Local pgTAP scope: structural bucket assertions + negative RLS behavioral assertions only.
+-- Positive same-tenant INSERT/SELECT proof is environment-split to remote/live storage smoke
+-- per QA ruling 2026-05-24 (current_tenant_id() not readable from storage RLS in pgTAP context).
 BEGIN;
 
-SELECT plan(10);
+SELECT plan(9);
+
+-- Seed tenant + owner for behavioral tests
+SELECT public.create_active_workspace_seed_v1(
+  'b1145200-0000-0000-0000-000000000001'::uuid,
+  'a1145200-0000-0000-0000-000000000001'::uuid,
+  'owner'
+);
+
+-- Seed cross-tenant
+SELECT public.create_active_workspace_seed_v1(
+  'b1145200-0000-0000-0000-000000000002'::uuid,
+  'a1145200-0000-0000-0000-000000000099'::uuid,
+  'owner'
+);
 
 -- 1. deal-documents bucket exists
 SELECT is(
@@ -36,80 +53,85 @@ SELECT ok(
   'deal-documents bucket MIME allowlist includes Word document type'
 );
 
--- 6. INSERT policy exists for authenticated
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'storage'
-      AND tablename = 'objects'
-      AND policyname = 'deal_documents_insert_authenticated'
-      AND roles @> ARRAY['authenticated']::name[]
-      AND cmd = 'INSERT'
-  ),
-  'deal_documents_insert_authenticated policy exists for authenticated INSERT'
+-- Seed one valid object as postgres for anon SELECT test
+SET LOCAL ROLE postgres;
+INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata)
+VALUES (
+  'f1145200-0000-0000-0000-000000000001'::uuid,
+  'deal-documents',
+  'b1145200-0000-0000-0000-000000000001/d1145200-0000-0000-0000-000000000001/documents/general/test.pdf',
+  'a1145200-0000-0000-0000-000000000001'::uuid,
+  now(), now(), now(), '{}'
 );
 
--- 7. SELECT policy exists for authenticated
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'storage'
-      AND tablename = 'objects'
-      AND policyname = 'deal_documents_select_authenticated'
-      AND roles @> ARRAY['authenticated']::name[]
-      AND cmd = 'SELECT'
-  ),
-  'deal_documents_select_authenticated policy exists for authenticated SELECT'
+-- 6. anon INSERT is blocked
+SET LOCAL ROLE anon;
+
+SELECT throws_ok(
+  $tap$
+  INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata)
+  VALUES (
+    'f1145200-0000-0000-0000-000000000004'::uuid,
+    'deal-documents',
+    'b1145200-0000-0000-0000-000000000001/d1145200-0000-0000-0000-000000000001/documents/general/anon.pdf',
+    null,
+    now(), now(), now(), '{}'
+  )
+  $tap$,
+  '42501',
+  NULL,
+  'anon INSERT is blocked'
 );
 
--- 8. no deal_documents storage policy grants anon access
-SELECT ok(
-  NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'storage'
-      AND tablename = 'objects'
-      AND policyname LIKE 'deal_documents%'
-      AND roles @> ARRAY['anon']::name[]
+-- 7. anon SELECT cannot see seeded deal-documents object
+SELECT is(
+  (
+    SELECT COUNT(*)::int
+    FROM storage.objects
+    WHERE bucket_id = 'deal-documents'
+      AND name = 'b1145200-0000-0000-0000-000000000001/d1145200-0000-0000-0000-000000000001/documents/general/test.pdf'
   ),
-  'no deal_documents storage policy grants anon access'
+  0,
+  'anon SELECT cannot see seeded deal-documents object'
 );
 
--- 9. INSERT policy WITH CHECK enforces bucket + full tenant/path convention
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'storage'
-      AND tablename = 'objects'
-      AND policyname = 'deal_documents_insert_authenticated'
-      AND with_check LIKE '%bucket_id%'
-      AND with_check LIKE '%deal-documents%'
-      AND with_check LIKE '%foldername%'
-      AND with_check LIKE '%current_tenant_id%'
-      AND with_check LIKE '%documents%'
-      AND with_check LIKE '%signed_purchase_agreement%'
-      AND with_check LIKE '%general%'
-      AND with_check LIKE '%filename%'
-  ),
-  'INSERT policy WITH CHECK enforces bucket + tenant/path convention'
+-- 8. authenticated wrong tenant prefix INSERT is blocked
+SELECT set_config('request.jwt.claims',
+  '{"sub":"a1145200-0000-0000-0000-000000000001","role":"authenticated","tenant_id":"b1145200-0000-0000-0000-000000000001"}',
+  true);
+SET LOCAL ROLE authenticated;
+
+SELECT throws_ok(
+  $tap$
+  INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata)
+  VALUES (
+    'f1145200-0000-0000-0000-000000000002'::uuid,
+    'deal-documents',
+    'b1145200-0000-0000-0000-000000000002/d1145200-0000-0000-0000-000000000001/documents/general/cross.pdf',
+    'a1145200-0000-0000-0000-000000000001'::uuid,
+    now(), now(), now(), '{}'
+  )
+  $tap$,
+  '42501',
+  NULL,
+  'authenticated wrong tenant prefix INSERT is blocked'
 );
 
--- 10. SELECT policy USING enforces bucket + full tenant/path convention
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'storage'
-      AND tablename = 'objects'
-      AND policyname = 'deal_documents_select_authenticated'
-      AND qual LIKE '%bucket_id%'
-      AND qual LIKE '%deal-documents%'
-      AND qual LIKE '%foldername%'
-      AND qual LIKE '%current_tenant_id%'
-      AND qual LIKE '%documents%'
-      AND qual LIKE '%signed_purchase_agreement%'
-      AND qual LIKE '%general%'
-      AND qual LIKE '%filename%'
-  ),
-  'SELECT policy USING enforces bucket + tenant/path convention'
+-- 9. authenticated malformed path INSERT is blocked
+SELECT throws_ok(
+  $tap$
+  INSERT INTO storage.objects (id, bucket_id, name, owner, created_at, updated_at, last_accessed_at, metadata)
+  VALUES (
+    'f1145200-0000-0000-0000-000000000003'::uuid,
+    'deal-documents',
+    'b1145200-0000-0000-0000-000000000001/random.pdf',
+    'a1145200-0000-0000-0000-000000000001'::uuid,
+    now(), now(), now(), '{}'
+  )
+  $tap$,
+  '42501',
+  NULL,
+  'authenticated malformed path INSERT is blocked'
 );
 
 SELECT finish();

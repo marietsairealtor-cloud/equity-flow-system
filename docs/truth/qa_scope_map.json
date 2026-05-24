@@ -743,6 +743,10 @@
     "10.14B5B": {
       "title": "Deal Documents Storage Bucket + RLS Policies",
       "proof_pattern": "^docs/proofs/10\\.14B5B_deal_documents_storage_bucket_"
+    },
+    "10.14B6": {
+      "title": "ACQ UI -- Deal Documents Upload + Send to Dispo Reminder",
+      "proof_pattern": "^docs/proofs/10\\.14B6_acq_deal_documents_ui_"
     }
   }
 }
