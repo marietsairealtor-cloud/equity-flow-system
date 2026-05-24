@@ -4,5 +4,5 @@
   "migration_tip": "20260522000001",
   "migration_tip_file": "20260522000001_10_14B5B_deal_documents_storage_bucket.sql",
   "migration_count": 143,
-  "pinned_at": "2026-05-23"
+  "pinned_at": "2026-05-24"
 }
