@@ -10232,3 +10232,32 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+2026-05-24 — Build Route v2.4 — 10.14B6
+
+Objective
+ACQ UI — Deal Documents Upload + Send to Dispo Reminder
+
+Changes
+- ACQ deal detail: Documents section added (between Pricing and Photos)
+- Upload: WeWeb file upload component → Supabase Storage deal-documents bucket → attach_deal_document_v1
+- List: list_deal_documents_v1 via fetch-deal-documents → dealDocuments variable → bound to document list
+- Document row shows: filename, uploaded date (formatted), Remove button
+- Remove: delete_deal_document_v1 soft-delete via delete-deal-document workflow
+- Open/download: Supabase Storage signed URL (3600s TTL) via open-deal-document workflow -- no backend RPC
+- Send to Dispo modal reminder copy: 'Confirm APS and proof of deposit are uploaded before sending to Dispo.'
+- Send to Dispo not blocked by document state
+- Error handling: fixed-position toast element + error_message variable on ACQ page
+- Error handling convention documented in WORKFLOWS.md
+- WORKFLOWS.md updated: fetch-deal-documents, upload-deal-documents, delete-deal-document, open-deal-document registered
+- dealDocuments and error_message variables added to ACQ Page Variables table
+- save-property stale next_action/next_action_due fields removed from registry
+- Gate: lane-only
+
+Proof
+docs/proofs/10.14B6_acq_deal_documents_ui_20260524T140941Z.md
+
+DoD
+All checklist items PASS. Lane-only gate satisfied.
+
+Status
+MERGED
