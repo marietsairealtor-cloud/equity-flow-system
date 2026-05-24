@@ -710,6 +710,65 @@ Item: 10.12D2
 
 ---
 
+## upload-deal-documents
+Trigger: Add Document button on-click (file upload component on-change) on ACQ deal detail Documents section
+Reads: uploadedFiles variable (file array), uploadIndex variable, activeDealId, entitlements.data.tenant_id
+Pattern: Multi-file Storage upload loop then metadata registration (same pattern as upload-deal-photos)
+First action: Set error_message = ''
+
+  - Action 1: Set uploadIndex = 0
+  - While loop (uploadIndex < uploadedFiles.length):
+    - Action: Supabase Storage upload to deal-documents bucket
+      - Path: entitlements.data.tenant_id + '/' + activeDealId + '/documents/general/' + uploadedFiles?.[uploadIndex]?.['name']
+      - File: uploadedFiles?.[uploadIndex]
+    - Action: attach_deal_document_v1(p_deal_id=activeDealId, p_document_type='general', p_storage_path=<constructed path>, p_file_name=uploadedFiles?.[uploadIndex]?.['name'], p_mime_type=uploadedFiles?.[uploadIndex]?.['type'], p_file_size=uploadedFiles?.[uploadIndex]?.['size'])
+    - Action: Set uploadIndex = uploadIndex + 1
+  - After loop: fetch-deal-documents
+
+Branches: error on any action → set error_message = 'Something went wrong. Please try again.'
+Item: 10.14B6
+
+---
+
+## delete-deal-document
+Trigger: Remove button on-click on document row in ACQ deal detail Documents section
+Reads: item.data.id (document UUID from list row context)
+First action: Set error_message = ''
+Calls: delete_deal_document_v1(p_document_id=item.data.id)
+Writes: none -- triggers fetch-deal-documents on success
+Branches: success → fetch-deal-documents
+          error → set error_message = 'Something went wrong. Please try again.'
+Item: 10.14B6
+
+---
+
+## open-deal-document
+Trigger: Filename text on-click on document row in ACQ deal detail Documents section
+Reads: item.data.storage_path (from list row context)
+First action: Set error_message = ''
+Pattern: Signed URL generation -- no backend RPC; client-side Supabase Storage action only
+
+  - Action 1: Supabase Storage create signed URL
+    - Bucket: deal-documents
+    - Path: item.data.storage_path
+    - Expires in: 3600 seconds
+  - Action 2: Execute JavaScript -- window.open(actions[0].result.signedUrl, '_blank')
+
+Branches: error on Action 1 → set error_message = 'Unable to open file. Please try again.'
+Note: Private bucket -- direct URL not used. Signed URL is temporary (1 hour TTL).
+Item: 10.14B6
+
+---
+
+## Error Handling Convention (established 10.14B6)
+Every workflow on every page follows this pattern:
+- First action: Set error_message = '' (clear any prior error)
+- On error branch of any RPC or Storage action: Set error_message = 'Something went wrong. Please try again.'
+Each page has one fixed-position toast element bound to error_message, visible when error_message !== ''.
+Item: 10.14B6
+
+---
+
 # WeWeb Variable Registry
 
 All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolean.
@@ -776,6 +835,8 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | acqOfferSendRefreshKey | text | Idempotency key for refresh_deal_soft_offer_v1 in Offer Sent sequence. Variable ID: TBD | acq-offer-sent |
 | acqOfferSendCommitKey | text | Idempotency key for send_offer_v1 in Offer Sent sequence. Variable ID: TBD | acq-offer-sent |
 | offerPayload | object | get_offer_payload_v1() result when Email Offer binds RPC-backed mailto body. Variable ID: TBD | optional pre-step to acq-email-offer |
+| dealDocuments | object | list_deal_documents_v1() result -- document metadata for selected deal. Variable ID: TBD | fetch-deal-documents |
+| error_message | text | Page-level error toast text. Empty string when no error. Cleared at start of every workflow. Variable ID: TBD | all workflows on error branch |
 
 ## Public Form Variables
 
