@@ -1917,3 +1917,4 @@ Below-market display value derivation: `COALESCE(dispo_below_market_override, di
 - **Does not return:** exact `address`, `deal_id`, `tenant_id`, seller fields, internal fields, activity, notes.
 
 **§Registry:** `docs/truth/rpc_contract_registry.json`; `docs/truth/privilege_truth.json`; `docs/truth/execute_allowlist.json`; `§17` mapping table (add `update_dispo_packet_v1`, `lookup_share_token_public_v1`); `§72` share token split note.
+<!-- entitlement-policy-coupling: last-verified 10.14B7A -->

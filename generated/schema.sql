@@ -4423,7 +4423,6 @@ DECLARE
   v_sub_status text;
   v_period_end timestamptz;
 BEGIN
-  -- 1. Validate token format
   IF p_token IS NULL OR length(p_token) < 68 OR left(p_token, 4) <> 'shr_'
      OR substring(p_token FROM 5) !~ '^[0-9a-f]{64}$'
   THEN
@@ -4435,19 +4434,12 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- 2. Hash token
   v_hash := extensions.digest(p_token, 'sha256');
 
-  -- 3. Lookup share_tokens by token_hash; join deal via share_tokens.deal_id + tenant_id
   SELECT st.deal_id, st.tenant_id, st.expires_at, st.revoked_at,
-         d.dispo_asking_price,
-         d.dispo_intersection,
-         d.dispo_closing_date,
-         d.dispo_description,
-         d.dispo_comparables,
-         d.dispo_media_url,
-         d.dispo_market_value_estimate,
-         d.dispo_below_market_override,
+         d.dispo_asking_price, d.dispo_intersection, d.dispo_closing_date,
+         d.dispo_description, d.dispo_comparables, d.dispo_media_url,
+         d.dispo_market_value_estimate, d.dispo_below_market_override,
          COALESCE(
            d.dispo_below_market_override,
            CASE WHEN d.dispo_market_value_estimate IS NOT NULL AND d.dispo_asking_price IS NOT NULL
@@ -4459,7 +4451,6 @@ BEGIN
   JOIN public.deals d ON d.id = st.deal_id AND d.tenant_id = st.tenant_id
   WHERE st.token_hash = v_hash;
 
-  -- 4. Not found
   IF NOT FOUND THEN
     BEGIN
       PERFORM public.foundation_log_activity_v1('share_token_lookup',
@@ -4469,7 +4460,6 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- 5. Revoked
   IF v_row.revoked_at IS NOT NULL THEN
     BEGIN
       PERFORM public.foundation_log_activity_v1('share_token_lookup',
@@ -4479,7 +4469,6 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- 6. Expired token
   IF v_row.expires_at <= now() THEN
     BEGIN
       PERFORM public.foundation_log_activity_v1('share_token_lookup',
@@ -4489,7 +4478,6 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- 7. Check workspace subscription (tenant resolved from token row)
   SELECT ts.status, ts.current_period_end INTO v_sub_status, v_period_end
   FROM public.tenant_subscriptions ts WHERE ts.tenant_id = v_row.tenant_id;
   IF NOT FOUND OR v_sub_status = 'canceled' OR v_period_end <= now() THEN
@@ -4501,8 +4489,6 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- 8. Return allowlisted buyer-facing fields only
-  -- No exact address. No seller/internal fields.
   v_result := json_build_object('ok', true, 'code', 'OK',
     'data', json_build_object(
       'expires_at',                  v_row.expires_at,
@@ -7709,7 +7695,6 @@ BEGIN
       'error', json_build_object('message', 'p_fields must be a non-empty JSON object', 'fields', json_build_object()));
   END IF;
 
-  -- Reject unknown keys
   FOR v_key IN SELECT jsonb_object_keys(p_fields) LOOP
     IF NOT (v_key = ANY(v_allowed_keys)) THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
@@ -7717,7 +7702,6 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- Validate numeric fields (envelope-safe, no raw cast exceptions)
   IF p_fields ? 'dispo_asking_price' AND p_fields->>'dispo_asking_price' IS NOT NULL AND trim(p_fields->>'dispo_asking_price') <> '' THEN
     BEGIN
       v_num := (p_fields->>'dispo_asking_price')::numeric;
@@ -7745,7 +7729,6 @@ BEGIN
     END;
   END IF;
 
-  -- Validate date field
   IF p_fields ? 'dispo_closing_date' AND p_fields->>'dispo_closing_date' IS NOT NULL AND trim(p_fields->>'dispo_closing_date') <> '' THEN
     BEGIN
       v_date := (p_fields->>'dispo_closing_date')::date;
@@ -7755,7 +7738,6 @@ BEGIN
     END;
   END IF;
 
-  -- Validate media URL: must be NULL, empty string (normalized to NULL), or https://
   IF p_fields ? 'dispo_media_url' AND p_fields->>'dispo_media_url' IS NOT NULL AND trim(p_fields->>'dispo_media_url') <> '' THEN
     v_url := trim(p_fields->>'dispo_media_url');
     IF NOT (v_url ~* '^https://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(:[0-9]+)?(/.*)?$') THEN
