@@ -22,6 +22,47 @@ Item: Build Route item that introduced this workflow
 
 ---
 
+## App Layout Convention (established 10.14B6 cleanup)
+
+Every authenticated page follows this section structure:
+
+```
+Section -- Subscription warning banner
+Section (root)
+  ├── Error message component   -- fixed-position toast, visible when error_message !== ''
+  ├── Top Nav component         -- hamburger (page nav) + cog (settings), visible when Supabase Auth['user'] !== undefined
+  └── Page content container
+```
+
+**Section settings:**
+- Width: 100%
+- Row gap: 16px
+- Padding: 16px
+
+**Top Nav — hamburger menu:**
+Opens a side drawer with page navigation links:
+- Today
+- MAO
+- Lead Intake
+- ACQ
+- Dispo
+- TC
+
+**Top Nav — cog (settings):**
+Opens a settings popup with:
+- Current Workspace (name + role)
+- Switch Workspace
+- Create New Workspace
+- Workspace Settings
+- Profile Settings
+- Log out
+
+**Bottom Nav:** Removed. Navigation consolidated into Top Nav hamburger menu.
+
+**No root wrapper required:** WeWeb sections stack vertically by default. Error message, Top Nav, and page content are sibling sections inside one root Section.
+
+---
+
 ## Fetch Workflows (data load only, no branches)
 
 ## fetch-workspace-list
@@ -401,68 +442,6 @@ Item: 10.11B
 
 ---
 
-## fetch-deal-documents
-Trigger: deal row click, after upload-deal-documents, after delete-deal-document
-Reads: activeDealId
-Calls: list_deal_documents_v1(p_deal_id=activeDealId)
-Writes: dealDocuments variable
-Item: 10.14B6
-
----
-
-## upload-deal-documents
-Trigger: Add Document button on-click (file upload component on-change) on ACQ deal detail Documents section
-Reads: uploadedFiles variable (file array), uploadIndex variable, activeDealId, entitlements.data.tenant_id
-Pattern: Multi-file Storage upload loop then metadata registration (same pattern as upload-deal-photos)
-First action: Set error_message = ''
-Pre-upload validation (before loop):
-  - Reject any file where name is empty, or contains /, \, .., or //
-  - On invalid filename: set error_message = 'Invalid filename. Please rename the file and try again.' and stop workflow
-
-  - Action 1: Set uploadIndex = 0
-  - While loop (uploadIndex < uploadedFiles.length):
-    - Action: Supabase Storage upload to deal-documents bucket
-      - Path: entitlements.data.tenant_id + '/' + activeDealId + '/documents/general/' + uploadedFiles?.[uploadIndex]?.['name']
-      - File: uploadedFiles?.[uploadIndex]
-    - Action: attach_deal_document_v1(p_deal_id=activeDealId, p_document_type='general', p_storage_path=<constructed path>, p_file_name=uploadedFiles?.[uploadIndex]?.['name'], p_mime_type=uploadedFiles?.[uploadIndex]?.['type'], p_file_size=uploadedFiles?.[uploadIndex]?.['size'])
-    - Action: Set uploadIndex = uploadIndex + 1
-  - After loop: fetch-deal-documents
-
-Branches: error on any action → set error_message = 'Something went wrong. Please try again.'
-Item: 10.14B6
-
----
-
-## delete-deal-document
-Trigger: Remove button on-click on document row in ACQ deal detail Documents section
-Reads: item.data.id (document UUID from list row context)
-First action: Set error_message = ''
-Calls: delete_deal_document_v1(p_document_id=item.data.id)
-Writes: none -- triggers fetch-deal-documents on success
-Branches: success → fetch-deal-documents
-          error → set error_message = 'Something went wrong. Please try again.'
-Item: 10.14B6
-
----
-
-## open-deal-document
-Trigger: Filename text on-click on document row in ACQ deal detail Documents section
-Reads: item.data.storage_path (from list row context)
-First action: Set error_message = ''
-Pattern: Signed URL generation -- no backend RPC; client-side Supabase Storage action only
-
-  - Action 1: Supabase Storage create signed URL
-    - Bucket: deal-documents
-    - Path: item.data.storage_path
-    - Expires in: 3600 seconds
-  - Action 2: Execute JavaScript -- window.open(actions[0].result.signedUrl, '_blank')
-
-Branches: error on Action 1 → set error_message = 'Unable to open file. Please try again.'
-Note: Private bucket -- direct URL not used. Signed URL is temporary (1 hour TTL).
-Item: 10.14B6
-
----
-
 ## fetch-dispo-kpis
 Trigger: /dispo page load, after Dispo KPI date filter change (when bound)
 Reads: dispoKpiDateFrom, dispoKpiDateTo (ISO timestamptz strings; may be null — server defaults per **§71**)
@@ -523,7 +502,7 @@ Item: 10.11B
 ## save-property
 Trigger: Save button in Edit Property popup
 Reads: property input field values, activeDealId, deficiencyTags variable
-Calls: update_deal_property_v1(p_deal_id, p_fields=address)
+Calls: update_deal_property_v1(p_deal_id, p_fields=address/next_action/next_action_due)
        update_deal_properties_v1(p_deal_id, p_fields=all property fields + deficiency_tags + electrical + plumbing)
 Writes: none -- triggers fetch-selected-deal on success
 Branches: success → fetch-selected-deal + close popup
@@ -838,8 +817,6 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | acqOfferSendRefreshKey | text | Idempotency key for refresh_deal_soft_offer_v1 in Offer Sent sequence. Variable ID: TBD | acq-offer-sent |
 | acqOfferSendCommitKey | text | Idempotency key for send_offer_v1 in Offer Sent sequence. Variable ID: TBD | acq-offer-sent |
 | offerPayload | object | get_offer_payload_v1() result when Email Offer binds RPC-backed mailto body. Variable ID: TBD | optional pre-step to acq-email-offer |
-| dealDocuments | object | list_deal_documents_v1() result -- document metadata for selected deal. Variable ID: TBD | fetch-deal-documents |
-| error_message | text | Page-level error toast text. Empty string when no error. Cleared at start of every workflow. Variable ID: TBD | all workflows on error branch |
 
 ## Public Form Variables
 
@@ -864,26 +841,3 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | dispoKpiDateTo | text | Dispo KPI window end — ISO timestamptz string or empty for RPC default. Variable ID: TBD | date filter on-change |
 | dispoKpiData | object | get_dispo_kpis_v1() result — deals_moved_to_tc, deposit_collected, avg_assignment_fee, date_from, date_to (**§71** / **§8.7**). Variable ID: TBD | fetch-dispo-kpis |
 | dispoDealList | object | list_dispo_dashboard_deals_v1() result — `data.items` board payload. Variable ID: TBD | fetch-dispo-dashboard |
-
-## Error Handling Convention (established 10.14B6)
-
-Every workflow on every page follows this pattern:
-
-**Step 1 — First action of every workflow:**
-Set variable: `error_message` → `''` (clear any prior error)
-
-**Step 2 — Error branch on every RPC or Storage action:**
-Set variable: `error_message` → `'Something went wrong. Please try again.'`
-
-**Page-level error display:**
-Each page has one fixed-position toast container element:
-- Position: fixed
-- Visibility condition: `error_message !== ''`
-- Contains a text element bound to `error_message`
-- Operator dismisses by navigating away or next successful action clears it automatically
-
-**Why one variable per page:**
-All workflows on a page share the single `error_message` variable. The first action of each workflow clears it, so stale errors from prior actions never bleed through.
-
-**WeWeb agent sweep instruction (future):**
-For every workflow on this page, add a Set variable action at the start that clears `error_message` to empty string, and add an error branch on every RPC and Storage action that sets `error_message` to 'Something went wrong. Please try again.'
