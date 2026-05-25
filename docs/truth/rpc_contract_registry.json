@@ -1007,39 +1007,32 @@
         "CONFLICT"
       ],
       "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_draft_id uuid, p_fields jsonb). require_min_role_v1(member); check_workspace_write_allowed_v1. Merges tenant draft + optional review overrides into new deals row; links draft.promoted_deal_id. On promoted_deal_id change, trigger trg_draft_deals_promoted_sync_intake_review sets intake reviewed_at / review_status / review_outcome=promoted; promote also issues legacy reviewed_at-only UPDATE on intake. CONFLICT when draft already promoted. NOT_FOUND when draft missing for tenant. Same field/assumption validation posture as create_deal_from_intake_v1 (no client mao). 10.12C7: birddog payload asking_price may be raw text merged into assumptions then full snapshot canonicalized (_intake_canonicalize_pricing_assumptions_v1) before validate/MAO; NULL canonicalize => VALIDATION_ERROR."
+    },
+    {
+      "name": "update_dispo_packet_v1",
+      "version": 1,
+      "build_route_owner": "10.14B7",
+      "input_contract": "CONTRACTS.md §73 update_dispo_packet_v1 (10.14B7)",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "CONFLICT"
+      ],
+      "notes": "SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). p_fields jsonb patch: omit=unchanged, null=clear, empty string=normalize to NULL for nullable fields. Stage guard: dispo/under_contract only; else CONFLICT. Envelope-safe numeric/date/URL validation (dispo_media_url must be https:// with valid host or empty/null). require_min_role_v1(member); check_workspace_write_allowed_v1. Writes deal_activity_log packet_update on success."
+    },
+    {
+      "name": "lookup_share_token_public_v1",
+      "version": 1,
+      "build_route_owner": "10.14B7",
+      "input_contract": "CONTRACTS.md §73 lookup_share_token_public_v1 (10.14B7)",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_FOUND"
+      ],
+      "notes": "SECURITY DEFINER, STABLE; EXECUTE to anon AND authenticated (REVOKE PUBLIC). Public buyer-facing share token lookup. Token is authorization mechanism. No current_tenant_id() required. Resolution: validate format, hash, lookup share_tokens by token_hash, check revoked/expired, check workspace subscription from token row. Returns only allowlisted buyer-facing packet fields. No exact address, no seller/internal fields. Identical NOT_FOUND envelope for all failure cases (no existence leak)."
     }
-  ],
-  "update_dispo_packet_v1": {
-    "volatility": "VOLATILE",
-    "security": "DEFINER",
-    "item": "10.14B7",
-    "grants": [
-      "authenticated"
-    ],
-    "signature": "update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)",
-    "codes": [
-      "OK",
-      "NOT_AUTHORIZED",
-      "VALIDATION_ERROR",
-      "NOT_FOUND",
-      "CONFLICT",
-      "WORKSPACE_NOT_WRITABLE"
-    ],
-    "envelope": "ok/code/data/error"
-  },
-  "lookup_share_token_public_v1": {
-    "volatility": "STABLE",
-    "security": "DEFINER",
-    "item": "10.14B7",
-    "grants": [
-      "anon",
-      "authenticated"
-    ],
-    "signature": "lookup_share_token_public_v1(p_token text)",
-    "codes": [
-      "OK",
-      "NOT_FOUND"
-    ],
-    "envelope": "ok/code/data/error"
-  }
+  ]
 }
