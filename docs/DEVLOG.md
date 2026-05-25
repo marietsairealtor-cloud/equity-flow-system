@@ -10261,3 +10261,22 @@ All checklist items PASS. Lane-only gate satisfied.
 
 Status
 MERGED
+2026-05-24 — Build Route v2.4 — Nav Layout Revision
+
+Objective
+Bottom Nav removed. Top Nav consolidated with page navigation and settings.
+
+Changes
+- Bottom Nav component removed from all authenticated pages
+- Top Nav hamburger menu: page navigation (Today, MAO, Lead Intake, ACQ, Dispo, TC)
+- Top Nav cog: settings (Switch Workspace, Workspace Settings, Profile Settings, Log out)
+- Page shell structure standardized across all authenticated pages:
+  - Section: Subscription warning banner
+  - Section (root): Error message + Top Nav + Page content
+  - Section settings: width 100%, row gap 16px, padding 16px
+- docs/artifacts/WEWEB_ARCHITECTURE.md: §6 Authenticated Shell revised
+- docs/ui-workflows/WORKFLOWS.md: App Layout Convention section added
+- Governance file: GOVERNANCE_CHANGE_20260525T012443Z.md
+
+Status
+MERGED
