@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-05-24T14:59:32Z",
+    "generated":  "2026-05-25T17:07:45Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -408,6 +408,16 @@
                             "name":  "update_display_name_v1",
                             "tables":  [
                                            "user_profiles"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_dispo_packet_v1",
+                            "tables":  [
+                                           "deal_activity_log",
+                                           "deals"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false
