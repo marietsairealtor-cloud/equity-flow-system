@@ -9731,16 +9731,56 @@ Generic Documents section on ACQ deal detail for uploading, listing, and removin
 **Proof:** `docs/proofs/10.14B6_acq_deal_documents_ui_<UTC>.md`
 **Gate:** `lane-only`
 **Prerequisite:** `10.14B5A` merged
+
 ---
 
 ### **10.14B7 — Dispo Backend — Buyer-Facing Packet Fields**
 
 **Deliverable:**
-Backend support for buyer-facing Dispo deal packet fields used by the Dispo packet editor and unauthenticated share packet viewer.
+Backend support for buyer-facing Dispo deal packet fields used by the Dispo packet editor and public buyer-facing share packet viewer.
+
+**Architecture decision:**
+
+Share-token lookup is split by caller class:
+
+* `lookup_share_token_v1(p_token text, p_deal_id uuid)`
+  * existing authenticated tenant-scoped internal lookup
+  * remains authenticated-only
+  * existing tests/contracts remain unchanged
+  * B7 must not replace or weaken this RPC
+
+* `lookup_share_token_public_v1(p_token text)`
+  * new public buyer-facing lookup
+  * anon-callable
+  * token is the authorization mechanism
+  * no tenant context required
+  * resolves tenant/deal from `share_tokens.token_hash`
+  * returns only allowlisted buyer-facing packet fields
+  * does **not** return exact property address by default
+
+**Public location rule:**
+
+* Internal/authenticated users may see exact deal address through existing authenticated RPCs
+* Public buyer-facing share packet must not expose exact address by default
+* Public buyer-facing packet should expose location through:
+
+  * `dispo_intersection`
+
+* Public packet must not expose:
+
+  * exact `address`
+  * seller name
+  * seller phone
+  * seller email
+  * seller pain
+  * seller notes
+  * internal notes
+  * internal activity
+  * internal deal identifiers unless QA explicitly approves later
 
 **DoD:**
 
-* Buyer-facing Dispo fields exist:
+* Buyer-facing Dispo fields exist on `deals`:
 
   * `dispo_asking_price`
   * `dispo_intersection`
@@ -9758,26 +9798,126 @@ Backend support for buyer-facing Dispo deal packet fields used by the Dispo pack
   * `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`
 
 * If market value and override are absent, below-market badge can be hidden
-* Governed authenticated mutation exists for editing packet fields
-* `lookup_share_token_v1` returns these fields for valid share tokens
-* `lookup_share_token_v1` does not expose non-allowlisted/internal fields
+* Governed authenticated mutation exists:
+
+  * `update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)`
+
+* `update_dispo_packet_v1` uses patch semantics:
+
+  * omitted key = unchanged
+  * explicit `null` = clear field
+  * empty string for nullable text/date/numeric fields may normalize to `NULL`
+  * unknown key returns `VALIDATION_ERROR`
+
+* `update_dispo_packet_v1` is governed:
+
+  * authenticated only
+  * `require_min_role_v1('member')`
+  * tenant-scoped
+  * workspace write-lock enforced
+  * cross-tenant deal returns `NOT_FOUND`
+  * wrong-stage deal returns `CONFLICT`
+  * no raw Postgres cast errors leak through envelope
+
+* Numeric/date validation is envelope-safe:
+
+  * invalid numeric returns `VALIDATION_ERROR`
+  * invalid date returns `VALIDATION_ERROR`
+
+* `dispo_media_url` is validated:
+
+  * `NULL` allowed
+  * empty string allowed / normalized to `NULL`
+  * `https://` URL allowed
+  * non-HTTPS / `javascript:` / `data:` / malformed unsafe URL returns `VALIDATION_ERROR`
+
+* New public RPC exists:
+
+  * `lookup_share_token_public_v1(p_token text)`
+
+* `lookup_share_token_public_v1` behavior:
+
+  * validates token format
+  * hashes token
+  * resolves tenant/deal from `share_tokens.token_hash`
+  * checks revoked token
+  * checks expired token
+  * checks workspace/subscription validity after token resolution
+  * returns only allowlisted buyer-facing packet fields
+  * does not require `current_tenant_id()`
+  * does not expose exact property address
+  * does not expose seller/internal fields
+
+* Public RPC allowlisted output fields:
+
+  * `expires_at`
+  * `dispo_asking_price`
+  * `dispo_intersection`
+  * `dispo_closing_date`
+  * `dispo_description`
+  * `dispo_comparables`
+  * `dispo_media_url`
+  * `dispo_market_value_estimate`
+  * `dispo_below_market_override`
+  * `dispo_below_market_value`
+
+* Public lookup failure cases return identical `NOT_FOUND` envelope:
+
+  * invalid token format
+  * missing token
+  * missing share token row
+  * expired token
+  * revoked token
+  * workspace/subscription expired
+  * wrong/unknown token
+
+* `lookup_share_token_v1` remains unchanged unless a regression test proves the authenticated contract is preserved
+* `lookup_share_token_public_v1` is registered in:
+
+  * `CONTRACTS.md`
+  * `rpc_contract_registry.json`
+  * execute allowlist / privilege truth
+  * definer allowlist, if required
+  * QA scope/truth files, if required
+
 * No direct table calls
+* No base64 media/document storage
+* No exact address exposure in public packet
+* No internal/seller-sensitive field exposure
 
 **Tests:**
 
-* packet fields can be saved through governed mutation
+* packet fields can be saved through `update_dispo_packet_v1`
 * saved packet fields persist
+* patch update preserves omitted fields
+* explicit `null` clears fields
+* empty string clears/normalizes nullable fields as designed
+* unknown key returns `VALIDATION_ERROR`
+* invalid numeric returns `VALIDATION_ERROR`
+* invalid date returns `VALIDATION_ERROR`
+* invalid/non-HTTPS `dispo_media_url` returns `VALIDATION_ERROR`
+* valid `https://` `dispo_media_url` is accepted
 * below-market value derives correctly from market value minus asking price
 * override value takes precedence over derived value
-* `lookup_share_token_v1` returns packet fields for valid token
-* `lookup_share_token_v1` excludes internal/seller-sensitive fields
 * cross-tenant mutation returns `NOT_FOUND`
-* non-member returns `NOT_AUTHORIZED`
+* non-member mutation returns `NOT_AUTHORIZED`
+* wrong-stage deal returns `CONFLICT`
+* `lookup_share_token_public_v1` works as anon with valid token
+* `lookup_share_token_public_v1` returns buyer-facing packet fields for valid token
+* `lookup_share_token_public_v1` derives `dispo_below_market_value`
+* `lookup_share_token_public_v1` returns `dispo_intersection`
+* `lookup_share_token_public_v1` does **not** return exact `address`
+* `lookup_share_token_public_v1` does **not** return seller/internal-sensitive fields
+* invalid public token returns `NOT_FOUND`
+* expired public token returns `NOT_FOUND`
+* revoked public token returns `NOT_FOUND`
+* workspace-expired public token returns `NOT_FOUND`
+* public token failure envelopes are identical across invalid/missing/expired/revoked/workspace-expired cases
+* existing `lookup_share_token_v1` authenticated tests remain unchanged and passing
 
 **Proof:** `docs/proofs/10.14B7_dispo_buyer_packet_fields_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** `10.14B2` merged
-
+**Prerequisite:** `10.14B6` merged
 ---
 
 ### **10.14B8 — Dispo Backend — Share Packet Photo Visibility**

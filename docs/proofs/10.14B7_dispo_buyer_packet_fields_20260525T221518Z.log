@@ -1,0 +1,150 @@
+PROOF_HEAD=bf9a446a830fdca60569ed191c0afc5555d4ca5f
+PROOF_SCRIPTS_FILES=scripts/ci_proof_commit_binding.ps1
+PROOF_SCRIPTS_FILE_SHA256=scripts/ci_proof_commit_binding.ps1:6f587ea8a5c11be7797cabd6ad10df93383c109a3612a89f356f2b3dd65d9eba
+PROOF_SCRIPTS_HASH=ce0178bfa8774469ee797cbb450f48bda03bc02d66100de19ea4e5ea96955ab3
+=== 10.14B7 Dispo Backend -- Buyer-Facing Packet Fields -- Proof Log ===
+Date: 2026-05-25T18:15:09.0243475-04:00
+Branch: feature/10.14B7-dispo-buyer-packet-fields
+PR HEAD SHA: bf9a446a830fdca60569ed191c0afc5555d4ca5f
+
+=== Deliverable ===
+Item: 10.14B7
+Gate: merge-blocking
+Prerequisite: 10.14B6 merged
+
+=== Migration ===
+supabase/migrations/20260525000001_10_14B7_dispo_buyer_packet_fields.sql
+
+=== Schema Changes ===
+deals table: 8 nullable columns added
+  dispo_asking_price numeric NULL
+  dispo_intersection text NULL
+  dispo_closing_date date NULL
+  dispo_description text NULL
+  dispo_comparables text NULL
+  dispo_media_url text NULL (https:// with valid host required or empty/null)
+  dispo_market_value_estimate numeric NULL
+  dispo_below_market_override numeric NULL
+
+Below-market derivation: COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)
+
+=== RPCs Added ===
+update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)
+  VOLATILE SECURITY DEFINER
+  GRANT EXECUTE to authenticated only
+  Guards: require_min_role_v1('member'), current_tenant_id(), auth.uid(), check_workspace_write_allowed_v1()
+  p_fields patch semantics: omit=unchanged, explicit null=clear, empty string=normalize to NULL
+  Unknown keys: VALIDATION_ERROR
+  Numeric/date/URL validation: envelope-safe
+  dispo_media_url: https:// with valid host required, regex enforced
+  Stage guard: dispo/under_contract only; other stages return CONFLICT
+  Writes deal_activity_log (packet_update) on success
+  Cross-tenant: NOT_FOUND
+  Non-member: NOT_AUTHORIZED
+
+lookup_share_token_public_v1(p_token text)
+  STABLE SECURITY DEFINER
+  GRANT EXECUTE to anon AND authenticated
+  No current_tenant_id() required -- token is authorization mechanism
+  Resolution: validate format -> hash -> lookup share_tokens by token_hash -> check revoked -> check expired -> check workspace subscription (from token row)
+  Returns only allowlisted buyer-facing packet fields
+  No exact address, no seller/internal fields
+  Identical NOT_FOUND envelope for all failure cases (no existence leak)
+  tenant_context_exempt in definer_allowlist.json
+
+lookup_share_token_v1 unchanged -- authenticated tenant-scoped contract preserved
+
+=== QA Architecture Ruling ===
+Per QA ruling 2026-05-25: share token lookup split by caller class:
+  lookup_share_token_v1: authenticated, tenant-scoped internal lookup (unchanged)
+  lookup_share_token_public_v1: public buyer-facing lookup, token is authorization
+Future share-token read RPCs must preserve this split unless QA explicitly approves a contract migration.
+
+=== pgTAP Results ===
+supabase db reset + npx supabase test db -- PASS
+Files=97, Tests=1237, 0 failures
+
+Test coverage:
+  update_dispo_packet_v1: saves packet fields -- PASS
+  update_dispo_packet_v1: fields persist -- PASS
+  update_dispo_packet_v1: patch preserves omitted fields -- PASS
+  update_dispo_packet_v1: explicit null clears field -- PASS
+  update_dispo_packet_v1: empty string normalizes to NULL -- PASS
+  update_dispo_packet_v1: unknown key returns VALIDATION_ERROR -- PASS
+  update_dispo_packet_v1: invalid numeric returns VALIDATION_ERROR -- PASS
+  update_dispo_packet_v1: invalid date returns VALIDATION_ERROR -- PASS
+  update_dispo_packet_v1: non-HTTPS URL returns VALIDATION_ERROR -- PASS
+  update_dispo_packet_v1: bare https:// returns VALIDATION_ERROR -- PASS
+  update_dispo_packet_v1: valid https:// URL accepted -- PASS
+  update_dispo_packet_v1: cross-tenant returns NOT_FOUND -- PASS
+  update_dispo_packet_v1: wrong-stage returns CONFLICT -- PASS
+  update_dispo_packet_v1: non-member returns NOT_AUTHORIZED -- PASS
+  lookup_share_token_public_v1: anon valid token returns OK -- PASS
+  lookup_share_token_public_v1: returns dispo_intersection -- PASS
+  lookup_share_token_public_v1: derives dispo_below_market_value -- PASS
+  lookup_share_token_public_v1: override takes precedence -- PASS
+  lookup_share_token_public_v1: does not return exact address -- PASS
+  lookup_share_token_public_v1: no internal/seller-sensitive fields -- PASS
+  lookup_share_token_public_v1: revoked token returns NOT_FOUND -- PASS
+  lookup_share_token_public_v1: expired token returns NOT_FOUND -- PASS
+  lookup_share_token_public_v1: workspace-expired token returns NOT_FOUND -- PASS
+  lookup_share_token_public_v1: invalid format returns NOT_FOUND -- PASS
+  lookup_share_token_public_v1: nonexistent token returns NOT_FOUND -- PASS
+  envelope identity: all failure cases ok=false -- PASS
+  envelope identity: all failure cases code=NOT_FOUND -- PASS
+  envelope identity: all failure cases data={} -- PASS
+  envelope identity: all failure cases error.message identical -- PASS
+  envelope identity: all failure cases error.fields present -- PASS
+  envelope identity: all failure cases error.fields identical -- PASS
+  lookup_share_token_v1: existing authenticated RPC still works (regression) -- PASS
+  lookup_share_token_v1: returns deal_id (regression) -- PASS
+
+=== Phase 1 Admin ===
+docs/governance/GOVERNANCE_CHANGE_20260525T164913Z.md -- PASS
+docs/truth/qa_claim.json (item: 10.14B7) -- PASS
+docs/truth/qa_scope_map.json -- PASS
+scripts/ci_robot_owned_guard.ps1 -- PASS
+docs/truth/rpc_contract_registry.json (update_dispo_packet_v1, lookup_share_token_public_v1) -- PASS
+docs/truth/privilege_truth.json (both RPCs, migration_grant_allowlist, routine_grants) -- PASS
+docs/truth/execute_allowlist.json (both RPCs) -- PASS
+docs/truth/definer_allowlist.json (lookup_share_token_public_v1 tenant_context_exempt) -- PASS
+docs/artifacts/CONTRACTS.md (§72 share token split, §73 new section, §17 table rows) -- PASS
+migration-grant-lint: 153 allowlisted, 12 superseded, 0 violations -- PASS
+ci_definer_safety_audit: PASS
+ci_rpc_contract_registry: PASS
+
+=== Phase 3 -- full sanitized pr:preflight transcript ===
+
+> equity-flow-system@0.0.0 pr:preflight
+> powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pr_preflight.ps1
+
+== preflight:encoding ==
+Encoding preflight OK.
+== lint ==
+== test ==
+All tests successful.
+Files=97, Tests=1237, 4 wallclock secs
+Result: PASS
+
+== toolchain:contract ==
+TOOLCHAIN_CONTRACT_OK
+
+== truth:check ==
+STATUS: PASS (truth-bootstrap OK)
+
+=== required-checks-contract ===
+PASS lane-only excluded
+PASS required checks all map to workflow job names
+STATUS: PASS (required-checks-contract OK)
+
+== lint:calc-version ==
+calc-version-registry: PASS
+
+== proof:manifest ==
+PROOF_MANIFEST_OK
+
+== proof-commit-binding ==
+PROOF_COMMIT_BINDING_SKIP: no proof files changed in PR
+
+=== RESULT ===
+10.14B7 Dispo Backend -- Buyer-Facing Packet Fields: PASS (merge-blocking)

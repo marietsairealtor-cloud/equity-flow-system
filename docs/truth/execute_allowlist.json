@@ -47,6 +47,7 @@
     "list_reminders_v1",
     "list_user_tenants_v1",
     "list_workspace_members_v1",
+    "lookup_share_token_public_v1",
     "lookup_share_token_v1",
     "mark_deal_dead_v1",
     "mark_submission_reviewed_v1",
@@ -72,9 +73,23 @@
     "update_deal_seller_v1",
     "update_deal_v1",
     "update_display_name_v1",
+    "update_dispo_packet_v1",
     "update_member_role_v1",
     "update_property_info_v1",
     "update_seller_info_v1",
     "update_workspace_settings_v1"
-  ]
+  ],
+  "update_dispo_packet_v1": {
+    "grant": [
+      "authenticated"
+    ],
+    "item": "10.14B7"
+  },
+  "lookup_share_token_public_v1": {
+    "grant": [
+      "anon",
+      "authenticated"
+    ],
+    "item": "10.14B7"
+  }
 }

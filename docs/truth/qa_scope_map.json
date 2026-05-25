@@ -747,6 +747,10 @@
     "10.14B6": {
       "title": "ACQ UI -- Deal Documents Upload + Send to Dispo Reminder",
       "proof_pattern": "^docs/proofs/10\\.14B6_acq_deal_documents_ui_"
+    },
+    "10.14B7": {
+      "title": "Dispo Backend -- Buyer-Facing Packet Fields",
+      "proof_pattern": "^docs/proofs/10\\.14B7_dispo_buyer_packet_fields_"
     }
   }
 }
