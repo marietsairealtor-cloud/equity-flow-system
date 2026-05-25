@@ -10280,3 +10280,38 @@ Changes
 
 Status
 MERGED
+2026-05-25 -- Build Route v2.4 -- 10.14B7
+
+Objective
+Dispo Backend -- Buyer-Facing Packet Fields
+
+Changes
+- deals table: 8 nullable dispo_* columns added (asking_price, intersection, closing_date, description, comparables, media_url, market_value_estimate, below_market_override)
+- Below-market derivation: COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)
+- New RPC: update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)
+  - VOLATILE SECURITY DEFINER, authenticated only, min role: member
+  - p_fields jsonb patch semantics: omit=unchanged, null=clear, empty string=normalize to NULL
+  - Unknown keys: VALIDATION_ERROR; envelope-safe numeric/date/URL validation
+  - dispo_media_url: https:// with valid host required
+  - Stage guard: dispo/under_contract only
+  - Writes deal_activity_log on success
+- New RPC: lookup_share_token_public_v1(p_token text)
+  - STABLE SECURITY DEFINER, GRANT to anon + authenticated
+  - Token-first resolution, no current_tenant_id() required
+  - Returns only allowlisted buyer-facing packet fields
+  - No exact address, no seller/internal fields
+  - Identical NOT_FOUND envelope for all failure cases
+  - tenant_context_exempt in definer_allowlist.json
+- lookup_share_token_v1 unchanged -- authenticated tenant-scoped contract preserved
+- QA ruling: share token lookup split by caller class documented in CONTRACTS.md §72 + §73
+- Truth files updated: rpc_contract_registry, privilege_truth, execute_allowlist, definer_allowlist, qa_claim, qa_scope_map, CONTRACTS.md
+- Gate: merge-blocking
+
+Proof
+docs/proofs/10.14B7_dispo_buyer_packet_fields_20260525T215558Z.log
+
+Test suite
+Files=97, Tests=1237, Result=PASS
+
+Status
+MERGED
