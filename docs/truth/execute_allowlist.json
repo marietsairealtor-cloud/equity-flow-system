@@ -76,5 +76,18 @@
     "update_property_info_v1",
     "update_seller_info_v1",
     "update_workspace_settings_v1"
-  ]
+  ],
+  "update_dispo_packet_v1": {
+    "grant": [
+      "authenticated"
+    ],
+    "item": "10.14B7"
+  },
+  "lookup_share_token_public_v1": {
+    "grant": [
+      "anon",
+      "authenticated"
+    ],
+    "item": "10.14B7"
+  }
 }

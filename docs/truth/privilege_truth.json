@@ -33,6 +33,11 @@
         "routine": "submit_form_v1",
         "privilege": "EXECUTE",
         "authority": "CONTRACTS.md §12 controlled exception — Build Route 10.8.1; §64 / §66 (10.12A persistence + 10.12C outcomes)"
+      },
+      {
+        "routine": "lookup_share_token_public_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B7 -- public buyer-facing share token lookup; anon-callable; token is authorization mechanism"
       }
     ],
     "anon_explicit_none": "anon holds zero routine grants except CONTRACTS.md §12 controlled exceptions: resolve_form_slug_v1 and submit_form_v1 (Build Route 10.8.1; submit contract §64–§66 / 10.12A–10.12C). Any other EXECUTE grant to anon is a violation.",
@@ -292,37 +297,47 @@
       },
       {
         "routine": "update_buyer_active_status_v1",
-          "privilege": "EXECUTE",
-          "authority": "Build Route 10.14B1 -- buyer active status mutation; EXECUTE to authenticated"
-        },
-        {
-          "routine": "attach_deal_document_v1",
-          "privilege": "EXECUTE",
-          "authority": "Build Route 10.14B5 -- signed APS document attach; EXECUTE to authenticated"
-        },
-        {
-          "routine": "list_deal_documents_v1",
-          "privilege": "EXECUTE",
-          "authority": "Build Route 10.14B5 -- signed APS document list; EXECUTE to authenticated"
-        },
-        {
-          "routine": "delete_deal_document_v1",
-          "privilege": "EXECUTE",
-          "authority": "Build Route 10.14B5A -- generic document vault remove path; EXECUTE to authenticated"
-        },
-        {
-          "routine": "set_dispo_deal_milestone_v1",
-          "privilege": "EXECUTE",
-          "authority": "Build Route 10.14B2 -- dispo deal milestone mutation; EXECUTE to authenticated"
-        },
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B1 -- buyer active status mutation; EXECUTE to authenticated"
+      },
       {
-          "routine": "update_deal_pricing_v1",
-          "privilege": "EXECUTE",
-          "authority": "Build Route 10.11A7 -- append-only deal_inputs pricing merge; EXECUTE to authenticated"
-        },
+        "routine": "attach_deal_document_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B5 -- signed APS document attach; EXECUTE to authenticated"
+      },
+      {
+        "routine": "list_deal_documents_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B5 -- signed APS document list; EXECUTE to authenticated"
+      },
+      {
+        "routine": "delete_deal_document_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B5A -- generic document vault remove path; EXECUTE to authenticated"
+      },
+      {
+        "routine": "set_dispo_deal_milestone_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B2 -- dispo deal milestone mutation; EXECUTE to authenticated"
+      },
+      {
+        "routine": "update_deal_pricing_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.11A7 -- append-only deal_inputs pricing merge; EXECUTE to authenticated"
+      },
       {
         "routine": "update_seller_info_v1",
         "privilege": "EXECUTE"
+      },
+      {
+        "routine": "update_dispo_packet_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B7 -- dispo packet fields mutation; authenticated only"
+      },
+      {
+        "routine": "lookup_share_token_public_v1",
+        "privilege": "EXECUTE",
+        "authority": "Build Route 10.14B7 -- public buyer-facing share token lookup; anon + authenticated"
       }
     ],
     "service_role": [
@@ -477,9 +492,9 @@
       "submit_form_v1",
       "update_deal_properties_v1",
       "update_buyer_active_status_v1",
-        "attach_deal_document_v1",
-        "list_deal_documents_v1",
-        "delete_deal_document_v1",
+      "attach_deal_document_v1",
+      "list_deal_documents_v1",
+      "delete_deal_document_v1",
       "set_dispo_deal_milestone_v1",
       "update_deal_pricing_v1",
       "update_deal_property_v1",
@@ -489,11 +504,14 @@
       "update_member_role_v1",
       "update_property_info_v1",
       "update_seller_info_v1",
-      "update_workspace_settings_v1"
+      "update_workspace_settings_v1",
+      "update_dispo_packet_v1",
+      "lookup_share_token_public_v1"
     ],
     "anon_routines": [
       "resolve_form_slug_v1",
-      "submit_form_v1"
+      "submit_form_v1",
+      "lookup_share_token_public_v1"
     ],
     "alter_default_privileges": []
   },
@@ -522,12 +540,22 @@
         "grants": [
           {
             "table": "deal_tc",
-            "privileges": ["SELECT","INSERT","UPDATE","DELETE"],
+            "privileges": [
+              "SELECT",
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ],
             "role": "authenticated"
           },
           {
             "table": "deal_tc_checklist",
-            "privileges": ["SELECT","INSERT","UPDATE","DELETE"],
+            "privileges": [
+              "SELECT",
+              "INSERT",
+              "UPDATE",
+              "DELETE"
+            ],
             "role": "authenticated"
           }
         ],
@@ -567,5 +595,29 @@
       "description": "pg_default_acl for operator-owned roles must contain zero entries granting privileges to anon or authenticated in schema public",
       "authority": "CONTRACTS.md §13, GUARDRAILS §11"
     }
-  ]
+  ],
+  "update_dispo_packet_v1": {
+    "type": "function",
+    "grant": [
+      "authenticated"
+    ],
+    "revoke": [
+      "public",
+      "anon"
+    ],
+    "security": "DEFINER",
+    "item": "10.14B7"
+  },
+  "lookup_share_token_public_v1": {
+    "type": "function",
+    "grant": [
+      "anon",
+      "authenticated"
+    ],
+    "revoke": [
+      "public"
+    ],
+    "security": "DEFINER",
+    "item": "10.14B7"
+  }
 }

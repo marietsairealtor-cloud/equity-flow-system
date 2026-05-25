@@ -357,6 +357,8 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | claim_trial_v1 | 10.8.12 | Atomically reserve one-time 30-day free trial for current authenticated user; returns trial_eligible and trial_period_days | SECURITY DEFINER, authenticated only | auth.uid() only — no caller tenant_id param; tenant context exempt |
 | update_display_name_v1 | 10.8.11J | Update display name for current authenticated user; blank returns VALIDATION_ERROR | SECURITY DEFINER, authenticated only | auth.uid() only — no caller user_id or tenant_id param |
 | mark_submission_reviewed_v1 | 10.12C4, 10.12C8 | Lead Intake: set **`review_status`**, **`review_outcome`**, **`reviewed_at`** on a **seller** or **birddog** intake row (dismiss / reject outcomes only; **`promoted`** via **`promote_draft_deal_v1`**); workspace write lock; idempotent same outcome; **10.12C8** optional **`p_draft_id`** resolve by **`draft_deals_id`** | SECURITY DEFINER, authenticated only; min role member | **`p_outcome`** first; optional **`p_submission_id`** / **`p_draft_id`** (**10.12C8**); legacy **`(p_submission_id, p_outcome)`** overload — tenant from **`current_tenant_id()`** |
+| update_dispo_packet_v1 | 10.14B7 | Patch dispo buyer-facing packet fields on a deal (jsonb patch semantics; omit=unchanged, null=clear, empty string=normalize to NULL); stage guard: dispo/under_contract only; envelope-safe numeric/date/URL validation; writes deal_activity_log on success | SECURITY DEFINER, authenticated only, min role: member, workspace write-lock | current_tenant_id() — p_deal_id uuid + p_fields jsonb |
+| lookup_share_token_public_v1 | 10.14B7 | Public buyer-facing share token lookup; token is authorization; no tenant context required; returns only allowlisted buyer-facing packet fields; no exact address or seller/internal fields; identical NOT_FOUND envelope for all failure cases | SECURITY DEFINER, STABLE, anon + authenticated EXECUTE | p_token text only — tenant resolved from share_tokens row |
 
 ### Mapping Rules
 
@@ -1871,3 +1873,47 @@ Authoritative names and variable IDs: **`docs/ui-workflows/WORKFLOWS.md`** — *
 - **`create_share_token_v1`**, **`revoke_share_token_v1`**, **`lookup_share_token_v1`**: behavior per **§17** and foundation bullets; **`lookup_share_token_v1`** continues identical **`NOT_FOUND`** JSON for invalid, expired, and revoked paths.
 
 **§Registry:** **`docs/truth/rpc_contract_registry.json`**; **`docs/truth/write_path_registry.json`**; **`docs/truth/tenant_table_selector.json`**; **`§17`** mapping table above.
+
+---
+
+## 73) Dispo backend -- Buyer-Facing Packet Fields (10.14B7)
+
+**Authority:** migration `20260525000001_10_14B7_dispo_buyer_packet_fields.sql`.
+
+**Purpose:** Buyer-facing Dispo deal packet fields for the Dispo packet editor and public share packet viewer. Governed authenticated mutation path for operators. New public anon-callable lookup RPC for buyers.
+
+### Schema changes
+
+Eight nullable columns added to `public.deals`:
+
+- `dispo_asking_price numeric` -- buyer-facing asking price
+- `dispo_intersection text` -- nearest intersection (public location proxy; no exact address)
+- `dispo_closing_date date` -- target closing date
+- `dispo_description text` -- deal description
+- `dispo_comparables text` -- comparable sales notes
+- `dispo_media_url text` -- external media URL (https:// only; validated)
+- `dispo_market_value_estimate numeric` -- operator-estimated ARV / market value
+- `dispo_below_market_override numeric` -- optional below-market display override
+
+Below-market display value derivation: `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`. If both absent, badge may be hidden.
+
+### `update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)`
+
+- **SECURITY DEFINER**, **VOLATILE**; **GRANT EXECUTE** to `authenticated` only (REVOKE `anon`, `PUBLIC`).
+- **Guards:** `require_min_role_v1('member')` first; `current_tenant_id()` + `auth.uid()` required; `check_workspace_write_allowed_v1()` enforced.
+- **Stage guard:** `dispo` or `under_contract` only; other stages return `CONFLICT`.
+- **p_fields patch semantics:** omitted key = unchanged; explicit null = clear field; empty string = normalize to NULL for nullable fields; unknown key = `VALIDATION_ERROR`; non-object or empty object = `VALIDATION_ERROR`.
+- **Envelope-safe validation:** invalid numeric → `VALIDATION_ERROR`; invalid date → `VALIDATION_ERROR`; `dispo_media_url` must be `https://` with valid host or empty/null → else `VALIDATION_ERROR`.
+- **On success:** writes `deal_activity_log` (`packet_update`), increments `row_version`.
+- Cross-tenant deal → `NOT_FOUND`.
+
+### `lookup_share_token_public_v1(p_token text)`
+
+- **SECURITY DEFINER**, **STABLE**; **GRANT EXECUTE** to `anon` and `authenticated` (REVOKE `PUBLIC`).
+- No `current_tenant_id()` required -- token is the authorization mechanism.
+- **Resolution order:** validate format → hash → lookup `share_tokens` by `token_hash` → check revoked → check expired → check workspace subscription (resolved from token row) → return allowlisted packet fields.
+- **Identical NOT_FOUND envelope** for all failure cases: invalid format, missing token, revoked, expired, workspace expired. No existence leak.
+- **Allowlisted output fields only:** `expires_at`, `dispo_asking_price`, `dispo_intersection`, `dispo_closing_date`, `dispo_description`, `dispo_comparables`, `dispo_media_url`, `dispo_market_value_estimate`, `dispo_below_market_override`, `dispo_below_market_value` (derived).
+- **Does not return:** exact `address`, `deal_id`, `tenant_id`, seller fields, internal fields, activity, notes.
+
+**§Registry:** `docs/truth/rpc_contract_registry.json`; `docs/truth/privilege_truth.json`; `docs/truth/execute_allowlist.json`; `§17` mapping table (add `update_dispo_packet_v1`, `lookup_share_token_public_v1`); `§72` share token split note.

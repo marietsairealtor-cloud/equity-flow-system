@@ -170,51 +170,74 @@
       ],
       "notes": "Authenticated only (REVOKE anon, PUBLIC). SECURITY DEFINER. Same limit and NOT_AUTHORIZED contract as list_intake_submissions_v1. Reads intake_buyers for tenant; items expose id, name, email, phone, areas_of_interest, budget_range, deal_type_tags, price_range_notes, notes, is_active, created_at, updated_at. Primary UI consumer: Dispo Buyer Ops (10.14C); Lead Intake must not use this as a roster."
     },
-      {
-        "name": "update_buyer_active_status_v1",
-        "version": 1,
-        "build_route_owner": "10.14B1",
-        "input_contract": "CONTRACTS.md §-- update_buyer_active_status_v1",
-        "response_schema": null,
-        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"],
-        "notes": "Governed mutation for Dispo Buyer Ops activate/deactivate. Tenant-scoped. Does not modify list_buyers_v1."
-      },
-      {
-        "name": "attach_deal_document_v1",
-        "version": 1,
-        "build_route_owner": "10.14B5",
-        "input_contract": "CONTRACTS.md -- attach_deal_document_v1",
-        "response_schema": null,
-        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR", "WORKSPACE_NOT_WRITABLE"],
-        "notes": "Records governed document metadata after client uploads file to Supabase Storage. Allowed document_type: signed_purchase_agreement. storage_path validated against tenant/deal-scoped convention."
-      },
-      {
-        "name": "list_deal_documents_v1",
-        "version": 1,
-        "build_route_owner": "10.14B5",
-        "input_contract": "CONTRACTS.md -- list_deal_documents_v1",
-        "response_schema": null,
-        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"],
-        "notes": "Returns document metadata for a deal. Metadata only -- no file contents returned."
-      },
-      {
-        "name": "delete_deal_document_v1",
-        "version": 1,
-        "build_route_owner": "10.14B5A",
-        "input_contract": "CONTRACTS.md §-- delete_deal_document_v1",
-        "response_schema": null,
-        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR", "WORKSPACE_NOT_WRITABLE"],
-        "notes": "Soft-deletes document metadata only. Storage file deletion is out of scope. deleted_at and deleted_by set on mutation."
-      },
-      {
-        "name": "set_dispo_deal_milestone_v1",
-        "version": 1,
-        "build_route_owner": "10.14B2",
-        "input_contract": "CONTRACTS.md §-- set_dispo_deal_milestone_v1",
-        "response_schema": null,
-        "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR", "CONFLICT"],
-        "notes": "Sets or clears assignment_agreement_signed_at / earnest_money_received_at on dispo deals. Writes activity log on mutation."
-      },
+    {
+      "name": "update_buyer_active_status_v1",
+      "version": 1,
+      "build_route_owner": "10.14B1",
+      "input_contract": "CONTRACTS.md §-- update_buyer_active_status_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR"
+      ],
+      "notes": "Governed mutation for Dispo Buyer Ops activate/deactivate. Tenant-scoped. Does not modify list_buyers_v1."
+    },
+    {
+      "name": "attach_deal_document_v1",
+      "version": 1,
+      "build_route_owner": "10.14B5",
+      "input_contract": "CONTRACTS.md -- attach_deal_document_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR",
+        "WORKSPACE_NOT_WRITABLE"
+      ],
+      "notes": "Records governed document metadata after client uploads file to Supabase Storage. Allowed document_type: signed_purchase_agreement. storage_path validated against tenant/deal-scoped convention."
+    },
+    {
+      "name": "list_deal_documents_v1",
+      "version": 1,
+      "build_route_owner": "10.14B5",
+      "input_contract": "CONTRACTS.md -- list_deal_documents_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR"
+      ],
+      "notes": "Returns document metadata for a deal. Metadata only -- no file contents returned."
+    },
+    {
+      "name": "delete_deal_document_v1",
+      "version": 1,
+      "build_route_owner": "10.14B5A",
+      "input_contract": "CONTRACTS.md §-- delete_deal_document_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR",
+        "WORKSPACE_NOT_WRITABLE"
+      ],
+      "notes": "Soft-deletes document metadata only. Storage file deletion is out of scope. deleted_at and deleted_by set on mutation."
+    },
+    {
+      "name": "set_dispo_deal_milestone_v1",
+      "version": 1,
+      "build_route_owner": "10.14B2",
+      "input_contract": "CONTRACTS.md §-- set_dispo_deal_milestone_v1",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR",
+        "CONFLICT"
+      ],
+      "notes": "Sets or clears assignment_agreement_signed_at / earnest_money_received_at on dispo deals. Writes activity log on mutation."
+    },
     {
       "name": "list_reminders_v1",
       "version": 1,
@@ -245,7 +268,9 @@
       "build_route_owner": "10.8.6",
       "input_contract": "CONTRACTS.md §17 list_farm_areas_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "Min role: admin. Returns all farm areas for caller tenant ordered by area_name."
     },
     {
@@ -254,7 +279,11 @@
       "build_route_owner": "10.8.6",
       "input_contract": "CONTRACTS.md §17 create_farm_area_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED","VALIDATION_ERROR","CONFLICT"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "CONFLICT"
+      ],
       "notes": "Min role: admin. VALIDATION_ERROR on blank area_name. CONFLICT on duplicate (tenant_id, area_name)."
     },
     {
@@ -263,7 +292,10 @@
       "build_route_owner": "10.8.6",
       "input_contract": "CONTRACTS.md §17 delete_farm_area_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED","NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND"
+      ],
       "notes": "Min role: admin. NOT_FOUND if farm area does not exist for tenant. ON DELETE SET NULL cascades to deals.farm_area_id."
     },
     {
@@ -272,7 +304,9 @@
       "build_route_owner": "10.8.7E",
       "input_contract": "CONTRACTS.md §34 accept_pending_invites_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "Resolves all valid pending invites by exact email match. No parameters. Oldest-first. Partial acceptance. Silent per-invite failure. Sets current_tenant_id if NULL."
     },
     {
@@ -281,7 +315,12 @@
       "build_route_owner": "10.8.7B",
       "input_contract": "CONTRACTS.md §32 accept_invite_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED","VALIDATION_ERROR","NOT_FOUND","INVITE_EXPIRED"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "INVITE_EXPIRED"
+      ],
       "notes": "Consumes app invite token. Idempotent via accepted_at. Creates tenant_memberships row. Prerequisite for 10.8.8."
     },
     {
@@ -464,7 +503,9 @@
       "build_route_owner": "10.8.11G",
       "input_contract": "CONTRACTS.md §17 list_workspace_members_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "Returns all members of current workspace. Min role: member. No caller-supplied tenant_id."
     },
     {
@@ -473,7 +514,11 @@
       "build_route_owner": "10.8.11G",
       "input_contract": "CONTRACTS.md §17 invite_workspace_member_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "CONFLICT"
+      ],
       "notes": "Invites new member to current workspace. Min role: admin. Rejects duplicates and existing members."
     },
     {
@@ -482,7 +527,11 @@
       "build_route_owner": "10.8.11G",
       "input_contract": "CONTRACTS.md §17 update_member_role_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "Updates role of existing workspace member. Min role: admin. No caller-supplied tenant_id."
     },
     {
@@ -491,7 +540,11 @@
       "build_route_owner": "10.8.11G",
       "input_contract": "CONTRACTS.md §17 remove_member_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "Removes member from current workspace. Min role: admin. No caller-supplied tenant_id."
     },
     {
@@ -500,7 +553,9 @@
       "build_route_owner": "10.8.11I3",
       "input_contract": "CONTRACTS.md §17 list_pending_invites_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "Returns all pending invites for current tenant. Min role: admin. No caller-supplied tenant_id."
     },
     {
@@ -509,7 +564,11 @@
       "build_route_owner": "10.8.11I3",
       "input_contract": "CONTRACTS.md §17 rescind_invite_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "Rescinds a pending invite for current tenant. Min role: admin. No caller-supplied tenant_id."
     },
     {
@@ -518,7 +577,9 @@
       "build_route_owner": "10.8.11O3",
       "input_contract": "CONTRACTS.md §52 list_archived_workspaces_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "No parameters. Returns archived workspaces where caller is owner; includes restore_token for restore_workspace_v1(uuid). Not JWT-tenant-scoped."
     },
     {
@@ -527,7 +588,13 @@
       "build_route_owner": "10.8.11O3",
       "input_contract": "p_restore_token uuid — CONTRACTS.md §52 restore_workspace_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND", "CONFLICT", "INTERNAL"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "CONFLICT",
+        "INTERNAL"
+      ],
       "notes": "Owner-only. Resolves tenants.restore_token to tenant; clears archived_at, subscription_lapsed_at, restore_token when subscription active. Supersedes 10.8.11O1 zero-parameter form."
     },
     {
@@ -545,7 +612,10 @@
       "build_route_owner": "10.11A4",
       "input_contract": "CONTRACTS.md §55 Acquisition backend — get_acq_kpis_v1 (10.11A4 KPI date range)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
       "notes": "Old zero-arg surface dropped. Signature get_acq_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). Tenant from current_tenant_id(). Both params NULL = all-time; otherwise filters deals by created_at (inclusive bounds when set). p_date_to < p_date_from => VALIDATION_ERROR. avg_assignment_fee: latest deal_inputs row per deal (ORDER BY created_at DESC), averaged over qualifying terminal-stage deals in range. Read-only KPIs. STABLE."
     },
     {
@@ -554,7 +624,10 @@
       "build_route_owner": "10.12C6",
       "input_contract": "CONTRACTS.md §64 get_draft_deal_v1 (10.12C6 draft read path)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND"
+      ],
       "notes": "Migration 20260509000001_10_12C6_get_draft_deal_read_path.sql. get_draft_deal_v1(p_draft_id uuid). STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE PUBLIC, anon). require_min_role_v1(member); failure => NOT_AUTHORIZED envelope. current_tenant_id() NULL => NOT_AUTHORIZED. Tenant-scoped SELECT on draft_deals; wrong tenant, missing row, or NULL p_draft_id => NOT_FOUND. No check_workspace_write_allowed_v1. OK data: id, form_type, payload, address, asking_price, repair_estimate, promoted_deal_id, created_at. Standard jsonb envelope ok/code/data/error."
     },
     {
@@ -563,7 +636,10 @@
       "build_route_owner": "10.14A",
       "input_contract": "CONTRACTS.md §17 / §71 get_dispo_kpis_v1 (10.14A)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
       "notes": "Migration 20260515000001_10_14A_dispo_dashboard_read_path.sql. get_dispo_kpis_v1(p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). Inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED (Not authorized). current_tenant_id() NULL => NOT_AUTHORIZED. v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from => VALIDATION_ERROR. OK data: deals_moved_to_tc (deal_activity_log handoff rows content 'Deal handed off to TC' in window), deposit_collected (deal_tc_checklist deposit_received completed_at in window), avg_assignment_fee (ROUND mean assignment_fee from assumptions_snapshot_id join for deals stage=dispo only, not windowed), date_from, date_to. JSON envelope (json). No workspace write lock (read-only)."
     },
     {
@@ -572,7 +648,10 @@
       "build_route_owner": "10.12C2",
       "input_contract": "CONTRACTS.md §64 get_lead_intake_kpis_v1 (10.12C2 Lead Intake KPI; 10.12C4 review outcome metrics; 10.12C5 unreviewed_count scope)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
       "notes": "Migrations 20260505000002_10_12C2_lead_intake_kpis.sql (intro), 20260507000001_10_12C4_submission_review_outcomes.sql (KPI payload + semantics), 20260508000001_10_12C5_kpi_unreviewed_count_fix.sql (recreate only: unreviewed_count). DROP IF EXISTS + CREATE. STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). Signature (p_date_from timestamptz DEFAULT NULL, p_date_to timestamptz DEFAULT NULL). require_min_role_v1(member); wrapped NOT_AUTHORIZED. current_tenant_id() required. Effective bounds v_from = COALESCE(p_date_from, now() - interval '30 days'), v_to = COALESCE(p_date_to, now()); v_to < v_from => VALIDATION_ERROR. OK data (10.12C4): new_submissions, new_leads (excludes rejected_spam/test/invalid), rejected_count, submission_to_deal_pct (pct of new_leads promoted; draft.promoted_deal_id or review_outcome=promoted), avg_review_time_hours (review_status=reviewed, reviewed_at set), unreviewed_count (10.12C5: review_status=unreviewed AND form_type IN (seller,birddog); not windowed; buyer excluded), date_from, date_to. No check_workspace_write_allowed_v1."
     },
     {
@@ -581,7 +660,11 @@
       "build_route_owner": "10.13A",
       "input_contract": "CONTRACTS.md §17 / §69 get_offer_payload_v1 (10.13A)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR"
+      ],
       "notes": "Migration 20260513000003_10_13A_offer_data_contract_soft_offer.sql. get_offer_payload_v1(p_deal_id uuid). STABLE SECURITY DEFINER; EXECUTE to authenticated only (REVOKE PUBLIC, anon). require_min_role_v1(member); NOT_AUTHORIZED on guard failure or null tenant. Explicit-column SELECT on deals + deal_inputs (no SELECT *). NOT_FOUND missing deal or snapshot in tenant; NULL p_deal_id => VALIDATION_ERROR. Non-empty mao must parse numeric else VALIDATION_ERROR (invalid mao). Otherwise derives MAO when arv+repair_estimate+multiplier present; assignment_fee optional. OK jsonb envelope: data.pricing, data.seller, offer_clause_hours=48."
     },
     {
@@ -590,7 +673,10 @@
       "build_route_owner": "10.13A",
       "input_contract": "CONTRACTS.md §17 / §69 refresh_deal_soft_offer_v1 (10.13A)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
       "notes": "Migration 20260513000003_10_13A_offer_data_contract_soft_offer.sql. refresh_deal_soft_offer_v1(p_deal_id uuid, p_idempotency_key text). VOLATILE SECURITY DEFINER; EXECUTE authenticated only. Order: require_min_role(member) first executable (wrapped NOT_AUTHORIZED); auth.uid() required; trim(p_idempotency_key) non-empty else VALIDATION_ERROR; SELECT rpc_idempotency_log replay before tenant/workspace/get_offer_payload/mutations; current_tenant_id(); check_workspace_write_allowed_v1; get_offer_payload_v1; builds copy_text/copy_email with 48h UTC clause (ASCII hyphen in Subject); INSERT rpc_idempotency_log ON CONFLICT replay; DELETE+INSERT deal_soft_offers. Failure from get_offer_payload returns envelope without log row."
     },
     {
@@ -599,7 +685,12 @@
       "build_route_owner": "10.13B",
       "input_contract": "CONTRACTS.md §17 / §70 send_offer_v1 (10.13B)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND", "VALIDATION_ERROR", "CONFLICT"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND",
+        "VALIDATION_ERROR",
+        "CONFLICT"
+      ],
       "notes": "Migration 20260513000004_10_13B_offer_send_write_path.sql. send_offer_v1(p_deal_id uuid, p_idempotency_key text). VOLATILE SECURITY DEFINER; EXECUTE authenticated only. Order: require_min_role(member) first executable (wrapped NOT_AUTHORIZED); auth.uid(); trim(p_idempotency_key) non-empty else VALIDATION_ERROR; SELECT rpc_idempotency_log replay before tenant/workspace/deal lock; current_tenant_id(); check_workspace_write_allowed_v1; SELECT deals FOR UPDATE (tenant, deleted_at IS NULL); NOT_FOUND missing deal; CONFLICT if stage not analyzing or already offer_sent; VALIDATION_ERROR if no deal_soft_offers row for deal; INSERT rpc_idempotency_log ON CONFLICT RETURNING (xmax = 0) loser replay; winner UPDATE deals stage offer_sent row_version+1, INSERT deal_reminders offer_follow_up at clock_timestamp()+3 days, INSERT deal_activity_log stage_change. OK jsonb: deal_id, stage, deal_soft_offer_id, reminder_id, reminder_date UTC Z string."
     },
     {
@@ -608,7 +699,10 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — list_acq_deals_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
+      ],
       "notes": "p_filter text default all; p_farm_area_id uuid optional. Excludes dispo/tc/closed/dead. follow_ups uses deal_reminders due/overdue. STABLE."
     },
     {
@@ -617,7 +711,10 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — get_acq_deal_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND"
+      ],
       "notes": "p_deal_id uuid. Full Acquisition deal payload: deal row, optional deal_properties JSON, pricing from latest deal_inputs (returns mao and multiplier inside pricing object — 10.11A3). Returns last_contacted_at at top level of data, derived from most recent call_log note on deal_notes (10.11A3); null when no call_log exists. STABLE."
     },
     {
@@ -626,7 +723,10 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — update_seller_info_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND"
+      ],
       "notes": "Partial update on deals seller + next_action fields via COALESCE. Min role: member. Workspace write lock. NOT_FOUND cross-tenant or missing deal."
     },
     {
@@ -635,7 +735,10 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — update_property_info_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND"
+      ],
       "notes": "Upsert public.deal_properties by deal_id. Partial field merge via COALESCE on conflict. Workspace write lock."
     },
     {
@@ -644,7 +747,12 @@
       "build_route_owner": "10.11A8",
       "input_contract": "CONTRACTS.md §58 update_deal_properties_v1 (10.11A6 — deal_properties jsonb patch)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "Signature update_deal_properties_v1(p_deal_id uuid, p_fields jsonb). SECURITY DEFINER; GRANT EXECUTE to authenticated only. current_tenant_id() + auth.uid() required; else NOT_AUTHORIZED. check_workspace_write_allowed_v1 before write. Updates public.deal_properties only — no deal_inputs or assumptions. Jsonb patch semantics match update_deal_seller_v1 (§57): omitted key unchanged, explicit JSON null clears nullable field, value equals current => VALIDATION_ERROR, empty object / non-object / unknown key => VALIDATION_ERROR. Missing deal_properties row for deal in tenant => NOT_FOUND (no upsert). repair_estimate removed in 10.11A8 — use update_deal_pricing_v1 instead (corrective to 10.11A6). Allowed keys: property_type, beds, baths, sqft, lot_size, year_built, occupancy, deficiency_tags, condition_notes, garage_parking, basement_type, foundation_type, roof_age, furnace_age, ac_age, heating_type, cooling_type. beds/baths/sqft/garage_parking are text (v1 shorthand e.g. 3+1, 2+1, 2400/1200). deficiency_tags: explicit null clears, json array of strings valid, any other shape => VALIDATION_ERROR. year_built, roof_age, furnace_age, ac_age validated to safe typed values => VALIDATION_ERROR on bad input. Increments row_version and touches updated_at on successful change."
     },
     {
@@ -667,7 +775,12 @@
       "build_route_owner": "10.11A10",
       "input_contract": "CONTRACTS.md §62 advance_deal_stage_v1 (deal_activity_log; 10.11A10); §55 Acquisition backend",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "CONFLICT",
+        "NOT_FOUND"
+      ],
       "notes": "p_action: start_analysis | send_offer | mark_contract_signed. Valid transitions only. UC→dispo via handoff_to_dispo_v1. Workspace write lock. Requires non-NULL current_tenant_id() and auth.uid(); missing either → NOT_AUTHORIZED. Successful transition writes stage_change row to deal_activity_log."
     },
     {
@@ -676,7 +789,12 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — mark_deal_dead_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "CONFLICT",
+        "NOT_FOUND"
+      ],
       "notes": "p_dead_reason required non-empty. Terminal dead stage. CONFLICT if already terminal. Workspace write lock."
     },
     {
@@ -685,7 +803,11 @@
       "build_route_owner": "10.11A10",
       "input_contract": "CONTRACTS.md §62 handoff_to_dispo_v1 (deal_activity_log; 10.11A10); §55 Acquisition backend",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "CONFLICT",
+        "NOT_FOUND"
+      ],
       "notes": "under_contract only → dispo; sets assignee_user_id. Workspace write lock. Requires non-NULL current_tenant_id() and auth.uid(); missing either → NOT_AUTHORIZED. Successful handoff writes handoff row to deal_activity_log."
     },
     {
@@ -694,7 +816,12 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 / §62 / §71 / §72 handoff_to_tc_v1 (10.11A; activity log 10.14A; milestones + notification 10.14B)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "CONFLICT", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "CONFLICT",
+        "NOT_FOUND"
+      ],
       "notes": "dispo only → tc; sets assignee_user_id. **10.14A:** inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED (Not authorized). Then current_tenant_id() + auth.uid() both required (NOT_AUTHORIZED if missing). check_workspace_write_allowed_v1 (read-only workspace => NOT_AUTHORIZED). Non-member assignee => VALIDATION_ERROR. **10.14B:** assignment_agreement_signed_at and earnest_money_received_at on deals must both be non-NULL before handoff; else CONFLICT with error.fields for missing milestones. Successful path UPDATE deals + INSERT deal_activity_log (activity_type handoff, content 'Deal handed off to TC', created_by auth.uid()); if p_assignee_user_id set, INSERT workspace_handoff_notifications (kind handoff_to_tc). Workspace write lock."
     },
     {
@@ -703,7 +830,11 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — return_to_acq_v1; activity log 10.14B §72",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "CONFLICT",
+        "NOT_FOUND"
+      ],
       "notes": "dispo → under_contract only. **10.14B:** inner BEGIN PERFORM require_min_role_v1('member'); EXCEPTION WHEN OTHERS => NOT_AUTHORIZED. current_tenant_id() + auth.uid() required; check_workspace_write_allowed_v1 before write. Successful path UPDATE deals + INSERT deal_activity_log (activity_type handoff, content 'Deal returned to Acq from Dispo', created_by auth.uid()). Workspace write lock."
     },
     {
@@ -712,7 +843,11 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — return_to_dispo_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "CONFLICT", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "CONFLICT",
+        "NOT_FOUND"
+      ],
       "notes": "tc → dispo only. Workspace write lock."
     },
     {
@@ -721,7 +856,10 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — list_deal_media_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND"
+      ],
       "notes": "Lists deal_media rows for deal in tenant. STABLE."
     },
     {
@@ -730,7 +868,12 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — register_deal_media_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND", "CONFLICT"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "CONFLICT"
+      ],
       "notes": "Post-upload metadata; p_storage_path unique per tenant. Workspace write lock."
     },
     {
@@ -739,7 +882,10 @@
       "build_route_owner": "10.11A",
       "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — delete_deal_media_v1",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "NOT_FOUND"
+      ],
       "notes": "Deletes metadata row; returns storage_path for Edge cleanup. Workspace write lock."
     },
     {
@@ -748,7 +894,12 @@
       "build_route_owner": "10.11A1",
       "input_contract": "CONTRACTS.md — create_deal_note_v1 (10.11A1); p_deal_id uuid, p_note_type text (note | call_log), p_content text",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "SECURITY DEFINER. Inserts deal_notes row; workspace write lock via check_workspace_write_allowed_v1. JSON envelope; ok data includes note_id."
     },
     {
@@ -757,7 +908,11 @@
       "build_route_owner": "10.11A1",
       "input_contract": "CONTRACTS.md — list_deal_notes_v1 (10.11A1); p_deal_id uuid",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "STABLE SECURITY DEFINER. Returns notes array for deal in tenant (newest first)."
     },
     {
@@ -766,7 +921,11 @@
       "build_route_owner": "10.11A1",
       "input_contract": "CONTRACTS.md — list_deal_activity_v1 (10.11A1); p_deal_id uuid",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "STABLE SECURITY DEFINER. Returns activity array from deal_activity_log for deal in tenant (newest first)."
     },
     {
@@ -775,7 +934,9 @@
       "build_route_owner": "10.14A",
       "input_contract": "CONTRACTS.md §17 / §71 list_dispo_dashboard_deals_v1 (10.14A)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED"],
+      "error_codes": [
+        "NOT_AUTHORIZED"
+      ],
       "notes": "Migration 20260515000001_10_14A_dispo_dashboard_read_path.sql. list_dispo_dashboard_deals_v1() no args. STABLE SECURITY DEFINER; EXECUTE authenticated only (REVOKE anon, PUBLIC). require_min_role_v1(member) wrapped NOT_AUTHORIZED. current_tenant_id() NULL => NOT_AUTHORIZED. OK data.items: deals where tenant_id match, deleted_at IS NULL, stage=dispo; each row includes share_link summary (active|none|revoked|expired|inactive), buyer_interest {schema_version:1, signals:[]}, activity teaser {entry_count, last_activity_type, last_activity_at}, latest arv/ask/assignment_fee from deal_inputs, health_color. JSON envelope (json). Read-only."
     },
     {
@@ -784,7 +945,12 @@
       "build_route_owner": "10.11A2",
       "input_contract": "CONTRACTS.md §57 update_deal_seller_v1 (10.11A2)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "SECURITY DEFINER, grants authenticated. p_fields jsonb: seller_name, seller_phone, seller_email, seller_pain, seller_timeline, seller_notes. check_workspace_write_allowed_v1. Omit key = no change; explicit json null = clear; same as current = VALIDATION_ERROR; empty/non-object/unknown keys = VALIDATION_ERROR."
     },
     {
@@ -793,7 +959,12 @@
       "build_route_owner": "10.11A2",
       "input_contract": "CONTRACTS.md §57 update_deal_property_v1 (10.11A2)",
       "response_schema": null,
-      "error_codes": ["NOT_AUTHORIZED", "WORKSPACE_NOT_WRITABLE", "VALIDATION_ERROR", "NOT_FOUND"],
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND"
+      ],
       "notes": "SECURITY DEFINER, grants authenticated. p_fields jsonb: address, next_action, next_action_due (timestamptz). Same field contract as update_deal_seller_v1. check_workspace_write_allowed_v1."
     },
     {
@@ -837,5 +1008,38 @@
       ],
       "notes": "SECURITY DEFINER, EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_draft_id uuid, p_fields jsonb). require_min_role_v1(member); check_workspace_write_allowed_v1. Merges tenant draft + optional review overrides into new deals row; links draft.promoted_deal_id. On promoted_deal_id change, trigger trg_draft_deals_promoted_sync_intake_review sets intake reviewed_at / review_status / review_outcome=promoted; promote also issues legacy reviewed_at-only UPDATE on intake. CONFLICT when draft already promoted. NOT_FOUND when draft missing for tenant. Same field/assumption validation posture as create_deal_from_intake_v1 (no client mao). 10.12C7: birddog payload asking_price may be raw text merged into assumptions then full snapshot canonicalized (_intake_canonicalize_pricing_assumptions_v1) before validate/MAO; NULL canonicalize => VALIDATION_ERROR."
     }
-  ]
+  ],
+  "update_dispo_packet_v1": {
+    "volatility": "VOLATILE",
+    "security": "DEFINER",
+    "item": "10.14B7",
+    "grants": [
+      "authenticated"
+    ],
+    "signature": "update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)",
+    "codes": [
+      "OK",
+      "NOT_AUTHORIZED",
+      "VALIDATION_ERROR",
+      "NOT_FOUND",
+      "CONFLICT",
+      "WORKSPACE_NOT_WRITABLE"
+    ],
+    "envelope": "ok/code/data/error"
+  },
+  "lookup_share_token_public_v1": {
+    "volatility": "STABLE",
+    "security": "DEFINER",
+    "item": "10.14B7",
+    "grants": [
+      "anon",
+      "authenticated"
+    ],
+    "signature": "lookup_share_token_public_v1(p_token text)",
+    "codes": [
+      "OK",
+      "NOT_FOUND"
+    ],
+    "envelope": "ok/code/data/error"
+  }
 }
