@@ -751,6 +751,10 @@
     "10.14B7": {
       "title": "Dispo Backend -- Buyer-Facing Packet Fields",
       "proof_pattern": "^docs/proofs/10\\.14B7_dispo_buyer_packet_fields_"
+    },
+    "10.14B7A": {
+      "title": "Corrective Migration -- Dispo Packet RPC Search Path Fix",
+      "proof_pattern": "^docs/proofs/10\\.14B7A_dispo_packet_rpc_search_path_fix_"
     }
   }
 }

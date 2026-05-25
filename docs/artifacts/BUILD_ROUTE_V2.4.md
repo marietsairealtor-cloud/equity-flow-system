@@ -9920,6 +9920,50 @@ Share-token lookup is split by caller class:
 **Prerequisite:** `10.14B6` merged
 ---
 
+### **10.14B7A — Corrective Migration — Dispo Packet RPC Search Path Fix**
+
+**Deliverable:**
+Forward corrective migration to ensure 10.14B7 RPCs reliably land after `supabase db reset`.
+
+**Context:**
+10.14B7 already merged. The original migration is recorded as applied, but `update_dispo_packet_v1` and/or `lookup_share_token_public_v1` may not exist in `pg_proc` after reset due to non-standard function `SET search_path` syntax. Since B7 is merged, do not amend historical migration. Apply a forward corrective migration.
+
+**DoD:**
+
+* New forward migration exists
+* Original 10.14B7 migration is not rewritten
+* `update_dispo_packet_v1(uuid,jsonb)` is recreated with project-standard:
+
+  * `SET search_path = public`
+
+* `lookup_share_token_public_v1(text)` is recreated with project-standard:
+
+  * `SET search_path = public`
+
+* Function bodies preserve approved 10.14B7 logic
+* Grants are preserved:
+
+  * `update_dispo_packet_v1` → authenticated only
+  * `lookup_share_token_public_v1` → anon + authenticated
+
+* After `supabase db reset`, both functions exist in `pg_proc`
+* Existing 10.14B7 pgTAP tests still pass
+* Truth/registry/contract entries remain accurate
+* DEVLOG records why this corrective migration exists
+
+**Tests / Proof:**
+
+* `to_regprocedure('public.update_dispo_packet_v1(uuid,jsonb)')` returns non-null
+* `to_regprocedure('public.lookup_share_token_public_v1(text)')` returns non-null
+* 10.14B7 tests still pass
+* full `pr:preflight` passes
+
+**Proof:** `docs/proofs/10.14B7A_dispo_packet_rpc_search_path_fix_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B7` merged
+
+---
+
 ### **10.14B8 — Dispo Backend — Share Packet Photo Visibility**
 
 **Deliverable:**
