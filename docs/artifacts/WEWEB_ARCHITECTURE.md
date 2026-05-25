@@ -390,22 +390,48 @@ Pending invite resolution rules:
 
 ## 6) Authenticated Shell
 
-### 6.1 Navbar (AUTHORITATIVE order)
+### 6.1 Page Shell Structure (revised 2026-05-24)
 
-| Nav Item | Page | Color | Notes |
-|---|---|---|---|
-| Today | Today view | Amber | DEFAULT LANDING |
-| MAO | MAO calculator | Green | Dual-route + offer gen + toggles + multiplier |
-| Acquisition | Acquisition | Purple | Pipeline + health dots + auto-advance |
-| Dispo | Dispo dashboard | Purple | Share link management |
-| TC | Transaction coord. | Purple | /tc/:deal_id + checklist + contract upload |
-| Lead intake | Lead intake mgmt | Blue | Submissions, form links, embeds |
-| 🔔 | Notifications | Gray | Drawer/component only. Shows reminders, new intake submissions, buyer interest, closing alerts, and deal handoff notifications ("deal assigned to you"). |
-| Workspace ▾ | Account dropdown | Coral | Switch workspace, settings, profile, sign out |
+Every authenticated page uses this WeWeb section structure:
 
-Mobile: navbar collapses to hamburger menu. Workspace dropdown remains accessible.
+```
+Section -- Subscription warning banner (visible when subscription expiring/expired)
+Section (root)
+  ├── Error message component   -- fixed-position toast, visible when error_message !== ''
+  ├── Top Nav component         -- hamburger (page nav) + cog (settings), visible when Supabase Auth['user'] !== undefined
+  └── Page content container
+```
 
-### 6.2 Expired Subscription Banner
+Section settings: width 100%, row gap 16px, padding 16px.
+
+**Bottom Nav removed.** Navigation consolidated into Top Nav hamburger menu (2026-05-24).
+
+### 6.2 Top Nav — Hamburger Menu (page navigation)
+
+Opens a side drawer with page navigation links:
+
+| Nav Item | Page | Notes |
+|---|---|---|
+| Today | /today | DEFAULT LANDING |
+| MAO | /mao-calculator | Dual-route + offer gen |
+| Lead Intake | /lead-intake | Submissions, form links, embeds |
+| ACQ | /acquisition | Pipeline + health dots |
+| Dispo | /dispo | Share link management |
+| TC | /tc | /tc/:deal_id + checklist |
+
+### 6.3 Top Nav — Cog (settings)
+
+Opens a settings popup with:
+- Current Workspace (name + role)
+- Switch Workspace
+- Create New Workspace
+- Workspace Settings
+- Profile Settings
+- Log out
+
+Switch workspace writes `gs_selectedTenantId` (CONTRACTS §4), updates `user_profiles.current_tenant_id` (CONTRACTS §3), refetches `get_user_entitlements_v1`. No page navigation — data reloads in place.
+
+### 6.4 Expired Subscription Banner
 
 Component (not a page) rendered at top of authenticated shell. Two states:
 
@@ -414,7 +440,7 @@ Component (not a page) rendered at top of authenticated shell. Two states:
 
 `get_user_entitlements_v1` returns `subscription_status` = 'expiring' when ≤5 days remain (computed server-side). WeWeb checks the status string only — no date math in frontend. GUARDRAILS §5: no business logic in WeWeb.
 
-### 6.3 Workspace ▾ Dropdown
+### 6.5 Workspace Settings (legacy reference)
 
 Single merged dropdown (no separate User menu). Contains:
 - Switch workspace — shows tenant list, writes `gs_selectedTenantId` (CONTRACTS §4), updates `user_profiles.current_tenant_id` (CONTRACTS §3), refetches `get_user_entitlements_v1`. No page navigation — data reloads in place.
@@ -422,7 +448,7 @@ Single merged dropdown (no separate User menu). Contains:
 - Profile settings (all users)
 - Sign out
 
-### 6.4 Notifications Drawer Behavior
+### 6.6 Notifications Drawer Behavior
 
 Notifications are user-targeted, not broad role spam.
 
