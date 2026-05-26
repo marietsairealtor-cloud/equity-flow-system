@@ -10315,3 +10315,35 @@ Files=97, Tests=1237, Result=PASS
 
 Status
 MERGED
+2026-05-26 — Build Route v2.4 — 10.14B7A + fix/10.14B7-search-path
+
+Objective
+Corrective migrations to fix lookup_share_token_public_v1 and update_dispo_packet_v1
+not landing in pg_proc after supabase db reset.
+
+Changes
+- Migration 20260525000002_10_14B7A_dispo_packet_rpc_search_path_fix.sql -- merged
+  Recreated both RPCs with SET search_path = public (project-standard syntax)
+- fix/10.14B7-search-path-original-migration -- merged
+  Amended original 20260525000001 on disk to fix same syntax
+
+Status
+PARTIAL -- cloud DB correct, both functions present on cloud.
+Local db reset still does not land functions in pg_proc reliably.
+Post-merge handoff still produces dirty definer_allowlist.json,
+execute_allowlist.json, write_path_registry.json, generated/schema.sql.
+Root cause not fully resolved. See bug summary for full diagnostic details.
+
+Known working state
+- Cloud DB: both functions present and correct
+- Manual psql execution: both migrations execute cleanly
+- pr:preflight + test suite: all pass when functions are present
+
+Next
+10.14B7B scoped by QA as forward repair migration -- three small files:
+  000003_B7B_columns_only.sql     -- ADD COLUMN IF NOT EXISTS for all 8 dispo_* columns
+  000004_B7B_update_dispo_packet_rpc.sql  -- CREATE OR REPLACE update_dispo_packet_v1
+  000005_B7B_public_share_lookup_rpc.sql  -- CREATE OR REPLACE lookup_share_token_public_v1
+Required proof: after db reset, all columns + both RPCs exist AND
+npm run handoff produces no dirty truth files.
+Note: QA ruling -- do not accept ALTER TABLE only theory as confirmed.
