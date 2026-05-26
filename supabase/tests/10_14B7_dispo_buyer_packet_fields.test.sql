@@ -105,7 +105,7 @@ SET LOCAL ROLE authenticated;
 -- 1. saves packet fields
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_asking_price":250000,"dispo_intersection":"Main & Elm","dispo_description":"Nice deal","dispo_market_value_estimate":300000}'::jsonb
   )::json)->>'code',
   'OK',
@@ -124,7 +124,7 @@ SET LOCAL ROLE authenticated;
 -- 3. patch preserves omitted fields
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_description":"Updated desc"}'::jsonb
   )::json)->>'code',
   'OK',
@@ -142,7 +142,7 @@ SET LOCAL ROLE authenticated;
 -- 4. explicit null clears field
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_intersection":null}'::jsonb
   )::json)->>'code',
   'OK',
@@ -160,7 +160,7 @@ SET LOCAL ROLE authenticated;
 -- 5. empty string normalizes to NULL
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_description":""}'::jsonb
   )::json)->>'code',
   'OK',
@@ -178,7 +178,7 @@ SET LOCAL ROLE authenticated;
 -- 6. unknown key returns VALIDATION_ERROR
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"unknown_field":"value"}'::jsonb
   )::json)->>'code',
   'VALIDATION_ERROR',
@@ -188,7 +188,7 @@ SELECT is(
 -- 7. invalid numeric returns VALIDATION_ERROR
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_asking_price":"not-a-number"}'::jsonb
   )::json)->>'code',
   'VALIDATION_ERROR',
@@ -198,7 +198,7 @@ SELECT is(
 -- 8. invalid date returns VALIDATION_ERROR
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_closing_date":"not-a-date"}'::jsonb
   )::json)->>'code',
   'VALIDATION_ERROR',
@@ -208,7 +208,7 @@ SELECT is(
 -- 9. non-HTTPS URL returns VALIDATION_ERROR
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_media_url":"http://example.com/video"}'::jsonb
   )::json)->>'code',
   'VALIDATION_ERROR',
@@ -218,7 +218,7 @@ SELECT is(
 -- 10. bare https:// returns VALIDATION_ERROR
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_media_url":"https://"}'::jsonb
   )::json)->>'code',
   'VALIDATION_ERROR',
@@ -228,7 +228,7 @@ SELECT is(
 -- 11. valid https:// URL accepted
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_media_url":"https://example.com/video.mp4"}'::jsonb
   )::json)->>'code',
   'OK',
@@ -238,7 +238,7 @@ SELECT is(
 -- 12. cross-tenant returns NOT_FOUND
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000099',
+    'd1145700-0000-0000-0000-000000000099'::uuid,
     '{"dispo_description":"cross tenant"}'::jsonb
   )::json)->>'code',
   'NOT_FOUND',
@@ -248,7 +248,7 @@ SELECT is(
 -- 13. wrong-stage returns CONFLICT
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000003',
+    'd1145700-0000-0000-0000-000000000003'::uuid,
     '{"dispo_description":"new stage"}'::jsonb
   )::json)->>'code',
   'CONFLICT',
@@ -265,7 +265,7 @@ SET LOCAL ROLE authenticated;
 
 SELECT is(
   (public.update_dispo_packet_v1(
-    'd1145700-0000-0000-0000-000000000001',
+    'd1145700-0000-0000-0000-000000000001'::uuid,
     '{"dispo_description":"blocked"}'::jsonb
   )::json)->>'code',
   'NOT_AUTHORIZED',
