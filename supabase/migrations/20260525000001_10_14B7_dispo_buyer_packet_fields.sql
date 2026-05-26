@@ -202,7 +202,7 @@ RETURNS json
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path TO 'public'
+SET search_path = public
 AS $fn$
 DECLARE
   v_hash       bytea;
