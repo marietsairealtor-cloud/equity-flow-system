@@ -4,5 +4,5 @@
   "migration_tip": "20260525000002",
   "migration_tip_file": "20260525000002_10_14B7A_dispo_packet_rpc_search_path_fix.sql",
   "migration_count": 145,
-  "pinned_at": "2026-05-25"
+  "pinned_at": "2026-05-26"
 }
