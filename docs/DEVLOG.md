@@ -10390,3 +10390,31 @@ Historical pushed migrations should not be rewritten. Any existing DO block shou
 
 Future DO blocks require explicit QA/governance approval. Default migration policy remains: plain, deterministic, forward-only SQL.
 
+
+## 2026-06-03 -- Build Route v2.4 -- 10.14B7B
+
+Objective
+Ensure update_dispo_packet_v1 and lookup_share_token_public_v1 reliably land in pg_proc after db reset and during the full green gate cycle.
+
+Changes
+- Added 20260526000001-20260526000004: four single-statement corrective migrations splitting B7 RPCs and grants into standalone files
+- Fixed 10_14B7_dispo_buyer_packet_fields.test.sql: explicit ::uuid casts and request.jwt.claim.* GUCs on all auth context blocks
+- Fixed scripts/green_gate.mjs: replaced custom psqlStdin migration replay with npx supabase db reset
+- Updated CONTRACTS.md, rpc_contract_registry.json, privilege_truth.json, qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1 for 10.14B7B
+- Added governance file GOVERNANCE_CHANGE_20260603T000641Z.md
+- Added logs/ to .gitignore
+
+Proof
+docs/proofs/10.14B7B_dispo_packet_rpc_landing_repair_<UTC>.log
+
+DoD
+- update_dispo_packet_v1(uuid,jsonb) lands after db reset -- PASS
+- lookup_share_token_public_v1(text) lands after db reset -- PASS
+- 10_14B7_dispo_buyer_packet_fields.test.sql passes 40/40 -- PASS
+- Full supabase test db passes 97 files, 1237 tests -- PASS
+- green:once and green:twice pass -- PASS
+- pr:preflight passes -- PASS
+- handoff produces only expected dirty files -- PASS
+
+Status
+MERGED
