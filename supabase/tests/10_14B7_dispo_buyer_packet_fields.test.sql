@@ -100,6 +100,9 @@ VALUES (
 SELECT set_config('request.jwt.claims',
   '{"sub":"a1145700-0000-0000-0000-000000000001","role":"authenticated","tenant_id":"b1145700-0000-0000-0000-000000000001"}',
   true);
+SELECT set_config('request.jwt.claim.sub', 'a1145700-0000-0000-0000-000000000001', true);
+SELECT set_config('request.jwt.claim.role', 'authenticated', true);
+SELECT set_config('request.jwt.claim.tenant_id', 'b1145700-0000-0000-0000-000000000001', true);
 SET LOCAL ROLE authenticated;
 
 -- 1. saves packet fields
@@ -261,6 +264,9 @@ INSERT INTO auth.users (id, email) VALUES ('a1145700-0000-0000-0000-000000000088
 SELECT set_config('request.jwt.claims',
   '{"sub":"a1145700-0000-0000-0000-000000000088","role":"authenticated","tenant_id":"b1145700-0000-0000-0000-000000000001"}',
   true);
+SELECT set_config('request.jwt.claim.sub', 'a1145700-0000-0000-0000-000000000088', true);
+SELECT set_config('request.jwt.claim.role', 'authenticated', true);
+SELECT set_config('request.jwt.claim.tenant_id', 'b1145700-0000-0000-0000-000000000001', true);
 SET LOCAL ROLE authenticated;
 
 SELECT is(
@@ -460,6 +466,9 @@ SET LOCAL ROLE postgres;
 SELECT set_config('request.jwt.claims',
   '{"sub":"a1145700-0000-0000-0000-000000000001","role":"authenticated","tenant_id":"b1145700-0000-0000-0000-000000000001"}',
   true);
+SELECT set_config('request.jwt.claim.sub', 'a1145700-0000-0000-0000-000000000001', true);
+SELECT set_config('request.jwt.claim.role', 'authenticated', true);
+SELECT set_config('request.jwt.claim.tenant_id', 'b1145700-0000-0000-0000-000000000001', true);
 SET LOCAL ROLE authenticated;
 
 SELECT is(

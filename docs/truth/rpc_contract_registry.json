@@ -1011,8 +1011,8 @@
     {
       "name": "update_dispo_packet_v1",
       "version": 1,
-      "build_route_owner": "10.14B7",
-      "input_contract": "CONTRACTS.md §73 update_dispo_packet_v1 (10.14B7)",
+      "build_route_owner": "10.14B7B",
+      "input_contract": "CONTRACTS.md §73 update_dispo_packet_v1 (10.14B7B)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
@@ -1026,8 +1026,8 @@
     {
       "name": "lookup_share_token_public_v1",
       "version": 1,
-      "build_route_owner": "10.14B7",
-      "input_contract": "CONTRACTS.md §73 lookup_share_token_public_v1 (10.14B7)",
+      "build_route_owner": "10.14B7B",
+      "input_contract": "CONTRACTS.md §73 lookup_share_token_public_v1 (10.14B7B)",
       "response_schema": null,
       "error_codes": [
         "NOT_FOUND"

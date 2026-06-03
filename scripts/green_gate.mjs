@@ -124,7 +124,7 @@ for (let pass = 1; pass <= passes; pass++) {
   run("supabase status", "npx", ["supabase", "status"]);
 
   // DB-only reset via Docker (avoids CLI "Restarting containers" 502); matches CI flow (start -> db reset).
-  runDbOnlyReset();
+  run("supabase db reset", "npx", ["supabase", "db", "reset"]);
 
   run("lint:migrations", "npm", ["run", "lint:migrations"]);
   run("lint:sql", "npm", ["run", "lint:sql"]);

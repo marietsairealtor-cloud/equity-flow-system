@@ -332,7 +332,7 @@
       {
         "routine": "update_dispo_packet_v1",
         "privilege": "EXECUTE",
-        "authority": "Build Route 10.14B7 -- dispo packet fields mutation; authenticated only"
+        "authority": "Build Route 10.14B7B -- dispo packet RPC landing repair; authenticated only"
       },
       {
         "routine": "lookup_share_token_public_v1",
