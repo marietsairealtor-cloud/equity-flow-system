@@ -10347,3 +10347,46 @@ Next
 Required proof: after db reset, all columns + both RPCs exist AND
 npm run handoff produces no dirty truth files.
 Note: QA ruling -- do not accept ALTER TABLE only theory as confirmed.
+
+
+## 2026-05-26 — 10.12D2 / 10.13A-B / 10.14B7 Reset Reliability Clarification
+
+### Context
+
+During the 10.14B7 / 10.14B7A post-merge investigation, a similar historical reset issue from May 11 was referenced. The earlier issue was initially described as a 10.13A/B migration problem, but review clarified that 10.13A/B were downstream casualties, not the root cause.
+
+### Historical culprit
+
+The May 11 reset reliability issue was caused by:
+
+`20260513000002_10_12D2_cleanup_intake_forms_storage.sql`
+
+Specifically:
+
+```sql
+SELECT set_config('storage.allow_delete_query', 'true', true);
+````
+
+Because `set_config(..., true)` is transaction-local, the Supabase reset runner could split the migration so the setting expired before the dependent storage DELETE statements executed. This caused storage cleanup to fail or be blocked by `storage.protect_delete()`, leaving local reset state unreliable and affecting downstream migrations.
+
+### Historical fix
+
+The May 11 fix wrapped the transaction-local `set_config` and dependent DELETE statements in a single `DO` block so the GUC remained active for the full cleanup operation.
+
+This was a narrow storage-cleanup exception pattern, not general approval for DO blocks in migrations.
+
+### Current 10.14B7 clarification
+
+10.14B7 does not rely on a transaction-local GUC. The May 11 DO-block pattern does not automatically apply to 10.14B7.
+
+Current 10.14B7 issue after CLI update was identified as a pgTAP test authoring issue: calls to `update_dispo_packet_v1(uuid,jsonb)` passed UUID values as uncast string literals. The correct fix is explicit `::uuid` casts in the test file, not a function signature change, migration change, or DO-block wrapper.
+
+### Governance note
+
+Historical pushed migrations should not be rewritten. Any existing DO block should be treated as either:
+
+* a documented historical exception, or
+* historical non-compliance accepted after merge.
+
+Future DO blocks require explicit QA/governance approval. Default migration policy remains: plain, deterministic, forward-only SQL.
+

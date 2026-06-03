@@ -9964,6 +9964,99 @@ Forward corrective migration to ensure 10.14B7 RPCs reliably land after `supabas
 
 ---
 
+### **10.14B7B — Corrective Migration — Dispo Packet RPC Landing Repair**
+
+**Deliverable:**
+Forward repair to ensure the 10.14B7 Dispo packet RPCs reliably land in the local/test database during `supabase test db` and full reset/test workflows.
+
+**Context:**
+10.14B7 and 10.14B7A are already merged. Post-CLI-update testing shows the B7 pgTAP test fails before execution because:
+
+`function public.update_dispo_packet_v1(uuid, jsonb) does not exist`
+
+Test-level fixes were attempted and confirmed:
+- `::uuid` casts added to all `update_dispo_packet_v1` calls
+- explicit JWT claim GUCs added to auth context blocks
+
+The error persisted. Therefore the blocker is not test context. The RPC is physically absent from `pg_proc` at test runtime.
+
+**Architecture decision:**
+Use forward-only, plain-SQL corrective migrations. Do not rewrite merged migrations. Do not use `DO` blocks.
+
+To make failures loud and diagnosable, split the repair into small migrations:
+
+* `20260526000001_10_14B7B_update_dispo_packet_rpc.sql`
+* `20260526000002_10_14B7B_update_dispo_packet_grants.sql`
+* `20260526000003_10_14B7B_public_share_lookup_rpc.sql`
+* `20260526000004_10_14B7B_public_share_lookup_grants.sql`
+
+If an RPC does not land, the following grant migration should fail loudly instead of allowing ghost-state drift.
+
+**DoD:**
+
+* Forward corrective migrations exist
+* Original 10.14B7 and 10.14B7A migrations are not rewritten
+* No `DO` blocks are used
+* `update_dispo_packet_v1(uuid,jsonb)` is recreated with approved 10.14B7 logic
+* `lookup_share_token_public_v1(text)` is recreated with approved 10.14B7 logic
+* `lookup_share_token_v1` remains unchanged
+* `update_dispo_packet_v1` keeps approved contract:
+
+  * authenticated only
+  * `require_min_role_v1('member')`
+  * tenant-scoped
+  * workspace write-lock enforced
+  * patch semantics: omitted key = unchanged
+  * explicit `null` = clear field
+  * empty string normalizes to `NULL`
+  * unknown key returns `VALIDATION_ERROR`
+  * invalid numeric/date/URL returns `VALIDATION_ERROR`
+  * wrong-stage deal returns `CONFLICT`
+  * cross-tenant deal returns `NOT_FOUND`
+
+* `lookup_share_token_public_v1` keeps approved contract:
+
+  * callable by `anon` and `authenticated`
+  * token is the authorization mechanism
+  * no tenant context required
+  * resolves tenant/deal from `share_tokens.token_hash`
+  * checks revoked token
+  * checks expired token
+  * checks workspace/subscription validity after token resolution
+  * returns only allowlisted buyer-facing packet fields
+  * does not expose exact address
+  * does not expose seller/internal fields
+  * all public failure cases return identical `NOT_FOUND` envelope
+
+* Grants are preserved:
+
+  * `update_dispo_packet_v1(uuid,jsonb)` → `authenticated` only
+  * `lookup_share_token_public_v1(text)` → `anon` + `authenticated`
+
+* After `supabase db reset`, both RPCs exist in `pg_proc`
+* During `supabase test db`, both RPCs exist before B7 pgTAP execution
+* 10.14B7 pgTAP test passes
+* Full `pr:preflight` passes
+* Handoff produces only expected dirty files:
+
+  * `docs/handoff_latest.txt`
+  * `docs/truth/write_path_registry.json`
+
+**Tests / Proof:**
+
+* `to_regprocedure('public.update_dispo_packet_v1(uuid,jsonb)')` returns non-null after reset
+* `to_regprocedure('public.lookup_share_token_public_v1(text)')` returns non-null after reset
+* `10_14B7_dispo_buyer_packet_fields.test.sql` passes
+* Full `npx supabase test db` passes
+* Full `npm run pr:preflight` passes
+* `npm run handoff` produces only expected dirty files
+
+**Proof:** `docs/proofs/10.14B7B_dispo_packet_rpc_landing_repair_<UTC>.log`  
+**Gate:** `merge-blocking`  
+**Prerequisite:** `10.14B7A` merged
+
+---
+
 ### **10.14B8 — Dispo Backend — Share Packet Photo Visibility**
 
 **Deliverable:**
