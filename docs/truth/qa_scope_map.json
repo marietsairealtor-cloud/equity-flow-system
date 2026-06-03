@@ -755,6 +755,10 @@
     "10.14B7A": {
       "title": "Corrective Migration -- Dispo Packet RPC Search Path Fix",
       "proof_pattern": "^docs/proofs/10\\.14B7A_dispo_packet_rpc_search_path_fix_"
+    },
+    "10.14B7B": {
+      "title": "Dispo Packet RPC Landing Repair",
+      "proof_pattern": "^docs/proofs/10\\.14B7B_dispo_packet_rpc_landing_repair_"
     }
   }
 }
