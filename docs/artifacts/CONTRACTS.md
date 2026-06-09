@@ -359,6 +359,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | mark_submission_reviewed_v1 | 10.12C4, 10.12C8 | Lead Intake: set **`review_status`**, **`review_outcome`**, **`reviewed_at`** on a **seller** or **birddog** intake row (dismiss / reject outcomes only; **`promoted`** via **`promote_draft_deal_v1`**); workspace write lock; idempotent same outcome; **10.12C8** optional **`p_draft_id`** resolve by **`draft_deals_id`** | SECURITY DEFINER, authenticated only; min role member | **`p_outcome`** first; optional **`p_submission_id`** / **`p_draft_id`** (**10.12C8**); legacy **`(p_submission_id, p_outcome)`** overload — tenant from **`current_tenant_id()`** |
 | update_dispo_packet_v1 | 10.14B7B | Patch dispo buyer-facing packet fields on a deal (jsonb patch semantics; omit=unchanged, null=clear, empty string=normalize to NULL); stage guard: dispo/under_contract only; envelope-safe numeric/date/URL validation; writes deal_activity_log on success | SECURITY DEFINER, authenticated only, min role: member, workspace write-lock | current_tenant_id() — p_deal_id uuid + p_fields jsonb |
 | lookup_share_token_public_v1 | 10.14B7B | Public buyer-facing share token lookup; token is authorization; no tenant context required; returns only allowlisted buyer-facing packet fields; no exact address or seller/internal fields; identical NOT_FOUND envelope for all failure cases | SECURITY DEFINER, STABLE, anon + authenticated EXECUTE | p_token text only — tenant resolved from share_tokens row |
+| update_deal_media_dispo_approval_v1 | 10.14B8 | Approve or remove a deal_media row from the public dispo share packet; null inputs → VALIDATION_ERROR; cross-tenant → NOT_FOUND; non-member → NOT_AUTHORIZED; write-locked → WORKSPACE_NOT_WRITABLE | SECURITY DEFINER, authenticated only, min role: member, workspace write-lock | current_tenant_id() — p_media_id uuid + p_is_dispo_approved boolean |
 
 ### Mapping Rules
 
@@ -1918,3 +1919,37 @@ Below-market display value derivation: `COALESCE(dispo_below_market_override, di
 
 **§Registry:** `docs/truth/rpc_contract_registry.json`; `docs/truth/privilege_truth.json`; `docs/truth/execute_allowlist.json`; `§17` mapping table (add `update_dispo_packet_v1`, `lookup_share_token_public_v1`); `§72` share token split note.
 <!-- entitlement-policy-coupling: last-verified 10.14B7A -->
+
+## 74) Dispo backend -- Share Packet Photo Visibility (10.14B8)
+
+**Authority:** migrations 20260608000001-20260608000003.
+
+**Purpose:** Opt-in approval gate controlling which deal_media rows are exposed in the public buyer-facing dispo share packet.
+
+### Schema changes
+
+Three nullable columns added to public.deal_media:
+- is_dispo_approved boolean NOT NULL DEFAULT false
+- dispo_approved_at timestamptz NULL
+- dispo_approved_by uuid NULL
+
+Existing rows default to is_dispo_approved = false. Backward compatible.
+
+### update_deal_media_dispo_approval_v1(p_media_id uuid, p_is_dispo_approved boolean)
+
+- SECURITY DEFINER, VOLATILE; GRANT EXECUTE to authenticated only (REVOKE anon, PUBLIC).
+- Null p_media_id or null p_is_dispo_approved returns VALIDATION_ERROR.
+- Guards: current_tenant_id() + auth.uid() required; require_min_role_v1('member'); check_workspace_write_allowed_v1().
+- Resolves media via deal_media JOIN deals with dm.tenant_id = v_tenant AND d.tenant_id = v_tenant; cross-tenant returns NOT_FOUND.
+- Approval: sets is_dispo_approved = true, dispo_approved_at = now(), dispo_approved_by = auth.uid().
+- Unapproval: clears all three fields to false / NULL / NULL.
+
+### lookup_share_token_public_v1 (10.14B8 extension)
+
+Extends approved B7B body. Only addition: approved media returned under data.media.
+Media filtered by dm.tenant_id = v_row.tenant_id AND dm.deal_id = v_row.deal_id AND dm.is_dispo_approved = true.
+Public-safe fields only: media_id, storage_path, sort_order, updated_at.
+All B7B invariants preserved: token format, bytea hash, NOT_FOUND envelope, no exact address, no seller/internal fields.
+
+**Registry:** docs/truth/rpc_contract_registry.json; docs/truth/privilege_truth.json; docs/truth/execute_allowlist.json; docs/truth/definer_allowlist.json; 17 mapping table above; 73 extended by B8.
+<!-- entitlement-policy-coupling: last-verified 10.14B8 -->

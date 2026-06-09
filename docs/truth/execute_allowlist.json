@@ -74,6 +74,7 @@
     "update_deal_v1",
     "update_display_name_v1",
     "update_dispo_packet_v1",
+    "update_deal_media_dispo_approval_v1",
     "update_member_role_v1",
     "update_property_info_v1",
     "update_seller_info_v1",
@@ -84,6 +85,12 @@
       "authenticated"
     ],
     "item": "10.14B7"
+  },
+  "update_deal_media_dispo_approval_v1": {
+    "grant": [
+      "authenticated"
+    ],
+    "item": "10.14B8"
   },
   "lookup_share_token_public_v1": {
     "grant": [

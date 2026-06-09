@@ -85,6 +85,7 @@
     "public.update_deal_v1",
     "public.update_display_name_v1",
     "public.update_dispo_packet_v1",
+    "public.update_deal_media_dispo_approval_v1",
     "public.update_member_role_v1",
     "public.update_property_info_v1",
     "public.update_seller_info_v1",
@@ -116,7 +117,7 @@
     "public.update_display_name_v1",
     "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1",
-    "public.lookup_share_token_public_v1"
+    "public.update_deal_media_dispo_approval_v1"
   ],
   "create_deal_note_v1": {
     "anon_callable": false

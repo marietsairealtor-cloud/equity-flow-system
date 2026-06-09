@@ -10060,35 +10060,145 @@ If an RPC does not land, the following grant migration should fail loudly instea
 ### **10.14B8 — Dispo Backend — Share Packet Photo Visibility**
 
 **Deliverable:**
-Backend support for controlling which deal photos/media are approved for the buyer-facing share packet.
+Backend support for controlling which deal photos/media are approved for the public buyer-facing Dispo share packet.
+
+**Architecture decision:**
+
+B8 must extend the public buyer-facing share packet path:
+
+* `lookup_share_token_public_v1(p_token text)`
+
+B8 must **not** modify the frozen authenticated/internal share-token RPC unless explicitly approved:
+
+* `lookup_share_token_v1(p_token text, p_deal_id uuid)`
+
+Public buyer-facing media exposure must be opt-in only. Internal deal media is not exposed by default.
+
+**Visibility model:**
+
+Use boolean approval fields on `deal_media`:
+
+* `is_dispo_approved boolean NOT NULL DEFAULT false`
+* `dispo_approved_at timestamptz NULL`
+* `dispo_approved_by uuid NULL`
 
 **DoD:**
 
-* `deal_media` supports share-packet visibility using one of:
+* `deal_media` supports share-packet visibility using:
 
   * `is_dispo_approved`
-  * or `visibility = internal / dispo_share`
+  * `dispo_approved_at`
+  * `dispo_approved_by`
 
-* Internal deal media is not exposed by default
-* Only approved/share-visible photos are returned to buyer share packet
-* Governed authenticated mutation exists to approve/remove media from share packet
-* `lookup_share_token_v1` returns approved/share-visible media only
-* No direct table calls
 * Existing media remains backward compatible
+
+* Existing media defaults to not share-approved
+
+* Internal/unapproved media is not exposed by default
+
+* Only approved media is returned to the public buyer-facing share packet
+
+* Governed authenticated mutation exists to approve/remove media from share packet:
+
+  * `update_deal_media_dispo_approval_v1(p_media_id uuid, p_is_dispo_approved boolean)`
+
+* `update_deal_media_dispo_approval_v1` is governed:
+
+  * authenticated only
+  * `require_min_role_v1('member')`
+  * tenant-scoped through the media’s deal
+  * workspace write-lock enforced
+  * cross-tenant media returns `NOT_FOUND`
+  * non-member returns `NOT_AUTHORIZED`
+  * invalid media ID returns `NOT_FOUND`
+
+* Approval mutation behavior:
+
+  * when approved:
+
+    * `is_dispo_approved = true`
+    * `dispo_approved_at = now()`
+    * `dispo_approved_by = auth.uid()`
+
+  * when removed/unapproved:
+
+    * `is_dispo_approved = false`
+    * `dispo_approved_at = NULL`
+    * `dispo_approved_by = NULL`
+
+* `lookup_share_token_public_v1(p_token text)` returns approved/share-visible media only
+
+* `lookup_share_token_public_v1` does not return unapproved/internal media
+
+* `lookup_share_token_public_v1` continues to return only buyer-facing allowlisted fields
+
+* `lookup_share_token_public_v1` continues not to expose exact address
+
+* `lookup_share_token_public_v1` continues not to expose seller/internal fields
+
+* `lookup_share_token_v1` remains unchanged unless explicit regression coverage proves no authenticated contract break
+
+* No direct table calls
+
+* No public exposure of internal media by default
+
+* No base64 media payloads in RPC response
+
+* No storage deletion/change required
+
+**Public media return contract:**
+
+`lookup_share_token_public_v1` returns approved media under:
+
+* `media`
+
+Each media item may include only public-safe metadata:
+
+* `media_id`
+* `file_name`
+* `mime_type`
+* `storage_path` or existing safe media reference
+* `created_at`
+* optional `sort_order` if already supported
+
+The RPC must not return:
+
+* tenant-internal notes
+* uploader private profile data
+* seller/internal fields
+* unapproved media
+* exact property address
+
+**Media access note:**
+
+B8 controls backend visibility and public packet metadata.
+
+If current storage/media delivery already has a buyer-safe URL pattern, B8 may return the existing safe reference. If not, signed/public media URL generation is a separate follow-up item and should not be smuggled into B8.
 
 **Tests:**
 
+* existing media defaults to `is_dispo_approved = false`
 * media is internal/not shared by default
 * authenticated member can mark media as share-approved
+* approved media sets `dispo_approved_at`
+* approved media sets `dispo_approved_by`
 * authenticated member can remove media from share packet
-* `lookup_share_token_v1` returns approved media only
-* unapproved/internal media is not returned
+* removing media clears `dispo_approved_at`
+* removing media clears `dispo_approved_by`
+* `lookup_share_token_public_v1` returns approved media only
+* `lookup_share_token_public_v1` does not return unapproved/internal media
+* `lookup_share_token_public_v1` returns media under `data.media`
+* `lookup_share_token_public_v1` does not expose exact address
+* `lookup_share_token_public_v1` does not expose seller/internal-sensitive fields
 * cross-tenant approval returns `NOT_FOUND`
-* non-member returns `NOT_AUTHORIZED`
+* non-member approval returns `NOT_AUTHORIZED`
+* invalid media ID returns `NOT_FOUND`
+* workspace write-locked tenant cannot mutate approval
+* existing `lookup_share_token_v1` authenticated tests remain unchanged and passing
 
 **Proof:** `docs/proofs/10.14B8_dispo_share_packet_photo_visibility_<UTC>.log`
 **Gate:** `merge-blocking`
-**Prerequisite:** `10.8.7A`, `10.14B7` merged
+**Prerequisite:** `10.8.7A`, `10.14B7B` merged
 
 ---
 
