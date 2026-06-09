@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "cloud_project_ref": "upnelewdvbicxvfgzojg",
-  "migration_tip": "20260526000004",
-  "migration_tip_file": "20260526000004_10_14B7B_public_share_lookup_grants.sql",
-  "migration_count": 149,
-  "pinned_at": "2026-06-03"
+  "migration_tip": "20260608000003",
+  "migration_tip_file": "20260608000003_10_14B8_dispo_approval_grants.sql",
+  "migration_count": 152,
+  "pinned_at": "2026-06-09"
 }
