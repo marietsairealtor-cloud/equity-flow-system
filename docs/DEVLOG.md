@@ -10418,3 +10418,45 @@ DoD
 
 Status
 MERGED
+
+## 2026-06-09 -- Build Route v2.4 -- 10.14B8
+
+Objective
+Dispo Backend -- Share Packet Photo Visibility
+
+Changes
+- Migration 20260608000001_10_14B8_deal_media_dispo_approval_columns.sql applied
+  - public.deal_media: is_dispo_approved boolean NOT NULL DEFAULT false
+  - public.deal_media: dispo_approved_at timestamptz NULL
+  - public.deal_media: dispo_approved_by uuid NULL
+  - Existing rows default to is_dispo_approved = false. Backward compatible.
+- Migration 20260608000002_10_14B8_dispo_approval_rpcs.sql applied
+  - New RPC: update_deal_media_dispo_approval_v1(p_media_id uuid, p_is_dispo_approved boolean)
+    - SECURITY DEFINER, authenticated only, min role member, workspace write-lock
+    - Null inputs return VALIDATION_ERROR
+    - Cross-tenant media returns NOT_FOUND
+    - Non-member returns NOT_AUTHORIZED
+    - Write-locked workspace returns WORKSPACE_NOT_WRITABLE
+    - Approval sets is_dispo_approved=true, dispo_approved_at=now(), dispo_approved_by=auth.uid()
+    - Unapproval clears all three fields to false/NULL/NULL
+  - Modified RPC: lookup_share_token_public_v1 extended to return approved media under data.media
+    - Media filtered: dm.tenant_id=v_row.tenant_id AND dm.deal_id=v_row.deal_id AND dm.is_dispo_approved=true
+    - Public-safe fields only: media_id, storage_path, sort_order, updated_at
+    - All B7B invariants preserved: token format, bytea hash, NOT_FOUND envelope, no exact address, no seller/internal fields
+- Migration 20260608000003_10_14B8_dispo_approval_grants.sql applied
+  - update_deal_media_dispo_approval_v1: GRANT to authenticated only
+  - lookup_share_token_public_v1: re-applied GRANT to anon + authenticated
+- CONTRACTS.md section 74 added, section 17 table row added
+- rpc_contract_registry.json, privilege_truth.json, definer_allowlist.json, execute_allowlist.json updated
+- qa_scope_map.json, qa_claim.json, ci_robot_owned_guard.ps1 registered
+- Governance file: GOVERNANCE_CHANGE_20260609T010629Z.md
+
+Proof
+docs/proofs/10.14B8_dispo_share_packet_photo_visibility_20260609T020056Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+98 files, 1279 tests, Result: PASS
+
+Status
+MERGED
