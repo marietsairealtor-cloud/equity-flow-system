@@ -117,6 +117,7 @@
     "public.update_display_name_v1",
     "public.upsert_buyer_from_intake_v1",
     "public.upsert_subscription_v1",
+    "public.lookup_share_token_public_v1",
     "public.update_deal_media_dispo_approval_v1"
   ],
   "create_deal_note_v1": {

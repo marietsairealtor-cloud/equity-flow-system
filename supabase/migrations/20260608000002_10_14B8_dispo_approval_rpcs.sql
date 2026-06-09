@@ -1,7 +1,7 @@
--- 10.14B8 — Dispo Backend — Share Packet Photo Visibility
+-- 10.14B8 -- Dispo Backend -- Share Packet Photo Visibility
 -- Migration 2 of 2: RPCs
---   (a) update_deal_media_dispo_approval_v1  — new governed mutation
---   (b) lookup_share_token_public_v1         — extend B7B body to add approved media
+--   (a) update_deal_media_dispo_approval_v1  -- new governed mutation
+--   (b) lookup_share_token_public_v1         -- extend B7B body to add approved media
 -- Grants follow in 20260608000003.
 
 -- ============================================================
@@ -57,7 +57,7 @@ BEGIN
       'error', json_build_object('message', 'Workspace is not active', 'fields', json_build_object()));
   END IF;
 
-  -- Resolve media — must belong to a deal in this tenant
+  -- Resolve media -- must belong to a deal in this tenant
   SELECT dm.*
     INTO v_media
     FROM public.deal_media dm
@@ -180,7 +180,7 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- B8 extension: load approved media only — public-safe metadata
+  -- B8 extension: load approved media only -- public-safe metadata
   SELECT COALESCE(
     json_agg(
       json_build_object(
@@ -223,3 +223,4 @@ BEGIN
   RETURN v_result;
 END;
 $fn$;
+
