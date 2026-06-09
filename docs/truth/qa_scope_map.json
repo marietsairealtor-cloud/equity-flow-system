@@ -759,6 +759,10 @@
     "10.14B7B": {
       "title": "Dispo Packet RPC Landing Repair",
       "proof_pattern": "^docs/proofs/10\\.14B7B_dispo_packet_rpc_landing_repair_"
+    },
+    "10.14B8": {
+      "title": "Dispo Backend -- Share Packet Photo Visibility",
+      "proof_pattern": "^docs/proofs/10\\.14B8_dispo_share_packet_photo_visibility_"
     }
   }
 }

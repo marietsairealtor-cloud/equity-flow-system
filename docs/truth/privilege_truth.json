@@ -335,6 +335,11 @@
         "authority": "Build Route 10.14B7B -- dispo packet RPC landing repair; authenticated only"
       },
       {
+        "routine": "update_deal_media_dispo_approval_v1",
+        "privilege": "EXECUTE",
+        "authority": "CONTRACTS.md §74 update_deal_media_dispo_approval_v1 (10.14B8); authenticated only (REVOKE anon, PUBLIC)"
+      },
+      {
         "routine": "lookup_share_token_public_v1",
         "privilege": "EXECUTE",
         "authority": "Build Route 10.14B7 -- public buyer-facing share token lookup; anon + authenticated"
@@ -506,12 +511,14 @@
       "update_seller_info_v1",
       "update_workspace_settings_v1",
       "update_dispo_packet_v1",
-      "lookup_share_token_public_v1"
+      "lookup_share_token_public_v1",
+      "update_deal_media_dispo_approval_v1"
     ],
     "anon_routines": [
       "resolve_form_slug_v1",
       "submit_form_v1",
-      "lookup_share_token_public_v1"
+      "lookup_share_token_public_v1",
+      "update_deal_media_dispo_approval_v1"
     ],
     "alter_default_privileges": []
   },
@@ -619,5 +626,17 @@
     ],
     "security": "DEFINER",
     "item": "10.14B7"
+  },
+  "update_deal_media_dispo_approval_v1": {
+    "type": "function",
+    "grant": [
+      "authenticated"
+    ],
+    "revoke": [
+      "public",
+      "anon"
+    ],
+    "security": "DEFINER",
+    "item": "10.14B8"
   }
 }

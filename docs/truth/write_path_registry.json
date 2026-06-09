@@ -1,6 +1,6 @@
 {
     "version":  1,
-    "generated":  "2026-06-03T00:15:20Z",
+    "generated":  "2026-06-09T01:36:55Z",
     "write_paths":  [
                         {
                             "path_type":  "rpc",
@@ -352,6 +352,15 @@
                             "name":  "update_buyer_active_status_v1",
                             "tables":  [
                                            "intake_buyers"
+                                       ],
+                            "row_version_enforced":  false,
+                            "optimistic_concurrency":  false
+                        },
+                        {
+                            "path_type":  "rpc",
+                            "name":  "update_deal_media_dispo_approval_v1",
+                            "tables":  [
+                                           "deal_media"
                                        ],
                             "row_version_enforced":  false,
                             "optimistic_concurrency":  false

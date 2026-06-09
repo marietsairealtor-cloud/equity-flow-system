@@ -1033,6 +1033,21 @@
         "NOT_FOUND"
       ],
       "notes": "SECURITY DEFINER, STABLE; EXECUTE to anon AND authenticated (REVOKE PUBLIC). Public buyer-facing share token lookup. Token is authorization mechanism. No current_tenant_id() required. Resolution: validate format, hash, lookup share_tokens by token_hash, check revoked/expired, check workspace subscription from token row. Returns only allowlisted buyer-facing packet fields. No exact address, no seller/internal fields. Identical NOT_FOUND envelope for all failure cases (no existence leak)."
+    },
+    {
+      "name": "update_deal_media_dispo_approval_v1",
+      "version": 1,
+      "build_route_owner": "10.14B8",
+      "input_contract": "CONTRACTS.md §74 update_deal_media_dispo_approval_v1 (10.14B8)",
+      "response_schema": null,
+      "error_codes": [
+        "NOT_AUTHORIZED",
+        "WORKSPACE_NOT_WRITABLE",
+        "VALIDATION_ERROR",
+        "NOT_FOUND",
+        "CONFLICT"
+      ],
+      "notes": "SECURITY DEFINER, VOLATILE; GRANT EXECUTE to authenticated only (REVOKE anon, PUBLIC). (p_media_id uuid, p_is_dispo_approved boolean). require_min_role_v1(member); check_workspace_write_allowed_v1(). Resolves media via deal_media JOIN deals with dm.tenant_id = v_tenant AND d.tenant_id = v_tenant; cross-tenant returns NOT_FOUND. Approval: sets is_dispo_approved = true, dispo_approved_at = now(), dispo_approved_by = auth.uid(). Unapproval: clears all three fields to false / NULL / NULL. Workspace write lock."
     }
   ]
 }

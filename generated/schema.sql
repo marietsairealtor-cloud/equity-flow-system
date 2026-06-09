@@ -4422,6 +4422,7 @@ DECLARE
   v_result     json;
   v_sub_status text;
   v_period_end timestamptz;
+  v_media      json;
 BEGIN
   IF p_token IS NULL OR length(p_token) < 68 OR left(p_token, 4) <> 'shr_'
      OR substring(p_token FROM 5) !~ '^[0-9a-f]{64}$'
@@ -4489,6 +4490,25 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
+  -- B8 extension: load approved media only -- public-safe metadata
+  SELECT COALESCE(
+    json_agg(
+      json_build_object(
+        'media_id',     dm.id,
+        'storage_path', dm.storage_path,
+        'sort_order',   dm.sort_order,
+        'updated_at',   dm.updated_at
+      )
+      ORDER BY dm.sort_order ASC NULLS LAST, dm.updated_at ASC
+    ),
+    '[]'::json
+  )
+  INTO v_media
+  FROM public.deal_media dm
+  WHERE dm.tenant_id = v_row.tenant_id
+    AND dm.deal_id = v_row.deal_id
+    AND dm.is_dispo_approved = true;
+
   v_result := json_build_object('ok', true, 'code', 'OK',
     'data', json_build_object(
       'expires_at',                  v_row.expires_at,
@@ -4500,7 +4520,8 @@ BEGIN
       'dispo_media_url',             v_row.dispo_media_url,
       'dispo_market_value_estimate', v_row.dispo_market_value_estimate,
       'dispo_below_market_override', v_row.dispo_below_market_override,
-      'dispo_below_market_value',    v_row.dispo_below_market_value
+      'dispo_below_market_value',    v_row.dispo_below_market_value,
+      'media',                       v_media
     ),
     'error', null);
 
@@ -6748,6 +6769,85 @@ $$;
 
 ALTER FUNCTION "public"."update_buyer_active_status_v1"("p_buyer_id" "uuid", "p_is_active" boolean) OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."update_deal_media_dispo_approval_v1"("p_media_id" "uuid", "p_is_dispo_approved" boolean) RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_tenant uuid;
+  v_user   uuid;
+  v_media  record;
+BEGIN
+  -- Null input validation
+  IF p_media_id IS NULL THEN
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'p_media_id is required', 'fields', json_build_object()));
+  END IF;
+
+  IF p_is_dispo_approved IS NULL THEN
+    RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+      'error', json_build_object('message', 'p_is_dispo_approved is required', 'fields', json_build_object()));
+  END IF;
+
+  -- Tenant + user context
+  v_tenant := public.current_tenant_id();
+  v_user   := auth.uid();
+
+  IF v_tenant IS NULL OR v_user IS NULL THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'No tenant or user context', 'fields', json_build_object()));
+  END IF;
+
+  -- Role guard
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object()));
+  END;
+
+  -- Workspace write lock
+  IF NOT public.check_workspace_write_allowed_v1() THEN
+    RETURN json_build_object('ok', false, 'code', 'WORKSPACE_NOT_WRITABLE', 'data', json_build_object(),
+      'error', json_build_object('message', 'Workspace is not active', 'fields', json_build_object()));
+  END IF;
+
+  -- Resolve media -- must belong to a deal in this tenant
+  SELECT dm.*
+    INTO v_media
+    FROM public.deal_media dm
+    JOIN public.deals d ON d.id = dm.deal_id AND d.tenant_id = v_tenant
+   WHERE dm.id = p_media_id
+     AND dm.tenant_id = v_tenant;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object('ok', false, 'code', 'NOT_FOUND', 'data', json_build_object(),
+      'error', json_build_object('message', 'Media not found', 'fields', json_build_object()));
+  END IF;
+
+  -- Apply approval or removal
+  IF p_is_dispo_approved THEN
+    UPDATE public.deal_media
+       SET is_dispo_approved = true,
+           dispo_approved_at = now(),
+           dispo_approved_by = v_user
+     WHERE id = p_media_id;
+  ELSE
+    UPDATE public.deal_media
+       SET is_dispo_approved = false,
+           dispo_approved_at = NULL,
+           dispo_approved_by = NULL
+     WHERE id = p_media_id;
+  END IF;
+
+  RETURN json_build_object('ok', true, 'code', 'OK',
+    'data', json_build_object('media_id', p_media_id),
+    'error', null);
+END;
+$$;
+
+ALTER FUNCTION "public"."update_deal_media_dispo_approval_v1"("p_media_id" "uuid", "p_is_dispo_approved" boolean) OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."update_deal_pricing_v1"("p_deal_id" "uuid", "p_fields" "jsonb") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -8329,6 +8429,9 @@ CREATE TABLE IF NOT EXISTS "public"."deal_media" (
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "uploaded_by" "uuid" NOT NULL,
     "row_version" bigint DEFAULT 1 NOT NULL,
+    "is_dispo_approved" boolean DEFAULT false NOT NULL,
+    "dispo_approved_at" timestamp with time zone,
+    "dispo_approved_by" "uuid",
     CONSTRAINT "deal_media_media_type_check" CHECK (("media_type" = 'photo'::"text"))
 );
 
