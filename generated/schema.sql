@@ -4490,7 +4490,7 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- B8 extension: load approved media only â€” public-safe metadata
+  -- B8 extension: load approved media only -- public-safe metadata
   SELECT COALESCE(
     json_agg(
       json_build_object(
@@ -6812,7 +6812,7 @@ BEGIN
       'error', json_build_object('message', 'Workspace is not active', 'fields', json_build_object()));
   END IF;
 
-  -- Resolve media â€” must belong to a deal in this tenant
+  -- Resolve media -- must belong to a deal in this tenant
   SELECT dm.*
     INTO v_media
     FROM public.deal_media dm
