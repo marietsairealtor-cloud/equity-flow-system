@@ -146,6 +146,36 @@ Item: 10.8.11E
 
 ---
 
+## fetch-dispo-kpis
+Trigger: /dispo page load, after Dispo KPI date filter change
+Reads: dispoKpiDateFrom, dispoKpiDateTo (ISO timestamptz strings; may be null — server defaults per §71)
+Calls: get_dispo_kpis_v1(p_date_from=dispoKpiDateFrom, p_date_to=dispoKpiDateTo)
+Writes: dispoKpiData variable
+Branches: none
+Item: 10.14A
+
+---
+
+## fetch-dispo-dashboard
+Trigger: /dispo page load, after share link mutations, after milestone mutations, after handoff_to_tc_v1
+Reads: none
+Calls: list_dispo_dashboard_deals_v1()
+Writes: dispoDealList variable
+Branches: none
+Item: 10.14A
+
+---
+
+## fetch-workspace-members-dispo
+Trigger: Send to TC popup open on /dispo
+Reads: auth session, current_tenant_id
+Calls: list_workspace_members_v1()
+Writes: workspaceMembers variable (shared with ACQ)
+Branches: none
+Item: 10.14B2
+
+---
+
 ## Action Workflows
 
 ## post-auth-routing
@@ -442,50 +472,53 @@ Item: 10.11B
 
 ---
 
-## fetch-dispo-kpis
-Trigger: /dispo page load, after Dispo KPI date filter change (when bound)
-Reads: dispoKpiDateFrom, dispoKpiDateTo (ISO timestamptz strings; may be null — server defaults per **§71**)
-Calls: get_dispo_kpis_v1(p_date_from=dispoKpiDateFrom, p_date_to=dispoKpiDateTo)
-Writes: dispoKpiData variable
-Item: 10.14A
-
----
-
-## fetch-dispo-dashboard
-Trigger: /dispo page load, after successful **`handoff_to_tc_v1`** (when wired), after other Dispo writes that should refresh the board (when wired)
-Reads: none
-Calls: list_dispo_dashboard_deals_v1()
-Writes: dispoDealList variable
-Item: 10.14A
-
----
-
-## dispo-share-link
-Trigger: Dispo deal row or detail when operator creates or revokes a buyer-facing share link (when wired)
-Reads: activeDispoDealId (or equivalent), expires_at for create
-Calls: create_share_token_v1(p_deal_id=activeDispoDealId, p_expires_at=future timestamptz within 90 days)
-       revoke_share_token_v1(p_token=token string from create response or list-derived source)
-Writes: share link state variables as bound; then fetch-dispo-dashboard when wired
+## dispo-create-share-link
+Trigger: Create Link button on dispo deal row
+Reads: context.item.data['id'] (deal_id from dispoDealList repeater)
+Calls: create_share_token_v1(p_deal_id=context.item.data['id'], p_expires_at=future timestamptz within 90 days)
+Writes: none -- triggers fetch-dispo-dashboard on success
+Branches: ok=true → fetch-dispo-dashboard | ok=false → set error_message
 Item: 10.14B
 
 ---
 
+## dispo-revoke-share-link
+Trigger: Revoke button on dispo deal row (visible only when active token exists)
+Reads: context.item.data['share_token_id'] from dispoDealList repeater
+Calls: revoke_share_token_v1(p_token_id=context.item.data['share_token_id'])
+Writes: none -- triggers fetch-dispo-dashboard on success
+Branches: ok=true → fetch-dispo-dashboard | ok=false → set error_message
+Item: 10.14B
+
+---
+
+## dispo-set-milestone
+Trigger: Assignment agreement / Earnest money checkbox toggle on dispo deal row
+Reads: context.item.data['id'] (deal_id), milestone name (assignment_agreement_signed or earnest_money_received), checkbox boolean state
+Calls: set_dispo_deal_milestone_v1(p_deal_id=context.item.data['id'], p_milestone, p_is_complete)
+Writes: none -- triggers fetch-dispo-dashboard on success
+Branches: ok=true → fetch-dispo-dashboard | ok=false → set error_message
+Item: 10.14B2
+
+---
+
 ## dispo-return-to-acq
-Trigger: Dispo operator confirms Return to Acq (when wired)
-Reads: activeDispoDealId
-Calls: return_to_acq_v1(p_deal_id=activeDispoDealId)
-Writes: none -- triggers fetch-dispo-dashboard and clears selection when wired
+Trigger: Dispo operator confirms Return to Acq
+Reads: context.item.data['id'] (deal_id from dispoDealList repeater)
+Calls: return_to_acq_v1(p_deal_id=context.item.data['id'])
+Writes: none -- triggers fetch-dispo-dashboard on success
+Branches: ok=true → fetch-dispo-dashboard | ok=false → set error_message
 Item: 10.14B
 
 ---
 
 ## dispo-send-to-tc
-Trigger: Dispo operator confirms Send to TC after milestones satisfied (when wired)
-Reads: activeDispoDealId, tcAssigneeUserId (nullable)
-Calls: handoff_to_tc_v1(p_deal_id=activeDispoDealId, p_assignee_user_id=tcAssigneeUserId)
-Writes: none -- triggers fetch-dispo-dashboard when wired
-Branches: CONFLICT when assignment_agreement_signed_at or earnest_money_received_at missing on deal -- surface server message; do not call until milestones persisted via governed path (future setter or server-seeded state)
-Item: 10.14B
+Trigger: Confirm button in Send to TC popup on /dispo (enabled only when both milestones are set)
+Reads: context.item.data['id'] (deal_id), dispoTcAssignee variable (nullable uuid)
+Calls: handoff_to_tc_v1(p_deal_id=context.item.data['id'], p_assignee_user_id=dispoTcAssignee)
+Writes: none -- triggers fetch-dispo-dashboard on success
+Branches: ok=true → close popup + fetch-dispo-dashboard | CONFLICT → surface server error (milestones not set) | ok=false → set error_message
+Item: 10.14B2
 
 ---
 
@@ -841,3 +874,4 @@ All WeWeb variables by scope. Type icons: (i) = object, (T) = text, (o) = boolea
 | dispoKpiDateTo | text | Dispo KPI window end — ISO timestamptz string or empty for RPC default. Variable ID: TBD | date filter on-change |
 | dispoKpiData | object | get_dispo_kpis_v1() result — deals_moved_to_tc, deposit_collected, avg_assignment_fee, date_from, date_to (**§71** / **§8.7**). Variable ID: TBD | fetch-dispo-kpis |
 | dispoDealList | object | list_dispo_dashboard_deals_v1() result — `data.items` board payload. Variable ID: TBD | fetch-dispo-dashboard |
+| dispoTcAssignee | text | Selected assignee user_id for Send to TC popup on /dispo. Nullable — null sends deal with no assignee. Variable ID: TBD | assignee repeater on-click in Send to TC popup |
