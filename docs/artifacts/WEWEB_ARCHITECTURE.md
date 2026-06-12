@@ -646,8 +646,8 @@ Dispo owns **outbound monetization**: deals in Dispo stage **and** the tenant bu
 * Send to TC opens modal with optional assignee (from `list_workspace_members_v1`) then calls `handoff_to_tc_v1`
 * Return to Acq calls `return_to_acq_v1`
 
-**Dispo packet editor (gap 7 / build order step 7)**
-* Lives in deal detail modal/slide-out on `/dispo`
+**Dispo packet editor (10.14B9)**
+* Lives on `/dispo/deal/:id` — a separate deal detail page
 * Operator edits buyer-facing marketing fields:
   * asking price (`dispo_asking_price`)
   * closing date (`dispo_closing_date`)
@@ -657,14 +657,24 @@ Dispo owns **outbound monetization**: deals in Dispo stage **and** the tenant bu
   * media URL (`dispo_media_url`)
   * market value estimate (`dispo_market_value_estimate`)
   * below-market override (`dispo_below_market_override`)
-* Below-market display: `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`
-* All writes via governed `update_dispo_packet_v1` RPC (build order step 5)
+* Below-market preview: `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)` — computed client-side, no RPC call
+* All reads via extended Dispo dashboard/deal read path (10.14B8A)
+* All writes via governed `update_dispo_packet_v1` only — no direct `deals` table writes
 
-**Dispo photo approval (gap 9 / build order step 6)**
-* Dispo deal detail shows deal media list
-* Operator toggles `is_dispo_approved` per photo via governed mutation
-* Only approved photos appear on buyer share packet
-* All writes via governed RPC -- no direct `deal_media` table calls
+**Dispo photo approval (10.14B9)**
+* Photo approval UI on `/dispo/deal/:id` alongside packet editor
+* Operator toggles `is_dispo_approved` per photo
+* Photo list loaded via governed media read path (confirmed/extended in 10.14B8A)
+* Each photo shows approved vs internal state visually
+* All writes via governed `update_deal_media_dispo_approval_v1` only — no direct `deal_media` table writes
+* Approved/unapproved state refreshes after each mutation
+
+**B9 read/write boundary (LOCKED)**
+* Dispo dashboard/deal read path (10.14B8A): internal operator data for `/dispo` and `/dispo/deal/:id`
+* `update_dispo_packet_v1`: saves buyer-facing packet fields (authenticated, operator only)
+* `update_deal_media_dispo_approval_v1`: toggles photo approval (authenticated, operator only)
+* `lookup_share_token_public_v1`: public buyer-facing output only — not used in operator UI
+* No direct table reads or writes anywhere in B9 UI
 
 **Buyer Ops (Build Route 10.14D)**
 * buyer roster via `list_buyers_v1` (not on Lead Intake)
