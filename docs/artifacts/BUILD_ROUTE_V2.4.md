@@ -10202,16 +10202,74 @@ If current storage/media delivery already has a buyer-safe URL pattern, B8 may r
 
 ---
 
+### **10.14B8A — Dispo Backend — Dashboard Packet + Media Approval Read Extension**
+
+**Deliverable:**
+Extend `list_dispo_dashboard_deals_v1` to return the 8 `dispo_*` packet fields, derived `dispo_below_market_value`, and deal media with approval state — so the 10.14B9 operator UI has a governed read path for the packet editor and photo approval UI.
+
+**DoD:**
+
+* `list_dispo_dashboard_deals_v1` returns the following on each deal item:
+  * `dispo_asking_price`
+  * `dispo_intersection`
+  * `dispo_closing_date`
+  * `dispo_description`
+  * `dispo_comparables`
+  * `dispo_media_url`
+  * `dispo_market_value_estimate`
+  * `dispo_below_market_override`
+  * `dispo_below_market_value` — derived as `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`
+
+* `list_dispo_dashboard_deals_v1` returns deal media per item under a `media` key:
+  * `media_id`
+  * `storage_path`
+  * `sort_order`
+  * `is_dispo_approved`
+  * `dispo_approved_at`
+  * `dispo_approved_by`
+
+* Media records are tenant-scoped through the deal
+* Read path remains authenticated only
+* Existing role guard and tenant scope enforced
+* Cross-tenant deal returns `NOT_FOUND`
+* Non-member returns `NOT_AUTHORIZED`
+
+**Tests:**
+
+* read path returns all 8 `dispo_*` packet fields per deal item
+* `dispo_below_market_value` equals market value minus asking price when no override
+* below-market override takes precedence over derived value
+* null market value and null asking price returns null `dispo_below_market_value`
+* read path returns media records under `media` key
+* media records include `is_dispo_approved`
+* approved and unapproved media both readable by authenticated operator
+* cross-tenant deal returns `NOT_FOUND`
+* non-member returns `NOT_AUTHORIZED`
+* existing Dispo dashboard tests remain passing
+* existing B8 public share packet tests remain passing
+
+**Proof:** `docs/proofs/10.14B8A_dispo_dashboard_packet_media_read_extension_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B7B`, `10.14B8` merged
+
+---
 ### **10.14B9 — Dispo UI — Packet Editor + Photo Approval**
 
 **Deliverable:**
 Authenticated Dispo UI editor for buyer-facing packet fields and share-packet photo approval.
 
+**Scope:**
+This is a UI-only lane item. It uses existing governed backend RPCs from 10.14B7B and 10.14B8. No new backend RPCs are expected unless implementation discovers a missing governed media read path.
+
 **DoD:**
 
 * Dispo packet editor lives on `/dispo`
-* Editor is opened from Dispo deal detail row/card, preferably modal or slide-out
-* Editor supports:
+
+* Editor opens from Dispo deal detail row/card
+
+* Editor may be modal, slide-out, or equivalent focused editing surface
+
+* Editor supports buyer-facing packet fields:
 
   * asking price
   * closing date
@@ -10222,27 +10280,81 @@ Authenticated Dispo UI editor for buyer-facing packet fields and share-packet ph
   * market value estimate
   * below-market override
 
-* Editor shows derived below-market value preview
-* Editor can save buyer-facing packet fields through governed backend only
-* Photo approval UI lets operator choose which photos appear in buyer share packet
-* Photo approval uses governed backend only
+* `media URL` means the existing `dispo_media_url` packet field
+
+* Approved deal photos are handled separately through the photo approval UI
+
+* Editor renders existing packet field values
+
+* Editor shows derived below-market value preview:
+
+  * `COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)`
+
+* Below-market preview hides or shows empty state when market value and override are absent
+
+* Editor saves buyer-facing packet fields through governed backend only:
+
+  * `update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)`
+
+* Photo approval UI shows existing deal media/photos from a governed read path
+
+* Photo approval UI lets operator choose which photos appear in the buyer-facing share packet
+
+* Photo approval uses governed backend only:
+
+  * `update_deal_media_dispo_approval_v1(p_media_id uuid, p_is_dispo_approved boolean)`
+
+* Approved/unapproved state refreshes after mutation
+
+* UI clearly distinguishes:
+
+  * internal/unapproved photos
+  * approved share-packet photos
+
 * No direct table calls
+
+* No direct writes to `deal_media`
+
+* No direct writes to `deals`
+
+* No public share packet viewer work in this item
+
 * No buyer matching engine
+
 * No CRM/Rolodex expansion
+
+* No storage upload/delete work
+
+* No backend schema or RPC changes unless QA approves a discovered gap
+
+**Backend dependency check:**
+
+Before implementation, confirm there is an existing governed read path that returns deal media/photos for authenticated Dispo UI use.
+
+If no governed media read path exists, stop and report to QA before building the UI. Do not use direct table reads as a workaround.
 
 **Tests:**
 
 * editor opens from `/dispo`
+* editor opens from Dispo deal detail row/card
 * packet fields render existing values
-* packet fields save through governed backend
-* derived below-market preview works
-* photo approval toggle works
-* approved photos refresh correctly
+* packet fields save through `update_dispo_packet_v1`
+* omitted packet fields are preserved on save
+* explicit cleared field is sent correctly
+* derived below-market preview works with market value minus asking price
+* below-market override takes precedence in preview
+* photo approval UI renders existing deal media/photos from governed read path
+* photo approval toggle calls `update_deal_media_dispo_approval_v1`
+* approving a photo updates UI state after refresh
+* unapproving a photo updates UI state after refresh
+* approved photos are visually distinguishable from internal/unapproved photos
 * no direct table access exists in UI
+* no direct `deals` write exists in UI
+* no direct `deal_media` write exists in UI
 
 **Proof:** `docs/proofs/10.14B9_dispo_packet_editor_photo_approval_ui_<UTC>.md`
 **Gate:** `lane-only`
-**Prerequisite:** `10.14B7`, `10.14B8` merged
+**Prerequisite:** `10.14B7B`, `10.14B8`, `10.14B8A` merged
 
 ---
 
