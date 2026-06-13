@@ -10460,3 +10460,33 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+## 2026-06-13 -- Build Route v2.4 -- 10.14B8A
+
+Objective
+Dispo Backend -- Dashboard Packet + Media Approval Read Extension
+
+Changes
+- Migration 20260613000001_10_14B8A_extend_dispo_dashboard_packet_fields.sql applied
+  - list_dispo_dashboard_deals_v1 extended to return per deal item:
+    dispo_asking_price, dispo_intersection, dispo_closing_date,
+    dispo_description, dispo_comparables, dispo_media_url,
+    dispo_market_value_estimate, dispo_below_market_override,
+    dispo_below_market_value (COALESCE(override, market_value - asking_price))
+- Migration 20260613000002_10_14B8A_extend_list_deal_media_approval_fields.sql applied
+  - list_deal_media_v1 extended to return per media item:
+    is_dispo_approved, dispo_approved_at, dispo_approved_by
+  - Member role guard added: require_min_role_v1('member') wrapped into NOT_AUTHORIZED
+- No schema changes. No new RPCs. No privilege changes. No public surface changes.
+- CONTRACTS.md section 75 added, section 17 table row added
+- rpc_contract_registry.json, qa_claim.json, qa_scope_map.json, ci_robot_owned_guard.ps1 updated
+- Governance file: GOVERNANCE_CHANGE_20260613T165539Z.md
+
+Proof
+docs/proofs/10.14B8A_dispo_dashboard_packet_media_read_extension_20260613T180230Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+99 files, 1299 tests, Result: PASS
+
+Status
+MERGED
