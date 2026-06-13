@@ -763,6 +763,10 @@
     "10.14B8": {
       "title": "Dispo Backend -- Share Packet Photo Visibility",
       "proof_pattern": "^docs/proofs/10\\.14B8_dispo_share_packet_photo_visibility_"
+    },
+    "10.14B8A": {
+      "title": "Dispo Backend -- Dashboard Packet + Media Approval Read Extension",
+      "proof_pattern": "^docs/proofs/10\\.14B8A_dispo_dashboard_packet_media_read_extension_"
     }
   }
 }

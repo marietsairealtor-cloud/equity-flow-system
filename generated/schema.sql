@@ -3789,6 +3789,15 @@ CREATE OR REPLACE FUNCTION "public"."list_deal_media_v1"("p_deal_id" "uuid") RET
 DECLARE
   v_tenant uuid;
 BEGIN
+  BEGIN
+    PERFORM public.require_min_role_v1('member');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
+  END;
+
   v_tenant := public.current_tenant_id();
   IF v_tenant IS NULL THEN
     RETURN json_build_object(
@@ -3814,12 +3823,15 @@ BEGIN
         (
           SELECT json_agg(
             json_build_object(
-              'id',           m.id,
-              'storage_path', m.storage_path,
-              'media_type',   m.media_type,
-              'sort_order',   m.sort_order,
-              'uploaded_at',  m.uploaded_at,
-              'uploaded_by',  m.uploaded_by
+              'id',                m.id,
+              'storage_path',      m.storage_path,
+              'media_type',        m.media_type,
+              'sort_order',        m.sort_order,
+              'uploaded_at',       m.uploaded_at,
+              'uploaded_by',       m.uploaded_by,
+              'is_dispo_approved', m.is_dispo_approved,
+              'dispo_approved_at', m.dispo_approved_at,
+              'dispo_approved_by', m.dispo_approved_by
             )
             ORDER BY m.sort_order ASC, m.uploaded_at ASC
           )
@@ -3971,14 +3983,11 @@ DECLARE
 BEGIN
   BEGIN
     PERFORM public.require_min_role_v1('member');
-  EXCEPTION
-    WHEN OTHERS THEN
-      RETURN json_build_object(
-        'ok', false,
-        'code', 'NOT_AUTHORIZED',
-        'data', json_build_object(),
-        'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
-      );
+  EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+      'ok', false, 'code', 'NOT_AUTHORIZED', 'data', json_build_object(),
+      'error', json_build_object('message', 'Not authorized', 'fields', json_build_object())
+    );
   END;
 
   v_tenant := public.current_tenant_id();
@@ -3997,16 +4006,16 @@ BEGIN
         (
           SELECT json_agg(
             json_build_object(
-              'id',                 d.id,
-              'stage',              d.stage,
-              'address',            d.address,
-              'assignee_user_id',   d.assignee_user_id,
-              'farm_area_id',       d.farm_area_id,
-              'next_action',        d.next_action,
-              'next_action_due',    d.next_action_due,
-              'updated_at',         d.updated_at,
-              'created_at',         d.created_at,
-              'health_color',       public.get_deal_health_color(d.stage, d.updated_at),
+              'id',                          d.id,
+              'stage',                       d.stage,
+              'address',                     d.address,
+              'assignee_user_id',            d.assignee_user_id,
+              'farm_area_id',                d.farm_area_id,
+              'next_action',                 d.next_action,
+              'next_action_due',             d.next_action_due,
+              'updated_at',                  d.updated_at,
+              'created_at',                  d.created_at,
+              'health_color',                public.get_deal_health_color(d.stage, d.updated_at),
               'arv', (
                 SELECT di2.assumptions->>'arv'
                 FROM public.deal_inputs di2
@@ -4036,7 +4045,7 @@ BEGIN
                   WHEN COALESCE(tok.expired_total, 0) = tok.token_total THEN 'expired'
                   ELSE 'inactive'
                 END,
-                'active_count', COALESCE(tok.active_count, 0),
+                'active_count',    COALESCE(tok.active_count, 0),
                 'next_expires_at', tok.next_expires_at
               ),
               'buyer_interest', json_build_object(
@@ -4047,6 +4056,23 @@ BEGIN
                 'entry_count',        COALESCE(actc.entry_count, 0),
                 'last_activity_type', act1.activity_type,
                 'last_activity_at',   act1.created_at
+              ),
+              'dispo_asking_price',          d.dispo_asking_price,
+              'dispo_intersection',          d.dispo_intersection,
+              'dispo_closing_date',          d.dispo_closing_date,
+              'dispo_description',           d.dispo_description,
+              'dispo_comparables',           d.dispo_comparables,
+              'dispo_media_url',             d.dispo_media_url,
+              'dispo_market_value_estimate', d.dispo_market_value_estimate,
+              'dispo_below_market_override', d.dispo_below_market_override,
+              'dispo_below_market_value',    COALESCE(
+                d.dispo_below_market_override,
+                CASE
+                  WHEN d.dispo_market_value_estimate IS NOT NULL
+                    AND d.dispo_asking_price IS NOT NULL
+                  THEN d.dispo_market_value_estimate - d.dispo_asking_price
+                  ELSE NULL
+                END
               )
             )
             ORDER BY d.updated_at DESC
