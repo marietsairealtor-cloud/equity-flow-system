@@ -230,6 +230,7 @@ if($pp -match "^docs/proofs/6\.7_share_link_surface_\d{8}T\d{6}Z\.log$"){ return
   if($pp -match "^docs/proofs/10\.14B7A_dispo_packet_rpc_search_path_fix_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.14B7A proof log" }
   if($pp -match "^docs/proofs/10\.14B7B_dispo_packet_rpc_landing_repair_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.14B7B proof log" }
   if($pp -match "^docs/proofs/10\.14B8_dispo_share_packet_photo_visibility_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.14B8 proof log" }
+  if($pp -match "^docs/proofs/10\.14B8A_dispo_dashboard_packet_media_read_extension_\d{8}T\d{6}Z\.log$"){ return "ALLOW:10.14B8A proof log" }
   if($pp -eq "docs/truth/deal_health_thresholds.json"){ return "ALLOW:10.8.4 deal health thresholds truth file" }
   if($pp -eq "docs/truth/rpc_schemas/list_deals_v1.json"){ return "ALLOW:10.8.4 list_deals_v1 schema update" }
   if($pp -eq "docs/truth/surface_truth.json"){ return "ALLOW:9.1 surface truth capture" }

@@ -854,13 +854,14 @@
       "name": "list_deal_media_v1",
       "version": 1,
       "build_route_owner": "10.11A",
-      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — list_deal_media_v1",
+      "input_contract": "CONTRACTS.md §55 Acquisition backend (10.11A) — list_deal_media_v1 (10.14B8A extension)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
+        "VALIDATION_ERROR",
         "NOT_FOUND"
       ],
-      "notes": "Lists deal_media rows for deal in tenant. STABLE."
+      "notes": "Lists deal_media rows for deal in tenant. STABLE. require_min_role_v1('member') wrapped into NOT_AUTHORIZED envelope."
     },
     {
       "name": "register_deal_media_v1",
@@ -931,11 +932,12 @@
     {
       "name": "list_dispo_dashboard_deals_v1",
       "version": 1,
-      "build_route_owner": "10.14A",
-      "input_contract": "CONTRACTS.md §17 / §71 list_dispo_dashboard_deals_v1 (10.14A)",
+      "build_route_owner": "10.14B8A",
+      "input_contract": "CONTRACTS.md §17 / §71 list_dispo_dashboard_deals_v1 (10.14B8A)",
       "response_schema": null,
       "error_codes": [
-        "NOT_AUTHORIZED"
+        "NOT_AUTHORIZED",
+        "VALIDATION_ERROR"
       ],
       "notes": "Migration 20260515000001_10_14A_dispo_dashboard_read_path.sql. list_dispo_dashboard_deals_v1() no args. STABLE SECURITY DEFINER; EXECUTE authenticated only (REVOKE anon, PUBLIC). require_min_role_v1(member) wrapped NOT_AUTHORIZED. current_tenant_id() NULL => NOT_AUTHORIZED. OK data.items: deals where tenant_id match, deleted_at IS NULL, stage=dispo; each row includes share_link summary (active|none|revoked|expired|inactive), buyer_interest {schema_version:1, signals:[]}, activity teaser {entry_count, last_activity_type, last_activity_at}, latest arv/ask/assignment_fee from deal_inputs, health_color. JSON envelope (json). Read-only."
     },

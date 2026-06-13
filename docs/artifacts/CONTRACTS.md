@@ -360,6 +360,7 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | update_dispo_packet_v1 | 10.14B7B | Patch dispo buyer-facing packet fields on a deal (jsonb patch semantics; omit=unchanged, null=clear, empty string=normalize to NULL); stage guard: dispo/under_contract only; envelope-safe numeric/date/URL validation; writes deal_activity_log on success | SECURITY DEFINER, authenticated only, min role: member, workspace write-lock | current_tenant_id() — p_deal_id uuid + p_fields jsonb |
 | lookup_share_token_public_v1 | 10.14B7B | Public buyer-facing share token lookup; token is authorization; no tenant context required; returns only allowlisted buyer-facing packet fields; no exact address or seller/internal fields; identical NOT_FOUND envelope for all failure cases | SECURITY DEFINER, STABLE, anon + authenticated EXECUTE | p_token text only — tenant resolved from share_tokens row |
 | update_deal_media_dispo_approval_v1 | 10.14B8 | Approve or remove a deal_media row from the public dispo share packet; null inputs → VALIDATION_ERROR; cross-tenant → NOT_FOUND; non-member → NOT_AUTHORIZED; write-locked → WORKSPACE_NOT_WRITABLE | SECURITY DEFINER, authenticated only, min role: member, workspace write-lock | current_tenant_id() — p_media_id uuid + p_is_dispo_approved boolean |
+| list_deal_media_v1 | 10.14B8A | Extended to return is_dispo_approved, dispo_approved_at, dispo_approved_by; member role guard added | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() -- p_deal_id uuid |
 
 ### Mapping Rules
 
@@ -1953,3 +1954,35 @@ All B7B invariants preserved: token format, bytea hash, NOT_FOUND envelope, no e
 
 **Registry:** docs/truth/rpc_contract_registry.json; docs/truth/privilege_truth.json; docs/truth/execute_allowlist.json; docs/truth/definer_allowlist.json; 17 mapping table above; 73 extended by B8.
 <!-- entitlement-policy-coupling: last-verified 10.14B8 -->
+## 75) Dispo Dashboard Packet + Media Approval Read Extension (10.14B8A)
+
+**Authority:** migrations 20260613000001-20260613000002.
+
+**Purpose:** Extend the authenticated Dispo dashboard/deal read path to return buyer-facing packet editor fields and media approval state for the 10.14B9 operator UI.
+
+### list_dispo_dashboard_deals_v1 (10.14B8A extension)
+
+Extended to return the following on each deal item:
+- dispo_asking_price
+- dispo_intersection
+- dispo_closing_date
+- dispo_description
+- dispo_comparables
+- dispo_media_url
+- dispo_market_value_estimate
+- dispo_below_market_override
+- dispo_below_market_value -- derived as COALESCE(dispo_below_market_override, dispo_market_value_estimate - dispo_asking_price)
+
+All B7/B7B contract invariants preserved. No new anon-callable surface. No public share token changes.
+
+### list_deal_media_v1 (10.14B8A extension)
+
+Extended to return the following on each media item:
+- is_dispo_approved
+- dispo_approved_at
+- dispo_approved_by
+
+Member role guard added (require_min_role_v1('member') wrapped into NOT_AUTHORIZED envelope). Existing tenant scope and NOT_FOUND envelope preserved.
+
+**Registry:** docs/truth/rpc_contract_registry.json -- no new RPCs; existing entries extended. docs/truth/privilege_truth.json -- no privilege changes.
+<!-- entitlement-policy-coupling: last-verified 10.14B8A -->
