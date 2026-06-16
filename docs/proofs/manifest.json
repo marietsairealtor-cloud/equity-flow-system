@@ -276,6 +276,7 @@
     "docs/proofs/10.14B7A_dispo_packet_rpc_search_path_fix_20260526T000226Z.log": "ccbddc4eb6b9e8ee8e48fc6170df5f04524c5215d2e7a52d837640b6e5727594",
     "docs/proofs/10.14B7B_dispo_packet_rpc_landing_repair_20260603T005623Z.log": "15a97159a41cd7739d49b15767e10c8b791aef7826ba200ac482ba5ad79c4262",
     "docs/proofs/10.14B8_dispo_share_packet_photo_visibility_20260609T020056Z.log": "eb4b4e423f51464beddf9a44e0388f833265d11cd523c8594d6c5b4b44280122",
-    "docs/proofs/10.14B8A_dispo_dashboard_packet_media_read_extension_20260613T180230Z.log": "5da9860e6b11996c25359d5469eb36b96d4bfee2758327a107ec9133ad1167c5"
+    "docs/proofs/10.14B8A_dispo_dashboard_packet_media_read_extension_20260613T180230Z.log": "5da9860e6b11996c25359d5469eb36b96d4bfee2758327a107ec9133ad1167c5",
+    "docs/proofs/10.14B8B_expanded_share_packet_fields_20260616T234059Z.log": "48025f93dcaa37142851345aa52b0d03f0e9c1313f9a2c6e2a8869abce3cc2dd"
   }
 }

@@ -4073,7 +4073,14 @@ BEGIN
                   THEN d.dispo_market_value_estimate - d.dispo_asking_price
                   ELSE NULL
                 END
-              )
+              ),
+              'dispo_headline',              d.dispo_headline,
+              'dispo_tagline',               d.dispo_tagline,
+              'dispo_offer_deadline',        d.dispo_offer_deadline,
+              'dispo_walkthrough',           d.dispo_walkthrough,
+              'dispo_features',              d.dispo_features,
+              'dispo_contact_name',          d.dispo_contact_name,
+              'dispo_contact_phone',         d.dispo_contact_phone
             )
             ORDER BY d.updated_at DESC
           )
@@ -4472,7 +4479,10 @@ BEGIN
            CASE WHEN d.dispo_market_value_estimate IS NOT NULL AND d.dispo_asking_price IS NOT NULL
                 THEN d.dispo_market_value_estimate - d.dispo_asking_price
                 ELSE NULL END
-         ) AS dispo_below_market_value
+         ) AS dispo_below_market_value,
+         d.dispo_headline, d.dispo_tagline, d.dispo_offer_deadline,
+         d.dispo_walkthrough, d.dispo_features,
+         d.dispo_contact_name, d.dispo_contact_phone
   INTO v_row
   FROM public.share_tokens st
   JOIN public.deals d ON d.id = st.deal_id AND d.tenant_id = st.tenant_id
@@ -4516,7 +4526,7 @@ BEGIN
       'error', json_build_object('message', 'Token not found', 'fields', json_build_object()));
   END IF;
 
-  -- B8 extension: load approved media only -- public-safe metadata
+  -- Approved media -- first by sort_order then updated_at (hero = first item)
   SELECT COALESCE(
     json_agg(
       json_build_object(
@@ -4547,6 +4557,13 @@ BEGIN
       'dispo_market_value_estimate', v_row.dispo_market_value_estimate,
       'dispo_below_market_override', v_row.dispo_below_market_override,
       'dispo_below_market_value',    v_row.dispo_below_market_value,
+      'dispo_headline',              v_row.dispo_headline,
+      'dispo_tagline',               v_row.dispo_tagline,
+      'dispo_offer_deadline',        v_row.dispo_offer_deadline,
+      'dispo_walkthrough',           v_row.dispo_walkthrough,
+      'dispo_features',              v_row.dispo_features,
+      'dispo_contact_name',          v_row.dispo_contact_name,
+      'dispo_contact_phone',         v_row.dispo_contact_phone,
       'media',                       v_media
     ),
     'error', null);
@@ -7784,12 +7801,16 @@ DECLARE
   v_allowed_keys text[] := ARRAY[
     'dispo_asking_price', 'dispo_intersection', 'dispo_closing_date',
     'dispo_description', 'dispo_comparables', 'dispo_media_url',
-    'dispo_market_value_estimate', 'dispo_below_market_override'
+    'dispo_market_value_estimate', 'dispo_below_market_override',
+    'dispo_headline', 'dispo_tagline', 'dispo_offer_deadline',
+    'dispo_walkthrough', 'dispo_features',
+    'dispo_contact_name', 'dispo_contact_phone'
   ];
   v_key          text;
   v_num          numeric;
   v_date         date;
   v_url          text;
+  v_ts           timestamptz;
 BEGIN
   v_tenant := public.current_tenant_id();
   v_user   := auth.uid();
@@ -7828,6 +7849,7 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- Numeric field validation (existing)
   IF p_fields ? 'dispo_asking_price' AND p_fields->>'dispo_asking_price' IS NOT NULL AND trim(p_fields->>'dispo_asking_price') <> '' THEN
     BEGIN
       v_num := (p_fields->>'dispo_asking_price')::numeric;
@@ -7855,6 +7877,7 @@ BEGIN
     END;
   END IF;
 
+  -- Date field validation (existing)
   IF p_fields ? 'dispo_closing_date' AND p_fields->>'dispo_closing_date' IS NOT NULL AND trim(p_fields->>'dispo_closing_date') <> '' THEN
     BEGIN
       v_date := (p_fields->>'dispo_closing_date')::date;
@@ -7864,12 +7887,23 @@ BEGIN
     END;
   END IF;
 
+  -- URL validation (existing)
   IF p_fields ? 'dispo_media_url' AND p_fields->>'dispo_media_url' IS NOT NULL AND trim(p_fields->>'dispo_media_url') <> '' THEN
     v_url := trim(p_fields->>'dispo_media_url');
     IF NOT (v_url ~* '^https://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(:[0-9]+)?(/.*)?$') THEN
       RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
         'error', json_build_object('message', 'dispo_media_url must be a valid https:// URL or empty', 'fields', json_build_object()));
     END IF;
+  END IF;
+
+  -- B8B: offer deadline validation (timestamptz)
+  IF p_fields ? 'dispo_offer_deadline' AND p_fields->>'dispo_offer_deadline' IS NOT NULL AND trim(p_fields->>'dispo_offer_deadline') <> '' THEN
+    BEGIN
+      v_ts := (p_fields->>'dispo_offer_deadline')::timestamptz;
+    EXCEPTION WHEN OTHERS THEN
+      RETURN json_build_object('ok', false, 'code', 'VALIDATION_ERROR', 'data', json_build_object(),
+        'error', json_build_object('message', 'dispo_offer_deadline must be a valid timestamp', 'fields', json_build_object()));
+    END;
   END IF;
 
   SELECT stage INTO v_stage
@@ -7887,6 +7921,7 @@ BEGIN
   END IF;
 
   UPDATE public.deals SET
+    -- Existing fields (unchanged)
     dispo_asking_price          = CASE WHEN p_fields ? 'dispo_asking_price'
                                        THEN CASE WHEN p_fields->>'dispo_asking_price' IS NULL OR trim(p_fields->>'dispo_asking_price') = ''
                                                  THEN NULL ELSE (p_fields->>'dispo_asking_price')::numeric END
@@ -7915,6 +7950,29 @@ BEGIN
                                        THEN CASE WHEN p_fields->>'dispo_below_market_override' IS NULL OR trim(p_fields->>'dispo_below_market_override') = ''
                                                  THEN NULL ELSE (p_fields->>'dispo_below_market_override')::numeric END
                                        ELSE dispo_below_market_override END,
+    -- B8B: new fields
+    dispo_headline              = CASE WHEN p_fields ? 'dispo_headline'
+                                       THEN NULLIF(trim(p_fields->>'dispo_headline'), '')
+                                       ELSE dispo_headline END,
+    dispo_tagline               = CASE WHEN p_fields ? 'dispo_tagline'
+                                       THEN NULLIF(trim(p_fields->>'dispo_tagline'), '')
+                                       ELSE dispo_tagline END,
+    dispo_offer_deadline        = CASE WHEN p_fields ? 'dispo_offer_deadline'
+                                       THEN CASE WHEN p_fields->>'dispo_offer_deadline' IS NULL OR trim(p_fields->>'dispo_offer_deadline') = ''
+                                                 THEN NULL ELSE (p_fields->>'dispo_offer_deadline')::timestamptz END
+                                       ELSE dispo_offer_deadline END,
+    dispo_walkthrough           = CASE WHEN p_fields ? 'dispo_walkthrough'
+                                       THEN NULLIF(trim(p_fields->>'dispo_walkthrough'), '')
+                                       ELSE dispo_walkthrough END,
+    dispo_features              = CASE WHEN p_fields ? 'dispo_features'
+                                       THEN NULLIF(trim(p_fields->>'dispo_features'), '')
+                                       ELSE dispo_features END,
+    dispo_contact_name          = CASE WHEN p_fields ? 'dispo_contact_name'
+                                       THEN NULLIF(trim(p_fields->>'dispo_contact_name'), '')
+                                       ELSE dispo_contact_name END,
+    dispo_contact_phone         = CASE WHEN p_fields ? 'dispo_contact_phone'
+                                       THEN NULLIF(trim(p_fields->>'dispo_contact_phone'), '')
+                                       ELSE dispo_contact_phone END,
     updated_at                  = now(),
     row_version                 = row_version + 1
   WHERE id = p_deal_id AND tenant_id = v_tenant;
@@ -8615,6 +8673,13 @@ CREATE TABLE IF NOT EXISTS "public"."deals" (
     "dispo_media_url" "text",
     "dispo_market_value_estimate" numeric,
     "dispo_below_market_override" numeric,
+    "dispo_headline" "text",
+    "dispo_tagline" "text",
+    "dispo_offer_deadline" timestamp with time zone,
+    "dispo_walkthrough" "text",
+    "dispo_features" "text",
+    "dispo_contact_name" "text",
+    "dispo_contact_phone" "text",
     CONSTRAINT "deals_stage_check" CHECK (("stage" = ANY (ARRAY['new'::"text", 'analyzing'::"text", 'offer_sent'::"text", 'under_contract'::"text", 'dispo'::"text", 'tc'::"text", 'closed'::"text", 'dead'::"text"])))
 );
 

@@ -931,16 +931,16 @@
     },
     {
       "name": "list_dispo_dashboard_deals_v1",
-      "version": 1,
+      "version": 1, 
       "build_route_owner": "10.14B8A",
-      "input_contract": "CONTRACTS.md §17 / §71 list_dispo_dashboard_deals_v1 (10.14B8A)",
+      "input_contract": "CONTRACTS.md §17 / §71 list_dispo_dashboard_deals_v1 (10.14B8A; 10.14B8B extension for 7 new fields for authenticated operator UI use only not public packet use)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
         "VALIDATION_ERROR"
-      ],
+      ],    
       "notes": "Migration 20260515000001_10_14A_dispo_dashboard_read_path.sql. list_dispo_dashboard_deals_v1() no args. STABLE SECURITY DEFINER; EXECUTE authenticated only (REVOKE anon, PUBLIC). require_min_role_v1(member) wrapped NOT_AUTHORIZED. current_tenant_id() NULL => NOT_AUTHORIZED. OK data.items: deals where tenant_id match, deleted_at IS NULL, stage=dispo; each row includes share_link summary (active|none|revoked|expired|inactive), buyer_interest {schema_version:1, signals:[]}, activity teaser {entry_count, last_activity_type, last_activity_at}, latest arv/ask/assignment_fee from deal_inputs, health_color. JSON envelope (json). Read-only."
-    },
+    },  
     {
       "name": "update_deal_seller_v1",
       "version": 1,
@@ -1012,9 +1012,9 @@
     },
     {
       "name": "update_dispo_packet_v1",
-      "version": 1,
+      "version": 1, 
       "build_route_owner": "10.14B7B",
-      "input_contract": "CONTRACTS.md §73 update_dispo_packet_v1 (10.14B7B)",
+      "input_contract": "CONTRACTS.md §73 update_dispo_packet_v1 (10.14B7B; 10.14B8B extension for 7 new fields)",
       "response_schema": null,
       "error_codes": [
         "NOT_AUTHORIZED",
@@ -1023,13 +1023,13 @@
         "NOT_FOUND",
         "CONFLICT"
       ],
-      "notes": "SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). p_fields jsonb patch: omit=unchanged, null=clear, empty string=normalize to NULL for nullable fields. Stage guard: dispo/under_contract only; else CONFLICT. Envelope-safe numeric/date/URL validation (dispo_media_url must be https:// with valid host or empty/null). require_min_role_v1(member); check_workspace_write_allowed_v1. Writes deal_activity_log packet_update on success."
+      "notes": "SECURITY DEFINER; EXECUTE to authenticated only (REVOKE anon, PUBLIC). p_fields jsonb patch: omit=unchanged, null=clear, empty string=normalize to NULL for nullable fields. Stage guard: dispo/under_contract only; else CONFLICT. Envelope-safe numeric/date/URL validation (dispo_media_url must be https:"
     },
     {
       "name": "lookup_share_token_public_v1",
       "version": 1,
-      "build_route_owner": "10.14B7B",
-      "input_contract": "CONTRACTS.md §73 lookup_share_token_public_v1 (10.14B7B)",
+      "build_route_owner": "10.14B8B",
+      "input_contract": "CONTRACTS.md §73 lookup_share_token_public_v1 (10.14B7B; 10.14B8B extension for 7 new fields for public packet)",
       "response_schema": null,
       "error_codes": [
         "NOT_FOUND"
@@ -1038,7 +1038,7 @@
     },
     {
       "name": "update_deal_media_dispo_approval_v1",
-      "version": 1,
+      "version": 1, 
       "build_route_owner": "10.14B8",
       "input_contract": "CONTRACTS.md §74 update_deal_media_dispo_approval_v1 (10.14B8)",
       "response_schema": null,
@@ -1053,3 +1053,5 @@
     }
   ]
 }
+
+

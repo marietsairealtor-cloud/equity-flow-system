@@ -670,11 +670,19 @@ Dispo owns **outbound monetization**: deals in Dispo stage **and** the tenant bu
 * Approved/unapproved state refreshes after each mutation
 
 **B9 read/write boundary (LOCKED)**
-* Dispo dashboard/deal read path (10.14B8A): internal operator data for `/dispo` and `/dispo/deal/:id`
-* `update_dispo_packet_v1`: saves buyer-facing packet fields (authenticated, operator only)
+* Dispo dashboard/deal read path (10.14B8A + 10.14B8B): internal operator data for `/dispo` and `/dispo/deal/{dealId}`
+* `update_dispo_packet_v1`: saves all buyer-facing packet fields including B8B expanded fields (authenticated, operator only)
 * `update_deal_media_dispo_approval_v1`: toggles photo approval (authenticated, operator only)
 * `lookup_share_token_public_v1`: public buyer-facing output only — not used in operator UI
 * No direct table reads or writes anywhere in B9 UI
+* Hero photo = first approved media by sort_order then updated_at — no manual hero selection in B8B
+
+**Public share packet page (/deal/:token)**
+* Buyer-facing page — no authentication required
+* Reads via `lookup_share_token_public_v1(p_token)` only
+* Renders: headline, tagline, wholesale price, as-is market value, below-market value, intersection, map, approved photos, description, features, comparables, offer deadline, closing date, walkthrough, contact, realtor note, tenant disclaimer
+* Does not expose: exact address, seller info, internal fields, unapproved media
+* Rich text fields (dispo_features, dispo_comparables) rendered safely — no raw script execution
 
 **Buyer Ops (Build Route 10.14D)**
 * buyer roster via `list_buyers_v1` (not on Lead Intake)

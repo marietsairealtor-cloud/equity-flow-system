@@ -10253,6 +10253,206 @@ Extend `list_dispo_dashboard_deals_v1` to return the 8 `dispo_*` packet fields, 
 **Prerequisite:** `10.14B7B`, `10.14B8` merged
 
 ---
+
+### **10.14B8B — Dispo Backend — Expanded Share Packet Fields**
+
+**Deliverable:**
+Backend support for expanded buyer-facing Dispo share packet fields used by the public buyer packet and the 10.14B9 Dispo packet editor UI.
+
+**Context:**
+The buyer-facing share packet design has expanded after reviewing a successful wholesale packet reference and the internal buyer packet mockup. The packet now needs headline, tagline, offer deadline, walkthrough instructions, property features, public contact information, and richer marketing sections.
+
+This is a backend item. 10.14B9 remains UI-only and should not perform schema/RPC expansion.
+
+**Architecture decision:**
+
+* Store expanded buyer-facing packet fields on `deals`
+
+* Use existing governed save path:
+
+  * `update_dispo_packet_v1(p_deal_id uuid, p_fields jsonb)`
+
+* Use existing governed internal read path:
+
+  * `list_dispo_dashboard_deals_v1`
+
+* Use existing public buyer output path:
+
+  * `lookup_share_token_public_v1(p_token text)`
+
+* Do not create a new packet read RPC unless QA later approves a discovered need
+
+* Do not modify frozen authenticated/internal share-token RPC:
+
+  * `lookup_share_token_v1`
+
+* Public packet continues to expose intersection/location only, not exact address
+
+* Public packet continues to expose only buyer-facing allowlisted fields
+
+**New fields:**
+
+Add the following fields to `deals`:
+
+* `dispo_headline text NULL`
+* `dispo_tagline text NULL`
+* `dispo_offer_deadline timestamptz NULL`
+* `dispo_walkthrough text NULL`
+* `dispo_features text NULL`
+* `dispo_contact_name text NULL`
+* `dispo_contact_phone text NULL`
+
+Existing field retained and used with richer editor support:
+
+* `dispo_comparables text NULL`
+
+**Hero photo decision:**
+
+Do **not** add `dispo_hero_media_id` in this item.
+
+For now, the public packet hero photo should be derived from approved media using deterministic ordering, such as:
+
+* first approved media by `sort_order`, then `updated_at`
+* or the existing media ordering contract if already defined
+
+If manual hero photo selection is needed later, create a separate backend item.
+
+**Rich text / content safety rule:**
+
+* `dispo_features` and `dispo_comparables` may support rich-text editor input from the UI
+* Backend stores them as text
+* No base64 payloads
+* No file/media embedding inside rich-text fields
+* Public rendering must be safe
+* Unsafe script/style/event-handler content must not be allowed to execute in the public packet
+* If sanitization is handled in UI, that must be documented in the B9 UI proof
+* If backend sanitization is required, stop and request QA approval before implementation
+
+**DoD:**
+
+* New `deals` columns exist:
+
+  * `dispo_headline`
+  * `dispo_tagline`
+  * `dispo_offer_deadline`
+  * `dispo_walkthrough`
+  * `dispo_features`
+  * `dispo_contact_name`
+  * `dispo_contact_phone`
+
+* Existing rows remain backward compatible
+
+* New fields default to `NULL`
+
+* `update_dispo_packet_v1` supports saving the new fields
+
+* `update_dispo_packet_v1` keeps existing patch semantics:
+
+  * omitted key = unchanged
+  * explicit `null` = clear field
+  * empty string normalizes to `NULL` where applicable
+  * unknown key returns `VALIDATION_ERROR`
+
+* `update_dispo_packet_v1` validates `dispo_offer_deadline` as timestamp/date-safe input
+
+* `update_dispo_packet_v1` validates `dispo_contact_phone` as text, not numeric
+
+* `update_dispo_packet_v1` remains governed:
+
+  * authenticated only
+  * `require_min_role_v1('member')`
+  * tenant-scoped
+  * workspace write-lock enforced
+  * cross-tenant deal returns `NOT_FOUND`
+  * non-member returns `NOT_AUTHORIZED`
+  * wrong-stage deal returns `CONFLICT`
+  * validation errors return governed `VALIDATION_ERROR` envelope
+
+* `list_dispo_dashboard_deals_v1` returns the new packet fields for authenticated Dispo UI use
+
+* `lookup_share_token_public_v1` returns the new buyer-facing fields for valid public share tokens
+
+* `lookup_share_token_public_v1` continues to return approved media only
+
+* `lookup_share_token_public_v1` continues not to expose exact address
+
+* `lookup_share_token_public_v1` continues not to expose seller/internal-sensitive fields
+
+* `lookup_share_token_public_v1` preserves B7B/B8 public failure-envelope invariants
+
+* `lookup_share_token_v1` remains unchanged
+
+* No direct table calls from UI
+
+* No public exposure of internal media by default
+
+* No buyer matching engine
+
+* No CRM/Rolodex expansion
+
+* No storage upload/delete/signing work
+
+* No manual hero-media selection field in this item
+
+**Public packet output fields added:**
+
+`lookup_share_token_public_v1` may return the following new fields under `data`:
+
+* `dispo_headline`
+* `dispo_tagline`
+* `dispo_offer_deadline`
+* `dispo_walkthrough`
+* `dispo_features`
+* `dispo_contact_name`
+* `dispo_contact_phone`
+
+Existing public packet fields remain:
+
+* `dispo_asking_price`
+* `dispo_intersection`
+* `dispo_closing_date`
+* `dispo_description`
+* `dispo_comparables`
+* `dispo_media_url`
+* `dispo_market_value_estimate`
+* `dispo_below_market_override`
+* `dispo_below_market_value`
+* approved `media`
+
+**Tests:**
+
+* new columns exist on `deals`
+* existing rows default new fields to `NULL`
+* `update_dispo_packet_v1` saves `dispo_headline`
+* `update_dispo_packet_v1` saves `dispo_tagline`
+* `update_dispo_packet_v1` saves `dispo_offer_deadline`
+* `update_dispo_packet_v1` saves `dispo_walkthrough`
+* `update_dispo_packet_v1` saves `dispo_features`
+* `update_dispo_packet_v1` saves `dispo_contact_name`
+* `update_dispo_packet_v1` saves `dispo_contact_phone`
+* omitted new fields are preserved on patch update
+* explicit `null` clears new nullable fields
+* empty string normalizes to `NULL` for text fields
+* invalid offer deadline returns `VALIDATION_ERROR`
+* unknown key still returns `VALIDATION_ERROR`
+* cross-tenant mutation returns `NOT_FOUND`
+* non-member mutation returns `NOT_AUTHORIZED`
+* wrong-stage deal returns `CONFLICT`
+* `list_dispo_dashboard_deals_v1` returns new packet fields
+* `lookup_share_token_public_v1` returns new packet fields for valid token
+* `lookup_share_token_public_v1` excludes exact address
+* `lookup_share_token_public_v1` excludes seller/internal-sensitive fields
+* `lookup_share_token_public_v1` still returns approved media only
+* `lookup_share_token_public_v1` failure envelopes remain identical across invalid/missing/expired/revoked/workspace-expired cases
+* existing 10.14B7B tests remain passing
+* existing 10.14B8 tests remain passing
+* existing 10.14B8A tests remain passing
+
+**Proof:** `docs/proofs/10.14B8B_expanded_share_packet_fields_<UTC>.log`
+**Gate:** `merge-blocking`
+**Prerequisite:** `10.14B7B`, `10.14B8`, `10.14B8A` merged
+
+---
 ### **10.14B9 — Dispo UI — Packet Editor + Photo Approval**
 
 **Deliverable:**
