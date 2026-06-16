@@ -361,6 +361,9 @@ Internal helpers (e.g. require_min_role_v1, current_tenant_id) are excluded.
 | lookup_share_token_public_v1 | 10.14B7B | Public buyer-facing share token lookup; token is authorization; no tenant context required; returns only allowlisted buyer-facing packet fields; no exact address or seller/internal fields; identical NOT_FOUND envelope for all failure cases | SECURITY DEFINER, STABLE, anon + authenticated EXECUTE | p_token text only — tenant resolved from share_tokens row |
 | update_deal_media_dispo_approval_v1 | 10.14B8 | Approve or remove a deal_media row from the public dispo share packet; null inputs → VALIDATION_ERROR; cross-tenant → NOT_FOUND; non-member → NOT_AUTHORIZED; write-locked → WORKSPACE_NOT_WRITABLE | SECURITY DEFINER, authenticated only, min role: member, workspace write-lock | current_tenant_id() — p_media_id uuid + p_is_dispo_approved boolean |
 | list_deal_media_v1 | 10.14B8A | Extended to return is_dispo_approved, dispo_approved_at, dispo_approved_by; member role guard added | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() -- p_deal_id uuid |
+| update_dispo_packet_v1 | 10.14B8B | Extended to support 7 new dispo_* packet fields; dispo_offer_deadline validated as timestamptz | SECURITY DEFINER, authenticated only, min role: member, workspace write-lock, stage check | current_tenant_id() -- p_deal_id uuid + p_fields jsonb |
+| list_dispo_dashboard_deals_v1 | 10.14B8B | Extended to return 7 new B8B packet fields per deal item | SECURITY DEFINER, authenticated only, min role: member | current_tenant_id() |
+| lookup_share_token_public_v1 | 10.14B8B | Extended to return 7 new public packet fields for valid share tokens | SECURITY DEFINER, anon + authenticated, no tenant context required | token hash via extensions.digest |
 
 ### Mapping Rules
 
@@ -1986,3 +1989,39 @@ Member role guard added (require_min_role_v1('member') wrapped into NOT_AUTHORIZ
 
 **Registry:** docs/truth/rpc_contract_registry.json -- no new RPCs; existing entries extended. docs/truth/privilege_truth.json -- no privilege changes.
 <!-- entitlement-policy-coupling: last-verified 10.14B8A -->
+## 76) Dispo Backend -- Expanded Share Packet Fields (10.14B8B)
+
+**Authority:** migrations 20260616000001-20260616000003.
+
+**Purpose:** Adds 7 new buyer-facing packet fields to `deals` and extends the governed save, internal read, and public read paths to support the expanded dispo share packet.
+
+### New columns on public.deals
+
+All NULL by default. Backward compatible.
+
+- dispo_headline text NULL
+- dispo_tagline text NULL
+- dispo_offer_deadline timestamptz NULL
+- dispo_walkthrough text NULL
+- dispo_features text NULL
+- dispo_contact_name text NULL -- public deal contact, NOT seller contact
+- dispo_contact_phone text NULL -- public deal contact, NOT seller contact
+
+### update_dispo_packet_v1 (10.14B8B extension)
+
+New fields added to allowed patch keys. dispo_offer_deadline validated as timestamptz. dispo_contact_phone stored as text, not numeric. All existing patch semantics preserved: omitted key = unchanged, explicit null = clear, empty string = NULL. All existing guards preserved: member role, tenant scope, workspace write-lock, stage check.
+
+### list_dispo_dashboard_deals_v1 (10.14B8B extension)
+
+Returns all 7 new fields per deal item for authenticated operator UI. B8A fields preserved.
+
+### lookup_share_token_public_v1 (10.14B8B extension)
+
+Returns all 7 new public fields for valid share tokens. All B7B/B8 invariants preserved: strict token format, bytea hash, NOT_FOUND envelope, no exact address, no seller/internal fields, approved media only.
+
+### Rich text safety note
+
+dispo_features and dispo_comparables may contain rich-text editor output. Backend stores as text. Public rendering safety is enforced in B9 UI -- no raw script execution permitted. Documented in B9 proof.
+
+**Registry:** docs/truth/rpc_contract_registry.json updated. No new RPCs. No privilege changes.
+<!-- entitlement-policy-coupling: last-verified 10.14B8B --> 
