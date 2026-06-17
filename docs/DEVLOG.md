@@ -10490,3 +10490,38 @@ All checklist items PASS. Merge-blocking gate satisfied.
 
 Status
 MERGED
+## 2026-06-17 -- Build Route v2.4 -- 10.14B8B
+
+Objective
+Dispo Backend -- Expanded Share Packet Fields
+
+Changes
+- Migration 20260616000001: 7 new nullable columns added to public.deals
+  - dispo_headline, dispo_tagline, dispo_offer_deadline, dispo_walkthrough
+  - dispo_features, dispo_contact_name, dispo_contact_phone
+  - All NULL by default. Backward compatible.
+- Migration 20260616000002: update_dispo_packet_v1 extended
+  - 7 new fields added to allowed patch keys
+  - dispo_offer_deadline validated as timestamptz
+  - dispo_contact_phone stored as text
+  - All existing patch semantics and guards preserved
+- Migration 20260616000003: read RPCs extended
+  - list_dispo_dashboard_deals_v1 returns all 7 new fields
+  - lookup_share_token_public_v1 returns all 7 new public fields
+  - All B7B/B8/B8A invariants preserved
+- No new RPCs. No privilege changes.
+- CONTRACTS.md section 76 added, section 17 updated
+- rpc_contract_registry.json, qa_claim.json, qa_scope_map.json updated
+- ci_robot_owned_guard.ps1 proof pattern added
+- BUILD_ROUTE_V2.4.md and WEWEB_ARCHITECTURE.md updated
+- Governance file: GOVERNANCE_CHANGE_20260616T194217Z.md
+
+Proof
+docs/proofs/10.14B8B_expanded_share_packet_fields_20260616T234059Z.log
+
+DoD
+All checklist items PASS. Merge-blocking gate satisfied.
+100 files, 1342 tests, Result: PASS
+
+Status
+MERGED
